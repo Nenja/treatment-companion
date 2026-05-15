@@ -48,13 +48,14 @@ export function GoalRatingPicker({
 
   return (
     <div>
-      {/* The goal itself, restated above the choices so the patient is
-          rating the right thing without scrolling. */}
-      <div className="mb-5 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-        <div className="eyebrow mb-1">Goal</div>
-        <p className="font-display text-[18px] leading-snug text-ink">
+      {/* Goal header — not a card. Quiet eyebrow + heading so the goal
+          reads as the subject of the question, not a sixth choice. */}
+      <div className="mb-6">
+        <div className="eyebrow">Your goal</div>
+        <p className="mt-1 font-display text-[22px] leading-snug text-ink">
           {goalText}
         </p>
+        <div className="mt-4 h-px bg-stone" aria-hidden />
       </div>
 
       <div role="radiogroup" aria-label={ariaLabel} className="space-y-2">
