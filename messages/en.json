@@ -10,6 +10,7 @@
     "home": {
       "greeting": "Hello, {name}",
       "cycleContext": "Week {week} of {total} · Cycle {cycle}",
+      "nextVisit": "Next visit: {date}",
       "checkinReadyTitle": "Your weekly check-in is ready",
       "checkinReadyBody": "Takes about two minutes.",
       "checkinReadyAction": "Start check-in",
