@@ -10,19 +10,40 @@ import type {
   GoalSuggestion,
   WeeklyCheckin,
   WeeklyGoalRating,
-  RatingValue
+  RatingValue,
+  ApprovedGoal,
+  GasAnchors,
+  SuggestionStatus
 } from './types';
 import { RATING_VALUE_MAP, type RatingLabel } from './types';
 import type { SuggestGoalDraft } from './suggestGoalDraft';
 import type { CheckinDraft } from './checkinDraft';
+import {
+  generateVisitCodeString,
+  normalizeVisitCodeInput,
+  isUsable,
+  VISIT_CODE_TTL_MINUTES,
+  type VisitCode
+} from './visitCode';
 
 // ---------------------------------------------------------------------------
 // Store state
 // ---------------------------------------------------------------------------
 
+export interface ClinicianSession {
+  /** Patient ID the clinician currently has access to. */
+  patientId: string;
+  /** ISO timestamp of last activity — used for inactivity timeout. */
+  lastActivityAt: string;
+}
+
 export interface State extends Seed {
   currentRole: Role;
   currentPatientId: string;
+  /** Active and historical visit codes. */
+  visitCodes: VisitCode[];
+  /** Clinician's currently unlocked patient session, if any. */
+  clinicianSession?: ClinicianSession;
 }
 
 function makeInitial(): State {
@@ -30,7 +51,9 @@ function makeInitial(): State {
   return {
     ...seed,
     currentRole: 'patient',
-    currentPatientId: seed.patients[0].id // Anna by default
+    currentPatientId: seed.patients[0].id, // Anna by default
+    visitCodes: [],
+    clinicianSession: undefined
   };
 }
 
@@ -332,6 +355,213 @@ export const actions = {
       };
     });
     return newId;
+  },
+
+  /**
+   * Generate a fresh visit code for the given patient. Any previously
+   * unconsumed code for that patient is invalidated.
+   */
+  generateVisitCode(patientId: string): VisitCode {
+    const now = new Date();
+    const expiresAt = new Date(
+      now.getTime() + VISIT_CODE_TTL_MINUTES * 60 * 1000
+    ).toISOString();
+    const newCode: VisitCode = {
+      code: generateVisitCodeString(),
+      patientId,
+      expiresAt
+    };
+    setState((s) => {
+      // Mark any other unconsumed codes for this patient as consumed-now,
+      // so the new one is the only valid code.
+      const updated = s.visitCodes.map((c) =>
+        c.patientId === patientId && !c.consumedAt && new Date(c.expiresAt) > now
+          ? { ...c, consumedAt: now.toISOString() }
+          : c
+      );
+      return {
+        ...s,
+        visitCodes: [...updated, newCode],
+        auditLog: [
+          ...s.auditLog,
+          {
+            id: randomId('audit'),
+            actorId: patientId,
+            actorRole: 'patient',
+            action: 'visit_code_generated',
+            entity: 'visit_code',
+            entityId: newCode.code,
+            timestamp: now.toISOString()
+          }
+        ]
+      };
+    });
+    return newCode;
+  },
+
+  /**
+   * Clinician attempts to unlock a patient by entering a code.
+   * Returns the patient ID on success, or null on invalid/expired code.
+   */
+  unlockWithVisitCode(rawInput: string): string | null {
+    const code = normalizeVisitCodeInput(rawInput);
+    let unlockedPatientId: string | null = null;
+    setState((s) => {
+      const match = s.visitCodes.find(
+        (c) => c.code === code && isUsable(c)
+      );
+      if (!match) return s;
+      unlockedPatientId = match.patientId;
+      const nowIso = new Date().toISOString();
+      const updatedCodes = s.visitCodes.map((c) =>
+        c.code === code ? { ...c, consumedAt: nowIso } : c
+      );
+      return {
+        ...s,
+        visitCodes: updatedCodes,
+        clinicianSession: {
+          patientId: match.patientId,
+          lastActivityAt: nowIso
+        },
+        auditLog: [
+          ...s.auditLog,
+          {
+            id: randomId('audit'),
+            actorId: 'clin-1',
+            actorRole: 'clinician',
+            action: 'patient_unlocked',
+            entity: 'patient',
+            entityId: match.patientId,
+            timestamp: nowIso
+          }
+        ]
+      };
+    });
+    return unlockedPatientId;
+  },
+
+  /** Refresh the clinician's session timestamp (any clinician action). */
+  touchClinicianSession() {
+    setState((s) => {
+      if (!s.clinicianSession) return s;
+      return {
+        ...s,
+        clinicianSession: {
+          ...s.clinicianSession,
+          lastActivityAt: new Date().toISOString()
+        }
+      };
+    });
+  },
+
+  /** End the clinician's session (manual or timeout). */
+  endClinicianSession() {
+    setState((s) => {
+      if (!s.clinicianSession) return s;
+      return {
+        ...s,
+        clinicianSession: undefined,
+        auditLog: [
+          ...s.auditLog,
+          {
+            id: randomId('audit'),
+            actorId: 'clin-1',
+            actorRole: 'clinician',
+            action: 'session_ended',
+            entity: 'patient',
+            entityId: s.clinicianSession.patientId,
+            timestamp: new Date().toISOString()
+          }
+        ]
+      };
+    });
+  },
+
+  /**
+   * Set a suggestion's status without approving it. Used for
+   * "discuss at next visit", "combined", "not suitable" actions.
+   */
+  setSuggestionStatus(suggestionId: string, status: SuggestionStatus) {
+    setState((s) => {
+      const updated = s.goalSuggestions.map((g) =>
+        g.id === suggestionId ? { ...g, status } : g
+      );
+      return {
+        ...s,
+        goalSuggestions: updated,
+        auditLog: [
+          ...s.auditLog,
+          {
+            id: randomId('audit'),
+            actorId: 'clin-1',
+            actorRole: 'clinician',
+            action: 'suggestion_status_updated',
+            entity: 'goal_suggestion',
+            entityId: suggestionId,
+            timestamp: new Date().toISOString()
+          }
+        ]
+      };
+    });
+  },
+
+  /**
+   * Approve a suggestion: create an ApprovedGoal and mark the source
+   * suggestion as active.
+   */
+  approveSuggestion(
+    suggestionId: string,
+    fields: {
+      patientFacingText: string;
+      smartText: string;
+      gasAnchors: GasAnchors;
+    }
+  ): string {
+    let newGoalId = '';
+    setState((s) => {
+      const suggestion = s.goalSuggestions.find((g) => g.id === suggestionId);
+      if (!suggestion) return s;
+      newGoalId = randomId('goal');
+      const goal: ApprovedGoal = {
+        id: newGoalId,
+        suggestionId: suggestion.id,
+        patientId: suggestion.patientId,
+        treatmentCycleId: suggestion.treatmentCycleId,
+        patientFacingText: fields.patientFacingText.trim(),
+        smartText: fields.smartText.trim(),
+        gasAnchors: {
+          minus2: fields.gasAnchors.minus2.trim(),
+          minus1: fields.gasAnchors.minus1.trim(),
+          zero: fields.gasAnchors.zero.trim(),
+          plus1: fields.gasAnchors.plus1.trim(),
+          plus2: fields.gasAnchors.plus2.trim()
+        },
+        approvedByClinicianId: 'clin-1',
+        approvedAt: new Date().toISOString(),
+        status: 'active'
+      };
+      const updatedSuggestions = s.goalSuggestions.map((g) =>
+        g.id === suggestionId ? { ...g, status: 'active' as const } : g
+      );
+      return {
+        ...s,
+        goalSuggestions: updatedSuggestions,
+        approvedGoals: [...s.approvedGoals, goal],
+        auditLog: [
+          ...s.auditLog,
+          {
+            id: randomId('audit'),
+            actorId: 'clin-1',
+            actorRole: 'clinician',
+            action: 'suggestion_approved',
+            entity: 'approved_goal',
+            entityId: newGoalId,
+            timestamp: new Date().toISOString()
+          }
+        ]
+      };
+    });
+    return newGoalId;
   },
 
   reset() {

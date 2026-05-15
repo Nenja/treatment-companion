@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useStore, actions } from '@/lib/store';
@@ -17,22 +18,17 @@ export default function PatientHomePage() {
   const locale = useLocale();
   const state = useStore();
 
-  // Dev convenience: clinician role just shows a placeholder for now.
-  // The real clinician surface lands in a later slice.
+  // Clinician role redirects to the clinician unlock/landing flow.
+  // We use a side-effect rather than a render-time redirect so React
+  // Strict Mode doesn't double-call router.replace.
+  useEffect(() => {
+    if (state.currentRole === 'clinician') {
+      router.replace(locale === 'en' ? '/clinician' : `/${locale}/clinician`);
+    }
+  }, [state.currentRole, router, locale]);
+
   if (state.currentRole === 'clinician') {
-    return (
-      <AppShell>
-        <Card tone="muted">
-          <p className="font-display text-[18px] text-ink">
-            Clinician view arrives in slice 5.
-          </p>
-          <p className="mt-1 text-[14px] text-ink-soft">
-            Switch the role back to Patient in the dev panel to see this
-            slice.
-          </p>
-        </Card>
-      </AppShell>
-    );
+    return null;
   }
 
   const patient = state.patients.find((p) => p.id === state.currentPatientId);
@@ -212,6 +208,19 @@ export default function PatientHomePage() {
           +
         </span>
         {t('suggestGoal')}
+      </button>
+
+      {/* Visit code — quiet secondary action for the in-clinic moment */}
+      <button
+        type="button"
+        onClick={() =>
+          router.push(
+            locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
+          )
+        }
+        className="mt-3 flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+      >
+        {t('generateVisitCode')}
       </button>
 
       {/* Safety notice */}

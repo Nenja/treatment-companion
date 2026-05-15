@@ -93,7 +93,7 @@ The data model intentionally has no fields for any of those, either.
 | 1     | **Done.** Shell, data model, patient home.                    |
 | 2     | **Done.** Suggest-goal flow (5-step wizard with auto-save).   |
 | 3     | **Done.** Weekly check-in flow.                               |
-| 4     | Clinician patient list + goal review + approval form.         |
+| 4     | **Done.** Clinician unlock + suggestion review + approval form. |
 | 5     | Clinician summary screen.                                     |
 
 After slice 5, we'll have a complete clickable prototype of the

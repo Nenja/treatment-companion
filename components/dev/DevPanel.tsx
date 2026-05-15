@@ -110,6 +110,38 @@ function DevPanelInner() {
                 </div>
               </div>
 
+              {/* Active visit codes (for testing) */}
+              {state.visitCodes.filter(
+                (c) =>
+                  !c.consumedAt &&
+                  new Date(c.expiresAt).getTime() > Date.now()
+              ).length > 0 && (
+                <div className="rounded-md border border-cream/15 bg-cream/5 p-2">
+                  <div className="text-[10px] uppercase tracking-wider text-cream/50">
+                    Active visit codes
+                  </div>
+                  <ul className="mt-1.5 space-y-1 font-mono text-[12px] text-cream">
+                    {state.visitCodes
+                      .filter(
+                        (c) =>
+                          !c.consumedAt &&
+                          new Date(c.expiresAt).getTime() > Date.now()
+                      )
+                      .map((c) => {
+                        const patientName =
+                          state.patients.find((p) => p.id === c.patientId)
+                            ?.displayName ?? '?';
+                        return (
+                          <li key={c.code}>
+                            <span className="text-cream/60">{patientName}:</span>{' '}
+                            {c.code.slice(0, 3)}-{c.code.slice(3, 6)}
+                          </li>
+                        );
+                      })}
+                  </ul>
+                </div>
+              )}
+
               {/* Virtual date */}
               <div className="rounded-md bg-cream/5 px-3 py-2 text-[12px] text-cream/70">
                 {t('virtualDate', {

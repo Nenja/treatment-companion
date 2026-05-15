@@ -27,7 +27,16 @@
       "noSuggestionsBody": "Når du er klar, kan du foreslå noget, du gerne vil have hjælp til.",
       "suggestedGoalsTitle": "Foreslåede mål",
       "suggestedGoalsCount": "{count, plural, one {# mål foreslået} other {# mål foreslået}}",
-      "suggestGoal": "Foreslå et nyt mål"
+      "suggestGoal": "Foreslå et nyt mål",
+      "generateVisitCode": "Generér besøgskode"
+    },
+    "visitCode": {
+      "pageTitle": "Besøgskode",
+      "intro": "Vis eller læs denne kode for din kliniker under dit besøg. Den udløber efter 10 minutter.",
+      "expiresIn": "Udløber om {minutes}:{seconds}",
+      "expired": "Denne kode er udløbet.",
+      "regenerate": "Generér en ny kode",
+      "back": "Tilbage til forsiden"
     },
     "suggestGoal": {
       "pageTitle": "Foreslå et mål",
@@ -161,6 +170,65 @@
     "8w": "Om cirka 8 uger",
     "12w": "Om cirka 12 uger",
     "notSure": "Jeg er ikke sikker"
+  },
+  "clinician": {
+    "unlock": {
+      "title": "Indtast besøgskode",
+      "body": "Bed patienten generere en kode i deres app, og indtast den her.",
+      "placeholder": "ABC-DEF",
+      "submit": "Lås op",
+      "errorInvalid": "Den kode er ikke gyldig. Bed patienten generere en ny."
+    },
+    "session": {
+      "endSession": "Afslut session",
+      "endSessionConfirm": "Afslut sessionen med denne patient?",
+      "endSessionConfirmKeep": "Fortsæt",
+      "endSessionConfirmEnd": "Afslut",
+      "timeoutTitle": "Sessionen er afsluttet",
+      "timeoutBody": "Din session blev afsluttet på grund af inaktivitet. Bed patienten om en ny besøgskode for at fortsætte."
+    },
+    "patient": {
+      "viewingLabel": "Ser på",
+      "cycleContext": "Uge {week} af {total} · Forløb {cycle}",
+      "nextVisit": "Næste besøg: {date}",
+      "suggestionsTitle": "Foreslåede mål",
+      "suggestionsEmpty": "Ingen forslag afventer gennemgang.",
+      "activeGoalsTitle": "Aktive mål",
+      "activeGoalsEmpty": "Ingen aktive mål endnu.",
+      "review": "Gennemgå"
+    },
+    "review": {
+      "title": "Gennemgå forslag",
+      "patientWordsLabel": "Patientens egne ord",
+      "areaLabel": "Område",
+      "importanceLabel": "Vigtighed",
+      "contextLabel": "Patientens kontekst",
+      "submittedLabel": "Indsendt",
+      "actionsTitle": "Hvad vil du gøre?",
+      "approve": "Godkend",
+      "editAndApprove": "Redigér og godkend",
+      "discuss": "Drøft ved næste besøg",
+      "combine": "Kombinér med et andet mål",
+      "notSuitable": "Ikke i dette forløb",
+      "back": "Tilbage"
+    },
+    "approve": {
+      "title": "Godkend mål",
+      "headerNote": "Skriv hvad patienten skal se, din SMART-version, og de fem ankerbeskrivelser for dette mål. Anker bør beskrive situationen observerbart — det patienten eller en pårørende kan se.",
+      "patientTextLabel": "Hvad patienten ser",
+      "patientTextHelper": "Almindeligt sprog. Kort. Aktiv form.",
+      "smartLabel": "SMART-version (kun kliniker)",
+      "smartHelper": "Specifik, målbar, tidsbestemt. Patienten ser dette ikke.",
+      "anchorsTitle": "Fem-trins ankre for dette mål",
+      "anchorMinus2": "Meget værre end forventet",
+      "anchorMinus1": "Lidt værre end forventet",
+      "anchorZero": "Det du realistisk forventer",
+      "anchorPlus1": "Bedre end forventet",
+      "anchorPlus2": "Meget bedre end forventet",
+      "anchorPlaceholder": "Beskriv situationen…",
+      "submit": "Godkend og aktivér",
+      "cancel": "Annullér"
+    }
   },
   "dev": {
     "title": "Udviklerpanel",

@@ -23,7 +23,16 @@
       "noSuggestionsBody": "When you're ready, you can suggest something you'd like treatment to help with.",
       "suggestedGoalsTitle": "Suggested goals",
       "suggestedGoalsCount": "{count, plural, one {# goal suggested} other {# goals suggested}}",
-      "suggestGoal": "Suggest a new goal"
+      "suggestGoal": "Suggest a new goal",
+      "generateVisitCode": "Generate visit code"
+    },
+    "visitCode": {
+      "pageTitle": "Visit code",
+      "intro": "Show or read this code to your clinician during your visit. It expires after 10 minutes.",
+      "expiresIn": "Expires in {minutes}:{seconds}",
+      "expired": "This code has expired.",
+      "regenerate": "Generate a new code",
+      "back": "Back to home"
     },
     "suggestGoal": {
       "pageTitle": "Suggest a goal",
@@ -157,6 +166,65 @@
     "8w": "In about 8 weeks",
     "12w": "In about 12 weeks",
     "notSure": "I'm not sure"
+  },
+  "clinician": {
+    "unlock": {
+      "title": "Enter visit code",
+      "body": "Ask your patient to generate a code in their app, then type it here.",
+      "placeholder": "ABC-DEF",
+      "submit": "Unlock",
+      "errorInvalid": "That code isn't valid. Ask the patient to generate a new one."
+    },
+    "session": {
+      "endSession": "End session",
+      "endSessionConfirm": "End the session with this patient?",
+      "endSessionConfirmKeep": "Keep working",
+      "endSessionConfirmEnd": "End session",
+      "timeoutTitle": "Session ended",
+      "timeoutBody": "Your session ended after a period of inactivity. Ask the patient for a new visit code to continue."
+    },
+    "patient": {
+      "viewingLabel": "Viewing",
+      "cycleContext": "Week {week} of {total} · Cycle {cycle}",
+      "nextVisit": "Next visit: {date}",
+      "suggestionsTitle": "Suggested goals",
+      "suggestionsEmpty": "No suggestions awaiting review.",
+      "activeGoalsTitle": "Active goals",
+      "activeGoalsEmpty": "No active goals yet.",
+      "review": "Review"
+    },
+    "review": {
+      "title": "Review suggestion",
+      "patientWordsLabel": "Patient's words",
+      "areaLabel": "Area",
+      "importanceLabel": "Importance",
+      "contextLabel": "Context the patient added",
+      "submittedLabel": "Submitted",
+      "actionsTitle": "What would you like to do?",
+      "approve": "Approve",
+      "editAndApprove": "Edit and approve",
+      "discuss": "Discuss at next visit",
+      "combine": "Combine with another goal",
+      "notSuitable": "Not suitable this cycle",
+      "back": "Back"
+    },
+    "approve": {
+      "title": "Approve goal",
+      "headerNote": "Write what your patient will see, your SMART version, and the five anchor descriptions for this goal. Anchors should describe the situation in observable terms — what the patient or carer would see.",
+      "patientTextLabel": "What the patient will see",
+      "patientTextHelper": "Plain language. Short. Active voice.",
+      "smartLabel": "SMART version (clinician only)",
+      "smartHelper": "Specific, measurable, time-bound. The patient does not see this.",
+      "anchorsTitle": "Five-step anchors for this goal",
+      "anchorMinus2": "Much worse than expected",
+      "anchorMinus1": "A little worse than expected",
+      "anchorZero": "What you realistically expect",
+      "anchorPlus1": "Better than expected",
+      "anchorPlus2": "Much better than expected",
+      "anchorPlaceholder": "Describe the situation…",
+      "submit": "Approve and activate",
+      "cancel": "Cancel"
+    }
   },
   "dev": {
     "title": "Dev panel",
