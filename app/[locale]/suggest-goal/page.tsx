@@ -8,22 +8,35 @@ import { useSuggestGoalDraft, draftStorage } from '@/lib/useSuggestGoalDraft';
 import {
   GOAL_DOMAINS,
   IMPORTANCE_LEVELS,
-  HOPED_TIMEFRAMES,
   type GoalDomain,
-  type Importance,
-  type HopedTimeframe
+  type Importance
 } from '@/lib/types';
-import { isStepComplete, canSubmit, type WizardStep } from '@/lib/suggestGoalDraft';
+import {
+  isStepComplete,
+  canSubmit,
+  type WizardStep
+} from '@/lib/suggestGoalDraft';
 import { WizardLayout } from '@/components/wizard/WizardLayout';
 import { OptionList, ExamplesBlock } from '@/components/wizard/OptionList';
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 4;
 
 /**
  * Suggest-goal wizard. Lives at /suggest-goal (or /da/suggest-goal).
  *
- * Five steps, draft auto-saved to localStorage per patient. The patient
+ * Four steps, draft auto-saved to localStorage per patient. The patient
  * can cancel and resume any time without losing what they wrote.
+ *
+ * Step plan:
+ *   1. Domain — which area of life
+ *   2. Patient wording — open description
+ *   3. Importance — three-option scale
+ *   4. Optional extra context + summary review
+ *
+ * The previous "when do you hope to notice a change" question was removed
+ * because goals are scoped to the treatment cycle, which already has a
+ * defined length. Asking the patient for a timeframe created a mismatch
+ * between their expectation and how the system actually reviews goals.
  */
 export default function SuggestGoalPage() {
   const router = useRouter();
@@ -31,7 +44,6 @@ export default function SuggestGoalPage() {
   const t = useTranslations('patient.suggestGoal');
   const tDomain = useTranslations('domain');
   const tImportance = useTranslations('importance');
-  const tTimeframe = useTranslations('timeframe');
   const state = useStore();
 
   const patient = state.patients.find((p) => p.id === state.currentPatientId);
@@ -40,11 +52,8 @@ export default function SuggestGoalPage() {
   );
 
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  // Set when the patient has successfully submitted; switches to thanks view.
   const [submittedId, setSubmittedId] = useState<string | null>(null);
 
-  // If for some reason there's no patient (e.g. dev panel state cleared),
-  // bail back to home.
   useEffect(() => {
     if (hydrated && !patient) {
       router.replace(locale === 'en' ? '/' : `/${locale}`);
@@ -61,7 +70,6 @@ export default function SuggestGoalPage() {
     Boolean(draft.domain) ||
     Boolean(draft.patientWording?.trim()) ||
     Boolean(draft.importance) ||
-    Boolean(draft.hopedTimeframe) ||
     Boolean(draft.difficultyContext?.trim());
 
   const onCancel = () => {
@@ -78,7 +86,9 @@ export default function SuggestGoalPage() {
   }
 
   // --- Step rendering --------------------------------------------------
-  const step = draft.currentStep;
+  // Defensive: clamp current step so any old persisted draft pointing at
+  // step 5 lands on the new final step (4) instead.
+  const step = (Math.min(draft.currentStep, TOTAL_STEPS) as WizardStep);
 
   const goNext = () => {
     if (step < TOTAL_STEPS) {
@@ -188,25 +198,10 @@ export default function SuggestGoalPage() {
         }))}
       />
     );
-  } else if (step === 4) {
+  } else {
+    // Step 4: optional context + summary
     title = t('step4.title');
     helper = t('step4.helper');
-    body = (
-      <OptionList<HopedTimeframe>
-        name="timeframe"
-        ariaLabel={title}
-        value={draft.hopedTimeframe}
-        onChange={(v) => update({ hopedTimeframe: v })}
-        options={HOPED_TIMEFRAMES.map((tf) => ({
-          value: tf,
-          label: tTimeframe(tf)
-        }))}
-      />
-    );
-  } else {
-    // Step 5: optional context + summary preview
-    title = t('step5.title');
-    helper = t('step5.helper');
     body = (
       <>
         <label htmlFor="difficultyContext" className="sr-only">
@@ -216,13 +211,12 @@ export default function SuggestGoalPage() {
           id="difficultyContext"
           value={draft.difficultyContext ?? ''}
           onChange={(e) => update({ difficultyContext: e.target.value })}
-          placeholder={t('step5.placeholder')}
+          placeholder={t('step4.placeholder')}
           rows={4}
           className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-3 text-[16px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
           maxLength={500}
         />
 
-        {/* Summary card so the patient can review before sending */}
         <section className="mt-8 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5">
           <h2 className="font-display text-[18px] text-ink">
             {t('summary.title')}
@@ -252,14 +246,6 @@ export default function SuggestGoalPage() {
               label={t('summary.importanceLabel')}
               value={draft.importance ? tImportance(draft.importance) : '—'}
               onEdit={() => goToStep(3)}
-              editLabel={t('summary.edit')}
-            />
-            <SummaryRow
-              label={t('summary.timeframeLabel')}
-              value={
-                draft.hopedTimeframe ? tTimeframe(draft.hopedTimeframe) : '—'
-              }
-              onEdit={() => goToStep(4)}
               editLabel={t('summary.edit')}
             />
           </dl>

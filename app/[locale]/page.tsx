@@ -128,15 +128,18 @@ export default function PatientHomePage() {
           pendingPromptId={pendingPrompt?.id}
           nextDueDate={nextDueDate}
           patientId={patient.id}
+          hasActiveGoals={approvedGoals.length > 0}
         />
       </div>
 
-      {/* Visual cycle progress — replaces the old "X check-ins" text line */}
-      <CheckinDots
-        totalWeeks={totalWeeks}
-        completedWeeks={completedWeeks}
-        pendingPromptWeek={pendingPrompt?.weekNumber}
-      />
+      {/* Visual cycle progress — only shown when there are active goals */}
+      {approvedGoals.length > 0 && (
+        <CheckinDots
+          totalWeeks={totalWeeks}
+          completedWeeks={completedWeeks}
+          pendingPromptWeek={pendingPrompt?.weekNumber}
+        />
+      )}
 
       {/* Goals section */}
       <section className="mt-9" aria-labelledby="goals-heading">

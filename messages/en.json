@@ -60,14 +60,6 @@
         "high": "Very important to me"
       },
       "step4": {
-        "title": "When would you hope to notice a change?",
-        "helper": "An honest guess is fine. \"Not sure\" is also a good answer.",
-        "weeks4": "In about 4 weeks",
-        "weeks8": "In about 8 weeks",
-        "weeks12": "In about 12 weeks",
-        "notSure": "I'm not sure"
-      },
-      "step5": {
         "title": "Anything your team should know?",
         "helper": "Optional. For example, when it's harder, what helps, what you've tried.",
         "placeholder": "Add anything that feels useful (or skip this step)…"
@@ -78,7 +70,6 @@
         "areaLabel": "Area",
         "wordsLabel": "In your own words",
         "importanceLabel": "How important",
-        "timeframeLabel": "When you hope to notice a change",
         "contextLabel": "Anything else",
         "edit": "Change"
       },
@@ -87,6 +78,33 @@
         "body": "Your suggestion is now with your care team. You'll talk about it at your next visit.",
         "backHome": "Back to home"
       }
+    },
+    "checkin": {
+      "pageTitle": "Weekly check-in",
+      "stepOf": "Step {current} of {total}",
+      "back": "Back",
+      "next": "Continue",
+      "submit": "Send my check-in",
+      "cancel": "Cancel",
+      "cancelConfirmTitle": "Leave your check-in?",
+      "cancelConfirmBody": "Your answers so far will be kept. You can come back and finish at any time this week.",
+      "cancelConfirmDiscard": "Leave for now",
+      "cancelConfirmKeep": "Keep going",
+      "rateGoalTitle": "How did this week go for this goal?",
+      "rateGoalHelper": "The middle option is what your care team realistically expects this week. Pick the one that best describes how the week went.",
+      "commentTitle": "Anything else?",
+      "commentHelper": "Optional. A line or two if anything stood out.",
+      "commentSafetyNote": "For urgent concerns, contact your clinic.",
+      "commentPlaceholder": "Write something here, or skip…",
+      "summaryTitle": "Ready to send?",
+      "summaryBody": "Your care team will see this. You can submit it now.",
+      "summaryGoalLabel": "Goal",
+      "summaryRatingLabel": "Your answer",
+      "summaryCommentLabel": "Anything else",
+      "summaryEdit": "Change",
+      "thanksTitle": "Thank you",
+      "thanksBody": "Your check-in is recorded. See you next week.",
+      "thanksBackHome": "Back to home"
     }
   },
   "goal": {

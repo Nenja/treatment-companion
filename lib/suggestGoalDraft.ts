@@ -11,9 +11,9 @@
 // GoalSuggestion is created in the store.
 // ---------------------------------------------------------------------------
 
-import type { GoalDomain, Importance, HopedTimeframe } from './types';
+import type { GoalDomain, Importance } from './types';
 
-export type WizardStep = 1 | 2 | 3 | 4 | 5;
+export type WizardStep = 1 | 2 | 3 | 4;
 
 export interface SuggestGoalDraft {
   patientId: string;
@@ -23,7 +23,6 @@ export interface SuggestGoalDraft {
   otherDomainText?: string;
   patientWording?: string;
   importance?: Importance;
-  hopedTimeframe?: HopedTimeframe;
   difficultyContext?: string;
   // ISO timestamp — useful for "you have an unfinished suggestion from..."
   // hints later (not implemented in slice 2, but the field is here so we
@@ -56,9 +55,7 @@ export function isStepComplete(
     case 3:
       return Boolean(draft.importance);
     case 4:
-      return Boolean(draft.hopedTimeframe);
-    case 5:
-      // Step 5 (difficulty context) is entirely optional — always "complete".
+      // Step 4 (difficulty context) is entirely optional — always "complete".
       return true;
   }
 }
@@ -67,7 +64,6 @@ export function canSubmit(draft: SuggestGoalDraft): boolean {
   return (
     isStepComplete(draft, 1) &&
     isStepComplete(draft, 2) &&
-    isStepComplete(draft, 3) &&
-    isStepComplete(draft, 4)
+    isStepComplete(draft, 3)
   );
 }

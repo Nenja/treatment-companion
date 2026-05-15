@@ -3,8 +3,18 @@
 import { useSyncExternalStore } from 'react';
 import { buildSeed, type Seed } from './fakeData';
 import { addDaysIso } from './dates';
-import type { Role, AuditEvent, WeeklyPrompt, GoalSuggestion } from './types';
+import type {
+  Role,
+  AuditEvent,
+  WeeklyPrompt,
+  GoalSuggestion,
+  WeeklyCheckin,
+  WeeklyGoalRating,
+  RatingValue
+} from './types';
+import { RATING_VALUE_MAP, type RatingLabel } from './types';
 import type { SuggestGoalDraft } from './suggestGoalDraft';
+import type { CheckinDraft } from './checkinDraft';
 
 // ---------------------------------------------------------------------------
 // Store state
@@ -193,8 +203,7 @@ export const actions = {
       if (
         !draft.domain ||
         !draft.patientWording ||
-        !draft.importance ||
-        !draft.hopedTimeframe
+        !draft.importance
       ) {
         return s;
       }
@@ -212,7 +221,9 @@ export const actions = {
               `[${draft.otherDomainText.trim()}] ${draft.patientWording.trim()}`
             : draft.patientWording.trim(),
         importance: draft.importance,
-        hopedTimeframe: draft.hopedTimeframe,
+        // Default to "notSure" since we no longer ask the patient.
+        // The clinician can refine this against the cycle length on approval.
+        hopedTimeframe: 'notSure',
         difficultyContext: draft.difficultyContext?.trim() || undefined,
         createdAt: new Date().toISOString(),
         status: 'needsReview'
@@ -231,6 +242,92 @@ export const actions = {
       return {
         ...s,
         goalSuggestions: [...s.goalSuggestions, suggestion],
+        auditLog: [...s.auditLog, auditEvent]
+      };
+    });
+    return newId;
+  },
+
+  /**
+   * Convert a completed check-in draft into a WeeklyCheckin record,
+   * mark the prompt completed, and append both to the store.
+   *
+   * Pain / stiffness / spasm-frequency / daily-care / side-effects fields
+   * remain on the WeeklyCheckin type (historical data uses them) but new
+   * patient-submitted check-ins don't supply them — those questions were
+   * removed because they duplicate the per-goal rating once a patient has
+   * goals around pain, stiffness, etc.
+   *
+   * Returns the new check-in's ID, or empty string on validation failure.
+   */
+  submitCheckin(draft: CheckinDraft): string {
+    let newId = '';
+    setState((s) => {
+      const prompt = s.weeklyPrompts.find((p) => p.id === draft.weeklyPromptId);
+      if (!prompt || prompt.status !== 'pending') return s;
+
+      // Build the per-goal ratings from the draft's map.
+      const ratings: WeeklyGoalRating[] = [];
+      newId = randomId('ci');
+      for (const [goalId, value] of Object.entries(draft.ratings)) {
+        // Reverse-lookup the label from the value so the stored record
+        // carries both — handy for the clinician summary later.
+        const label = (Object.keys(RATING_VALUE_MAP) as RatingLabel[]).find(
+          (k) => RATING_VALUE_MAP[k] === value
+        );
+        if (!label) continue;
+        ratings.push({
+          id: randomId(`${newId}-r`),
+          weeklyCheckinId: newId,
+          approvedGoalId: goalId,
+          ratingLabel: label,
+          ratingValue: value as RatingValue
+        });
+      }
+
+      // Need at least one rating to be considered a valid submission.
+      if (ratings.length === 0) {
+        newId = '';
+        return s;
+      }
+
+      const checkin: WeeklyCheckin = {
+        id: newId,
+        weeklyPromptId: draft.weeklyPromptId,
+        patientId: draft.patientId,
+        treatmentCycleId: draft.treatmentCycleId,
+        weekNumber: draft.weekNumber,
+        submittedAt: new Date().toISOString(),
+        // The questions below were removed from the patient-facing check-in.
+        // Stored as nulls/defaults for new submissions; historical data
+        // retains its original values.
+        pain: 0,
+        stiffness: 0,
+        spasmFrequency: 'none',
+        dailyCare: 'notRelevant',
+        sideEffects: [],
+        comment: draft.comment?.trim() || undefined,
+        ratings
+      };
+
+      const updatedPrompts = s.weeklyPrompts.map((p) =>
+        p.id === prompt.id ? { ...p, status: 'completed' as const } : p
+      );
+
+      const auditEvent: AuditEvent = {
+        id: randomId('audit'),
+        actorId: draft.patientId,
+        actorRole: 'patient',
+        action: 'checkin_submitted',
+        entity: 'weekly_checkin',
+        entityId: newId,
+        timestamp: new Date().toISOString()
+      };
+
+      return {
+        ...s,
+        weeklyPrompts: updatedPrompts,
+        weeklyCheckins: [...s.weeklyCheckins, checkin],
         auditLog: [...s.auditLog, auditEvent]
       };
     });

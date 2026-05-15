@@ -64,14 +64,6 @@
         "high": "Meget vigtigt for mig"
       },
       "step4": {
-        "title": "Hvornår håber du at mærke en forandring?",
-        "helper": "Et ærligt gæt er fint. \"Ikke sikker\" er også et godt svar.",
-        "weeks4": "Om cirka 4 uger",
-        "weeks8": "Om cirka 8 uger",
-        "weeks12": "Om cirka 12 uger",
-        "notSure": "Jeg er ikke sikker"
-      },
-      "step5": {
         "title": "Er der noget dit team bør vide?",
         "helper": "Valgfrit. For eksempel hvornår det er sværere, hvad der hjælper, hvad du har prøvet.",
         "placeholder": "Tilføj noget, der føles nyttigt (eller spring dette trin over)…"
@@ -82,7 +74,6 @@
         "areaLabel": "Område",
         "wordsLabel": "Med dine egne ord",
         "importanceLabel": "Hvor vigtigt",
-        "timeframeLabel": "Hvornår du håber at mærke forandring",
         "contextLabel": "Andet",
         "edit": "Ændr"
       },
@@ -91,6 +82,33 @@
         "body": "Dit forslag er nu hos dit behandlerteam. I taler om det ved dit næste besøg.",
         "backHome": "Tilbage til forsiden"
       }
+    },
+    "checkin": {
+      "pageTitle": "Ugentlig status",
+      "stepOf": "Trin {current} af {total}",
+      "back": "Tilbage",
+      "next": "Fortsæt",
+      "submit": "Send min status",
+      "cancel": "Annullér",
+      "cancelConfirmTitle": "Forlade din status?",
+      "cancelConfirmBody": "Dine svar indtil nu gemmes. Du kan komme tilbage og afslutte når som helst i denne uge.",
+      "cancelConfirmDiscard": "Forlad for nu",
+      "cancelConfirmKeep": "Fortsæt",
+      "rateGoalTitle": "Hvordan gik denne uge for dette mål?",
+      "rateGoalHelper": "Det midterste valg er det, dit behandlerteam realistisk forventer denne uge. Vælg det, der bedst beskriver, hvordan ugen gik.",
+      "commentTitle": "Er der andet?",
+      "commentHelper": "Valgfrit. En linje eller to, hvis noget skilte sig ud.",
+      "commentSafetyNote": "Ved akutte bekymringer, kontakt din klinik.",
+      "commentPlaceholder": "Skriv noget her, eller spring over…",
+      "summaryTitle": "Klar til at sende?",
+      "summaryBody": "Dit behandlerteam ser dette. Du kan sende det nu.",
+      "summaryGoalLabel": "Mål",
+      "summaryRatingLabel": "Dit svar",
+      "summaryCommentLabel": "Andet",
+      "summaryEdit": "Ændr",
+      "thanksTitle": "Tak",
+      "thanksBody": "Din status er registreret. Vi ses næste uge.",
+      "thanksBackHome": "Tilbage til forsiden"
     }
   },
   "goal": {
