@@ -1,16 +1,9 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { GasAnchors, RatingValue } from '@/lib/types';
 
-interface AnchorOption {
-  key: string;
-  value: -2 | -1 | 0 | 1 | 2;
-  text: string;
-  isExpected: boolean;
-}
-
 interface GoalRatingPickerProps {
-  /** Patient-facing goal text, shown above the choices. */
   goalText: string;
   anchors: GasAnchors;
   value: Exclude<RatingValue, null> | undefined;
@@ -19,17 +12,16 @@ interface GoalRatingPickerProps {
 }
 
 /**
- * Per-goal rating selector for the weekly check-in.
+ * Horizontal 5-point scale.
  *
- * Shows the patient-facing goal text at the top, followed by the five
- * goal-specific GAS anchor descriptions as tappable options. The middle
- * option ("what your team realistically expects") is visually highlighted
- * but never labelled with that phrase — the description carries the
- * meaning, the design carries the framing.
+ * Visual-first: big dots in a row, no per-dot text. Direction is implied
+ * by the muted amber → cream → sage palette. The middle dot is slightly
+ * larger than its neighbours; we no longer show a permanent tick — the
+ * size difference is enough.
  *
- * No "not sure" option. Patients must pick one.
- *
- * Cards are large tap targets (min height comfortable for one-handed use).
+ * The selected option's goal-specific anchor text appears as a caption
+ * directly below the row. Before any selection, a quiet prompt sits in
+ * its place so the area never empties out.
  */
 export function GoalRatingPicker({
   goalText,
@@ -38,58 +30,111 @@ export function GoalRatingPicker({
   onChange,
   ariaLabel
 }: GoalRatingPickerProps) {
-  const options: AnchorOption[] = [
-    { key: 'm2', value: -2, text: anchors.minus2, isExpected: false },
-    { key: 'm1', value: -1, text: anchors.minus1, isExpected: false },
-    { key: 'z', value: 0, text: anchors.zero, isExpected: true },
-    { key: 'p1', value: 1, text: anchors.plus1, isExpected: false },
-    { key: 'p2', value: 2, text: anchors.plus2, isExpected: false }
+  const t = useTranslations('patient.checkin');
+
+  const points = [
+    {
+      value: -2 as const,
+      text: anchors.minus2,
+      bgUnselected: 'bg-amber-soft/60',
+      bgSelected: 'bg-amber-soft',
+      size: 52,
+      shortLabel: t('scaleMuchHarder')
+    },
+    {
+      value: -1 as const,
+      text: anchors.minus1,
+      bgUnselected: 'bg-amber-soft/30',
+      bgSelected: 'bg-amber-soft/80',
+      size: 44,
+      shortLabel: t('scaleALittleHarder')
+    },
+    {
+      value: 0 as const,
+      text: anchors.zero,
+      bgUnselected: 'bg-stone-soft',
+      bgSelected: 'bg-cream',
+      size: 60,
+      shortLabel: t('scaleAsExpected')
+    },
+    {
+      value: 1 as const,
+      text: anchors.plus1,
+      bgUnselected: 'bg-sage-soft/60',
+      bgSelected: 'bg-sage-soft',
+      size: 44,
+      shortLabel: t('scaleBetter')
+    },
+    {
+      value: 2 as const,
+      text: anchors.plus2,
+      bgUnselected: 'bg-sage/40',
+      bgSelected: 'bg-sage/80',
+      size: 52,
+      shortLabel: t('scaleMuchBetter')
+    }
   ];
+
+  const selectedPoint = points.find((p) => p.value === value);
 
   return (
     <div>
-      {/* Goal header — not a card. Quiet eyebrow + heading so the goal
-          reads as the subject of the question, not a sixth choice. */}
-      <div className="mb-6">
-        <div className="eyebrow">Your goal</div>
+      {/* Goal header */}
+      <div className="mb-8">
+        <div className="eyebrow">{t('scaleYourGoal')}</div>
         <p className="mt-1 font-display text-[22px] leading-snug text-ink">
           {goalText}
         </p>
-        <div className="mt-4 h-px bg-stone" aria-hidden />
       </div>
 
-      <div role="radiogroup" aria-label={ariaLabel} className="space-y-2">
-        {options.map((opt) => {
-          const selected = value === opt.value;
+      {/* Scale row */}
+      <div
+        role="radiogroup"
+        aria-label={ariaLabel}
+        className="flex items-center justify-between gap-2"
+      >
+        {points.map((p) => {
+          const selected = value === p.value;
           return (
-            <label
-              key={opt.key}
-              className={`block cursor-pointer rounded-[var(--radius-button)] border px-4 py-3.5 transition-colors ${
-                selected
-                  ? 'border-sage bg-sage-soft border-l-[5px]'
-                  : opt.isExpected
-                  ? 'border-sage/40 bg-sage-soft/40 border-l-[3px]'
-                  : 'border-stone bg-cream-soft hover:bg-stone-soft'
-              }`}
+            <button
+              key={p.value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              aria-label={p.shortLabel}
+              onClick={() => onChange(p.value)}
+              className="flex min-w-0 flex-1 items-center justify-center rounded-lg py-3 hover:bg-stone-soft/40 focus-visible:bg-stone-soft/40"
             >
-              <input
-                type="radio"
-                name="goal-rating"
-                value={String(opt.value)}
-                checked={selected}
-                onChange={() => onChange(opt.value)}
-                className="sr-only"
-              />
               <span
-                className={`block text-[15px] leading-relaxed ${
-                  selected ? 'text-sage-deep' : 'text-ink'
+                aria-hidden
+                style={{ width: `${p.size}px`, height: `${p.size}px` }}
+                className={`inline-block rounded-full transition-all ${
+                  selected
+                    ? `${p.bgSelected} ring-[3px] ring-sage ring-offset-2 ring-offset-cream`
+                    : `${p.bgUnselected} border border-stone`
                 }`}
-              >
-                {opt.text}
-              </span>
-            </label>
+              />
+            </button>
           );
         })}
+      </div>
+
+      {/* Caption: anchor text for selected dot, or quiet prompt */}
+      <div className="mt-6 min-h-[72px]">
+        {selectedPoint ? (
+          <>
+            <div className="eyebrow text-sage-deep">
+              {selectedPoint.shortLabel}
+            </div>
+            <p className="mt-1 text-[15px] leading-relaxed text-ink">
+              {selectedPoint.text}
+            </p>
+          </>
+        ) : (
+          <p className="text-center text-[14px] leading-relaxed text-ink-muted">
+            {t('scaleTapPrompt')}
+          </p>
+        )}
       </div>
     </div>
   );

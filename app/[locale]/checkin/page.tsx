@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useStore, actions } from '@/lib/store';
@@ -56,12 +56,32 @@ export default function CheckinPage() {
   const homePath = locale === 'en' ? '/' : `/${locale}`;
   const goHome = () => router.push(homePath);
 
-  // Redirect home if any of the preconditions are missing.
+  // Flag set synchronously when the patient hits submit. We use a ref so
+  // the redirect-when-no-prompt effect below can read the latest value
+  // immediately, without waiting for the React commit cycle. State alone
+  // wouldn't be fast enough — by the time `setState` flushed, the store
+  // would have already cleared the prompt and the effect would have
+  // redirected past the thanks view.
+  const submittingRef = useRef(false);
+  const [submittedId, setSubmittedId] = useState<string | null>(null);
+
+  // Redirect home if any of the preconditions are missing — unless we're
+  // mid-submit, in which case the missing-prompt is expected and the
+  // thanks view will take over on the next render.
   useEffect(() => {
+    if (submittingRef.current || submittedId) return;
     if (!patient || !cycle || !pendingPrompt || activeGoals.length === 0) {
       router.replace(homePath);
     }
-  }, [patient, cycle, pendingPrompt, activeGoals.length, router, homePath]);
+  }, [
+    patient,
+    cycle,
+    pendingPrompt,
+    activeGoals.length,
+    router,
+    homePath,
+    submittedId
+  ]);
 
   // Hooks must be called unconditionally, so we feed safe fallbacks when
   // the redirect is about to fire.
@@ -78,7 +98,12 @@ export default function CheckinPage() {
     });
 
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [submittedId, setSubmittedId] = useState<string | null>(null);
+
+  // Thanks view comes first: after submit, the pendingPrompt clears and
+  // we'd otherwise hit the "return null" below before showing thanks.
+  if (submittedId) {
+    return <ThanksView onBackHome={goHome} />;
+  }
 
   if (!patient || !cycle || !pendingPrompt || activeGoals.length === 0) {
     return null;
@@ -101,11 +126,6 @@ export default function CheckinPage() {
     const goal = activeGoals[step - 1];
     return typeof draft.ratings[goal.id] === 'number';
   })();
-
-  // Submitted view ----------------------------------------------------
-  if (submittedId) {
-    return <ThanksView onBackHome={goHome} />;
-  }
 
   const hasContent =
     Object.keys(draft.ratings).length > 0 ||
@@ -131,20 +151,20 @@ export default function CheckinPage() {
     if (step > 1) goToStep(step - 1);
   };
 
- const doSubmit = () => {
+  const doSubmit = () => {
     if (!isCheckinComplete(draft, activeGoals.map((g) => g.id))) return;
-    // Set the submitted state FIRST so the thanks view renders on the
-    // next pass, before the store update causes the prompt to disappear
-    // and the redirect-when-no-prompt effect fires.
-    setSubmittedId('pending');
+    // Set the submission flag synchronously BEFORE touching the store.
+    // The redirect-when-no-prompt effect will read this ref on its next
+    // run and skip its work, letting the thanks view render instead.
+    submittingRef.current = true;
     const id = actions.submitCheckin(draft);
     if (id) {
       checkinDraftStorage.clear(pendingPrompt.id);
       reset();
       setSubmittedId(id);
     } else {
-      // Submit failed — undo the optimistic flag.
-      setSubmittedId(null);
+      // Submit failed validation — release the guard.
+      submittingRef.current = false;
     }
   };
 
