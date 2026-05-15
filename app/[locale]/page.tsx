@@ -89,7 +89,11 @@ export default function PatientHomePage() {
   return (
     <AppShell>
       <div className="eyebrow mb-2">
-        {t('cycleContext', { cycle: cycle.cycleNumber, week: weekNumber })}
+        {t('cycleContext', {
+          cycle: cycle.cycleNumber,
+          week: weekNumber,
+          total: cycle.lengthWeeks ?? 12
+        })}
       </div>
 
       <h1 className="font-display text-[30px] leading-tight text-ink">
