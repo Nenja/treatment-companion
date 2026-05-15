@@ -14,7 +14,6 @@ import type { Role } from '@/lib/types';
  * Visible only in development by default; toggle by removing the env check.
  */
 export function DevPanel() {
-  if (process.env.NODE_ENV === 'production') return null;
   return <DevPanelInner />;
 }
 
