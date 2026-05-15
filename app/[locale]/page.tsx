@@ -11,8 +11,8 @@ import { Card } from '@/components/cards/Card';
 
 export default function PatientHomePage() {
   const t = useTranslations('patient.home');
+  const tGoal = useTranslations('goal');
   const state = useStore();
-
   // Dev convenience: clinician role just shows a placeholder for now.
   // The real clinician surface lands in a later slice.
   if (state.currentRole === 'clinician') {
