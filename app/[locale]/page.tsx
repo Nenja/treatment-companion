@@ -142,14 +142,19 @@ export default function PatientHomePage() {
               </p>
             </Card>
           </div>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {approvedGoals.map((g) => (
-              <li key={g.id}>
-                <GoalCard goal={g} reviewDate={cycle.reviewDate} />
-              </li>
-            ))}
-          </ul>
+      ) : (
+          <>
+            <p className="mt-2 text-[13px] leading-relaxed text-ink-muted">
+              {tGoal('howMeasuredHelper')}
+            </p>
+            <ul className="mt-4 space-y-3">
+              {approvedGoals.map((g) => (
+                <li key={g.id}>
+                  <GoalCard goal={g} reviewDate={cycle.reviewDate} />
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </section>
 
