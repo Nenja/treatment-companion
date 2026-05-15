@@ -1,16 +1,18 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useStore, actions } from '@/lib/store';
-import { weekOfCycle, addDaysIso } from '@/lib/dates';
+import { weekOfCycle, addDaysIso, formatLongDate } from '@/lib/dates';
 import { AppShell } from '@/components/layout/AppShell';
 import { SafetyNotice } from '@/components/layout/SafetyNotice';
 import { GoalCard } from '@/components/cards/GoalCard';
 import { CheckinPromptCard } from '@/components/cards/CheckinPromptCard';
+import { CheckinDots } from '@/components/cards/CheckinDots';
 import { Card } from '@/components/cards/Card';
 
 export default function PatientHomePage() {
   const t = useTranslations('patient.home');
+  const locale = useLocale();
   const state = useStore();
 
   if (state.currentRole === 'clinician') {
@@ -54,6 +56,7 @@ export default function PatientHomePage() {
   }
 
   const weekNumber = weekOfCycle(cycle.startDate, state.now);
+  const totalWeeks = cycle.lengthWeeks ?? 12;
 
   const approvedGoals = state.approvedGoals
     .filter(
@@ -71,9 +74,11 @@ export default function PatientHomePage() {
     .filter((p) => p.status === 'pending')
     .sort((a, b) => b.weekNumber - a.weekNumber)[0];
 
-  const completedCheckinsCount = state.weeklyCheckins.filter(
-    (c) => c.treatmentCycleId === cycle.id
-  ).length;
+  const completedWeeks = new Set(
+    state.weeklyCheckins
+      .filter((c) => c.treatmentCycleId === cycle.id)
+      .map((c) => c.weekNumber)
+  );
 
   const suggestionsAwaitingReview = state.goalSuggestions.filter(
     (s) =>
@@ -92,13 +97,17 @@ export default function PatientHomePage() {
         {t('cycleContext', {
           cycle: cycle.cycleNumber,
           week: weekNumber,
-          total: cycle.lengthWeeks ?? 12
+          total: totalWeeks
         })}
       </div>
 
       <h1 className="font-display text-[30px] leading-tight text-ink">
         {t('greeting', { name: patient.displayName })}
       </h1>
+
+      <p className="mt-1.5 text-[15px] text-ink-soft">
+        {t('nextVisit', { date: formatLongDate(cycle.reviewDate, locale) })}
+      </p>
 
       <div className="mt-6">
         <CheckinPromptCard
@@ -108,9 +117,11 @@ export default function PatientHomePage() {
         />
       </div>
 
-      <p className="mt-3 text-[13px] text-ink-muted">
-        {t('checkinsThisCycle', { count: completedCheckinsCount })}
-      </p>
+      <CheckinDots
+        totalWeeks={totalWeeks}
+        completedWeeks={completedWeeks}
+        pendingPromptWeek={pendingPrompt?.weekNumber}
+      />
 
       <section className="mt-9" aria-labelledby="goals-heading">
         <h2
@@ -137,7 +148,7 @@ export default function PatientHomePage() {
           <ul className="mt-4 space-y-3">
             {approvedGoals.map((g) => (
               <li key={g.id}>
-                <GoalCard goal={g} reviewDate={cycle.reviewDate} />
+                <GoalCard goal={g} />
               </li>
             ))}
           </ul>
