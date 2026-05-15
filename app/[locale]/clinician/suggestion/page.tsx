@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useStore, actions } from '@/lib/store';
@@ -18,8 +18,20 @@ import { useSessionTimeout } from '@/lib/useSessionTimeout';
  * Picking "Approve" or "Edit and approve" reveals the approval form
  * inline — patient-facing text, SMART text, five GAS anchors — so the
  * clinician sees the suggestion they're approving WHILE they write it.
+ *
+ * The page itself is a tiny Suspense wrapper because the inner component
+ * uses `useSearchParams`, which Next 15 requires to be inside a Suspense
+ * boundary or it fails to prerender.
  */
 export default function SuggestionReviewPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-cream" />}>
+      <SuggestionReviewInner />
+    </Suspense>
+  );
+}
+
+function SuggestionReviewInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const locale = useLocale();
