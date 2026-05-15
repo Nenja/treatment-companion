@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+
+/* ----- Design tokens -----------------------------------------------------
+ *
+ * Palette: warm cream backdrop, deep ink text, sage primary, stone borders.
+ * Chosen for calm legibility, not clinical sterility. No alarming red/green
+ * to keep us clear of the success/failure framing the brief forbids.
+ *
+ * Type: Newsreader (warm literary serif) for display moments, Atkinson
+ * Hyperlegible (designed for low-vision accessibility) for everything else.
+ * --------------------------------------------------------------------- */
+
+@theme {
+  --color-cream: #f6f1e8;
+  --color-cream-soft: #fbf8f2;
+  --color-ink: #1f2421;
+  --color-ink-soft: #4b5450;
+  --color-ink-muted: #8a8f8b;
+  --color-sage: #5c7a6a;
+  --color-sage-deep: #3f5a4b;
+  --color-sage-soft: #dce6de;
+  --color-amber-soft: #e8d5a0;
+  --color-amber-deep: #8a6a1f;
+  --color-stone: #e5dfd3;
+  --color-stone-soft: #efeae0;
+
+  --font-display: var(--font-newsreader), Georgia, serif;
+  --font-sans: var(--font-atkinson), system-ui, sans-serif;
+
+  --radius-card: 1.25rem;
+  --radius-button: 0.875rem;
+}
+
+/* Base layer */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 17px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  /* Accessibility: visible focus ring on every interactive element. */
+  :focus-visible {
+    outline: 2px solid var(--color-sage-deep);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  /* Honour the user's motion preference. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+/* Small uppercase eyebrow used for cycle/week context. */
+@utility eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}

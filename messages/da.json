@@ -1,0 +1,79 @@
+{
+  "_meta": {
+    "status": "PLACEHOLDER — needs native Danish reviewer before any user testing",
+    "reviewedBy": null
+  },
+  "app": {
+    "name": "Behandlingsledsager"
+  },
+  "safety": {
+    "title": "Ikke til akut hjælp",
+    "body": "Denne app overvåges ikke for akutte tilfælde. Hvis du oplever alvorlig muskelsvaghed, vejrtrækningsproblemer, synkebesvær, alvorlige fald eller andre akutte symptomer, kontakt da din klinik eller alarmcentralen."
+  },
+  "patient": {
+    "home": {
+      "greeting": "Hej, {name}",
+      "cycleContext": "Behandlingsforløb {cycle} · Uge {week}",
+      "checkinReadyTitle": "Din ugentlige status er klar",
+      "checkinReadyBody": "Tager omkring to minutter.",
+      "checkinReadyAction": "Start status",
+      "nextCheckinTitle": "Næste status",
+      "nextCheckinBody": "Forfalder {date}",
+      "checkinsThisCycle": "{count, plural, =0 {Ingen statusser i dette forløb endnu} one {# status i dette forløb} other {# statusser i dette forløb}}",
+      "yourGoals": "Dine mål",
+      "noActiveGoalsTitle": "Ingen aktive mål endnu",
+      "noActiveGoalsBody": "Dine foreslåede mål bliver drøftet ved dit næste besøg.",
+      "noSuggestionsBody": "Du kan foreslå noget, du gerne vil have hjælp til.",
+      "suggestedGoalsTitle": "Foreslåede mål",
+      "suggestedGoalsCount": "{count, plural, one {# mål foreslået} other {# mål foreslået}}",
+      "suggestGoal": "Foreslå et nyt mål"
+    }
+  },
+  "goal": {
+    "reviewDate": "Opfølgningsdato: {date}",
+    "howMeasuredTitle": "Sådan måles fremgangen",
+    "howMeasuredHelper": "Dit behandlerteam bruger en skala med fem trin. Det midterste trin er det, dit team realistisk forventer.",
+    "anchorMinus2Label": "Meget sværere end forventet",
+    "anchorMinus1Label": "Lidt sværere end forventet",
+    "anchorZeroLabel": "Det dit team realistisk forventer",
+    "anchorPlus1Label": "Bedre end forventet",
+    "anchorPlus2Label": "Meget bedre end forventet"
+  },
+  "suggestion": {
+    "status": {
+      "needsReview": "Afventer klinikerens gennemgang",
+      "active": "Aktivt",
+      "discussAtNextVisit": "Drøftes ved næste besøg",
+      "combinedWithAnother": "Samlet med et andet mål",
+      "notSuitableThisCycle": "Ikke i dette behandlingsforløb",
+      "archived": "Arkiveret"
+    }
+  },
+  "domain": {
+    "pain": "Smerte",
+    "hygiene": "Hygiejne",
+    "dressing": "Påklædning",
+    "walking": "Gang",
+    "transfers": "Forflytninger",
+    "handUse": "Brug af hånd",
+    "sleep": "Søvn",
+    "positioning": "Lejring",
+    "caregiverHelp": "Hjælp fra pårørende",
+    "therapyExercise": "Træning eller terapi",
+    "other": "Andet"
+  },
+  "dev": {
+    "title": "Udviklerpanel",
+    "subtitle": "Kun prototype",
+    "role": "Rolle",
+    "rolePatient": "Patient",
+    "roleClinician": "Kliniker",
+    "patient": "Patient",
+    "simulateWeek": "Simulér næste uge",
+    "viewAuditLog": "Vis hændelseslog",
+    "hideAuditLog": "Skjul hændelseslog",
+    "reset": "Nulstil testdata",
+    "auditEmpty": "Ingen hændelser endnu.",
+    "virtualDate": "Virtuel dato: {date}"
+  }
+}

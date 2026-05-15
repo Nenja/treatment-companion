@@ -1,0 +1,75 @@
+{
+  "app": {
+    "name": "Treatment Companion"
+  },
+  "safety": {
+    "title": "Not for urgent care",
+    "body": "This app is not monitored for urgent care. If you experience severe weakness, breathing problems, swallowing problems, serious falls, or other urgent symptoms, contact your clinic or emergency services."
+  },
+  "patient": {
+    "home": {
+      "greeting": "Hello, {name}",
+      "cycleContext": "Treatment cycle {cycle} · Week {week}",
+      "checkinReadyTitle": "Your weekly check-in is ready",
+      "checkinReadyBody": "Takes about two minutes.",
+      "checkinReadyAction": "Start check-in",
+      "nextCheckinTitle": "Next check-in",
+      "nextCheckinBody": "Due {date}",
+      "checkinsThisCycle": "{count, plural, =0 {No check-ins yet this cycle} one {# check-in this cycle} other {# check-ins this cycle}}",
+      "yourGoals": "Your goals",
+      "noActiveGoalsTitle": "No active goals yet",
+      "noActiveGoalsBody": "Your suggested goals will be discussed at your next visit.",
+      "noSuggestionsBody": "You can suggest something you would like treatment to help with.",
+      "suggestedGoalsTitle": "Suggested goals",
+      "suggestedGoalsCount": "{count, plural, one {# goal suggested} other {# goals suggested}}",
+      "suggestGoal": "Suggest a new goal"
+    }
+  },
+  "goal": {
+    "reviewDate": "Review date: {date}",
+    "howMeasuredTitle": "How progress is measured",
+    "howMeasuredHelper": "Your care team uses a five-step scale. The middle step is what your team realistically expects.",
+    "anchorMinus2Label": "Much harder than expected",
+    "anchorMinus1Label": "A little harder than expected",
+    "anchorZeroLabel": "What your team realistically expects",
+    "anchorPlus1Label": "Better than expected",
+    "anchorPlus2Label": "Much better than expected"
+  },
+  "suggestion": {
+    "status": {
+      "needsReview": "Awaiting clinician review",
+      "active": "Active",
+      "discussAtNextVisit": "Will be discussed at your next visit",
+      "combinedWithAnother": "Combined with another goal",
+      "notSuitableThisCycle": "Not for this treatment cycle",
+      "archived": "Archived"
+    }
+  },
+  "domain": {
+    "pain": "Pain",
+    "hygiene": "Hygiene",
+    "dressing": "Dressing",
+    "walking": "Walking",
+    "transfers": "Transfers",
+    "handUse": "Hand use",
+    "sleep": "Sleep",
+    "positioning": "Positioning",
+    "caregiverHelp": "Caregiver help",
+    "therapyExercise": "Therapy or exercise",
+    "other": "Other"
+  },
+  "dev": {
+    "title": "Dev panel",
+    "subtitle": "Prototype only",
+    "role": "Role",
+    "rolePatient": "Patient",
+    "roleClinician": "Clinician",
+    "patient": "Patient",
+    "simulateWeek": "Simulate next week",
+    "viewAuditLog": "View audit log",
+    "hideAuditLog": "Hide audit log",
+    "reset": "Reset fake data",
+    "auditEmpty": "No events recorded yet.",
+    "virtualDate": "Virtual date: {date}"
+  }
+}
