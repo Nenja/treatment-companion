@@ -102,6 +102,8 @@ export interface TreatmentCycle {
   id: string;
   patientId: string;
   cycleNumber: number;
+  /** Cycle length in weeks. Common values: 12, 14, 16. Varies by patient. */
+  lengthWeeks: number;
   startDate: string;
   reviewDate: string;
   status: 'active' | 'completed';
