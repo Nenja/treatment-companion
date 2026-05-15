@@ -11,10 +11,8 @@ import { Card } from '@/components/cards/Card';
 
 export default function PatientHomePage() {
   const t = useTranslations('patient.home');
-  const tGoal = useTranslations('goal');
   const state = useStore();
-  // Dev convenience: clinician role just shows a placeholder for now.
-  // The real clinician surface lands in a later slice.
+
   if (state.currentRole === 'clinician') {
     return (
       <AppShell>
@@ -55,8 +53,6 @@ export default function PatientHomePage() {
     );
   }
 
-  // --- Derive view data --------------------------------------------------
-
   const weekNumber = weekOfCycle(cycle.startDate, state.now);
 
   const approvedGoals = state.approvedGoals
@@ -86,27 +82,20 @@ export default function PatientHomePage() {
       s.status === 'needsReview'
   );
 
-  // If no pending prompt, compute a notional "next due" one week from
-  // cycle start + weekNumber.
   const nextDueDate = pendingPrompt
     ? undefined
     : addDaysIso(cycle.startDate, weekNumber * 7);
 
-  // --- Render ------------------------------------------------------------
-
   return (
     <AppShell>
-      {/* Cycle context eyebrow */}
       <div className="eyebrow mb-2">
         {t('cycleContext', { cycle: cycle.cycleNumber, week: weekNumber })}
       </div>
 
-      {/* Greeting */}
       <h1 className="font-display text-[30px] leading-tight text-ink">
         {t('greeting', { name: patient.displayName })}
       </h1>
 
-      {/* Check-in CTA / next-due */}
       <div className="mt-6">
         <CheckinPromptCard
           pendingPromptId={pendingPrompt?.id}
@@ -115,12 +104,10 @@ export default function PatientHomePage() {
         />
       </div>
 
-      {/* Tiny meta line */}
       <p className="mt-3 text-[13px] text-ink-muted">
         {t('checkinsThisCycle', { count: completedCheckinsCount })}
       </p>
 
-      {/* Goals section */}
       <section className="mt-9" aria-labelledby="goals-heading">
         <h2
           id="goals-heading"
@@ -142,23 +129,17 @@ export default function PatientHomePage() {
               </p>
             </Card>
           </div>
-      ) : (
-          <>
-            <p className="mt-2 text-[13px] leading-relaxed text-ink-muted">
-              {tGoal('howMeasuredHelper')}
-            </p>
-            <ul className="mt-4 space-y-3">
-              {approvedGoals.map((g) => (
-                <li key={g.id}>
-                  <GoalCard goal={g} reviewDate={cycle.reviewDate} />
-                </li>
-              ))}
-            </ul>
-          </>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {approvedGoals.map((g) => (
+              <li key={g.id}>
+                <GoalCard goal={g} reviewDate={cycle.reviewDate} />
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 
-      {/* Suggested goals summary (if any pending review) */}
       {suggestionsAwaitingReview.length > 0 && (
         <section className="mt-6" aria-labelledby="suggested-heading">
           <Card tone="note">
@@ -177,7 +158,6 @@ export default function PatientHomePage() {
         </section>
       )}
 
-      {/* Suggest goal action */}
       <button
         type="button"
         onClick={() =>
@@ -197,7 +177,6 @@ export default function PatientHomePage() {
         {t('suggestGoal')}
       </button>
 
-      {/* Safety notice */}
       <div className="mt-10">
         <SafetyNotice />
       </div>
