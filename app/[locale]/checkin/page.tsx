@@ -131,13 +131,20 @@ export default function CheckinPage() {
     if (step > 1) goToStep(step - 1);
   };
 
-  const doSubmit = () => {
+ const doSubmit = () => {
     if (!isCheckinComplete(draft, activeGoals.map((g) => g.id))) return;
+    // Set the submitted state FIRST so the thanks view renders on the
+    // next pass, before the store update causes the prompt to disappear
+    // and the redirect-when-no-prompt effect fires.
+    setSubmittedId('pending');
     const id = actions.submitCheckin(draft);
     if (id) {
       checkinDraftStorage.clear(pendingPrompt.id);
       reset();
       setSubmittedId(id);
+    } else {
+      // Submit failed — undo the optimistic flag.
+      setSubmittedId(null);
     }
   };
 
