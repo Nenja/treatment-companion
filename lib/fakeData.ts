@@ -46,6 +46,7 @@ export function buildSeed(): Seed {
     id: 'cyc-anna-2',
     patientId: 'pat-anna',
     cycleNumber: 2,
+    lengthWeeks: 12,
     startDate: annaCycleStart,
     reviewDate: addDaysIso(annaCycleStart, 7 * 12),
     status: 'active'
@@ -208,8 +209,9 @@ export function buildSeed(): Seed {
     id: 'cyc-lars-1',
     patientId: 'pat-lars',
     cycleNumber: 1,
+    lengthWeeks: 14,
     startDate: larsCycleStart,
-    reviewDate: addDaysIso(larsCycleStart, 7 * 12),
+    reviewDate: addDaysIso(larsCycleStart, 7 * 14),
     status: 'active'
   };
   const lars: Patient = {
@@ -262,8 +264,9 @@ export function buildSeed(): Seed {
     id: 'cyc-mette-3',
     patientId: 'pat-mette',
     cycleNumber: 3,
+    lengthWeeks: 16,
     startDate: metteCycleStart,
-    reviewDate: addDaysIso(metteCycleStart, 7 * 12),
+    reviewDate: addDaysIso(metteCycleStart, 7 * 16),
     status: 'active'
   };
   const mette: Patient = {
