@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useStore, actions } from '@/lib/store';
 import { weekOfCycle, formatLongDate } from '@/lib/dates';
 import { useSessionTimeout } from '@/lib/useSessionTimeout';
+import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 
 export default function ClinicianPatientPage() {
   const router = useRouter();
@@ -67,6 +68,40 @@ export default function ClinicianPatientPage() {
         g.status === 'active'
     )
     .sort((a, b) => a.approvedAt.localeCompare(b.approvedAt));
+
+  // For each active goal, build a week → rating map from the patient's
+  // completed check-ins this cycle.
+  const cycleCheckins = state.weeklyCheckins.filter(
+    (c) => c.treatmentCycleId === cycle.id
+  );
+
+  const ratingsByGoal = new Map<
+    string,
+    { weekNumber: number; value: -2 | -1 | 0 | 1 | 2 | null; reported: boolean }[]
+  >();
+  for (const goal of activeGoals) {
+    const perWeek = cycleCheckins
+      .map((c) => {
+        const r = c.ratings.find((x) => x.approvedGoalId === goal.id);
+        if (!r) return null;
+        return {
+          weekNumber: c.weekNumber,
+          value: r.ratingValue as -2 | -1 | 0 | 1 | 2 | null,
+          reported: true
+        };
+      })
+      .filter(
+        (
+          x
+        ): x is {
+          weekNumber: number;
+          value: -2 | -1 | 0 | 1 | 2 | null;
+          reported: boolean;
+        } => x !== null
+      )
+      .sort((a, b) => a.weekNumber - b.weekNumber);
+    ratingsByGoal.set(goal.id, perWeek);
+  }
 
   const endSession = () => {
     actions.endClinicianSession();
@@ -148,7 +183,7 @@ export default function ClinicianPatientPage() {
           )}
         </section>
 
-        {/* Active goals */}
+        {/* Active goals with progress visualisation */}
         <section className="mt-10">
           <h2 className="font-display text-[20px] leading-tight text-ink">
             {t('activeGoalsTitle')}
@@ -160,16 +195,13 @@ export default function ClinicianPatientPage() {
           ) : (
             <ul className="mt-3 space-y-3">
               {activeGoals.map((g) => (
-                <li
-                  key={g.id}
-                  className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
-                >
-                  <p className="font-display text-[17px] leading-snug text-ink">
-                    {g.patientFacingText}
-                  </p>
-                  <p className="mt-1 text-[12px] text-ink-muted">
-                    SMART: {g.smartText}
-                  </p>
+                <li key={g.id}>
+                  <GoalProgressView
+                    goalText={g.patientFacingText}
+                    totalWeeks={totalWeeks}
+                    currentWeek={weekNumber}
+                    ratings={ratingsByGoal.get(g.id) ?? []}
+                  />
                 </li>
               ))}
             </ul>
