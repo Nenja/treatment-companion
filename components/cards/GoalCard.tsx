@@ -10,17 +10,6 @@ interface GoalCardProps {
   reviewDate: string;
 }
 
-/**
- * Patient view of an approved goal. SMART text is intentionally NOT shown
- * here — patients see only:
- *   - their goal in plain language
- *   - the treatment-cycle review date
- *   - a collapsible "How progress is measured" section with the five GAS
- *     anchors and a neutral helper sentence
- *
- * The "0" anchor is presented as "What your team realistically expects" to
- * defuse the numeric/score framing of GAS without hiding the information.
- */
 export function GoalCard({ goal, reviewDate }: GoalCardProps) {
   const t = useTranslations();
   const locale = useLocale();
@@ -44,18 +33,21 @@ export function GoalCard({ goal, reviewDate }: GoalCardProps) {
         {t('goal.reviewDate', { date: formatLongDate(reviewDate, locale) })}
       </p>
 
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="mt-4 flex w-full items-center justify-between rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2.5 text-left text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
-      >
-        <span>{t('goal.howMeasuredTitle')}</span>
-        <span
-          aria-hidden
-          className={`transition-transform ${open ? 'rotate-180' : ''}`}
+      <div className="mt-3 flex justify-end">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-label={t('goal.howMeasuredTitle')}
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink-soft"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 16 16"
+            aria-hidden
+            className={`transition-transform ${open ? 'rotate-180' : ''}`}
+          >
             <path
               d="M4 6 L8 10 L12 6"
               fill="none"
@@ -65,9 +57,10 @@ export function GoalCard({ goal, reviewDate }: GoalCardProps) {
               strokeLinejoin="round"
             />
           </svg>
-        </span>
-      </button>
-{open && (
+        </button>
+      </div>
+
+      {open && (
         <div className="mt-3">
           <ol className="space-y-2">
             {anchors.map((a) => {
