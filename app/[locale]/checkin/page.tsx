@@ -55,6 +55,16 @@ export default function CheckinPage() {
 
   const homePath = locale === 'en' ? '/' : `/${locale}`;
   const goHome = () => router.push(homePath);
+  // Hard navigation, used only from the terminal thanks screen.
+  // Client-side router.push has been observed to leave this component
+  // mounted in some browsers, leaving the user stuck on the thanks view.
+  const goHomeHard = () => {
+    if (typeof window !== 'undefined') {
+      window.location.href = homePath;
+    } else {
+      router.push(homePath);
+    }
+  };
 
   // Flag set synchronously when the patient hits submit. We use a ref so
   // the redirect-when-no-prompt effect below can read the latest value
@@ -102,7 +112,7 @@ export default function CheckinPage() {
   // Thanks view comes first: after submit, the pendingPrompt clears and
   // we'd otherwise hit the "return null" below before showing thanks.
   if (submittedId) {
-    return <ThanksView onBackHome={goHome} />;
+    return <ThanksView onBackHome={goHomeHard} />;
   }
 
   if (!patient || !cycle || !pendingPrompt || activeGoals.length === 0) {
