@@ -67,14 +67,9 @@ export function GoalCard({ goal, reviewDate }: GoalCardProps) {
           </svg>
         </span>
       </button>
-
-      {open && (
+{open && (
         <div className="mt-3">
-          <p className="text-[13px] leading-relaxed text-ink-soft">
-            {t('goal.howMeasuredHelper')}
-          </p>
-
-          <ol className="mt-3 space-y-2">
+          <ol className="space-y-2">
             {anchors.map((a) => {
               const isZero = a.key === 'zero';
               return (
