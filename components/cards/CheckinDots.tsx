@@ -23,13 +23,13 @@ export function CheckinDots({
           const isCompleted = completedWeeks.has(w);
           const isCurrent = w === pendingPromptWeek;
 
-          let className = 'h-2.5 w-2.5 rounded-full ';
+          let className = 'h-3 w-3 rounded-full ';
           if (isCompleted) {
             className += 'bg-sage';
           } else if (isCurrent) {
-            className += 'bg-cream-soft border-2 border-sage';
+            className += 'border-2 border-sage';
           } else {
-            className += 'bg-cream-soft border border-stone';
+            className += 'border-2 border-ink-muted';
           }
 
           return <div key={w} className={className} />;
