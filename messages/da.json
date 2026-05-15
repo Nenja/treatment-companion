@@ -14,6 +14,7 @@
     "home": {
       "greeting": "Hej, {name}",
       "cycleContext": "Behandlingsforløb {cycle} · Uge {week}",
+      "nextVisit": "Næste besøg: {date}",
       "checkinReadyTitle": "Din ugentlige status er klar",
       "checkinReadyBody": "Tager omkring to minutter.",
       "checkinReadyAction": "Start status",
