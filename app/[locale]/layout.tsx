@@ -6,6 +6,11 @@ import { Newsreader, Atkinson_Hyperlegible } from 'next/font/google';
 import { routing } from '@/i18n/routing';
 import '../globals.css';
 
+// --- Fonts -------------------------------------------------------------
+// Newsreader: warm, literary serif. Used only for display moments.
+// Atkinson Hyperlegible: designed by the Braille Institute for low-vision
+// readability. Drives 100% of body / UI copy.
+
 const newsreader = Newsreader({
   subsets: ['latin', 'latin-ext'],
   display: 'swap',
@@ -19,6 +24,8 @@ const atkinson = Atkinson_Hyperlegible({
   variable: '--font-atkinson',
   weight: ['400', '700']
 });
+
+// --- Metadata ----------------------------------------------------------
 
 export const metadata = {
   title: 'Treatment Companion',

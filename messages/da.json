@@ -13,7 +13,7 @@
   "patient": {
     "home": {
       "greeting": "Hej, {name}",
-      "cycleContext": "Behandlingsforløb {cycle} · Uge {week}",
+      "cycleContext": "Uge {week} af {total} · Forløb {cycle}",
       "nextVisit": "Næste besøg: {date}",
       "checkinReadyTitle": "Din ugentlige status er klar",
       "checkinReadyBody": "Tager omkring to minutter.",
@@ -22,12 +22,75 @@
       "nextCheckinBody": "Forfalder {date}",
       "checkinsThisCycle": "{count, plural, =0 {Ingen statusser i dette forløb endnu} one {# status i dette forløb} other {# statusser i dette forløb}}",
       "yourGoals": "Dine mål",
-      "noActiveGoalsTitle": "Ingen aktive mål endnu",
-      "noActiveGoalsBody": "Dine foreslåede mål bliver drøftet ved dit næste besøg.",
-      "noSuggestionsBody": "Du kan foreslå noget, du gerne vil have hjælp til.",
+      "noActiveGoalsTitle": "Ingen mål endnu",
+      "noActiveGoalsBody": "Dine forslag er hos dit behandlerteam. I taler om dem sammen ved dit næste besøg.",
+      "noSuggestionsBody": "Når du er klar, kan du foreslå noget, du gerne vil have hjælp til.",
       "suggestedGoalsTitle": "Foreslåede mål",
       "suggestedGoalsCount": "{count, plural, one {# mål foreslået} other {# mål foreslået}}",
       "suggestGoal": "Foreslå et nyt mål"
+    },
+    "suggestGoal": {
+      "pageTitle": "Foreslå et mål",
+      "stepOf": "Trin {current} af {total}",
+      "back": "Tilbage",
+      "next": "Fortsæt",
+      "submit": "Send til mit team",
+      "cancel": "Annullér",
+      "cancelConfirmTitle": "Forlade dette forslag?",
+      "cancelConfirmBody": "Dit udkast gemmes. Du kan komme tilbage og afslutte det senere.",
+      "cancelConfirmDiscard": "Forlad for nu",
+      "cancelConfirmKeep": "Fortsæt",
+      "draftResumed": "Fortsætter, hvor du slap.",
+      "step1": {
+        "title": "Hvilket område vil du gerne have hjælp med?",
+        "helper": "Vælg det, der passer bedst. Du kan tilføje mere i de næste trin.",
+        "otherLabel": "Hvad vil du kalde det?",
+        "otherPlaceholder": "f.eks. at køre bil, havearbejde"
+      },
+      "step2": {
+        "title": "Med dine egne ord",
+        "helper": "Beskriv, hvad du gerne vil kunne, eller kunne lettere. Der er ingen rigtige eller forkerte ord.",
+        "placeholder": "Skriv en sætning eller to…",
+        "examplesTitle": "Et par eksempler",
+        "example1": "Jeg vil gerne kunne åbne min venstre hånd for at vaske den.",
+        "example2": "Jeg vil have færre spasmer i benene om natten, så jeg kan sove.",
+        "example3": "Jeg vil gerne gå til den lokale butik uden at mit knæ svigter."
+      },
+      "step3": {
+        "title": "Hvor vigtigt er det for dig?",
+        "helper": "Dit ærlige svar hjælper dit team med at prioritere.",
+        "low": "Rart at forbedre",
+        "medium": "Vigtigt for mig",
+        "high": "Meget vigtigt for mig"
+      },
+      "step4": {
+        "title": "Hvornår håber du at mærke en forandring?",
+        "helper": "Et ærligt gæt er fint. \"Ikke sikker\" er også et godt svar.",
+        "weeks4": "Om cirka 4 uger",
+        "weeks8": "Om cirka 8 uger",
+        "weeks12": "Om cirka 12 uger",
+        "notSure": "Jeg er ikke sikker"
+      },
+      "step5": {
+        "title": "Er der noget dit team bør vide?",
+        "helper": "Valgfrit. For eksempel hvornår det er sværere, hvad der hjælper, hvad du har prøvet.",
+        "placeholder": "Tilføj noget, der føles nyttigt (eller spring dette trin over)…"
+      },
+      "summary": {
+        "title": "Klar til at sende?",
+        "body": "Dit team ser dette inden dit næste besøg. Du kan ændre eller fjerne det når som helst inden da.",
+        "areaLabel": "Område",
+        "wordsLabel": "Med dine egne ord",
+        "importanceLabel": "Hvor vigtigt",
+        "timeframeLabel": "Hvornår du håber at mærke forandring",
+        "contextLabel": "Andet",
+        "edit": "Ændr"
+      },
+      "thanks": {
+        "title": "Tak",
+        "body": "Dit forslag er nu hos dit behandlerteam. I taler om det ved dit næste besøg.",
+        "backHome": "Tilbage til forsiden"
+      }
     }
   },
   "goal": {
@@ -55,13 +118,24 @@
     "hygiene": "Hygiejne",
     "dressing": "Påklædning",
     "walking": "Gang",
-    "transfers": "Forflytninger",
+    "transfers": "At bevæge sig",
     "handUse": "Brug af hånd",
     "sleep": "Søvn",
-    "positioning": "Lejring",
-    "caregiverHelp": "Hjælp fra pårørende",
+    "positioning": "At sidde eller ligge godt",
+    "caregiverHelp": "Hjælp fra andre",
     "therapyExercise": "Træning eller terapi",
-    "other": "Andet"
+    "other": "Noget andet"
+  },
+  "importance": {
+    "low": "Rart at forbedre",
+    "medium": "Vigtigt for mig",
+    "high": "Meget vigtigt for mig"
+  },
+  "timeframe": {
+    "4w": "Om cirka 4 uger",
+    "8w": "Om cirka 8 uger",
+    "12w": "Om cirka 12 uger",
+    "notSure": "Jeg er ikke sikker"
   },
   "dev": {
     "title": "Udviklerpanel",

@@ -91,7 +91,7 @@ The data model intentionally has no fields for any of those, either.
 | Slice | Scope                                                         |
 | ----- | ------------------------------------------------------------- |
 | 1     | **Done.** Shell, data model, patient home.                    |
-| 2     | Suggest-goal flow (5-step wizard with auto-save).             |
+| 2     | **Done.** Suggest-goal flow (5-step wizard with auto-save).   |
 | 3     | Weekly check-in flow.                                         |
 | 4     | Clinician patient list + goal review + approval form.         |
 | 5     | Clinician summary screen.                                     |

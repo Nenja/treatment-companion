@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useStore, actions } from '@/lib/store';
 import { weekOfCycle, addDaysIso, formatLongDate } from '@/lib/dates';
@@ -11,10 +12,13 @@ import { CheckinDots } from '@/components/cards/CheckinDots';
 import { Card } from '@/components/cards/Card';
 
 export default function PatientHomePage() {
+  const router = useRouter();
   const t = useTranslations('patient.home');
   const locale = useLocale();
   const state = useStore();
 
+  // Dev convenience: clinician role just shows a placeholder for now.
+  // The real clinician surface lands in a later slice.
   if (state.currentRole === 'clinician') {
     return (
       <AppShell>
@@ -55,6 +59,8 @@ export default function PatientHomePage() {
     );
   }
 
+  // --- Derive view data --------------------------------------------------
+
   const weekNumber = weekOfCycle(cycle.startDate, state.now);
   const totalWeeks = cycle.lengthWeeks ?? 12;
 
@@ -87,12 +93,17 @@ export default function PatientHomePage() {
       s.status === 'needsReview'
   );
 
+  // If no pending prompt, compute a notional "next due" one week from
+  // cycle start + weekNumber.
   const nextDueDate = pendingPrompt
     ? undefined
     : addDaysIso(cycle.startDate, weekNumber * 7);
 
+  // --- Render ------------------------------------------------------------
+
   return (
     <AppShell>
+      {/* Cycle context eyebrow */}
       <div className="eyebrow mb-2">
         {t('cycleContext', {
           cycle: cycle.cycleNumber,
@@ -101,14 +112,17 @@ export default function PatientHomePage() {
         })}
       </div>
 
+      {/* Greeting */}
       <h1 className="font-display text-[30px] leading-tight text-ink">
         {t('greeting', { name: patient.displayName })}
       </h1>
 
+      {/* Next visit — orientation info, once, near the top */}
       <p className="mt-1.5 text-[15px] text-ink-soft">
         {t('nextVisit', { date: formatLongDate(cycle.reviewDate, locale) })}
       </p>
 
+      {/* Check-in CTA / next-due */}
       <div className="mt-6">
         <CheckinPromptCard
           pendingPromptId={pendingPrompt?.id}
@@ -117,12 +131,14 @@ export default function PatientHomePage() {
         />
       </div>
 
+      {/* Visual cycle progress — replaces the old "X check-ins" text line */}
       <CheckinDots
         totalWeeks={totalWeeks}
         completedWeeks={completedWeeks}
         pendingPromptWeek={pendingPrompt?.weekNumber}
       />
 
+      {/* Goals section */}
       <section className="mt-9" aria-labelledby="goals-heading">
         <h2
           id="goals-heading"
@@ -155,6 +171,7 @@ export default function PatientHomePage() {
         )}
       </section>
 
+      {/* Suggested goals summary (if any pending review) */}
       {suggestionsAwaitingReview.length > 0 && (
         <section className="mt-6" aria-labelledby="suggested-heading">
           <Card tone="note">
@@ -173,17 +190,19 @@ export default function PatientHomePage() {
         </section>
       )}
 
+      {/* Suggest goal action */}
       <button
         type="button"
-        onClick={() =>
+        onClick={() => {
           actions.log({
             actorId: patient.id,
             actorRole: 'patient',
             action: 'suggest_goal_started',
             entity: 'patient',
             entityId: patient.id
-          })
-        }
+          });
+          router.push(locale === 'en' ? '/suggest-goal' : `/${locale}/suggest-goal`);
+        }}
         className="mt-6 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] border border-sage/40 bg-cream-soft px-5 text-[15px] font-semibold text-sage-deep hover:bg-sage-soft"
       >
         <span aria-hidden className="mr-2 text-[18px] leading-none">
@@ -192,6 +211,7 @@ export default function PatientHomePage() {
         {t('suggestGoal')}
       </button>
 
+      {/* Safety notice */}
       <div className="mt-10">
         <SafetyNotice />
       </div>

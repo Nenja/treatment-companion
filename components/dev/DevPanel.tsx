@@ -11,7 +11,9 @@ import type { Role } from '@/lib/types';
  * (dark slate, monospaced numerals) so testers immediately understand
  * these controls would not ship to real users.
  *
- * Visible only in development by default; toggle by removing the env check.
+ * TODO before any real user testing: gate this behind a query parameter
+ * (e.g. ?dev=1) or env flag. For now it's always visible because the
+ * prototype's audience IS the people testing it.
  */
 export function DevPanel() {
   return <DevPanelInner />;

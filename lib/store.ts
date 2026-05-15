@@ -3,7 +3,8 @@
 import { useSyncExternalStore } from 'react';
 import { buildSeed, type Seed } from './fakeData';
 import { addDaysIso } from './dates';
-import type { Role, AuditEvent, WeeklyPrompt } from './types';
+import type { Role, AuditEvent, WeeklyPrompt, GoalSuggestion } from './types';
+import type { SuggestGoalDraft } from './suggestGoalDraft';
 
 // ---------------------------------------------------------------------------
 // Store state
@@ -168,6 +169,72 @@ export const actions = {
         auditLog: [...s.auditLog, auditEvent]
       };
     });
+  },
+
+  /**
+   * Create a GoalSuggestion from a completed wizard draft and append it
+   * to the store. Returns the new suggestion's ID so the caller can
+   * route appropriately.
+   *
+   * Caller is responsible for clearing the draft from localStorage —
+   * this action only touches the in-memory store.
+   */
+  submitGoalSuggestion(draft: SuggestGoalDraft): string {
+    let newId = '';
+    setState((s) => {
+      const patient = s.patients.find((p) => p.id === draft.patientId);
+      if (!patient) return s;
+
+      const cycle = s.treatmentCycles.find(
+        (c) => c.id === patient.activeTreatmentCycleId
+      );
+      if (!cycle) return s;
+
+      if (
+        !draft.domain ||
+        !draft.patientWording ||
+        !draft.importance ||
+        !draft.hopedTimeframe
+      ) {
+        return s;
+      }
+
+      newId = randomId('sug');
+
+      const suggestion: GoalSuggestion = {
+        id: newId,
+        patientId: patient.id,
+        treatmentCycleId: cycle.id,
+        domain: draft.domain,
+        patientWording:
+          draft.domain === 'other' && draft.otherDomainText
+            ? // Prefix the other-domain label so clinicians see context
+              `[${draft.otherDomainText.trim()}] ${draft.patientWording.trim()}`
+            : draft.patientWording.trim(),
+        importance: draft.importance,
+        hopedTimeframe: draft.hopedTimeframe,
+        difficultyContext: draft.difficultyContext?.trim() || undefined,
+        createdAt: new Date().toISOString(),
+        status: 'needsReview'
+      };
+
+      const auditEvent: AuditEvent = {
+        id: randomId('audit'),
+        actorId: patient.id,
+        actorRole: 'patient',
+        action: 'suggest_goal_submitted',
+        entity: 'goal_suggestion',
+        entityId: newId,
+        timestamp: new Date().toISOString()
+      };
+
+      return {
+        ...s,
+        goalSuggestions: [...s.goalSuggestions, suggestion],
+        auditLog: [...s.auditLog, auditEvent]
+      };
+    });
+    return newId;
   },
 
   reset() {

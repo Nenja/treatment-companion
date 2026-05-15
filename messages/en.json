@@ -24,6 +24,69 @@
       "suggestedGoalsTitle": "Suggested goals",
       "suggestedGoalsCount": "{count, plural, one {# goal suggested} other {# goals suggested}}",
       "suggestGoal": "Suggest a new goal"
+    },
+    "suggestGoal": {
+      "pageTitle": "Suggest a goal",
+      "stepOf": "Step {current} of {total}",
+      "back": "Back",
+      "next": "Continue",
+      "submit": "Send to my team",
+      "cancel": "Cancel",
+      "cancelConfirmTitle": "Leave this suggestion?",
+      "cancelConfirmBody": "Your draft will be kept. You can come back and finish it later.",
+      "cancelConfirmDiscard": "Leave for now",
+      "cancelConfirmKeep": "Keep going",
+      "draftResumed": "Picking up where you left off.",
+      "step1": {
+        "title": "What area would you like help with?",
+        "helper": "Pick what fits best. You can add more detail in the next steps.",
+        "otherLabel": "What would you call it?",
+        "otherPlaceholder": "e.g. driving, gardening"
+      },
+      "step2": {
+        "title": "In your own words",
+        "helper": "Describe what you'd like to be able to do, or do more easily. There are no right or wrong words.",
+        "placeholder": "Write a sentence or two…",
+        "examplesTitle": "Some examples to help",
+        "example1": "I'd like to be able to open my left hand for washing.",
+        "example2": "I want fewer leg spasms at night so I can sleep.",
+        "example3": "I'd like to walk to the corner shop without my knee giving way."
+      },
+      "step3": {
+        "title": "How important is this to you?",
+        "helper": "Your honest answer helps your team set priorities.",
+        "low": "Nice to improve",
+        "medium": "Important to me",
+        "high": "Very important to me"
+      },
+      "step4": {
+        "title": "When would you hope to notice a change?",
+        "helper": "An honest guess is fine. \"Not sure\" is also a good answer.",
+        "weeks4": "In about 4 weeks",
+        "weeks8": "In about 8 weeks",
+        "weeks12": "In about 12 weeks",
+        "notSure": "I'm not sure"
+      },
+      "step5": {
+        "title": "Anything your team should know?",
+        "helper": "Optional. For example, when it's harder, what helps, what you've tried.",
+        "placeholder": "Add anything that feels useful (or skip this step)…"
+      },
+      "summary": {
+        "title": "Ready to send?",
+        "body": "Your team will see this before your next visit. You can change or remove it any time before then.",
+        "areaLabel": "Area",
+        "wordsLabel": "In your own words",
+        "importanceLabel": "How important",
+        "timeframeLabel": "When you hope to notice a change",
+        "contextLabel": "Anything else",
+        "edit": "Change"
+      },
+      "thanks": {
+        "title": "Thank you",
+        "body": "Your suggestion is now with your care team. You'll talk about it at your next visit.",
+        "backHome": "Back to home"
+      }
     }
   },
   "goal": {
@@ -51,13 +114,24 @@
     "hygiene": "Hygiene",
     "dressing": "Dressing",
     "walking": "Walking",
-    "transfers": "Transfers",
+    "transfers": "Moving around",
     "handUse": "Hand use",
     "sleep": "Sleep",
-    "positioning": "Positioning",
-    "caregiverHelp": "Caregiver help",
-    "therapyExercise": "Therapy or exercise",
-    "other": "Other"
+    "positioning": "Sitting or lying comfortably",
+    "caregiverHelp": "Help from others",
+    "therapyExercise": "Exercise or therapy",
+    "other": "Something else"
+  },
+  "importance": {
+    "low": "Nice to improve",
+    "medium": "Important to me",
+    "high": "Very important to me"
+  },
+  "timeframe": {
+    "4w": "In about 4 weeks",
+    "8w": "In about 8 weeks",
+    "12w": "In about 12 weeks",
+    "notSure": "I'm not sure"
   },
   "dev": {
     "title": "Dev panel",
