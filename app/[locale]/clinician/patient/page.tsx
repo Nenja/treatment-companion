@@ -75,9 +75,19 @@ export default function ClinicianPatientPage() {
     (c) => c.treatmentCycleId === cycle.id
   );
 
+  // Treatment record (if any) for this cycle.
+  const cycleTreatment = state.treatmentSessions.find(
+    (t) => t.treatmentCycleId === cycle.id
+  );
+
   const ratingsByGoal = new Map<
     string,
-    { weekNumber: number; value: -2 | -1 | 0 | 1 | 2 | null; reported: boolean }[]
+    {
+      weekNumber: number;
+      value: -2 | -1 | 0 | 1 | 2 | null;
+      reported: boolean;
+      comment?: string;
+    }[]
   >();
   for (const goal of activeGoals) {
     const perWeek = cycleCheckins
@@ -87,7 +97,8 @@ export default function ClinicianPatientPage() {
         return {
           weekNumber: c.weekNumber,
           value: r.ratingValue as -2 | -1 | 0 | 1 | 2 | null,
-          reported: true
+          reported: true,
+          comment: c.comment
         };
       })
       .filter(
@@ -97,6 +108,7 @@ export default function ClinicianPatientPage() {
           weekNumber: number;
           value: -2 | -1 | 0 | 1 | 2 | null;
           reported: boolean;
+          comment?: string;
         } => x !== null
       )
       .sort((a, b) => a.weekNumber - b.weekNumber);
@@ -139,6 +151,70 @@ export default function ClinicianPatientPage() {
         <p className="mt-1 text-[15px] text-ink-soft">
           {t('nextVisit', { date: formatLongDate(cycle.reviewDate, locale) })}
         </p>
+
+        {/* Treatment record card — shown at the top because it's the
+            anchor of the cycle. Either summarises the recorded session
+            or invites the clinician to record one. */}
+        <section className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+          {cycleTreatment ? (
+            <>
+              <div className="flex items-baseline justify-between gap-2">
+                <div>
+                  <div className="eyebrow">Treatment</div>
+                  <p className="mt-0.5 font-display text-[16px] text-ink">
+                    {cycleTreatment.drugProduct} · {cycleTreatment.totalUnits} units · {formatLongDate(cycleTreatment.date, locale)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      locale === 'en'
+                        ? '/clinician/treatment'
+                        : `/${locale}/clinician/treatment`
+                    )
+                  }
+                  className="shrink-0 text-[13px] font-semibold text-sage-deep hover:underline"
+                >
+                  Edit
+                </button>
+              </div>
+              <ul className="mt-3 space-y-1.5 text-[13px] text-ink-soft">
+                {cycleTreatment.injections.map((inj) => (
+                  <li key={inj.id}>
+                    {inj.muscle} · {inj.side} · {inj.doseUnits} units · {inj.guidance}
+                  </li>
+                ))}
+              </ul>
+              {cycleTreatment.notes && (
+                <p className="mt-3 whitespace-pre-wrap text-[13px] leading-relaxed text-ink-soft">
+                  <span className="text-ink-muted">Notes: </span>
+                  {cycleTreatment.notes}
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="eyebrow">Treatment</div>
+              <p className="mt-1 text-[14px] text-ink-soft">
+                No treatment recorded for this cycle yet.
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    locale === 'en'
+                      ? '/clinician/treatment'
+                      : `/${locale}/clinician/treatment`
+                  )
+                }
+                className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-cream-soft hover:bg-ink-soft"
+              >
+                Record treatment
+              </button>
+            </>
+          )}
+        </section>
 
         {/* Suggestions awaiting review */}
         <section className="mt-9">
@@ -207,6 +283,33 @@ export default function ClinicianPatientPage() {
             </ul>
           )}
         </section>
+
+        {/* Patient comments across the cycle — chronological */}
+        {cycleCheckins.some((c) => c.comment?.trim()) && (
+          <section className="mt-10">
+            <h2 className="font-display text-[20px] leading-tight text-ink">
+              Patient comments
+            </h2>
+            <ul className="mt-3 space-y-3">
+              {cycleCheckins
+                .filter((c) => c.comment?.trim())
+                .sort((a, b) => b.weekNumber - a.weekNumber)
+                .map((c) => (
+                  <li
+                    key={c.id}
+                    className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
+                  >
+                    <div className="eyebrow text-ink-muted">
+                      Week {c.weekNumber}
+                    </div>
+                    <p className="mt-1 whitespace-pre-wrap text-[14px] leading-relaxed text-ink">
+                      {c.comment}
+                    </p>
+                  </li>
+                ))}
+            </ul>
+          </section>
+        )}
       </main>
 
       {confirmEnd && (

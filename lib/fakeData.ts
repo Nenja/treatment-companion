@@ -7,7 +7,8 @@ import type {
   WeeklyPrompt,
   WeeklyCheckin,
   WeeklyGoalRating,
-  AuditEvent
+  AuditEvent,
+  TreatmentSession
 } from './types';
 import { todayIso, addDaysIso } from './dates';
 
@@ -28,6 +29,7 @@ export interface Seed {
   approvedGoals: ApprovedGoal[];
   weeklyPrompts: WeeklyPrompt[];
   weeklyCheckins: WeeklyCheckin[];
+  treatmentSessions: TreatmentSession[];
   auditLog: AuditEvent[];
 }
 
@@ -381,15 +383,17 @@ export function buildSeed(): Seed {
     status: wk < 7 ? 'completed' : 'pending'
   }));
 
-  // Mette's six check-ins. Week 3 had a reported fall — surfaced factually
-  // in the clinician summary, never as "treatment failure".
+  // Mette's six check-ins. Week 3 had a reported fall — recorded as a
+  // patient comment, not a categorical "side effect" question (which we
+  // removed). The clinician surfaces this descriptively in the summary,
+  // never as "treatment failure".
   const metteCheckinSpec = [
-    { wk: 1, pain: 5, stiff: 6, spasm: 'daily', care: 'unchanged', se: [] },
-    { wk: 2, pain: 5, stiff: 6, spasm: 'occasional', care: 'unchanged', se: [] },
-    { wk: 3, pain: 6, stiff: 6, spasm: 'occasional', care: 'harder', se: ['falls'] },
-    { wk: 4, pain: 5, stiff: 5, spasm: 'occasional', care: 'unchanged', se: [] },
-    { wk: 5, pain: 4, stiff: 5, spasm: 'occasional', care: 'easier', se: [] },
-    { wk: 6, pain: 4, stiff: 4, spasm: 'occasional', care: 'easier', se: [] }
+    { wk: 1, pain: 5, stiff: 6, spasm: 'daily', care: 'unchanged', se: [], comment: undefined as string | undefined },
+    { wk: 2, pain: 5, stiff: 6, spasm: 'occasional', care: 'unchanged', se: [], comment: undefined },
+    { wk: 3, pain: 6, stiff: 6, spasm: 'occasional', care: 'harder', se: ['falls'], comment: 'I had a fall on Tuesday when getting up from the wheelchair. No injuries. I called the clinic and the nurse said to mention it at my next visit.' },
+    { wk: 4, pain: 5, stiff: 5, spasm: 'occasional', care: 'unchanged', se: [], comment: undefined },
+    { wk: 5, pain: 4, stiff: 5, spasm: 'occasional', care: 'easier', se: [], comment: 'Transfers feel easier this week.' },
+    { wk: 6, pain: 4, stiff: 4, spasm: 'occasional', care: 'easier', se: [], comment: undefined }
   ] as const;
 
   const metteCheckins: WeeklyCheckin[] = metteCheckinSpec.map((c) => {
@@ -413,9 +417,56 @@ export function buildSeed(): Seed {
       spasmFrequency: c.spasm,
       dailyCare: c.care,
       sideEffects: [...c.se],
+      comment: c.comment,
       ratings
     };
   });
+
+  // ---- Treatment sessions (recorded by clinician at cycle start) -----
+  // Anna and Mette already have an active cycle, so they have a record.
+  // Lars is in week 1-2; we'll seed a minimal record so the clinician
+  // view shows something.
+  const annaTreatment: TreatmentSession = {
+    id: 'tx-anna-2',
+    patientId: anna.id,
+    treatmentCycleId: annaCycle.id,
+    date: annaCycleStart,
+    drugProduct: 'Botox',
+    totalUnits: 400,
+    injections: [
+      {
+        id: 'tx-anna-2-i1',
+        muscle: 'Flexor digitorum superficialis',
+        side: 'left',
+        doseUnits: 50,
+        guidance: 'ultrasound'
+      },
+      {
+        id: 'tx-anna-2-i2',
+        muscle: 'Flexor digitorum profundus',
+        side: 'left',
+        doseUnits: 50,
+        guidance: 'ultrasound'
+      },
+      {
+        id: 'tx-anna-2-i3',
+        muscle: 'Gastrocnemius',
+        side: 'left',
+        doseUnits: 150,
+        guidance: 'anatomicalLandmarks'
+      },
+      {
+        id: 'tx-anna-2-i4',
+        muscle: 'Soleus',
+        side: 'left',
+        doseUnits: 150,
+        guidance: 'anatomicalLandmarks'
+      }
+    ],
+    notes: 'Patient tolerated procedure well. Repeat at cycle review.',
+    recordedByClinicianId: clinician.id,
+    recordedAt: new Date(annaCycleStart + 'T10:30:00Z').toISOString()
+  };
 
   return {
     now,
@@ -431,6 +482,7 @@ export function buildSeed(): Seed {
     approvedGoals: [annaGoal1, annaGoal2, ...metteGoals],
     weeklyPrompts: [...annaPrompts, ...larsPrompts, ...mettePrompts],
     weeklyCheckins: [...annaCheckins, ...metteCheckins],
+    treatmentSessions: [annaTreatment],
     auditLog: []
   };
 }

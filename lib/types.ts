@@ -186,3 +186,39 @@ export interface AuditEvent {
   entityId: string;
   timestamp: string;
 }
+
+// --- Treatment record -------------------------------------------------
+
+export const INJECTION_SIDES = ['left', 'right', 'bilateral'] as const;
+export type InjectionSide = (typeof INJECTION_SIDES)[number];
+
+export const GUIDANCE_METHODS = [
+  'emg',
+  'ultrasound',
+  'electricalStimulation',
+  'anatomicalLandmarks',
+  'none',
+  'other'
+] as const;
+export type GuidanceMethod = (typeof GUIDANCE_METHODS)[number];
+
+export interface MuscleInjection {
+  id: string;
+  muscle: string; // free text — see slice-5 design notes
+  side: InjectionSide;
+  doseUnits: number;
+  guidance: GuidanceMethod;
+}
+
+export interface TreatmentSession {
+  id: string;
+  patientId: string;
+  treatmentCycleId: string;
+  date: string; // ISO date, day only
+  drugProduct: string; // free text — see slice-5 design notes
+  totalUnits: number;
+  injections: MuscleInjection[];
+  notes?: string;
+  recordedByClinicianId: string;
+  recordedAt: string; // ISO timestamp
+}

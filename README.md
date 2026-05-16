@@ -94,7 +94,7 @@ The data model intentionally has no fields for any of those, either.
 | 2     | **Done.** Suggest-goal flow (5-step wizard with auto-save).   |
 | 3     | **Done.** Weekly check-in flow.                               |
 | 4     | **Done.** Clinician unlock + suggestion review + approval form. |
-| 5     | Clinician summary screen.                                     |
+| 5     | **Done.** Patient comments + treatment record entry.          |
 
 After slice 5, we'll have a complete clickable prototype of the
 seven-screen flow specified in the brief.

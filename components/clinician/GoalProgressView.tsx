@@ -7,6 +7,8 @@ interface WeekRating {
   weekNumber: number;
   value: Exclude<RatingValue, null> | null;
   reported: boolean;
+  /** The check-in's optional patient comment, if any. */
+  comment?: string;
 }
 
 interface GoalProgressViewProps {
@@ -75,15 +77,28 @@ export function GoalProgressView({
         <LineChart byWeek={byWeek} currentWeek={currentWeek} />
       </div>
 
-      {/* Caption: shows the numeric value of the selected cell, or a
-          gentle hint when nothing is selected. */}
-      <p className="mt-2 min-h-[20px] text-[12px] text-ink-soft">
-        {selectedRating && selectedRating.reported
-          ? `Week ${selectedRating.weekNumber}: ${formatValue(selectedRating.value)}`
-          : selectedRating === null && selectedWeek !== null
-          ? `Week ${selectedWeek}: not reported`
-          : 'Tap a cell for the value.'}
-      </p>
+      {/* Caption: shows the numeric value + any patient comment for the
+          selected cell, or a gentle hint when nothing is selected. */}
+      <div className="mt-2 min-h-[20px] space-y-1 text-[12px]">
+        {selectedRating && selectedRating.reported ? (
+          <>
+            <p className="text-ink-soft">
+              Week {selectedRating.weekNumber}:{' '}
+              {formatValue(selectedRating.value)}
+            </p>
+            {selectedRating.comment && (
+              <p className="rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1.5 text-[13px] leading-relaxed text-ink">
+                <span className="text-ink-muted">Patient note: </span>
+                {selectedRating.comment}
+              </p>
+            )}
+          </>
+        ) : selectedRating === null && selectedWeek !== null ? (
+          <p className="text-ink-soft">Week {selectedWeek}: not reported</p>
+        ) : (
+          <p className="text-ink-soft">Tap a cell for the value.</p>
+        )}
+      </div>
     </article>
   );
 }

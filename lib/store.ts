@@ -13,7 +13,9 @@ import type {
   RatingValue,
   ApprovedGoal,
   GasAnchors,
-  SuggestionStatus
+  SuggestionStatus,
+  TreatmentSession,
+  MuscleInjection
 } from './types';
 import { RATING_VALUE_MAP, type RatingLabel } from './types';
 import type { SuggestGoalDraft } from './suggestGoalDraft';
@@ -562,6 +564,68 @@ export const actions = {
       };
     });
     return newGoalId;
+  },
+
+  /**
+   * Save a treatment session (recording of what was injected). Replaces
+   * any existing session for the same cycle — there's only one per cycle.
+   *
+   * IMPORTANT: this is a recording surface only. Nothing here calculates
+   * doses, suggests muscles, or evaluates the choices made — the brief
+   * forbids decision support.
+   */
+  saveTreatmentSession(
+    patientId: string,
+    treatmentCycleId: string,
+    fields: {
+      date: string;
+      drugProduct: string;
+      totalUnits: number;
+      injections: Omit<MuscleInjection, 'id'>[];
+      notes?: string;
+    }
+  ): string {
+    let newId = '';
+    setState((s) => {
+      newId = randomId('tx');
+      const session: TreatmentSession = {
+        id: newId,
+        patientId,
+        treatmentCycleId,
+        date: fields.date,
+        drugProduct: fields.drugProduct.trim(),
+        totalUnits: fields.totalUnits,
+        injections: fields.injections.map((inj) => ({
+          ...inj,
+          id: randomId(`${newId}-inj`),
+          muscle: inj.muscle.trim()
+        })),
+        notes: fields.notes?.trim() || undefined,
+        recordedByClinicianId: 'clin-1',
+        recordedAt: new Date().toISOString()
+      };
+      // Replace any prior session for this cycle.
+      const filtered = s.treatmentSessions.filter(
+        (t) => t.treatmentCycleId !== treatmentCycleId
+      );
+      return {
+        ...s,
+        treatmentSessions: [...filtered, session],
+        auditLog: [
+          ...s.auditLog,
+          {
+            id: randomId('audit'),
+            actorId: 'clin-1',
+            actorRole: 'clinician',
+            action: 'treatment_session_recorded',
+            entity: 'treatment_session',
+            entityId: newId,
+            timestamp: new Date().toISOString()
+          }
+        ]
+      };
+    });
+    return newId;
   },
 
   reset() {
