@@ -144,7 +144,7 @@ export default function ClinicianPatientPage() {
           })}
         </div>
         <p className="mt-1 text-[15px] text-ink-soft">
-          {t('nextVisit', { date: formatLongDate(cycle.reviewDate, locale) })}
+          Cycle length: {totalWeeks} weeks
         </p>
 
         {/* Treatment record card — shown at the top because it's the
