@@ -350,6 +350,8 @@ function labelForGuidance(g: GuidanceMethod): string {
       return 'EMG';
     case 'ultrasound':
       return 'Ultrasound';
+    case 'usEmg':
+      return 'Ultrasound + EMG';
     case 'electricalStimulation':
       return 'Electrical stimulation';
     case 'anatomicalLandmarks':

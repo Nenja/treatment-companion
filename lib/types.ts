@@ -195,6 +195,7 @@ export type InjectionSide = (typeof INJECTION_SIDES)[number];
 export const GUIDANCE_METHODS = [
   'emg',
   'ultrasound',
+  'usEmg',
   'electricalStimulation',
   'anatomicalLandmarks',
   'none',
