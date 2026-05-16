@@ -73,25 +73,18 @@ export function buildEhrExport({
     for (const goal of goals) {
       lines.push(`- ${goal.patientFacingText}`);
       const goalRatings = checkins
-        .map((c) => {
+        .flatMap((c) => {
           const r = c.ratings.find((rr) => rr.approvedGoalId === goal.id);
-          return r ? { week: c.weekNumber, value: r.ratingValue } : null;
+          if (!r || typeof r.ratingValue !== 'number') return [];
+          return [{ week: c.weekNumber, value: r.ratingValue }];
         })
-        .filter(
-          (
-            x
-          ): x is { week: number; value: -2 | -1 | 0 | 1 | 2 | null } =>
-            x !== null && typeof x?.value === 'number'
-        )
         .sort((a, b) => a.week - b.week);
 
       if (goalRatings.length === 0) {
         lines.push('  Patient reported: no ratings yet this cycle.');
       } else {
         const weeks = goalRatings.map((r) => r.week);
-        const values = goalRatings
-          .map((r) => r.value)
-          .filter((v): v is number => typeof v === 'number');
+        const values = goalRatings.map((r) => r.value);
         const minV = Math.min(...values);
         const maxV = Math.max(...values);
         const mode = mostFrequent(values);
