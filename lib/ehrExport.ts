@@ -47,9 +47,14 @@ export function buildEhrExport({
   // Treatment session -----------------------------------------------------
   if (treatment) {
     lines.push('Treatment');
-    lines.push(
-      `Date: ${formatLongDate(treatment.date, locale)} · ${treatment.drugProduct} · ${treatment.totalUnits} units total`
-    );
+    lines.push('Treatment');
+    const headerParts = [
+      `Date: ${formatLongDate(treatment.date, locale)}`,
+      treatment.drugProduct,
+      `${treatment.totalUnits} units total`
+    ];
+    if (treatment.dilution) headerParts.push(`Dilution: ${treatment.dilution}`);
+    lines.push(headerParts.join(' · '));
     if (treatment.injections.length > 0) {
       lines.push('Injections:');
       for (const inj of treatment.injections) {
