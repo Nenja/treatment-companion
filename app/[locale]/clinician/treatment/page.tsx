@@ -70,6 +70,7 @@ export default function TreatmentRecordPage() {
   const [totalUnits, setTotalUnits] = useState(
     existing?.totalUnits ? String(existing.totalUnits) : ''
   );
+  const [dilution, setDilution] = useState(existing?.dilution ?? '');
   const [notes, setNotes] = useState(existing?.notes ?? '');
   const [injections, setInjections] = useState<InjectionDraft[]>(
     existing
@@ -125,6 +126,7 @@ export default function TreatmentRecordPage() {
       date,
       drugProduct,
       totalUnits: totalUnitsNum,
+      dilution: dilution.trim() || undefined,
       injections: cleaned,
       notes: notes.trim() || undefined
     });
@@ -183,6 +185,16 @@ export default function TreatmentRecordPage() {
             value={totalUnits}
             onChange={(e) => setTotalUnits(e.target.value)}
             className={inputClasses}
+          />
+        </Field>
+        <Field label="Dilution" helper="Free text — e.g. 250 IU/ml. Optional.">
+          <input
+            type="text"
+            value={dilution}
+            onChange={(e) => setDilution(e.target.value)}
+            className={inputClasses}
+            maxLength={40}
+            placeholder="250 IU/ml"
           />
         </Field>
 
