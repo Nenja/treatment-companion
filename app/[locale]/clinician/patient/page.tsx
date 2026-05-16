@@ -211,6 +211,31 @@ export default function ClinicianPatientPage() {
           )}
         </section>
 
+        {/* Active goals with progress visualisation */}
+        <section className="mt-10">
+          <h2 className="font-display text-[20px] leading-tight text-ink">
+            {t('activeGoalsTitle')}
+          </h2>
+          {activeGoals.length === 0 ? (
+            <p className="mt-3 text-[14px] text-ink-muted">
+              {t('activeGoalsEmpty')}
+            </p>
+          ) : (
+            <ul className="mt-3 space-y-3">
+              {activeGoals.map((g) => (
+                <li key={g.id}>
+                  <GoalProgressView
+                    goalText={g.patientFacingText}
+                    totalWeeks={totalWeeks}
+                    currentWeek={weekNumber}
+                    ratings={ratingsByGoal.get(g.id) ?? []}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+        
         {/* Suggestions awaiting review */}
         <section className="mt-9">
           <h2 className="font-display text-[20px] leading-tight text-ink">
@@ -253,32 +278,6 @@ export default function ClinicianPatientPage() {
             </ul>
           )}
         </section>
-
-        {/* Active goals with progress visualisation */}
-        <section className="mt-10">
-          <h2 className="font-display text-[20px] leading-tight text-ink">
-            {t('activeGoalsTitle')}
-          </h2>
-          {activeGoals.length === 0 ? (
-            <p className="mt-3 text-[14px] text-ink-muted">
-              {t('activeGoalsEmpty')}
-            </p>
-          ) : (
-            <ul className="mt-3 space-y-3">
-              {activeGoals.map((g) => (
-                <li key={g.id}>
-                  <GoalProgressView
-                    goalText={g.patientFacingText}
-                    totalWeeks={totalWeeks}
-                    currentWeek={weekNumber}
-                    ratings={ratingsByGoal.get(g.id) ?? []}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
         {/* Patient comments across the cycle — chronological */}
         {cycleCheckins.some((c) => c.comment?.trim()) && (
           <section className="mt-10">
