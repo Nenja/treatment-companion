@@ -581,6 +581,7 @@ export const actions = {
       date: string;
       drugProduct: string;
       totalUnits: number;
+      dilution?: string;
       injections: Omit<MuscleInjection, 'id'>[];
       notes?: string;
     }
@@ -595,6 +596,7 @@ export const actions = {
         date: fields.date,
         drugProduct: fields.drugProduct.trim(),
         totalUnits: fields.totalUnits,
+        dilution: fields.dilution,
         injections: fields.injections.map((inj) => ({
           ...inj,
           id: randomId(`${newId}-inj`),
