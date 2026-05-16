@@ -7,6 +7,8 @@ import { useStore, actions } from '@/lib/store';
 import { weekOfCycle, formatLongDate } from '@/lib/dates';
 import { useSessionTimeout } from '@/lib/useSessionTimeout';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
+import { ExportModal } from '@/components/clinician/ExportModal';
+import { buildEhrExport } from '@/lib/ehrExport';
 
 export default function ClinicianPatientPage() {
   const router = useRouter();
@@ -19,6 +21,7 @@ export default function ClinicianPatientPage() {
 
   const session = state.clinicianSession;
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [showExport, setShowExport] = useState(false);
 
   useSessionTimeout({
     onTimeout: () => {
@@ -310,7 +313,34 @@ export default function ClinicianPatientPage() {
             </ul>
           </section>
         )}
+
+        {/* Export for EHR — only useful when there's actually data to export */}
+        {(cycleTreatment || activeGoals.length > 0 || cycleCheckins.length > 0) && (
+          <div className="mt-10">
+            <button
+              type="button"
+              onClick={() => setShowExport(true)}
+              className="flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+            >
+              Export for EHR
+            </button>
+          </div>
+        )}
       </main>
+
+      {showExport && (
+        <ExportModal
+          initialText={buildEhrExport({
+            patient,
+            cycle,
+            treatment: cycleTreatment,
+            goals: activeGoals,
+            checkins: cycleCheckins,
+            locale
+          })}
+          onClose={() => setShowExport(false)}
+        />
+      )}
 
       {confirmEnd && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
