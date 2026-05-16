@@ -14,6 +14,7 @@
     "home": {
       "greeting": "Hej, {name}",
       "cycleContext": "Uge {week} af {total} · Forløb {cycle}",
+      "cycleLength": "Forløbslængde: {weeks} uger",
       "nextVisit": "Næste besøg: {date}",
       "checkinReadyTitle": "Din ugentlige status er klar",
       "checkinReadyBody": "Tager omkring to minutter.",
@@ -190,6 +191,7 @@
     "patient": {
       "viewingLabel": "Ser på",
       "cycleContext": "Uge {week} af {total} · Forløb {cycle}",
+      "cycleLength": "Forløbslængde: {weeks} uger",
       "nextVisit": "Næste besøg: {date}",
       "suggestionsTitle": "Foreslåede mål",
       "suggestionsEmpty": "Ingen forslag afventer gennemgang.",
