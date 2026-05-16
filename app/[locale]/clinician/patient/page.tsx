@@ -94,26 +94,18 @@ export default function ClinicianPatientPage() {
   >();
   for (const goal of activeGoals) {
     const perWeek = cycleCheckins
-      .map((c) => {
+      .flatMap((c) => {
         const r = c.ratings.find((x) => x.approvedGoalId === goal.id);
-        if (!r) return null;
-        return {
-          weekNumber: c.weekNumber,
-          value: r.ratingValue as -2 | -1 | 0 | 1 | 2 | null,
-          reported: true,
-          comment: c.comment
-        };
+        if (!r) return [];
+        return [
+          {
+            weekNumber: c.weekNumber,
+            value: r.ratingValue as -2 | -1 | 0 | 1 | 2 | null,
+            reported: true,
+            comment: c.comment
+          }
+        ];
       })
-      .filter(
-        (
-          x
-        ): x is {
-          weekNumber: number;
-          value: -2 | -1 | 0 | 1 | 2 | null;
-          reported: boolean;
-          comment?: string;
-        } => x !== null
-      )
       .sort((a, b) => a.weekNumber - b.weekNumber);
     ratingsByGoal.set(goal.id, perWeek);
   }
