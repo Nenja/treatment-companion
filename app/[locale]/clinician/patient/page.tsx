@@ -143,8 +143,8 @@ export default function ClinicianPatientPage() {
             total: totalWeeks
           })}
         </div>
-        <p className="mt-1 text-[15px] text-ink-soft">
-          Cycle length: {totalWeeks} weeks
+      <p className="mt-1 text-[15px] text-ink-soft">
+          {t('cycleLength', { weeks: totalWeeks })}
         </p>
 
         {/* Treatment record card — shown at the top because it's the
