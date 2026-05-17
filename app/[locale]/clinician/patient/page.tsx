@@ -358,72 +358,37 @@ export default function ClinicianPatientPage() {
       {showExport && (
         <ExportModal
           initialText={buildEhrExport({
-            patient: {
-              id: patient.id,
-              displayName: patient.displayName,
-              // birthYear isn't loaded for the clinician view; the
-              // export builder doesn't use it. Empty placeholder.
-              birthYear: 0,
-              activeTreatmentCycleId: cycle.id
-            },
+            patient: { displayName: patient.displayName },
             cycle: {
-              id: cycle.id,
-              patientId: patient.id,
               cycleNumber: cycle.cycleNumber,
               lengthWeeks: cycle.lengthWeeks,
-              startDate: cycle.startDate,
-              reviewDate: cycle.reviewDate,
-              status: 'active'
+              reviewDate: cycle.reviewDate
             },
             treatment: treatment
               ? {
-                  id: treatment.id,
-                  patientId: patient.id,
-                  treatmentCycleId: cycle.id,
                   date: treatment.date,
                   drugProduct: treatment.drugProduct,
                   totalUnits: treatment.totalUnits,
                   dilution: treatment.dilution ?? undefined,
                   injections: treatment.injections.map((i) => ({
-                    id: i.id,
                     muscle: i.muscle,
                     side: i.side,
                     doseUnits: i.doseUnits,
                     guidance: i.guidance as GuidanceMethod
                   })),
-                  notes: treatment.notes ?? undefined,
-                  recordedByClinicianId: '',
-                  recordedAt: ''
+                  notes: treatment.notes ?? undefined
                 }
               : undefined,
             goals: activeGoals.map((g) => ({
               id: g.id,
-              suggestionId: '',
-              patientId: patient.id,
-              treatmentCycleId: cycle.id,
-              patientFacingText: g.patientFacingText,
-              smartText: g.smartText,
-              gasAnchors: g.gasAnchors,
-              approvedByClinicianId: '',
-              approvedAt: '',
-              status: 'active'
+              patientFacingText: g.patientFacingText
             })),
             checkins: checkins.map((c) => ({
-              id: c.id,
-              weeklyPromptId: '',
-              patientId: patient.id,
-              treatmentCycleId: cycle.id,
               weekNumber: c.weekNumber,
-              submittedAt: '',
-              sideEffects: [],
               comment: c.comment ?? undefined,
               ratings: c.ratings.map((r) => ({
-                id: '',
-                weeklyCheckinId: c.id,
                 approvedGoalId: r.approvedGoalId,
-                ratingLabel: 'asExpected',
-                ratingValue:
-                  r.ratingValue as -2 | -1 | 0 | 1 | 2 | null
+                ratingValue: r.ratingValue as -2 | -1 | 0 | 1 | 2 | null
               }))
             })),
             locale

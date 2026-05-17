@@ -1,12 +1,4 @@
-import type {
-  ApprovedGoal,
-  Patient,
-  TreatmentCycle,
-  TreatmentSession,
-  WeeklyCheckin,
-  GuidanceMethod,
-  InjectionSide
-} from './types';
+import type { GuidanceMethod, InjectionSide } from './types';
 import { formatLongDate } from './dates';
 
 // ---------------------------------------------------------------------------
@@ -16,14 +8,59 @@ import { formatLongDate } from './dates';
 // notes field. Output is purely descriptive — no outcome judgments, no
 // "successful" / "failed", no recommendations. The clinician edits it
 // in a textarea before copying.
+//
+// Inputs use small purpose-built shapes (defined below) rather than the
+// full entity types. That way both prototype call sites and Supabase
+// call sites can pass only the fields the export actually consumes,
+// without having to fabricate values for fields the export doesn't use.
 // ---------------------------------------------------------------------------
 
+export interface ExportPatient {
+  displayName: string;
+}
+
+export interface ExportCycle {
+  cycleNumber: number;
+  lengthWeeks?: number;
+  reviewDate: string;
+}
+
+export interface ExportInjection {
+  muscle: string;
+  side: InjectionSide;
+  doseUnits: number;
+  guidance: GuidanceMethod;
+}
+
+export interface ExportTreatment {
+  date: string;
+  drugProduct: string;
+  totalUnits: number;
+  dilution?: string;
+  injections: ExportInjection[];
+  notes?: string;
+}
+
+export interface ExportGoal {
+  id: string;
+  patientFacingText: string;
+}
+
+export interface ExportCheckin {
+  weekNumber: number;
+  comment?: string | null;
+  ratings: {
+    approvedGoalId: string;
+    ratingValue: -2 | -1 | 0 | 1 | 2 | null;
+  }[];
+}
+
 interface BuildExportArgs {
-  patient: Patient;
-  cycle: TreatmentCycle;
-  treatment?: TreatmentSession;
-  goals: ApprovedGoal[];
-  checkins: WeeklyCheckin[];
+  patient: ExportPatient;
+  cycle: ExportCycle;
+  treatment?: ExportTreatment;
+  goals: ExportGoal[];
+  checkins: ExportCheckin[];
   locale: string;
 }
 
