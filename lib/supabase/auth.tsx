@@ -80,11 +80,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
 
     // Listen for sign-in / sign-out events.
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    //
+    // IMPORTANT: do NOT make Supabase calls (like fetchProfile) directly
+    // inside this callback. The auth client holds a lock during the
+    // callback; any nested Supabase call deadlocks and hangs silently.
+    // We defer the profile fetch with setTimeout(..., 0) so it runs
+    // after the callback returns and the lock releases.
+    // See https://github.com/supabase/auth-js/issues/762
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
       const u = session?.user ?? null;
       setUser(u);
-      setProfile(u ? await fetchProfile(u.id) : null);
+      if (u) {
+        setTimeout(async () => {
+          if (!mounted) return;
+          const p = await fetchProfile(u.id);
+          if (mounted) setProfile(p);
+        }, 0);
+      } else {
+        setProfile(null);
+      }
     });
 
     return () => {
