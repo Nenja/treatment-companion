@@ -1,19 +1,20 @@
 'use client';
 
 import { createBrowserClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
- * Supabase client for use in client components ('use client').
- *
- * Reads connection details from environment variables set in Vercel:
- *   - NEXT_PUBLIC_SUPABASE_URL          — project URL
- *   - NEXT_PUBLIC_SUPABASE_ANON_KEY     — anon public key (safe to expose)
- *
- * The NEXT_PUBLIC_ prefix is what makes these accessible in browser code.
+ * Single shared Supabase client for the browser. Creating multiple
+ * instances causes session-storage races and is a known antipattern
+ * with @supabase/ssr.
  */
-export function createSupabaseBrowserClient() {
-  return createBrowserClient(
+let cached: SupabaseClient | null = null;
+
+export function createSupabaseBrowserClient(): SupabaseClient {
+  if (cached) return cached;
+  cached = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+  return cached;
 }
