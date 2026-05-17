@@ -20,7 +20,7 @@ export default function PatientHomePage() {
   const locale = useLocale();
 
   const { user, profile, loading: authLoading } = useAuth();
-  const homeQuery = usePatientHomeData(profile?.id ?? null);
+  const homeQuery = usePatientHomeData(profile?.id ?? null, profile?.role);
 
   // Auth redirects: not signed in → /login; clinician → /clinician.
   useEffect(() => {

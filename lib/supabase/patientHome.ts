@@ -44,13 +44,19 @@ export interface PatientHomeData {
  * supabase calls because joining multiple tables in one PostgREST call
  * is messier than just running parallel queries.
  *
+ * Pass the user's role so the hook only runs when the user is actually
+ * a patient — otherwise the query would 404 / error.
+ *
  * Returns null while loading and on error; the component is responsible
  * for rendering a skeleton in that case.
  */
-export function usePatientHomeData(profileId: string | null) {
+export function usePatientHomeData(
+  profileId: string | null,
+  role: string | null | undefined
+) {
   return useQuery({
     queryKey: ['patientHome', profileId],
-    enabled: !!profileId,
+    enabled: !!profileId && role === 'patient',
     queryFn: async (): Promise<PatientHomeData> => {
       const supabase = createSupabaseBrowserClient();
 
