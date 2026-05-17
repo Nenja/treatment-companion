@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useStore, actions } from '@/lib/store';
+import { useAuth } from '@/lib/supabase/auth';
 import { formatLongDate } from '@/lib/dates';
 import type { Role } from '@/lib/types';
 
@@ -22,7 +24,9 @@ export function DevPanel() {
 function DevPanelInner() {
   const t = useTranslations('dev');
   const locale = useLocale();
+  const router = useRouter();
   const state = useStore();
+  const { user, profile, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [showAudit, setShowAudit] = useState(false);
 
@@ -64,6 +68,54 @@ function DevPanelInner() {
             </div>
 
             <div className="space-y-4 px-4 py-4">
+              {/* Supabase auth — shows the real signed-in user (vs. the fake
+                  role/patient toggles below which still use localStorage). */}
+              <div className="rounded-md border border-cream/15 bg-cream/5 p-2.5">
+                <div className="mb-1.5 text-[11px] uppercase tracking-wider text-cream/50">
+                  Supabase auth
+                </div>
+                {user && profile ? (
+                  <>
+                    <div className="text-[12px] text-cream">
+                      <span className="text-cream/60">Signed in as: </span>
+                      {profile.displayName} ({profile.role})
+                    </div>
+                    <div className="font-mono text-[10px] text-cream/40">
+                      {profile.email}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await signOut();
+                        router.push(
+                          locale === 'en' ? '/login' : `/${locale}/login`
+                        );
+                      }}
+                      className="mt-2 w-full rounded-md bg-cream/10 px-3 py-1.5 text-[12px] font-semibold text-cream hover:bg-cream/15"
+                    >
+                      Sign out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-[12px] text-cream/60">
+                      Not signed in
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        router.push(
+                          locale === 'en' ? '/login' : `/${locale}/login`
+                        )
+                      }
+                      className="mt-2 w-full rounded-md bg-cream/10 px-3 py-1.5 text-[12px] font-semibold text-cream hover:bg-cream/15"
+                    >
+                      Go to sign in
+                    </button>
+                  </>
+                )}
+              </div>
+
               {/* Role */}
               <div>
                 <div className="mb-1.5 text-[11px] uppercase tracking-wider text-cream/50">

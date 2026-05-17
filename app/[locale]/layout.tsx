@@ -1,3 +1,4 @@
+import { AuthProvider } from '@/lib/supabase/auth';
 import type { ReactNode } from 'react';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
@@ -65,7 +66,7 @@ export default async function LocaleLayout({
     >
       <body>
         <NextIntlClientProvider messages={messages} locale={locale}>
-          {children}
+          <AuthProvider>{children}</AuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>
