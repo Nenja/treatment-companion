@@ -6,7 +6,6 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useStore, actions } from '@/lib/store';
 import { useAuth } from '@/lib/supabase/auth';
 import { formatLongDate } from '@/lib/dates';
-import type { Role } from '@/lib/types';
 
 /**
  * The dev panel is deliberately styled as "tooling" rather than "product"
@@ -29,8 +28,6 @@ function DevPanelInner() {
   const { user, profile, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [showAudit, setShowAudit] = useState(false);
-
-  const roles: Role[] = ['patient', 'clinician'];
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none">
@@ -116,51 +113,9 @@ function DevPanelInner() {
                 )}
               </div>
 
-              {/* Role */}
-              <div>
-                <div className="mb-1.5 text-[11px] uppercase tracking-wider text-cream/50">
-                  {t('role')}
-                </div>
-                <div className="flex gap-1.5">
-                  {roles.map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => actions.setRole(r)}
-                      className={`flex-1 rounded-md px-3 py-2 text-[13px] font-semibold ${
-                        state.currentRole === r
-                          ? 'bg-sage text-cream'
-                          : 'bg-cream/10 text-cream/80 hover:bg-cream/15'
-                      }`}
-                    >
-                      {t(r === 'patient' ? 'rolePatient' : 'roleClinician')}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Patient */}
-              <div>
-                <div className="mb-1.5 text-[11px] uppercase tracking-wider text-cream/50">
-                  {t('patient')}
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {state.patients.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => actions.setCurrentPatientId(p.id)}
-                      className={`rounded-md px-3 py-2 text-[13px] font-semibold ${
-                        state.currentPatientId === p.id
-                          ? 'bg-sage text-cream'
-                          : 'bg-cream/10 text-cream/80 hover:bg-cream/15'
-                      }`}
-                    >
-                      {p.displayName}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* Role and patient toggles removed — Supabase auth now
+                  determines who you are. See the "Supabase auth"
+                  section at the top of this panel for sign in / out. */}
 
               {/* Active visit codes (for testing) */}
               {state.visitCodes.filter(
