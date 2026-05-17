@@ -68,11 +68,13 @@ export function useCheckinData(profileId: string | null, role: string | null | u
       if (prErr) throw prErr;
       if (!promptRow) return null;
 
-// Load all active goals with their anchors
+      // Load all active goals with their anchors
       const { data: goalRows, error: gErr } = await supabase
         .from('approved_goal')
-        .select('id, patient_facing_text, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2')
-      
+        .select(
+          'id, patient_facing_text, ' +
+            'anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2'
+        )
         .eq('treatment_cycle_id', cycleId)
         .eq('status', 'active')
         .order('approved_at', { ascending: true });

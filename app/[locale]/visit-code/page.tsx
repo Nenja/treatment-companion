@@ -3,74 +3,86 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { useStore, actions } from '@/lib/store';
+import { useAuth } from '@/lib/supabase/auth';
+import {
+  useActiveVisitCode,
+  useGenerateVisitCode
+} from '@/lib/supabase/visitCode';
 import { formatVisitCode } from '@/lib/visitCode';
 
 /**
- * Patient view of their current visit code.
+ * Patient's visit-code screen. Shows the current active code (if any)
+ * with a countdown, or a button to generate one.
  *
- * - Generates a code on first mount (or reuses the most recent unconsumed
- *   one).
- * - Counts down the remaining validity in mm:ss.
- * - On expiry, offers a button to generate a new one.
- *
- * No PII is on this page. Just the code, a brief explanation, the timer,
- * and a way back home.
+ * The code persists server-side so multiple devices show the same code,
+ * and so a reload doesn't generate a fresh one mid-visit.
  */
 export default function VisitCodePage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('patient.visitCode');
-  const state = useStore();
 
-  const patient = state.patients.find((p) => p.id === state.currentPatientId);
+  const { user, profile, loading: authLoading } = useAuth();
+  const activeQuery = useActiveVisitCode(profile?.id ?? null, profile?.role);
+  const generate = useGenerateVisitCode();
 
-  // Pick the most recent unconsumed-and-unexpired code for this patient.
-  const existing = patient
-    ? state.visitCodes
-        .filter(
-          (c) =>
-            c.patientId === patient.id &&
-            !c.consumedAt &&
-            new Date(c.expiresAt).getTime() > Date.now()
-        )
-        .sort((a, b) => b.expiresAt.localeCompare(a.expiresAt))[0]
-    : undefined;
-
-  const [code, setCode] = useState(existing);
-  const [nowMs, setNowMs] = useState(() => Date.now());
-
-  // Generate one if none exists.
+  // Auth gating.
   useEffect(() => {
-    if (!patient) return;
-    if (!code) {
-      const fresh = actions.generateVisitCode(patient.id);
-      setCode(fresh);
+    if (authLoading) return;
+    if (!user || !profile) {
+      router.replace(locale === 'en' ? '/login' : `/${locale}/login`);
+      return;
     }
-  }, [patient, code]);
+    if (profile.role !== 'patient') {
+      router.replace(locale === 'en' ? '/' : `/${locale}`);
+    }
+  }, [authLoading, user, profile, router, locale]);
 
-  // Tick every second to update the countdown.
+  // If no active code on initial load, generate one automatically.
+  // We only auto-generate once per mount — if the patient lets it
+  // expire on screen, they tap the "Generate a new code" button.
+  const [didAutoGenerate, setDidAutoGenerate] = useState(false);
   useEffect(() => {
-    const interval = setInterval(() => setNowMs(Date.now()), 1000);
-    return () => clearInterval(interval);
+    if (
+      !authLoading &&
+      profile?.role === 'patient' &&
+      !activeQuery.isLoading &&
+      activeQuery.data === null &&
+      !didAutoGenerate &&
+      !generate.isPending
+    ) {
+      setDidAutoGenerate(true);
+      generate.mutate();
+    }
+  }, [authLoading, profile, activeQuery, didAutoGenerate, generate]);
+
+  // Tick once a second so the countdown updates.
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const i = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(i);
   }, []);
 
   const homePath = locale === 'en' ? '/' : `/${locale}`;
   const goHome = () => router.push(homePath);
 
-  if (!patient || !code) return null;
+  if (
+    authLoading ||
+    !user ||
+    !profile ||
+    profile.role !== 'patient' ||
+    activeQuery.isLoading
+  ) {
+    return <div className="min-h-dvh bg-cream" />;
+  }
 
-  const expiresAtMs = new Date(code.expiresAt).getTime();
+  const code = activeQuery.data;
+  const expiresAtMs = code ? new Date(code.expiresAt).getTime() : 0;
   const remainingMs = Math.max(0, expiresAtMs - nowMs);
   const totalSeconds = Math.floor(remainingMs / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  const expired = remainingMs === 0;
-
-  const regenerate = () => {
-    const fresh = actions.generateVisitCode(patient.id);
-    setCode(fresh);
-  };
+  const expired = code !== null && remainingMs === 0;
 
   return (
     <div className="min-h-dvh bg-cream">
@@ -93,37 +105,51 @@ export default function VisitCodePage() {
           {t('intro')}
         </p>
 
-        {/* The code itself — large, monospaced, generous spacing */}
-        <div className="mt-10 flex flex-col items-center">
-          <div
-            className={`font-mono text-[44px] font-bold tracking-[0.15em] tabular-nums ${
-              expired ? 'text-ink-muted line-through' : 'text-ink'
-            }`}
-            aria-label={code.code.split('').join(' ')}
-          >
-            {formatVisitCode(code.code)}
+        {code ? (
+          <div className="mt-10 flex flex-col items-center">
+            <div
+              className={`font-mono text-[44px] font-bold tracking-[0.15em] tabular-nums ${
+                expired ? 'text-ink-muted line-through' : 'text-ink'
+              }`}
+              aria-label={code.code.split('').join(' ')}
+            >
+              {formatVisitCode(code.code)}
+            </div>
+
+            {!expired ? (
+              <p className="mt-4 text-[15px] text-ink-soft">
+                {t('expiresIn', {
+                  minutes: String(minutes),
+                  seconds: String(seconds).padStart(2, '0')
+                })}
+              </p>
+            ) : (
+              <p className="mt-4 text-[15px] text-ink-soft">{t('expired')}</p>
+            )}
           </div>
-
-          {!expired ? (
-            <p className="mt-4 text-[15px] text-ink-soft">
-              {t('expiresIn', {
-                minutes: String(minutes),
-                seconds: String(seconds).padStart(2, '0')
-              })}
+        ) : (
+          <div className="mt-10 flex justify-center">
+            <p className="text-[14px] text-ink-muted">
+              {generate.isPending ? 'Generating…' : 'No active code'}
             </p>
-          ) : (
-            <p className="mt-4 text-[15px] text-ink-soft">{t('expired')}</p>
-          )}
-        </div>
+          </div>
+        )}
 
-        {expired && (
+        {(expired || (!code && !generate.isPending)) && (
           <button
             type="button"
-            onClick={regenerate}
-            className="mt-10 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft"
+            onClick={() => generate.mutate()}
+            disabled={generate.isPending}
+            className="mt-10 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone"
           >
             {t('regenerate')}
           </button>
+        )}
+
+        {generate.isError && (
+          <p className="mt-3 text-[14px] text-amber-deep" role="alert">
+            Could not generate a code. Please try again.
+          </p>
         )}
       </main>
     </div>

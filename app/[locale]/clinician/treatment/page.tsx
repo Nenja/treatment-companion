@@ -2,87 +2,120 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
-import { useStore, actions } from '@/lib/store';
+import { useLocale } from 'next-intl';
+import { useAuth } from '@/lib/supabase/auth';
+import {
+  useCurrentClinicianSession,
+  useTouchClinicianSession
+} from '@/lib/supabase/clinicianSession';
+import {
+  useClinicianPatientData,
+  useSaveTreatmentSession
+} from '@/lib/supabase/clinicianPatient';
 import { todayIso } from '@/lib/dates';
 import {
   GUIDANCE_METHODS,
   INJECTION_SIDES,
   type GuidanceMethod,
-  type InjectionSide,
-  type MuscleInjection
+  type InjectionSide
 } from '@/lib/types';
-import { useSessionTimeout } from '@/lib/useSessionTimeout';
 
 interface InjectionDraft {
   muscle: string;
   side: InjectionSide;
-  doseUnits: string; // string while editing, parsed on submit
+  doseUnits: string;
   guidance: GuidanceMethod;
 }
 
 function emptyInjection(): InjectionDraft {
-  return {
-    muscle: '',
-    side: 'left',
-    doseUnits: '',
-    guidance: 'ultrasound'
-  };
+  return { muscle: '', side: 'left', doseUnits: '', guidance: 'ultrasound' };
 }
 
 export default function TreatmentRecordPage() {
   const router = useRouter();
   const locale = useLocale();
-  const tSession = useTranslations('clinician.session');
-  const state = useStore();
-  const session = state.clinicianSession;
-
-  useSessionTimeout({
-    onTimeout: () => {
-      actions.endClinicianSession();
-      router.replace(
-        locale === 'en' ? '/clinician' : `/${locale}/clinician`
-      );
-    }
-  });
-
-  useEffect(() => {
-    if (!session) {
-      router.replace(
-        locale === 'en' ? '/clinician' : `/${locale}/clinician`
-      );
-    }
-  }, [session, router, locale]);
-
-  const patient = session
-    ? state.patients.find((p) => p.id === session.patientId)
-    : undefined;
-  const cycle = patient
-    ? state.treatmentCycles.find((c) => c.id === patient.activeTreatmentCycleId)
-    : undefined;
-  const existing = cycle
-    ? state.treatmentSessions.find((t) => t.treatmentCycleId === cycle.id)
-    : undefined;
-
-  // Form state — initialised from existing record if any.
-  const [date, setDate] = useState(existing?.date ?? todayIso());
-  const [drugProduct, setDrugProduct] = useState(existing?.drugProduct ?? '');
-  const [totalUnits, setTotalUnits] = useState(
-    existing?.totalUnits ? String(existing.totalUnits) : ''
+  const { user, profile, loading: authLoading } = useAuth();
+  const sessionQuery = useCurrentClinicianSession(
+    profile?.id ?? null,
+    profile?.role
   );
-  const [notes, setNotes] = useState(existing?.notes ?? '');
-  const [injections, setInjections] = useState<InjectionDraft[]>(
-    existing
-      ? existing.injections.map((i) => ({
+  const dataQuery = useClinicianPatientData(
+    profile?.id ?? null,
+    profile?.role,
+    sessionQuery.data?.patientId ?? null
+  );
+  const save = useSaveTreatmentSession();
+  const touchSession = useTouchClinicianSession();
+
+  // Auth gating.
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user || !profile) {
+      router.replace(locale === 'en' ? '/login' : `/${locale}/login`);
+      return;
+    }
+    if (profile.role !== 'clinician') {
+      router.replace(locale === 'en' ? '/' : `/${locale}`);
+    }
+  }, [authLoading, user, profile, router, locale]);
+
+  // Bounce if session timed out.
+  useEffect(() => {
+    if (!sessionQuery.isLoading && sessionQuery.data === null) {
+      router.replace(
+        (locale === 'en' ? '/clinician' : `/${locale}/clinician`) +
+          '?timeout=1'
+      );
+    }
+  }, [sessionQuery.isLoading, sessionQuery.data, router, locale]);
+
+  // Form state. Initialised from existing record once data loads.
+  const [date, setDate] = useState(todayIso());
+  const [drugProduct, setDrugProduct] = useState('');
+  const [totalUnits, setTotalUnits] = useState('');
+  const [dilution, setDilution] = useState('');
+  const [notes, setNotes] = useState('');
+  const [injections, setInjections] = useState<InjectionDraft[]>([
+    emptyInjection()
+  ]);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Hydrate form from existing session once data is available.
+  useEffect(() => {
+    if (hydrated) return;
+    if (!dataQuery.data) return;
+    const existing = dataQuery.data.treatment;
+    if (existing) {
+      setDate(existing.date);
+      setDrugProduct(existing.drugProduct);
+      setTotalUnits(String(existing.totalUnits));
+      setDilution(existing.dilution ?? '');
+      setNotes(existing.notes ?? '');
+      setInjections(
+        existing.injections.map((i) => ({
           muscle: i.muscle,
           side: i.side,
           doseUnits: String(i.doseUnits),
-          guidance: i.guidance
+          guidance: i.guidance as GuidanceMethod
         }))
-      : [emptyInjection()]
-  );
+      );
+    }
+    setHydrated(true);
+  }, [dataQuery.data, hydrated]);
 
-  if (!session || !patient || !cycle) return null;
+  if (
+    authLoading ||
+    !profile ||
+    profile.role !== 'clinician' ||
+    sessionQuery.isLoading ||
+    !sessionQuery.data ||
+    dataQuery.isLoading ||
+    !dataQuery.data
+  ) {
+    return <div className="min-h-dvh bg-cream" />;
+  }
+
+  const { patient, cycle, treatment: existing } = dataQuery.data;
 
   const back = () =>
     router.push(
@@ -94,15 +127,16 @@ export default function TreatmentRecordPage() {
       prev.map((inj, i) => (i === idx ? { ...inj, ...patch } : inj))
     );
   };
-  const removeInjection = (idx: number) => {
+  const removeInjection = (idx: number) =>
     setInjections((prev) => prev.filter((_, i) => i !== idx));
-  };
-  const addInjection = () => {
+  const addInjection = () =>
     setInjections((prev) => [...prev, emptyInjection()]);
-  };
 
   const validInjections = injections.filter(
-    (i) => i.muscle.trim() && i.doseUnits.trim() && !Number.isNaN(parseFloat(i.doseUnits))
+    (i) =>
+      i.muscle.trim() &&
+      i.doseUnits.trim() &&
+      !Number.isNaN(parseFloat(i.doseUnits))
   );
   const totalUnitsNum = parseFloat(totalUnits);
   const canSubmit =
@@ -113,22 +147,23 @@ export default function TreatmentRecordPage() {
     totalUnitsNum >= 0 &&
     validInjections.length > 0;
 
-  const submit = () => {
-    if (!canSubmit) return;
-    const cleaned: Omit<MuscleInjection, 'id'>[] = validInjections.map((i) => ({
-      muscle: i.muscle,
-      side: i.side,
-      doseUnits: parseFloat(i.doseUnits),
-      guidance: i.guidance
-    }));
-    actions.saveTreatmentSession(patient.id, cycle.id, {
+  const submit = async () => {
+    if (!canSubmit || save.isPending) return;
+    await save.mutateAsync({
+      treatmentCycleId: cycle.id,
       date,
       drugProduct,
       totalUnits: totalUnitsNum,
-      injections: cleaned,
-      notes: notes.trim() || undefined
+      dilution: dilution.trim() || undefined,
+      notes: notes.trim() || undefined,
+      injections: validInjections.map((i) => ({
+        muscle: i.muscle,
+        side: i.side,
+        doseUnits: parseFloat(i.doseUnits),
+        guidance: i.guidance
+      }))
     });
-    actions.touchClinicianSession();
+    touchSession.mutate();
     back();
   };
 
@@ -156,7 +191,6 @@ export default function TreatmentRecordPage() {
           For {patient.displayName} · Cycle {cycle.cycleNumber}
         </p>
 
-        {/* Session-level fields */}
         <Field label="Date of treatment">
           <input
             type="date"
@@ -165,7 +199,10 @@ export default function TreatmentRecordPage() {
             className={inputClasses}
           />
         </Field>
-        <Field label="Drug product" helper="Free text — e.g. Botox, Dysport, Xeomin">
+        <Field
+          label="Drug product"
+          helper="Free text — e.g. Botox, Dysport, Xeomin"
+        >
           <input
             type="text"
             value={drugProduct}
@@ -185,8 +222,20 @@ export default function TreatmentRecordPage() {
             className={inputClasses}
           />
         </Field>
+        <Field
+          label="Dilution"
+          helper="Free text — e.g. 250 IU/ml. Optional."
+        >
+          <input
+            type="text"
+            value={dilution}
+            onChange={(e) => setDilution(e.target.value)}
+            className={inputClasses}
+            maxLength={40}
+            placeholder="250 IU/ml"
+          />
+        </Field>
 
-        {/* Injections list */}
         <h2 className="mt-8 font-display text-[18px] text-ink">
           Muscles injected
         </h2>
@@ -308,10 +357,10 @@ export default function TreatmentRecordPage() {
           <button
             type="button"
             onClick={submit}
-            disabled={!canSubmit}
+            disabled={!canSubmit || save.isPending}
             className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
           >
-            Save
+            {save.isPending ? '…' : 'Save'}
           </button>
         </div>
       </main>

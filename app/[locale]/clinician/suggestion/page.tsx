@@ -2,36 +2,29 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslations, useLocale } from 'next-intl';
-import { useStore, actions } from '@/lib/store';
+import { useAuth } from '@/lib/supabase/auth';
+import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
+import {
+  useCurrentClinicianSession,
+  useTouchClinicianSession
+} from '@/lib/supabase/clinicianSession';
+import {
+  useApproveSuggestion,
+  useSetSuggestionStatus
+} from '@/lib/supabase/clinicianPatient';
 import { formatLongDate } from '@/lib/dates';
-import { useSessionTimeout } from '@/lib/useSessionTimeout';
 
-/**
- * Clinician's suggestion review screen.
- *
- *   /clinician/suggestion?id=<suggestion-id>
- *
- * Top half: read-only display of the patient's submission.
- * Bottom half: action buttons (defer / combine / not suitable / approve).
- *
- * Picking "Approve" or "Edit and approve" reveals the approval form
- * inline — patient-facing text, SMART text, five GAS anchors — so the
- * clinician sees the suggestion they're approving WHILE they write it.
- *
- * The page itself is a tiny Suspense wrapper because the inner component
- * uses `useSearchParams`, which Next 15 requires to be inside a Suspense
- * boundary or it fails to prerender.
- */
 export default function SuggestionReviewPage() {
   return (
     <Suspense fallback={<div className="min-h-dvh bg-cream" />}>
-      <SuggestionReviewInner />
+      <Inner />
     </Suspense>
   );
 }
 
-function SuggestionReviewInner() {
+function Inner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const locale = useLocale();
@@ -39,104 +32,145 @@ function SuggestionReviewInner() {
   const tApprove = useTranslations('clinician.approve');
   const tDomain = useTranslations('domain');
   const tImportance = useTranslations('importance');
-  const state = useStore();
 
-  const session = state.clinicianSession;
   const id = searchParams.get('id') ?? '';
 
-  useSessionTimeout({
-    onTimeout: () => {
-      actions.endClinicianSession();
-      router.replace(
-        locale === 'en' ? '/clinician' : `/${locale}/clinician`
-      );
-    }
-  });
+  const { user, profile, loading: authLoading } = useAuth();
+  const sessionQuery = useCurrentClinicianSession(
+    profile?.id ?? null,
+    profile?.role
+  );
+  const touchSession = useTouchClinicianSession();
+  const approve = useApproveSuggestion();
+  const setStatus = useSetSuggestionStatus();
 
-  useEffect(() => {
-    if (!session) {
-      router.replace(
-        locale === 'en' ? '/clinician' : `/${locale}/clinician`
-      );
-    }
-  }, [session, router, locale]);
-
-  const suggestion = state.goalSuggestions.find((s) => s.id === id);
   const patientHomePath =
     locale === 'en' ? '/clinician/patient' : `/${locale}/clinician/patient`;
 
+  // Auth gating.
   useEffect(() => {
-    if (session && !suggestion) {
-      // Bad id — back to patient view.
-      router.replace(patientHomePath);
+    if (authLoading) return;
+    if (!user || !profile) {
+      router.replace(locale === 'en' ? '/login' : `/${locale}/login`);
+      return;
     }
-  }, [session, suggestion, router, patientHomePath]);
+    if (profile.role !== 'clinician') {
+      router.replace(locale === 'en' ? '/' : `/${locale}`);
+    }
+  }, [authLoading, user, profile, router, locale]);
 
-  // Approval form fields
+  // Bounce if session timed out.
+  useEffect(() => {
+    if (!sessionQuery.isLoading && sessionQuery.data === null) {
+      router.replace(
+        (locale === 'en' ? '/clinician' : `/${locale}/clinician`) +
+          '?timeout=1'
+      );
+    }
+  }, [sessionQuery.isLoading, sessionQuery.data, router, locale]);
+
+  // Fetch the suggestion itself
+  const suggestionQuery = useQuery({
+    queryKey: ['suggestion', id],
+    enabled: !!id && !!sessionQuery.data,
+    queryFn: async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase
+        .from('goal_suggestion')
+        .select(
+          'id, patient_id, domain, patient_wording, importance, hoped_timeframe, difficulty_context, created_at, status'
+        )
+        .eq('id', id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Approval form state
   const [showApproveForm, setShowApproveForm] = useState(false);
   const [patientText, setPatientText] = useState('');
   const [smartText, setSmartText] = useState('');
-  const [anchorM2, setAnchorM2] = useState('');
-  const [anchorM1, setAnchorM1] = useState('');
-  const [anchorZ, setAnchorZ] = useState('');
-  const [anchorP1, setAnchorP1] = useState('');
-  const [anchorP2, setAnchorP2] = useState('');
+  const [aM2, setAM2] = useState('');
+  const [aM1, setAM1] = useState('');
+  const [aZ, setAZ] = useState('');
+  const [aP1, setAP1] = useState('');
+  const [aP2, setAP2] = useState('');
 
-  if (!session || !suggestion) return null;
+  if (
+    authLoading ||
+    !profile ||
+    profile.role !== 'clinician' ||
+    sessionQuery.isLoading ||
+    !sessionQuery.data ||
+    suggestionQuery.isLoading
+  ) {
+    return <div className="min-h-dvh bg-cream" />;
+  }
 
-  const patient = state.patients.find((p) => p.id === session.patientId);
-  if (!patient) return null;
+  if (!suggestionQuery.data) {
+    // Bad id or no access — go back to patient view.
+    router.replace(patientHomePath);
+    return <div className="min-h-dvh bg-cream" />;
+  }
 
-  // Action handlers ---------------------------------------------------
+  const suggestion = suggestionQuery.data;
   const back = () => router.push(patientHomePath);
 
-  const onDefer = () => {
-    actions.setSuggestionStatus(suggestion.id, 'discussAtNextVisit');
-    actions.touchClinicianSession();
+  const onDefer = async () => {
+    await setStatus.mutateAsync({
+      suggestionId: suggestion.id,
+      status: 'discussAtNextVisit'
+    });
+    touchSession.mutate();
     back();
   };
-  const onCombine = () => {
-    actions.setSuggestionStatus(suggestion.id, 'combinedWithAnother');
-    actions.touchClinicianSession();
+  const onCombine = async () => {
+    await setStatus.mutateAsync({
+      suggestionId: suggestion.id,
+      status: 'combinedWithAnother'
+    });
+    touchSession.mutate();
     back();
   };
-  const onNotSuitable = () => {
-    actions.setSuggestionStatus(suggestion.id, 'notSuitableThisCycle');
-    actions.touchClinicianSession();
+  const onNotSuitable = async () => {
+    await setStatus.mutateAsync({
+      suggestionId: suggestion.id,
+      status: 'notSuitableThisCycle'
+    });
+    touchSession.mutate();
     back();
   };
 
   const startApprove = (prefilled: boolean) => {
-    if (prefilled) {
-      // "Approve" — pre-fill patient text from the patient's own words.
-      setPatientText(suggestion.patientWording);
-    }
+    if (prefilled) setPatientText(suggestion.patient_wording as string);
     setShowApproveForm(true);
   };
 
   const canSubmitApprove =
     patientText.trim() &&
     smartText.trim() &&
-    anchorM2.trim() &&
-    anchorM1.trim() &&
-    anchorZ.trim() &&
-    anchorP1.trim() &&
-    anchorP2.trim();
+    aM2.trim() &&
+    aM1.trim() &&
+    aZ.trim() &&
+    aP1.trim() &&
+    aP2.trim();
 
-  const submitApprove = () => {
-    if (!canSubmitApprove) return;
-    actions.approveSuggestion(suggestion.id, {
+  const submitApprove = async () => {
+    if (!canSubmitApprove || approve.isPending) return;
+    await approve.mutateAsync({
+      suggestionId: suggestion.id,
       patientFacingText: patientText,
       smartText,
-      gasAnchors: {
-        minus2: anchorM2,
-        minus1: anchorM1,
-        zero: anchorZ,
-        plus1: anchorP1,
-        plus2: anchorP2
+      anchors: {
+        minus2: aM2,
+        minus1: aM1,
+        zero: aZ,
+        plus1: aP1,
+        plus2: aP2
       }
     });
-    actions.touchClinicianSession();
+    touchSession.mutate();
     back();
   };
 
@@ -157,36 +191,37 @@ function SuggestionReviewInner() {
       </header>
 
       <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
-        {/* Read-only suggestion summary */}
         <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5">
           <dl className="space-y-3 text-[14px]">
             <Row label={t('patientWordsLabel')}>
               <p className="font-display text-[18px] leading-snug text-ink">
-                "{suggestion.patientWording}"
+                &ldquo;{suggestion.patient_wording}&rdquo;
               </p>
             </Row>
             <Row label={t('areaLabel')}>
-              <p>{tDomain(suggestion.domain)}</p>
+              <p>{tDomain(suggestion.domain as string)}</p>
             </Row>
             <Row label={t('importanceLabel')}>
-              <p>{tImportance(suggestion.importance)}</p>
+              <p>{tImportance(suggestion.importance as string)}</p>
             </Row>
-            {suggestion.difficultyContext && (
+            {suggestion.difficulty_context && (
               <Row label={t('contextLabel')}>
                 <p className="whitespace-pre-wrap">
-                  {suggestion.difficultyContext}
+                  {suggestion.difficulty_context as string}
                 </p>
               </Row>
             )}
             <Row label={t('submittedLabel')}>
               <p className="text-ink-soft">
-                {formatLongDate(suggestion.createdAt.slice(0, 10), locale)}
+                {formatLongDate(
+                  (suggestion.created_at as string).slice(0, 10),
+                  locale
+                )}
               </p>
             </Row>
           </dl>
         </section>
 
-        {/* Action buttons or approval form */}
         {!showApproveForm ? (
           <section className="mt-8">
             <h2 className="font-display text-[18px] text-ink">
@@ -207,26 +242,94 @@ function SuggestionReviewInner() {
             </div>
           </section>
         ) : (
-          <ApproveForm
-            t={tApprove}
-            patientText={patientText}
-            setPatientText={setPatientText}
-            smartText={smartText}
-            setSmartText={setSmartText}
-            anchorM2={anchorM2}
-            setAnchorM2={setAnchorM2}
-            anchorM1={anchorM1}
-            setAnchorM1={setAnchorM1}
-            anchorZ={anchorZ}
-            setAnchorZ={setAnchorZ}
-            anchorP1={anchorP1}
-            setAnchorP1={setAnchorP1}
-            anchorP2={anchorP2}
-            setAnchorP2={setAnchorP2}
-            canSubmit={Boolean(canSubmitApprove)}
-            onCancel={() => setShowApproveForm(false)}
-            onSubmit={submitApprove}
-          />
+          <section className="mt-8">
+            <h2 className="font-display text-[20px] leading-tight text-ink">
+              {tApprove('title')}
+            </h2>
+            <p className="mt-2 rounded-[var(--radius-button)] border border-stone bg-cream-soft p-3 text-[13px] leading-relaxed text-ink-soft">
+              {tApprove('headerNote')}
+            </p>
+
+            <Field
+              label={tApprove('patientTextLabel')}
+              helper={tApprove('patientTextHelper')}
+            >
+              <input
+                type="text"
+                value={patientText}
+                onChange={(e) => setPatientText(e.target.value)}
+                className={inputClasses}
+                maxLength={120}
+              />
+            </Field>
+
+            <Field
+              label={tApprove('smartLabel')}
+              helper={tApprove('smartHelper')}
+            >
+              <textarea
+                value={smartText}
+                onChange={(e) => setSmartText(e.target.value)}
+                rows={3}
+                className={inputClasses}
+                maxLength={400}
+              />
+            </Field>
+
+            <h3 className="mt-8 font-display text-[17px] text-ink">
+              {tApprove('anchorsTitle')}
+            </h3>
+
+            <AnchorField
+              label={tApprove('anchorMinus2')}
+              value={aM2}
+              onChange={setAM2}
+              placeholder={tApprove('anchorPlaceholder')}
+            />
+            <AnchorField
+              label={tApprove('anchorMinus1')}
+              value={aM1}
+              onChange={setAM1}
+              placeholder={tApprove('anchorPlaceholder')}
+            />
+            <AnchorField
+              label={tApprove('anchorZero')}
+              value={aZ}
+              onChange={setAZ}
+              placeholder={tApprove('anchorPlaceholder')}
+              emphasised
+            />
+            <AnchorField
+              label={tApprove('anchorPlus1')}
+              value={aP1}
+              onChange={setAP1}
+              placeholder={tApprove('anchorPlaceholder')}
+            />
+            <AnchorField
+              label={tApprove('anchorPlus2')}
+              value={aP2}
+              onChange={setAP2}
+              placeholder={tApprove('anchorPlaceholder')}
+            />
+
+            <div className="mt-8 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowApproveForm(false)}
+                className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
+              >
+                {tApprove('cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={submitApprove}
+                disabled={!canSubmitApprove || approve.isPending}
+                className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
+              >
+                {approve.isPending ? '…' : tApprove('submit')}
+              </button>
+            </div>
+          </section>
         )}
       </main>
     </div>
@@ -271,117 +374,6 @@ function ActionButton({
     >
       {children}
     </button>
-  );
-}
-
-interface ApproveFormProps {
-  t: (key: string) => string;
-  patientText: string;
-  setPatientText: (v: string) => void;
-  smartText: string;
-  setSmartText: (v: string) => void;
-  anchorM2: string;
-  setAnchorM2: (v: string) => void;
-  anchorM1: string;
-  setAnchorM1: (v: string) => void;
-  anchorZ: string;
-  setAnchorZ: (v: string) => void;
-  anchorP1: string;
-  setAnchorP1: (v: string) => void;
-  anchorP2: string;
-  setAnchorP2: (v: string) => void;
-  canSubmit: boolean;
-  onCancel: () => void;
-  onSubmit: () => void;
-}
-
-function ApproveForm(p: ApproveFormProps) {
-  return (
-    <section className="mt-8">
-      <h2 className="font-display text-[20px] leading-tight text-ink">
-        {p.t('title')}
-      </h2>
-      <p className="mt-2 rounded-[var(--radius-button)] border border-stone bg-cream-soft p-3 text-[13px] leading-relaxed text-ink-soft">
-        {p.t('headerNote')}
-      </p>
-
-      <Field
-        label={p.t('patientTextLabel')}
-        helper={p.t('patientTextHelper')}
-      >
-        <input
-          type="text"
-          value={p.patientText}
-          onChange={(e) => p.setPatientText(e.target.value)}
-          className={inputClasses}
-          maxLength={120}
-        />
-      </Field>
-
-      <Field label={p.t('smartLabel')} helper={p.t('smartHelper')}>
-        <textarea
-          value={p.smartText}
-          onChange={(e) => p.setSmartText(e.target.value)}
-          rows={3}
-          className={inputClasses}
-          maxLength={400}
-        />
-      </Field>
-
-      <h3 className="mt-8 font-display text-[17px] text-ink">
-        {p.t('anchorsTitle')}
-      </h3>
-
-      <AnchorField
-        label={p.t('anchorMinus2')}
-        value={p.anchorM2}
-        onChange={p.setAnchorM2}
-        placeholder={p.t('anchorPlaceholder')}
-      />
-      <AnchorField
-        label={p.t('anchorMinus1')}
-        value={p.anchorM1}
-        onChange={p.setAnchorM1}
-        placeholder={p.t('anchorPlaceholder')}
-      />
-      <AnchorField
-        label={p.t('anchorZero')}
-        value={p.anchorZ}
-        onChange={p.setAnchorZ}
-        placeholder={p.t('anchorPlaceholder')}
-        emphasised
-      />
-      <AnchorField
-        label={p.t('anchorPlus1')}
-        value={p.anchorP1}
-        onChange={p.setAnchorP1}
-        placeholder={p.t('anchorPlaceholder')}
-      />
-      <AnchorField
-        label={p.t('anchorPlus2')}
-        value={p.anchorP2}
-        onChange={p.setAnchorP2}
-        placeholder={p.t('anchorPlaceholder')}
-      />
-
-      <div className="mt-8 flex gap-3">
-        <button
-          type="button"
-          onClick={p.onCancel}
-          className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
-        >
-          {p.t('cancel')}
-        </button>
-        <button
-          type="button"
-          onClick={p.onSubmit}
-          disabled={!p.canSubmit}
-          className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
-        >
-          {p.t('submit')}
-        </button>
-      </div>
-    </section>
   );
 }
 

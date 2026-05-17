@@ -3,64 +3,92 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { useStore, actions } from '@/lib/store';
-import { normalizeVisitCodeInput } from '@/lib/visitCode';
-import { useSessionTimeout } from '@/lib/useSessionTimeout';
+import { useAuth } from '@/lib/supabase/auth';
+import {
+  useCurrentClinicianSession,
+  useUnlockWithCode
+} from '@/lib/supabase/clinicianSession';
 
 /**
  * Clinician landing screen.
  *
- * If a session is already active and not timed out → redirect to the
- * patient view. Otherwise show the code-entry form.
+ * If a session is already active → redirect to the patient view.
+ * Otherwise show the code-entry form.
  */
 export default function ClinicianUnlockPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('clinician.unlock');
-  const state = useStore();
+  const tSession = useTranslations('clinician.session');
+
+  const { user, profile, loading: authLoading } = useAuth();
+  const sessionQuery = useCurrentClinicianSession(
+    profile?.id ?? null,
+    profile?.role
+  );
+  const unlock = useUnlockWithCode();
 
   const [input, setInput] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [timedOut, setTimedOut] = useState(false);
+  const [showTimedOut, setShowTimedOut] = useState(false);
 
-  // Run the inactivity timeout watcher — ends the session after 1 hour.
-  useSessionTimeout({
-    onTimeout: () => {
-      actions.endClinicianSession();
-      setTimedOut(true);
-    }
-  });
-
-  // If a session is active, jump to the patient view.
+  // Auth gating.
   useEffect(() => {
-    if (state.clinicianSession && !timedOut) {
+    if (authLoading) return;
+    if (!user || !profile) {
+      router.replace(locale === 'en' ? '/login' : `/${locale}/login`);
+      return;
+    }
+    if (profile.role !== 'clinician') {
+      router.replace(locale === 'en' ? '/' : `/${locale}`);
+    }
+  }, [authLoading, user, profile, router, locale]);
+
+  // Detect the timed-out case: we landed here without a session but the
+  // location's query string says "timeout=1" (set by patient-page on
+  // session expiry). Just a UX hint, not a security boundary.
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('timeout') === '1') setShowTimedOut(true);
+    }
+  }, []);
+
+  // If a valid session exists, jump to the patient view.
+  useEffect(() => {
+    if (sessionQuery.data) {
       router.replace(
         locale === 'en'
           ? '/clinician/patient'
           : `/${locale}/clinician/patient`
       );
     }
-  }, [state.clinicianSession, timedOut, router, locale]);
+  }, [sessionQuery.data, router, locale]);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const normalised = normalizeVisitCodeInput(input);
-    if (normalised.length !== 6) {
-      setError(t('errorInvalid'));
-      return;
+    try {
+      await unlock.mutateAsync(input);
+      router.replace(
+        locale === 'en' ? '/clinician/patient' : `/${locale}/clinician/patient`
+      );
+    } catch (err) {
+      const msg =
+        err instanceof Error && err.message ? err.message : t('errorInvalid');
+      // The RPC raises "invalid or expired code" for bad codes — show
+      // a friendly translated message rather than the raw text.
+      if (/invalid|expired|6 characters/i.test(msg)) {
+        setError(t('errorInvalid'));
+      } else {
+        setError(msg);
+      }
     }
-    const patientId = actions.unlockWithVisitCode(normalised);
-    if (!patientId) {
-      setError(t('errorInvalid'));
-      return;
-    }
-    router.replace(
-      locale === 'en' ? '/clinician/patient' : `/${locale}/clinician/patient`
-    );
   };
 
-  const tSession = useTranslations('clinician.session');
+  if (authLoading || !user || !profile || profile.role !== 'clinician') {
+    return <div className="min-h-dvh bg-cream" />;
+  }
 
   return (
     <div className="min-h-dvh bg-cream">
@@ -72,7 +100,7 @@ export default function ClinicianUnlockPage() {
           {t('body')}
         </p>
 
-        {timedOut && (
+        {showTimedOut && (
           <div className="mt-6 rounded-[var(--radius-card)] border border-amber-soft bg-amber-soft/40 p-4">
             <p className="text-[14px] font-semibold text-ink">
               {tSession('timeoutTitle')}
@@ -109,9 +137,10 @@ export default function ClinicianUnlockPage() {
           )}
           <button
             type="submit"
-            className="mt-6 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft"
+            disabled={unlock.isPending}
+            className="mt-6 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone"
           >
-            {t('submit')}
+            {unlock.isPending ? '…' : t('submit')}
           </button>
         </form>
       </main>

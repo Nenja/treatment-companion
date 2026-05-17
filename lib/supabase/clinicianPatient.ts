@@ -1,0 +1,352 @@
+'use client';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createSupabaseBrowserClient } from './browser';
+import type { GasAnchors } from '../types';
+
+export interface ClinicianPatientGoal {
+  id: string;
+  patientFacingText: string;
+  smartText: string;
+  gasAnchors: GasAnchors;
+}
+
+export interface ClinicianPatientSuggestion {
+  id: string;
+  domain: string;
+  patientWording: string;
+  importance: string;
+  hopedTimeframe: string;
+  difficultyContext: string | null;
+  createdAt: string;
+}
+
+export interface ClinicianPatientCheckin {
+  id: string;
+  weekNumber: number;
+  comment: string | null;
+  ratings: {
+    approvedGoalId: string;
+    ratingValue: number | null;
+  }[];
+}
+
+export interface ClinicianTreatmentRecord {
+  id: string;
+  date: string;
+  drugProduct: string;
+  totalUnits: number;
+  dilution: string | null;
+  notes: string | null;
+  injections: {
+    id: string;
+    muscle: string;
+    side: 'left' | 'right' | 'bilateral';
+    doseUnits: number;
+    guidance: string;
+    position: number;
+  }[];
+}
+
+export interface ClinicianPatientData {
+  patient: {
+    id: string;
+    displayName: string;
+  };
+  cycle: {
+    id: string;
+    cycleNumber: number;
+    lengthWeeks: number;
+    startDate: string;
+    reviewDate: string;
+  };
+  suggestions: ClinicianPatientSuggestion[];
+  activeGoals: ClinicianPatientGoal[];
+  checkins: ClinicianPatientCheckin[];
+  treatment: ClinicianTreatmentRecord | null;
+}
+
+/**
+ * Loads everything the clinician's patient view needs. Driven by the
+ * clinician's active session — the function fetches the session row
+ * first to discover which patient to load, then runs parallel queries
+ * for the rest.
+ */
+export function useClinicianPatientData(
+  profileId: string | null,
+  role: string | null | undefined,
+  patientId: string | null
+) {
+  return useQuery({
+    queryKey: ['clinicianPatient', patientId],
+    enabled: !!profileId && role === 'clinician' && !!patientId,
+    queryFn: async (): Promise<ClinicianPatientData | null> => {
+      const supabase = createSupabaseBrowserClient();
+
+      // 1. Patient + display_name
+      const { data: pRow, error: pErr } = await supabase
+        .from('patient')
+        .select('id, profile:profile_id (display_name)')
+        .eq('id', patientId!)
+        .maybeSingle();
+      if (pErr) throw pErr;
+      if (!pRow) return null;
+
+      const patient = {
+        id: pRow.id as string,
+        displayName:
+          (Array.isArray(pRow.profile)
+            ? pRow.profile[0]?.display_name
+            : (pRow.profile as { display_name?: string } | null)?.display_name) ??
+          'Patient'
+      };
+
+      // 2. Active cycle
+      const { data: cycleRow, error: cErr } = await supabase
+        .from('treatment_cycle')
+        .select('id, cycle_number, length_weeks, start_date, review_date')
+        .eq('patient_id', patient.id)
+        .eq('status', 'active')
+        .order('cycle_number', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (cErr) throw cErr;
+      if (!cycleRow) return null;
+
+      const cycle = {
+        id: cycleRow.id as string,
+        cycleNumber: cycleRow.cycle_number as number,
+        lengthWeeks: cycleRow.length_weeks as number,
+        startDate: cycleRow.start_date as string,
+        reviewDate: cycleRow.review_date as string
+      };
+
+      // 3. Parallel queries for the rest
+      const [suggestionsRes, goalsRes, checkinsRes, treatmentRes] =
+        await Promise.all([
+          supabase
+            .from('goal_suggestion')
+            .select(
+              'id, domain, patient_wording, importance, hoped_timeframe, difficulty_context, status, created_at'
+            )
+            .eq('treatment_cycle_id', cycle.id)
+            .eq('status', 'needsReview')
+            .order('created_at', { ascending: true }),
+          supabase
+            .from('approved_goal')
+            .select(
+              'id, patient_facing_text, smart_text, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2'
+            )
+            .eq('treatment_cycle_id', cycle.id)
+            .eq('status', 'active')
+            .order('approved_at', { ascending: true }),
+          supabase
+            .from('weekly_checkin')
+            .select(
+              'id, week_number, comment, ratings:weekly_goal_rating (approved_goal_id, rating_value)'
+            )
+            .eq('treatment_cycle_id', cycle.id)
+            .order('week_number', { ascending: true }),
+          supabase
+            .from('treatment_session')
+            .select(
+              'id, date, drug_product, total_units, dilution, notes, injections:muscle_injection (id, muscle, side, dose_units, guidance, position)'
+            )
+            .eq('treatment_cycle_id', cycle.id)
+            .order('date', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        ]);
+
+      if (suggestionsRes.error) throw suggestionsRes.error;
+      if (goalsRes.error) throw goalsRes.error;
+      if (checkinsRes.error) throw checkinsRes.error;
+      if (treatmentRes.error) throw treatmentRes.error;
+
+      const suggestions: ClinicianPatientSuggestion[] = (
+        suggestionsRes.data ?? []
+      ).map((s) => ({
+        id: s.id as string,
+        domain: s.domain as string,
+        patientWording: s.patient_wording as string,
+        importance: s.importance as string,
+        hopedTimeframe: s.hoped_timeframe as string,
+        difficultyContext: (s.difficulty_context as string | null) ?? null,
+        createdAt: s.created_at as string
+      }));
+
+      const activeGoals: ClinicianPatientGoal[] = (goalsRes.data ?? []).map(
+        (g) => ({
+          id: g.id as string,
+          patientFacingText: g.patient_facing_text as string,
+          smartText: g.smart_text as string,
+          gasAnchors: {
+            minus2: g.anchor_minus2 as string,
+            minus1: g.anchor_minus1 as string,
+            zero: g.anchor_zero as string,
+            plus1: g.anchor_plus1 as string,
+            plus2: g.anchor_plus2 as string
+          }
+        })
+      );
+
+      const checkins: ClinicianPatientCheckin[] = (checkinsRes.data ?? []).map(
+        (c) => ({
+          id: c.id as string,
+          weekNumber: c.week_number as number,
+          comment: (c.comment as string | null) ?? null,
+          ratings: (c.ratings as Array<{
+            approved_goal_id: string;
+            rating_value: number | null;
+          }> | null ?? []).map((r) => ({
+            approvedGoalId: r.approved_goal_id,
+            ratingValue: r.rating_value
+          }))
+        })
+      );
+
+      const treatment: ClinicianTreatmentRecord | null = treatmentRes.data
+        ? {
+            id: treatmentRes.data.id as string,
+            date: treatmentRes.data.date as string,
+            drugProduct: treatmentRes.data.drug_product as string,
+            totalUnits: Number(treatmentRes.data.total_units),
+            dilution: (treatmentRes.data.dilution as string | null) ?? null,
+            notes: (treatmentRes.data.notes as string | null) ?? null,
+            injections: (
+              treatmentRes.data.injections as Array<{
+                id: string;
+                muscle: string;
+                side: 'left' | 'right' | 'bilateral';
+                dose_units: number;
+                guidance: string;
+                position: number;
+              }> | null ?? []
+            )
+              .map((i) => ({
+                id: i.id,
+                muscle: i.muscle,
+                side: i.side,
+                doseUnits: Number(i.dose_units),
+                guidance: i.guidance,
+                position: i.position
+              }))
+              .sort((a, b) => a.position - b.position)
+          }
+        : null;
+
+      return {
+        patient,
+        cycle,
+        suggestions,
+        activeGoals,
+        checkins,
+        treatment
+      };
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Mutations called from the clinician patient view + suggestion review.
+// ---------------------------------------------------------------------------
+
+export interface ApproveSuggestionInput {
+  suggestionId: string;
+  patientFacingText: string;
+  smartText: string;
+  anchors: GasAnchors;
+}
+
+export function useApproveSuggestion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: ApproveSuggestionInput): Promise<string> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc('approve_suggestion', {
+        p_suggestion_id: input.suggestionId,
+        p_patient_facing_text: input.patientFacingText,
+        p_smart_text: input.smartText,
+        p_anchor_minus2: input.anchors.minus2,
+        p_anchor_minus1: input.anchors.minus1,
+        p_anchor_zero: input.anchors.zero,
+        p_anchor_plus1: input.anchors.plus1,
+        p_anchor_plus2: input.anchors.plus2
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
+export function useSetSuggestionStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      suggestionId: string;
+      status:
+        | 'discussAtNextVisit'
+        | 'combinedWithAnother'
+        | 'notSuitableThisCycle'
+        | 'archived';
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_suggestion_status', {
+        p_suggestion_id: input.suggestionId,
+        p_status: input.status
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
+export interface SaveTreatmentSessionInput {
+  treatmentCycleId: string;
+  date: string;
+  drugProduct: string;
+  totalUnits: number;
+  dilution?: string;
+  notes?: string;
+  injections: {
+    muscle: string;
+    side: 'left' | 'right' | 'bilateral';
+    doseUnits: number;
+    guidance: string;
+  }[];
+}
+
+export function useSaveTreatmentSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (
+      input: SaveTreatmentSessionInput
+    ): Promise<string> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc('save_treatment_session', {
+        p_treatment_cycle_id: input.treatmentCycleId,
+        p_date: input.date,
+        p_drug_product: input.drugProduct,
+        p_total_units: input.totalUnits,
+        p_dilution: input.dilution ?? null,
+        p_notes: input.notes ?? null,
+        p_injections: input.injections.map((i) => ({
+          muscle: i.muscle,
+          side: i.side,
+          dose_units: i.doseUnits,
+          guidance: i.guidance
+        }))
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}

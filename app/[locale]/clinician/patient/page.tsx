@@ -3,9 +3,17 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { useStore, actions } from '@/lib/store';
+import { useAuth } from '@/lib/supabase/auth';
+import {
+  useCurrentClinicianSession,
+  useEndClinicianSession,
+  useTouchClinicianSession
+} from '@/lib/supabase/clinicianSession';
+import {
+  useClinicianPatientData,
+  useSetSuggestionStatus
+} from '@/lib/supabase/clinicianPatient';
 import { weekOfCycle, formatLongDate } from '@/lib/dates';
-import { useSessionTimeout } from '@/lib/useSessionTimeout';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { buildEhrExport } from '@/lib/ehrExport';
@@ -17,72 +25,83 @@ export default function ClinicianPatientPage() {
   const tSession = useTranslations('clinician.session');
   const tDomain = useTranslations('domain');
   const tImportance = useTranslations('importance');
-  const state = useStore();
 
-  const session = state.clinicianSession;
+  const { user, profile, loading: authLoading } = useAuth();
+  const sessionQuery = useCurrentClinicianSession(
+    profile?.id ?? null,
+    profile?.role
+  );
+  const patientData = useClinicianPatientData(
+    profile?.id ?? null,
+    profile?.role,
+    sessionQuery.data?.patientId ?? null
+  );
+
+  const endSession = useEndClinicianSession();
+  const touchSession = useTouchClinicianSession();
+  const setStatus = useSetSuggestionStatus();
+
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [showExport, setShowExport] = useState(false);
 
-  useSessionTimeout({
-    onTimeout: () => {
-      actions.endClinicianSession();
-      router.replace(
-        locale === 'en' ? '/clinician' : `/${locale}/clinician`
-      );
-    }
-  });
-
-  // If no session, kick back to the unlock page.
+  // Auth + role gating.
   useEffect(() => {
-    if (!session) {
+    if (authLoading) return;
+    if (!user || !profile) {
+      router.replace(locale === 'en' ? '/login' : `/${locale}/login`);
+      return;
+    }
+    if (profile.role !== 'clinician') {
+      router.replace(locale === 'en' ? '/' : `/${locale}`);
+    }
+  }, [authLoading, user, profile, router, locale]);
+
+  // No session → back to unlock screen, with a "?timeout=1" hint that
+  // surfaces a friendly message there. We can't distinguish "session
+  // never existed" from "session timed out" perfectly, but if the
+  // sessionQuery completed and returned null we treat it as timeout.
+  useEffect(() => {
+    if (!sessionQuery.isLoading && sessionQuery.data === null) {
       router.replace(
-        locale === 'en' ? '/clinician' : `/${locale}/clinician`
+        (locale === 'en' ? '/clinician' : `/${locale}/clinician`) +
+          '?timeout=1'
       );
     }
-  }, [session, router, locale]);
+  }, [sessionQuery.isLoading, sessionQuery.data, router, locale]);
 
-  if (!session) return null;
+  if (
+    authLoading ||
+    !profile ||
+    profile.role !== 'clinician' ||
+    sessionQuery.isLoading ||
+    !sessionQuery.data
+  ) {
+    return <div className="min-h-dvh bg-cream" />;
+  }
 
-  const patient = state.patients.find((p) => p.id === session.patientId);
-  if (!patient) return null;
+  if (patientData.isLoading || !patientData.data) {
+    return (
+      <div className="min-h-dvh bg-cream">
+        <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
+          <div className="animate-pulse space-y-3">
+            <div className="h-4 w-24 rounded bg-stone" />
+            <div className="h-6 w-2/3 rounded bg-stone" />
+            <div className="h-32 rounded bg-stone-soft" />
+            <div className="h-48 rounded bg-stone-soft" />
+          </div>
+        </main>
+      </div>
+    );
+  }
 
-  const cycle = state.treatmentCycles.find(
-    (c) => c.id === patient.activeTreatmentCycleId
-  );
-  if (!cycle) return null;
+  const { patient, cycle, suggestions, activeGoals, checkins, treatment } =
+    patientData.data;
 
-  const weekNumber = weekOfCycle(cycle.startDate, state.now);
-  const totalWeeks = cycle.lengthWeeks ?? 12;
+  const nowIso = new Date().toISOString().slice(0, 10);
+  const weekNumber = weekOfCycle(cycle.startDate, nowIso);
+  const totalWeeks = cycle.lengthWeeks;
 
-  const suggestions = state.goalSuggestions
-    .filter(
-      (g) =>
-        g.patientId === patient.id &&
-        g.treatmentCycleId === cycle.id &&
-        g.status === 'needsReview'
-    )
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-
-  const activeGoals = state.approvedGoals
-    .filter(
-      (g) =>
-        g.patientId === patient.id &&
-        g.treatmentCycleId === cycle.id &&
-        g.status === 'active'
-    )
-    .sort((a, b) => a.approvedAt.localeCompare(b.approvedAt));
-
-  // For each active goal, build a week → rating map from the patient's
-  // completed check-ins this cycle.
-  const cycleCheckins = state.weeklyCheckins.filter(
-    (c) => c.treatmentCycleId === cycle.id
-  );
-
-  // Treatment record (if any) for this cycle.
-  const cycleTreatment = state.treatmentSessions.find(
-    (t) => t.treatmentCycleId === cycle.id
-  );
-
+  // Build per-goal ratings for the progress views.
   const ratingsByGoal = new Map<
     string,
     {
@@ -93,7 +112,7 @@ export default function ClinicianPatientPage() {
     }[]
   >();
   for (const goal of activeGoals) {
-    const perWeek = cycleCheckins
+    const perWeek = checkins
       .flatMap((c) => {
         const r = c.ratings.find((x) => x.approvedGoalId === goal.id);
         if (!r) return [];
@@ -102,7 +121,7 @@ export default function ClinicianPatientPage() {
             weekNumber: c.weekNumber,
             value: r.ratingValue as -2 | -1 | 0 | 1 | 2 | null,
             reported: true,
-            comment: c.comment
+            comment: c.comment ?? undefined
           }
         ];
       })
@@ -110,10 +129,14 @@ export default function ClinicianPatientPage() {
     ratingsByGoal.set(goal.id, perWeek);
   }
 
-  const endSession = () => {
-    actions.endClinicianSession();
+  const onEndSession = async () => {
+    await endSession.mutateAsync();
     router.replace(locale === 'en' ? '/clinician' : `/${locale}/clinician`);
   };
+
+  // Touch session on any meaningful click. Safe to call unconditionally
+  // — the RPC silently no-ops for non-clinicians.
+  const touch = () => touchSession.mutate();
 
   return (
     <div className="min-h-dvh bg-cream">
@@ -144,47 +167,53 @@ export default function ClinicianPatientPage() {
           })}
         </div>
         <p className="mt-1 text-[15px] text-ink-soft">
-          {t('nextVisit', { date: formatLongDate(cycle.reviewDate, locale) })}
+          {t('cycleLength', { weeks: totalWeeks })}
         </p>
 
-        {/* Treatment record card — shown at the top because it's the
-            anchor of the cycle. Either summarises the recorded session
-            or invites the clinician to record one. */}
+        {/* Treatment record card */}
         <section className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-          {cycleTreatment ? (
+          {treatment ? (
             <>
               <div className="flex items-baseline justify-between gap-2">
                 <div>
                   <div className="eyebrow">Treatment</div>
                   <p className="mt-0.5 font-display text-[16px] text-ink">
-                    {cycleTreatment.drugProduct} · {cycleTreatment.totalUnits} units · {formatLongDate(cycleTreatment.date, locale)}
+                    {treatment.drugProduct} · {treatment.totalUnits} units ·{' '}
+                    {formatLongDate(treatment.date, locale)}
                   </p>
+                  {treatment.dilution && (
+                    <p className="mt-0.5 text-[13px] text-ink-soft">
+                      Dilution: {treatment.dilution}
+                    </p>
+                  )}
                 </div>
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    touch();
                     router.push(
                       locale === 'en'
                         ? '/clinician/treatment'
                         : `/${locale}/clinician/treatment`
-                    )
-                  }
+                    );
+                  }}
                   className="shrink-0 text-[13px] font-semibold text-sage-deep hover:underline"
                 >
                   Edit
                 </button>
               </div>
               <ul className="mt-3 space-y-1.5 text-[13px] text-ink-soft">
-                {cycleTreatment.injections.map((inj) => (
+                {treatment.injections.map((inj) => (
                   <li key={inj.id}>
-                    {inj.muscle} · {inj.side} · {inj.doseUnits} units · {inj.guidance}
+                    {inj.muscle} · {inj.side} · {inj.doseUnits} units ·{' '}
+                    {inj.guidance}
                   </li>
                 ))}
               </ul>
-              {cycleTreatment.notes && (
+              {treatment.notes && (
                 <p className="mt-3 whitespace-pre-wrap text-[13px] leading-relaxed text-ink-soft">
                   <span className="text-ink-muted">Notes: </span>
-                  {cycleTreatment.notes}
+                  {treatment.notes}
                 </p>
               )}
             </>
@@ -196,61 +225,19 @@ export default function ClinicianPatientPage() {
               </p>
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  touch();
                   router.push(
                     locale === 'en'
                       ? '/clinician/treatment'
                       : `/${locale}/clinician/treatment`
-                  )
-                }
+                  );
+                }}
                 className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-cream-soft hover:bg-ink-soft"
               >
                 Record treatment
               </button>
             </>
-          )}
-        </section>
-
-        {/* Suggestions awaiting review */}
-        <section className="mt-9">
-          <h2 className="font-display text-[20px] leading-tight text-ink">
-            {t('suggestionsTitle')}
-          </h2>
-          {suggestions.length === 0 ? (
-            <p className="mt-3 text-[14px] text-ink-muted">
-              {t('suggestionsEmpty')}
-            </p>
-          ) : (
-            <ul className="mt-3 space-y-3">
-              {suggestions.map((s) => (
-                <li
-                  key={s.id}
-                  className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
-                >
-                  <div className="flex items-baseline justify-between gap-3">
-                    <div className="eyebrow text-ink-muted">
-                      {tDomain(s.domain)} · {tImportance(s.importance)}
-                    </div>
-                  </div>
-                  <p className="mt-1.5 text-[15px] leading-relaxed text-ink">
-                    "{s.patientWording}"
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      router.push(
-                        locale === 'en'
-                          ? `/clinician/suggestion?id=${s.id}`
-                          : `/${locale}/clinician/suggestion?id=${s.id}`
-                      )
-                    }
-                    className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-cream-soft hover:bg-ink-soft"
-                  >
-                    {t('review')}
-                  </button>
-                </li>
-              ))}
-            </ul>
           )}
         </section>
 
@@ -279,14 +266,58 @@ export default function ClinicianPatientPage() {
           )}
         </section>
 
-        {/* Patient comments across the cycle — chronological */}
-        {cycleCheckins.some((c) => c.comment?.trim()) && (
+        {/* Suggestions awaiting review */}
+        <section className="mt-10">
+          <h2 className="font-display text-[20px] leading-tight text-ink">
+            {t('suggestionsTitle')}
+          </h2>
+          {suggestions.length === 0 ? (
+            <p className="mt-3 text-[14px] text-ink-muted">
+              {t('suggestionsEmpty')}
+            </p>
+          ) : (
+            <ul className="mt-3 space-y-3">
+              {suggestions.map((s) => (
+                <li
+                  key={s.id}
+                  className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
+                >
+                  <div className="flex items-baseline justify-between gap-3">
+                    <div className="eyebrow text-ink-muted">
+                      {tDomain(s.domain)} · {tImportance(s.importance)}
+                    </div>
+                  </div>
+                  <p className="mt-1.5 text-[15px] leading-relaxed text-ink">
+                    &ldquo;{s.patientWording}&rdquo;
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      touch();
+                      router.push(
+                        locale === 'en'
+                          ? `/clinician/suggestion?id=${s.id}`
+                          : `/${locale}/clinician/suggestion?id=${s.id}`
+                      );
+                    }}
+                    className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-cream-soft hover:bg-ink-soft"
+                  >
+                    {t('review')}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Patient comments across the cycle */}
+        {checkins.some((c) => c.comment?.trim()) && (
           <section className="mt-10">
             <h2 className="font-display text-[20px] leading-tight text-ink">
               Patient comments
             </h2>
             <ul className="mt-3 space-y-3">
-              {cycleCheckins
+              {checkins
                 .filter((c) => c.comment?.trim())
                 .sort((a, b) => b.weekNumber - a.weekNumber)
                 .map((c) => (
@@ -306,12 +337,15 @@ export default function ClinicianPatientPage() {
           </section>
         )}
 
-        {/* Export for EHR — only useful when there's actually data to export */}
-        {(cycleTreatment || activeGoals.length > 0 || cycleCheckins.length > 0) && (
+        {/* EHR export */}
+        {(treatment || activeGoals.length > 0 || checkins.length > 0) && (
           <div className="mt-10">
             <button
               type="button"
-              onClick={() => setShowExport(true)}
+              onClick={() => {
+                touch();
+                setShowExport(true);
+              }}
               className="flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
             >
               Export for EHR
@@ -323,11 +357,74 @@ export default function ClinicianPatientPage() {
       {showExport && (
         <ExportModal
           initialText={buildEhrExport({
-            patient,
-            cycle,
-            treatment: cycleTreatment,
-            goals: activeGoals,
-            checkins: cycleCheckins,
+            patient: {
+              id: patient.id,
+              displayName: patient.displayName,
+              // birthYear isn't loaded for the clinician view; the
+              // export builder doesn't use it. Empty placeholder.
+              birthYear: 0,
+              activeTreatmentCycleId: cycle.id
+            },
+            cycle: {
+              id: cycle.id,
+              patientId: patient.id,
+              cycleNumber: cycle.cycleNumber,
+              lengthWeeks: cycle.lengthWeeks,
+              startDate: cycle.startDate,
+              reviewDate: cycle.reviewDate,
+              status: 'active'
+            },
+            treatment: treatment
+              ? {
+                  id: treatment.id,
+                  patientId: patient.id,
+                  treatmentCycleId: cycle.id,
+                  date: treatment.date,
+                  drugProduct: treatment.drugProduct,
+                  totalUnits: treatment.totalUnits,
+                  dilution: treatment.dilution ?? undefined,
+                  injections: treatment.injections.map((i) => ({
+                    id: i.id,
+                    muscle: i.muscle,
+                    side: i.side,
+                    doseUnits: i.doseUnits,
+                    guidance: i.guidance as never
+                  })),
+                  notes: treatment.notes ?? undefined,
+                  recordedByClinicianId: '',
+                  recordedAt: ''
+                }
+              : undefined,
+            goals: activeGoals.map((g) => ({
+              id: g.id,
+              suggestionId: '',
+              patientId: patient.id,
+              treatmentCycleId: cycle.id,
+              patientFacingText: g.patientFacingText,
+              smartText: g.smartText,
+              gasAnchors: g.gasAnchors,
+              approvedByClinicianId: '',
+              approvedAt: '',
+              status: 'active'
+            })),
+            checkins: checkins.map((c) => ({
+              id: c.id,
+              weeklyPromptId: '',
+              patientId: patient.id,
+              treatmentCycleId: cycle.id,
+              weekNumber: c.weekNumber,
+              submittedAt: '',
+              sideEffects: [],
+              comment: c.comment ?? undefined,
+              ratings: c.ratings.map((r) => ({
+                id: '',
+                weeklyCheckinId: c.id,
+                approvedGoalId: r.approvedGoalId,
+                ratingLabel: 'asExpected',
+                ratingValue:
+                  r.ratingValue as -2 | -1 | 0 | 1 | 2 | null
+              }))
+            })),
             locale
           })}
           onClose={() => setShowExport(false)}
@@ -350,7 +447,8 @@ export default function ClinicianPatientPage() {
               </button>
               <button
                 type="button"
-                onClick={endSession}
+                onClick={onEndSession}
+                disabled={endSession.isPending}
                 className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
               >
                 {tSession('endSessionConfirmEnd')}
