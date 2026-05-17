@@ -238,6 +238,7 @@ export interface TreatmentSession {
   date: string; // ISO date, day only
   drugProduct: string; // free text — see slice-5 design notes
   totalUnits: number;
+  dilution?: string; // free text, e.g. "250 IU/ml" — optional
   injections: MuscleInjection[];
   notes?: string;
   recordedByClinicianId: string;

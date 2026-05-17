@@ -14,6 +14,7 @@ import {
   useSetSuggestionStatus
 } from '@/lib/supabase/clinicianPatient';
 import { weekOfCycle, formatLongDate } from '@/lib/dates';
+import type { GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { buildEhrExport } from '@/lib/ehrExport';
@@ -388,7 +389,7 @@ export default function ClinicianPatientPage() {
                     muscle: i.muscle,
                     side: i.side,
                     doseUnits: i.doseUnits,
-                    guidance: i.guidance as never
+                    guidance: i.guidance as GuidanceMethod
                   })),
                   notes: treatment.notes ?? undefined,
                   recordedByClinicianId: '',
