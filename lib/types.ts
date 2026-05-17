@@ -84,6 +84,26 @@ export const RATING_VALUE_MAP: Record<RatingLabel, RatingValue> = {
   notSure: null
 };
 
+/**
+ * Reverse of RATING_VALUE_MAP. Given a numeric rating value, returns
+ * the canonical rating label. Used when submitting check-ins to
+ * Supabase, which stores both the label (enum) and the value (int).
+ */
+export function ratingLabelForValue(v: -2 | -1 | 0 | 1 | 2): RatingLabel {
+  switch (v) {
+    case -2:
+      return 'muchWorseThanExpected';
+    case -1:
+      return 'aLittleWorseThanExpected';
+    case 0:
+      return 'asExpected';
+    case 1:
+      return 'betterThanExpected';
+    case 2:
+      return 'muchBetterThanExpected';
+  }
+}
+
 // --- Entities -----------------------------------------------------------
 
 export interface Patient {

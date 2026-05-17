@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { useStore, actions } from '@/lib/store';
+import { useAuth } from '@/lib/supabase/auth';
+import { useCheckinData, useSubmitCheckin } from '@/lib/supabase/checkin';
 import { useCheckinDraft, checkinDraftStorage } from '@/lib/useCheckinDraft';
 import { isCheckinComplete } from '@/lib/checkinDraft';
+import { ratingLabelForValue } from '@/lib/types';
 import { WizardLayout } from '@/components/wizard/WizardLayout';
 import { GoalRatingPicker } from '@/components/wizard/GoalRatingPicker';
 
@@ -20,44 +22,20 @@ import { GoalRatingPicker } from '@/components/wizard/GoalRatingPicker';
  *   N+1  — optional comment field with safety nudge + summary review.
  *
  * If the patient has no active goals or no pending prompt, the page
- * redirects home. (The home screen guards against navigating here in
- * that case, but the check is repeated here in case of direct URL access.)
+ * redirects home.
  */
 export default function CheckinPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('patient.checkin');
-  const state = useStore();
 
-  const patient = state.patients.find((p) => p.id === state.currentPatientId);
-  const cycle = patient
-    ? state.treatmentCycles.find((c) => c.id === patient.activeTreatmentCycleId)
-    : undefined;
-
-  // Find the pending prompt for this cycle (latest by week number).
-  const pendingPrompt = cycle
-    ? state.weeklyPrompts
-        .filter((p) => p.treatmentCycleId === cycle.id && p.status === 'pending')
-        .sort((a, b) => b.weekNumber - a.weekNumber)[0]
-    : undefined;
-
-  // Active goals for the patient/cycle.
-  const activeGoals = patient && cycle
-    ? state.approvedGoals
-        .filter(
-          (g) =>
-            g.patientId === patient.id &&
-            g.treatmentCycleId === cycle.id &&
-            g.status === 'active'
-        )
-        .sort((a, b) => a.approvedAt.localeCompare(b.approvedAt))
-    : [];
+  const { user, profile, loading: authLoading } = useAuth();
+  const checkinQuery = useCheckinData(profile?.id ?? null, profile?.role);
+  const submitMutation = useSubmitCheckin();
 
   const homePath = locale === 'en' ? '/' : `/${locale}`;
   const goHome = () => router.push(homePath);
-  // Hard navigation, used only from the terminal thanks screen.
-  // Client-side router.push has been observed to leave this component
-  // mounted in some browsers, leaving the user stuck on the thanks view.
+  // Hard navigation for the terminal thanks screen — see comment below.
   const goHomeHard = () => {
     if (typeof window !== 'undefined') {
       window.location.href = homePath;
@@ -66,71 +44,95 @@ export default function CheckinPage() {
     }
   };
 
-  // Flag set synchronously when the patient hits submit. We use a ref so
-  // the redirect-when-no-prompt effect below can read the latest value
-  // immediately, without waiting for the React commit cycle. State alone
-  // wouldn't be fast enough — by the time `setState` flushed, the store
-  // would have already cleared the prompt and the effect would have
-  // redirected past the thanks view.
+  // Auth gating: not signed in → /login; not a patient → /.
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user || !profile) {
+      router.replace(locale === 'en' ? '/login' : `/${locale}/login`);
+      return;
+    }
+    if (profile.role !== 'patient') {
+      router.replace(homePath);
+    }
+  }, [authLoading, user, profile, router, locale, homePath]);
+
+  // Submission lifecycle: once we kick off submit, we want to render the
+  // thanks view, NOT redirect home (which the next effect would do once
+  // the prompt clears from the cache). The ref lets us short-circuit
+  // the redirect synchronously.
   const submittingRef = useRef(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
 
-  // Redirect home if any of the preconditions are missing — unless we're
-  // mid-submit, in which case the missing-prompt is expected and the
-  // thanks view will take over on the next render.
+  // Redirect home if there's nothing to check in on. Skip during submit
+  // (the thanks view takes over) and skip while data is still loading.
   useEffect(() => {
     if (submittingRef.current || submittedId) return;
-    if (!patient || !cycle || !pendingPrompt || activeGoals.length === 0) {
+    if (checkinQuery.isLoading || !checkinQuery.data) return;
+    if (checkinQuery.data.goals.length === 0) {
       router.replace(homePath);
     }
   }, [
-    patient,
-    cycle,
-    pendingPrompt,
-    activeGoals.length,
+    checkinQuery.isLoading,
+    checkinQuery.data,
     router,
     homePath,
     submittedId
   ]);
 
-  // Hooks must be called unconditionally, so we feed safe fallbacks when
-  // the redirect is about to fire.
-  const safePatient = patient ?? {
+  // The draft hook expects { id, activeTreatmentCycleId } for the patient
+  // and { id, weekNumber } for the prompt. Use placeholders while loading
+  // so hooks are called unconditionally; the page returns null below if
+  // data is missing.
+  const safePatient =
+    profile && checkinQuery.data
+      ? { id: profile.id, activeTreatmentCycleId: 'cycle' }
+      : { id: 'placeholder', activeTreatmentCycleId: 'placeholder' };
+  const safePrompt = checkinQuery.data?.prompt ?? {
     id: 'placeholder',
-    activeTreatmentCycleId: 'placeholder'
+    weekNumber: 0
   };
-  const safePrompt = pendingPrompt ?? { id: 'placeholder', weekNumber: 0 };
 
-  const { draft, update, setRating, goToStep, reset, hydrated } =
-    useCheckinDraft({
-      patient: safePatient,
-      prompt: safePrompt
-    });
+  const { draft, update, setRating, goToStep, reset } = useCheckinDraft({
+    patient: safePatient,
+    prompt: safePrompt
+  });
 
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
-  // Thanks view comes first: after submit, the pendingPrompt clears and
-  // we'd otherwise hit the "return null" below before showing thanks.
+  // Thanks view comes first — see ref comment above.
   if (submittedId) {
     return <ThanksView onBackHome={goHomeHard} />;
   }
 
-  if (!patient || !cycle || !pendingPrompt || activeGoals.length === 0) {
+  // Auth or data still loading → render nothing (could add a spinner).
+  if (
+    authLoading ||
+    !profile ||
+    profile.role !== 'patient' ||
+    checkinQuery.isLoading
+  ) {
+    return null;
+  }
+
+  // Query errored or there's no pending prompt → redirect home (the
+  // effect above triggers the redirect; render nothing until it does).
+  if (!checkinQuery.data) {
+    return null;
+  }
+
+  const { prompt, goals: activeGoals } = checkinQuery.data;
+
+  if (activeGoals.length === 0) {
     return null;
   }
 
   // Step bookkeeping --------------------------------------------------
-  //
-  // Steps 1..activeGoals.length  → goal rating step for goal[i-1]
-  // Last step (= length + 1)     → comment + summary
   const totalSteps = activeGoals.length + 1;
   const step = Math.min(Math.max(draft.currentStep, 1), totalSteps);
   const isLastStep = step === totalSteps;
 
-  // Whether the current step's input is in a state that allows advancing.
   const currentStepComplete = (() => {
     if (isLastStep) {
-      // Last step requires all goals rated (comment is optional).
       return isCheckinComplete(draft, activeGoals.map((g) => g.id));
     }
     const goal = activeGoals[step - 1];
@@ -161,20 +163,39 @@ export default function CheckinPage() {
     if (step > 1) goToStep(step - 1);
   };
 
-  const doSubmit = () => {
+  const doSubmit = async () => {
     if (!isCheckinComplete(draft, activeGoals.map((g) => g.id))) return;
-    // Set the submission flag synchronously BEFORE touching the store.
-    // The redirect-when-no-prompt effect will read this ref on its next
-    // run and skip its work, letting the thanks view render instead.
+    if (submitMutation.isPending) return;
+
     submittingRef.current = true;
-    const id = actions.submitCheckin(draft);
-    if (id) {
-      checkinDraftStorage.clear(pendingPrompt.id);
+
+    try {
+      const ratings = activeGoals.map((g) => {
+        const v = draft.ratings[g.id];
+        if (typeof v !== 'number') {
+          throw new Error('Missing rating for goal ' + g.id);
+        }
+        const value = v as -2 | -1 | 0 | 1 | 2;
+        return {
+          approvedGoalId: g.id,
+          ratingLabel: ratingLabelForValue(value),
+          ratingValue: value
+        };
+      });
+
+      const id = await submitMutation.mutateAsync({
+        promptId: prompt.id,
+        ratings,
+        comment: draft.comment?.trim() || undefined
+      });
+
+      checkinDraftStorage.clear(prompt.id);
       reset();
       setSubmittedId(id);
-    } else {
-      // Submit failed validation — release the guard.
+    } catch (err) {
+      console.error('submitCheckin failed', err);
       submittingRef.current = false;
+      // Could show an inline error toast here — left for a polish slice.
     }
   };
 
@@ -269,9 +290,13 @@ export default function CheckinPage() {
         onBack={step > 1 ? goBack : undefined}
         onCancel={onCancel}
         primaryAction={{
-          label: isLastStep ? t('submit') : t('next'),
+          label: isLastStep
+            ? submitMutation.isPending
+              ? t('submitting') /* falls back to 'Submit…' if missing key */
+              : t('submit')
+            : t('next'),
           onClick: goNext,
-          disabled: !currentStepComplete
+          disabled: !currentStepComplete || submitMutation.isPending
         }}
       >
         {body}
@@ -352,7 +377,7 @@ function CancelConfirmDialog({
             onClick={onLeave}
             className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
-            {t('cancelConfirmDiscard')}
+            {t('cancelConfirmLeave')}
           </button>
         </div>
       </div>
@@ -364,26 +389,11 @@ function ThanksView({ onBackHome }: { onBackHome: () => void }) {
   const t = useTranslations('patient.checkin');
   return (
     <div className="min-h-dvh bg-cream">
-      <main className="mx-auto flex min-h-dvh max-w-[480px] flex-col justify-center px-5">
-        <div
-          aria-hidden
-          className="mb-6 inline-flex h-14 w-14 items-center justify-center self-start rounded-full bg-sage-soft text-sage-deep"
-        >
-          <svg width="28" height="28" viewBox="0 0 24 24">
-            <path
-              d="M5 13l4 4 10-10"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
-        <h1 className="font-display text-[32px] leading-tight text-ink">
+      <main className="mx-auto max-w-[480px] px-5 py-16">
+        <h1 className="font-display text-[28px] leading-tight text-ink">
           {t('thanksTitle')}
         </h1>
-        <p className="mt-3 text-[16px] leading-relaxed text-ink-soft">
+        <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
           {t('thanksBody')}
         </p>
         <button
@@ -391,7 +401,7 @@ function ThanksView({ onBackHome }: { onBackHome: () => void }) {
           onClick={onBackHome}
           className="mt-8 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft"
         >
-          {t('thanksBackHome')}
+          {t('backToHome')}
         </button>
       </main>
     </div>

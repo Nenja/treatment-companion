@@ -35,8 +35,9 @@ export default function PatientHomePage() {
   }, [authLoading, user, profile, router, locale]);
 
   // While auth is resolving OR the user is being redirected away,
-  // render a skeleton placeholder so we don't flash "no goals" before
-  // the real check fires.
+  // render a skeleton placeholder so we don't flash "no goals" or an
+  // error before the real check fires. This also covers clinicians
+  // briefly landing here before the redirect-to-/clinician effect runs.
   if (
     authLoading ||
     !user ||

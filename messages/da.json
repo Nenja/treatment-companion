@@ -98,6 +98,7 @@
       "back": "Tilbage",
       "next": "Fortsæt",
       "submit": "Send min status",
+      "submitting": "Sender…",
       "cancel": "Annullér",
       "cancelConfirmTitle": "Forlade din status?",
       "cancelConfirmBody": "Dine svar indtil nu gemmes. Du kan komme tilbage og afslutte når som helst i denne uge.",

@@ -94,6 +94,7 @@
       "back": "Back",
       "next": "Continue",
       "submit": "Send my check-in",
+      "submitting": "Sending…",
       "cancel": "Cancel",
       "cancelConfirmTitle": "Leave your check-in?",
       "cancelConfirmBody": "Your answers so far will be kept. You can come back and finish at any time this week.",
