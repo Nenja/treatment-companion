@@ -595,6 +595,10 @@ export const actions = {
         date: fields.date,
         drugProduct: fields.drugProduct.trim(),
         totalUnits: fields.totalUnits,
+        // Legacy store doesn't capture guidance at session level; the
+        // pages that consumed this store are now on Supabase. Default
+        // value satisfies the type; nothing reads it.
+        guidance: 'ultrasound',
         injections: fields.injections.map((inj) => ({
           ...inj,
           id: randomId(`${newId}-inj`),
