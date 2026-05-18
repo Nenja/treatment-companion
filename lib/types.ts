@@ -229,6 +229,8 @@ export interface MuscleInjection {
   side: InjectionSide;
   doseUnits: number;
   guidance: GuidanceMethod;
+  /** Short clinical observation, e.g. "high EMG activity". Optional. */
+  note?: string;
 }
 
 export interface TreatmentSession {

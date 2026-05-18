@@ -206,8 +206,15 @@ export default function ClinicianPatientPage() {
               <ul className="mt-3 space-y-1.5 text-[13px] text-ink-soft">
                 {treatment.injections.map((inj) => (
                   <li key={inj.id}>
-                    {inj.muscle} · {inj.side} · {inj.doseUnits} units ·{' '}
-                    {inj.guidance}
+                    <span>
+                      {inj.muscle} · {inj.side} · {inj.doseUnits} units ·{' '}
+                      {inj.guidance}
+                    </span>
+                    {inj.note && (
+                      <span className="ml-1 italic text-ink-muted">
+                        — {inj.note}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -374,7 +381,8 @@ export default function ClinicianPatientPage() {
                     muscle: i.muscle,
                     side: i.side,
                     doseUnits: i.doseUnits,
-                    guidance: i.guidance as GuidanceMethod
+                    guidance: i.guidance as GuidanceMethod,
+                    note: i.note ?? undefined
                   })),
                   notes: treatment.notes ?? undefined
                 }

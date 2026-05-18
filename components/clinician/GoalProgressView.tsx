@@ -7,7 +7,6 @@ interface WeekRating {
   weekNumber: number;
   value: Exclude<RatingValue, null> | null;
   reported: boolean;
-  /** The check-in's optional patient comment, if any. */
   comment?: string;
 }
 
@@ -19,18 +18,24 @@ interface GoalProgressViewProps {
 }
 
 /**
- * Two visualisations of one goal's check-in history, side by side:
+ * Single chart per goal, with five colored bands behind the data:
  *
- *   1. Heatmap row — one cell per week of the cycle, colour-coded to the
- *      rating value (muted amber/cream/sage palette, consistent with the
- *      patient-facing scale). Empty cells for not-yet-reached or skipped
- *      weeks. Current week has a thin sage ring.
+ *   +2 / +1  →  sage (soft → medium): "as expected or better"
+ *      0     →  cream:                "expected"
+ *   −1 / −2  →  amber (soft → medium): "below expected"
  *
- *   2. Small line chart — same data plotted -2..+2 vertically, the
- *      "expected" zero line drawn across the middle. Lets the clinician
- *      see trajectory at a glance.
+ * Reported weeks are filled sage dots connected by a line. Skipped
+ * weeks break the line (so it doesn't draw a misleading slope through
+ * a gap) and show a small grey ring at y=0 as an explicit "missing
+ * data" marker.
  *
- * Tapping a heatmap cell shows the exact numeric value in a small caption.
+ * Y-axis labels (−2 / −1 / 0 / +1 / +2) sit on the left. X-axis week
+ * labels appear at week 1, then every ~3 weeks, with the final week
+ * always included.
+ *
+ * Tapping a reported dot shows the rating + any patient comment in a
+ * caption below the chart. Tapping a missing-week ring shows "not
+ * reported" so the clinician knows what they clicked.
  */
 export function GoalProgressView({
   goalText,
@@ -40,18 +45,70 @@ export function GoalProgressView({
 }: GoalProgressViewProps) {
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
 
-  // Build a week-indexed array. Each slot is either a known rating or null.
+  // Week-indexed lookup. Each slot is either a known rating or null.
   const byWeek: (WeekRating | null)[] = Array.from(
     { length: totalWeeks },
     (_, i) => ratings.find((r) => r.weekNumber === i + 1) ?? null
   );
 
   const reportedCount = ratings.filter((r) => r.reported).length;
+  const selected = selectedWeek !== null ? byWeek[selectedWeek - 1] : null;
 
-  const selectedRating =
-    selectedWeek !== null
-      ? byWeek[selectedWeek - 1]
-      : null;
+  // SVG layout. Width is set by the parent; viewBox handles scaling.
+  const width = 360;
+  const height = 160;
+  const padLeft = 26; // room for y-axis labels
+  const padRight = 8;
+  const padTop = 8;
+  const padBottom = 22; // room for x-axis labels
+
+  const innerWidth = width - padLeft - padRight;
+  const innerHeight = height - padTop - padBottom;
+
+  // x position for a 1-indexed week.
+  const xFor = (week: number) => {
+    if (totalWeeks <= 1) return padLeft + innerWidth / 2;
+    return padLeft + ((week - 1) / (totalWeeks - 1)) * innerWidth;
+  };
+  // y position for a rating value (-2..+2). +2 is at the top.
+  const yFor = (value: number) => {
+    // Map -2..+2 to 0..1 with +2 at top (so flipped).
+    const t = (value + 2) / 4;
+    return padTop + (1 - t) * innerHeight;
+  };
+
+  // Each rating value occupies a horizontal band of height innerHeight/5
+  // centred on yFor(value). The band edges sit at midpoints.
+  const bandTop = (value: number) => yFor(value) - innerHeight / 10;
+  const bandBottom = (value: number) => yFor(value) + innerHeight / 10;
+
+  // Build x-axis tick week numbers: 1, every 3rd, plus totalWeeks.
+  const xTicks = new Set<number>();
+  xTicks.add(1);
+  for (let w = 4; w < totalWeeks; w += 3) xTicks.add(w);
+  xTicks.add(totalWeeks);
+  const xTickArray = Array.from(xTicks).sort((a, b) => a - b);
+
+  // Build line segments — only between consecutive REPORTED weeks.
+  // Gaps (skipped weeks) break the line.
+  const segments: { x1: number; y1: number; x2: number; y2: number }[] = [];
+  for (let i = 0; i < byWeek.length - 1; i++) {
+    const a = byWeek[i];
+    const b = byWeek[i + 1];
+    if (
+      a?.reported &&
+      typeof a.value === 'number' &&
+      b?.reported &&
+      typeof b.value === 'number'
+    ) {
+      segments.push({
+        x1: xFor(i + 1),
+        y1: yFor(a.value),
+        x2: xFor(i + 2),
+        y2: yFor(b.value)
+      });
+    }
+  }
 
   return (
     <article className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
@@ -62,41 +119,209 @@ export function GoalProgressView({
         {reportedCount} of {currentWeek} weeks reported
       </p>
 
-      {/* Two-panel layout: heatmap on the left, chart on the right.
-          On very narrow screens (e.g. mobile clinician on a phone) they
-          stack vertically. */}
-      <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_140px] sm:items-end">
-        <Heatmap
-          byWeek={byWeek}
-          currentWeek={currentWeek}
-          selectedWeek={selectedWeek}
-          onSelectWeek={(w) =>
-            setSelectedWeek((prev) => (prev === w ? null : w))
-          }
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="mt-3 block w-full"
+        role="img"
+        aria-label={`Weekly ratings chart for: ${goalText}`}
+      >
+        {/* Background bands — muted directional colors */}
+        <rect
+          x={padLeft}
+          y={bandTop(2)}
+          width={innerWidth}
+          height={bandBottom(2) - bandTop(2)}
+          fill="var(--color-sage-soft)"
+          opacity={0.6}
         />
-        <LineChart byWeek={byWeek} currentWeek={currentWeek} />
-      </div>
+        <rect
+          x={padLeft}
+          y={bandTop(1)}
+          width={innerWidth}
+          height={bandBottom(1) - bandTop(1)}
+          fill="var(--color-sage-soft)"
+          opacity={0.35}
+        />
+        <rect
+          x={padLeft}
+          y={bandTop(0)}
+          width={innerWidth}
+          height={bandBottom(0) - bandTop(0)}
+          fill="var(--color-cream)"
+        />
+        <rect
+          x={padLeft}
+          y={bandTop(-1)}
+          width={innerWidth}
+          height={bandBottom(-1) - bandTop(-1)}
+          fill="var(--color-amber-soft)"
+          opacity={0.35}
+        />
+        <rect
+          x={padLeft}
+          y={bandTop(-2)}
+          width={innerWidth}
+          height={bandBottom(-2) - bandTop(-2)}
+          fill="var(--color-amber-soft)"
+          opacity={0.6}
+        />
+
+        {/* Y-axis labels */}
+        {[2, 1, 0, -1, -2].map((v) => (
+          <text
+            key={v}
+            x={padLeft - 6}
+            y={yFor(v)}
+            textAnchor="end"
+            dominantBaseline="middle"
+            className="fill-ink-muted"
+            fontSize={10}
+          >
+            {v > 0 ? `+${v}` : `${v}`}
+          </text>
+        ))}
+
+        {/* X-axis labels */}
+        {xTickArray.map((w) => (
+          <text
+            key={w}
+            x={xFor(w)}
+            y={height - 6}
+            textAnchor="middle"
+            className="fill-ink-muted"
+            fontSize={10}
+          >
+            {w}
+          </text>
+        ))}
+
+        {/* Current-week marker */}
+        {currentWeek >= 1 && currentWeek <= totalWeeks && (
+          <line
+            x1={xFor(currentWeek)}
+            x2={xFor(currentWeek)}
+            y1={padTop}
+            y2={padTop + innerHeight}
+            stroke="var(--color-sage)"
+            strokeWidth={1}
+            opacity={0.5}
+          />
+        )}
+
+        {/* Line segments between consecutive reported weeks */}
+        {segments.map((s, i) => (
+          <line
+            key={i}
+            x1={s.x1}
+            y1={s.y1}
+            x2={s.x2}
+            y2={s.y2}
+            stroke="var(--color-sage-deep)"
+            strokeWidth={1.75}
+            strokeLinecap="round"
+          />
+        ))}
+
+        {/* Markers per week: filled dot for reported, hollow ring at y=0
+            for missing. Wrapped in a transparent rect so a wider tap
+            target catches mobile taps even when the visible mark is
+            small. */}
+        {byWeek.map((entry, i) => {
+          const week = i + 1;
+          const isCurrent = week === currentWeek;
+          const isSelected = week === selectedWeek;
+          const x = xFor(week);
+
+          // Past-or-current weeks with no rating → missing marker at y=0.
+          const showMissing =
+            !entry?.reported && week <= currentWeek;
+          // Future weeks: nothing rendered (the band shows context enough).
+          if (!entry?.reported && !showMissing) {
+            return (
+              <rect
+                key={week}
+                x={x - 12}
+                y={padTop}
+                width={24}
+                height={innerHeight}
+                fill="transparent"
+                onClick={() =>
+                  setSelectedWeek((p) => (p === week ? null : week))
+                }
+                style={{ cursor: 'pointer' }}
+              />
+            );
+          }
+
+          return (
+            <g key={week}>
+              {/* Larger transparent target for tapping */}
+              <rect
+                x={x - 12}
+                y={padTop}
+                width={24}
+                height={innerHeight}
+                fill="transparent"
+                onClick={() =>
+                  setSelectedWeek((p) => (p === week ? null : week))
+                }
+                style={{ cursor: 'pointer' }}
+              />
+              {entry?.reported && typeof entry.value === 'number' ? (
+                <circle
+                  cx={x}
+                  cy={yFor(entry.value)}
+                  r={isSelected ? 5 : isCurrent ? 4.5 : 4}
+                  fill="var(--color-sage-deep)"
+                  stroke={
+                    isSelected
+                      ? 'var(--color-ink)'
+                      : isCurrent
+                      ? 'var(--color-sage)'
+                      : 'var(--color-cream-soft)'
+                  }
+                  strokeWidth={isSelected ? 2 : 1.5}
+                />
+              ) : (
+                <circle
+                  cx={x}
+                  cy={yFor(0)}
+                  r={4}
+                  fill="none"
+                  stroke={
+                    isSelected
+                      ? 'var(--color-ink)'
+                      : 'var(--color-stone)'
+                  }
+                  strokeWidth={isSelected ? 2 : 1.5}
+                />
+              )}
+            </g>
+          );
+        })}
+      </svg>
 
       {/* Caption: shows the numeric value + any patient comment for the
-          selected cell, or a gentle hint when nothing is selected. */}
+          selected week, or a gentle hint when nothing is selected. */}
       <div className="mt-2 min-h-[20px] space-y-1 text-[12px]">
-        {selectedRating && selectedRating.reported ? (
+        {selected && selected.reported ? (
           <>
             <p className="text-ink-soft">
-              Week {selectedRating.weekNumber}:{' '}
-              {formatValue(selectedRating.value)}
+              Week {selected.weekNumber}: {formatValue(selected.value)}
             </p>
-            {selectedRating.comment && (
+            {selected.comment && (
               <p className="rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1.5 text-[13px] leading-relaxed text-ink">
                 <span className="text-ink-muted">Patient note: </span>
-                {selectedRating.comment}
+                {selected.comment}
               </p>
             )}
           </>
-        ) : selectedRating === null && selectedWeek !== null ? (
-          <p className="text-ink-soft">Week {selectedWeek}: not reported</p>
+        ) : selectedWeek !== null && !selected?.reported ? (
+          <p className="text-ink-soft">
+            Week {selectedWeek}: not reported
+          </p>
         ) : (
-          <p className="text-ink-soft">Tap a cell for the value.</p>
+          <p className="text-ink-soft">Tap a point for details.</p>
         )}
       </div>
     </article>
@@ -105,170 +330,6 @@ export function GoalProgressView({
 
 function formatValue(v: Exclude<RatingValue, null> | null): string {
   if (v === null) return '—';
-  // Show with explicit sign for non-zero so the direction is obvious.
   if (v === 0) return '0 (as expected)';
   return v > 0 ? `+${v}` : String(v);
-}
-
-// --- Heatmap subcomponent -----------------------------------------------
-
-interface HeatmapProps {
-  byWeek: (WeekRating | null)[];
-  currentWeek: number;
-  selectedWeek: number | null;
-  onSelectWeek: (w: number) => void;
-}
-
-function Heatmap({
-  byWeek,
-  currentWeek,
-  selectedWeek,
-  onSelectWeek
-}: HeatmapProps) {
-  return (
-    <div className="flex flex-wrap gap-1" aria-label="Weekly ratings">
-      {byWeek.map((entry, i) => {
-        const week = i + 1;
-        const isCurrent = week === currentWeek;
-        const isSelected = week === selectedWeek;
-        const isFuture = week > currentWeek;
-
-        const cellColor = entry?.reported
-          ? colorForValue(entry.value)
-          : isFuture
-          ? 'bg-transparent border-stone'
-          : 'bg-stone-soft/30 border-stone';
-
-        const ringClass = isSelected
-          ? 'ring-2 ring-ink ring-offset-1 ring-offset-cream-soft'
-          : isCurrent
-          ? 'ring-2 ring-sage ring-offset-1 ring-offset-cream-soft'
-          : '';
-
-        return (
-          <button
-            key={week}
-            type="button"
-            onClick={() => onSelectWeek(week)}
-            aria-label={`Week ${week}${entry?.reported ? `, value ${entry.value}` : ', not reported'}`}
-            className={`h-6 w-6 rounded border ${cellColor} ${ringClass}`}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-function colorForValue(v: Exclude<RatingValue, null> | null): string {
-  if (v === null) return 'bg-stone-soft border-stone';
-  switch (v) {
-    case -2:
-      return 'bg-amber-soft border-amber-soft';
-    case -1:
-      return 'bg-amber-soft/50 border-amber-soft/60';
-    case 0:
-      return 'bg-cream border-stone';
-    case 1:
-      return 'bg-sage-soft border-sage-soft';
-    case 2:
-      return 'bg-sage/70 border-sage';
-  }
-}
-
-// --- Line chart subcomponent --------------------------------------------
-
-interface LineChartProps {
-  byWeek: (WeekRating | null)[];
-  currentWeek: number;
-}
-
-function LineChart({ byWeek, currentWeek }: LineChartProps) {
-  const width = 140;
-  const height = 60;
-  const padX = 6;
-  const padY = 6;
-  const totalWeeks = byWeek.length;
-
-  // X coordinate per week (1-indexed).
-  const xFor = (week: number) => {
-    if (totalWeeks <= 1) return padX;
-    return padX + ((week - 1) / (totalWeeks - 1)) * (width - 2 * padX);
-  };
-  // Y coordinate for rating value (-2..+2). Larger value → higher on chart
-  // (lower y in SVG coordinates).
-  const yFor = (value: number) => {
-    const t = (value + 2) / 4; // 0..1
-    return height - padY - t * (height - 2 * padY);
-  };
-
-  const points = byWeek
-    .map((entry, i) => {
-      if (!entry?.reported || entry.value === null) return null;
-      return { x: xFor(i + 1), y: yFor(entry.value), week: i + 1 };
-    })
-    .filter((p): p is { x: number; y: number; week: number } => p !== null);
-
-  // Polyline path through reported points only (skips missing weeks).
-  const path =
-    points.length > 0
-      ? points.map((p) => `${p.x},${p.y}`).join(' ')
-      : '';
-
-  const yZero = yFor(0);
-  const xCurrent = currentWeek <= totalWeeks ? xFor(currentWeek) : null;
-
-  return (
-    <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      role="img"
-      aria-label="Weekly ratings chart"
-      className="block"
-    >
-      {/* Zero line — "as expected" anchor */}
-      <line
-        x1={padX}
-        x2={width - padX}
-        y1={yZero}
-        y2={yZero}
-        stroke="var(--color-stone)"
-        strokeWidth={1}
-        strokeDasharray="2 2"
-      />
-      {/* Current-week marker */}
-      {xCurrent !== null && (
-        <line
-          x1={xCurrent}
-          x2={xCurrent}
-          y1={padY}
-          y2={height - padY}
-          stroke="var(--color-sage)"
-          strokeWidth={1}
-          opacity={0.4}
-        />
-      )}
-      {/* Polyline of reported values */}
-      {points.length >= 2 && (
-        <polyline
-          fill="none"
-          stroke="var(--color-sage-deep)"
-          strokeWidth={1.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          points={path}
-        />
-      )}
-      {/* Dots for each reported value */}
-      {points.map((p) => (
-        <circle
-          key={p.week}
-          cx={p.x}
-          cy={p.y}
-          r={2.5}
-          fill="var(--color-sage-deep)"
-        />
-      ))}
-    </svg>
-  );
 }

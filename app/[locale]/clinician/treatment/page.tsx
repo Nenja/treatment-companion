@@ -25,10 +25,11 @@ interface InjectionDraft {
   side: InjectionSide;
   doseUnits: string;
   guidance: GuidanceMethod;
+  note: string;
 }
 
 function emptyInjection(): InjectionDraft {
-  return { muscle: '', side: 'left', doseUnits: '', guidance: 'ultrasound' };
+  return { muscle: '', side: 'left', doseUnits: '', guidance: 'ultrasound', note: '' };
 }
 
 export default function TreatmentRecordPage() {
@@ -96,7 +97,8 @@ export default function TreatmentRecordPage() {
           muscle: i.muscle,
           side: i.side,
           doseUnits: String(i.doseUnits),
-          guidance: i.guidance as GuidanceMethod
+          guidance: i.guidance as GuidanceMethod,
+          note: i.note ?? ''
         }))
       );
     }
@@ -160,7 +162,8 @@ export default function TreatmentRecordPage() {
         muscle: i.muscle,
         side: i.side,
         doseUnits: parseFloat(i.doseUnits),
-        guidance: i.guidance
+        guidance: i.guidance,
+        note: i.note.trim() || undefined
       }))
     });
     touchSession.mutate();
@@ -325,6 +328,17 @@ export default function TreatmentRecordPage() {
                   </select>
                 </Field>
               </div>
+              <Field label="Note" helper="Optional. E.g. 'high EMG activity'." inline>
+                <input
+                  type="text"
+                  value={inj.note}
+                  onChange={(e) =>
+                    updateInjection(i, { note: e.target.value })
+                  }
+                  className={inputClasses}
+                  maxLength={200}
+                />
+              </Field>
             </li>
           ))}
         </ul>

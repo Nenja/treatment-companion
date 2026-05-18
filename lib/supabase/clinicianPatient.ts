@@ -44,6 +44,7 @@ export interface ClinicianTreatmentRecord {
     side: 'left' | 'right' | 'bilateral';
     doseUnits: number;
     guidance: string;
+    note: string | null;
     position: number;
   }[];
 }
@@ -150,7 +151,7 @@ export function useClinicianPatientData(
           supabase
             .from('treatment_session')
             .select(
-              'id, date, drug_product, total_units, dilution, notes, injections:muscle_injection (id, muscle, side, dose_units, guidance, position)'
+              'id, date, drug_product, total_units, dilution, notes, injections:muscle_injection (id, muscle, side, dose_units, guidance, note, position)'
             )
             .eq('treatment_cycle_id', cycle.id)
             .order('date', { ascending: false })
@@ -220,6 +221,7 @@ export function useClinicianPatientData(
                 side: 'left' | 'right' | 'bilateral';
                 dose_units: number;
                 guidance: string;
+                note: string | null;
                 position: number;
               }> | null ?? []
             )
@@ -229,6 +231,7 @@ export function useClinicianPatientData(
                 side: i.side,
                 doseUnits: Number(i.dose_units),
                 guidance: i.guidance,
+                note: i.note,
                 position: i.position
               }))
               .sort((a, b) => a.position - b.position)
@@ -318,6 +321,7 @@ export interface SaveTreatmentSessionInput {
     side: 'left' | 'right' | 'bilateral';
     doseUnits: number;
     guidance: string;
+    note?: string;
   }[];
 }
 
@@ -339,7 +343,8 @@ export function useSaveTreatmentSession() {
           muscle: i.muscle,
           side: i.side,
           dose_units: i.doseUnits,
-          guidance: i.guidance
+          guidance: i.guidance,
+          note: i.note ?? null
         }))
       });
       if (error) throw error;

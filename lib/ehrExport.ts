@@ -30,6 +30,7 @@ export interface ExportInjection {
   side: InjectionSide;
   doseUnits: number;
   guidance: GuidanceMethod;
+  note?: string;
 }
 
 export interface ExportTreatment {
@@ -90,8 +91,9 @@ export function buildEhrExport({
     if (treatment.injections.length > 0) {
       lines.push('Injections:');
       for (const inj of treatment.injections) {
+        const noteSuffix = inj.note ? ` — ${inj.note}` : '';
         lines.push(
-          `- ${inj.muscle} (${sideLabel(inj.side)}) — ${inj.doseUnits} units, ${guidanceLabel(inj.guidance)}`
+          `- ${inj.muscle} (${sideLabel(inj.side)}) — ${inj.doseUnits} units, ${guidanceLabel(inj.guidance)}${noteSuffix}`
         );
       }
     }
