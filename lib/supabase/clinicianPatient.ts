@@ -37,13 +37,13 @@ export interface ClinicianTreatmentRecord {
   drugProduct: string;
   totalUnits: number;
   dilution: string | null;
+  guidance: string;
   notes: string | null;
   injections: {
     id: string;
     muscle: string;
     side: 'left' | 'right' | 'bilateral';
     doseUnits: number;
-    guidance: string;
     note: string | null;
     position: number;
   }[];
@@ -151,7 +151,7 @@ export function useClinicianPatientData(
           supabase
             .from('treatment_session')
             .select(
-              'id, date, drug_product, total_units, dilution, notes, injections:muscle_injection (id, muscle, side, dose_units, guidance, note, position)'
+              'id, date, drug_product, total_units, dilution, guidance, notes, injections:muscle_injection (id, muscle, side, dose_units, note, position)'
             )
             .eq('treatment_cycle_id', cycle.id)
             .order('date', { ascending: false })
@@ -213,6 +213,7 @@ export function useClinicianPatientData(
             drugProduct: treatmentRes.data.drug_product as string,
             totalUnits: Number(treatmentRes.data.total_units),
             dilution: (treatmentRes.data.dilution as string | null) ?? null,
+            guidance: treatmentRes.data.guidance as string,
             notes: (treatmentRes.data.notes as string | null) ?? null,
             injections: (
               treatmentRes.data.injections as Array<{
@@ -220,7 +221,6 @@ export function useClinicianPatientData(
                 muscle: string;
                 side: 'left' | 'right' | 'bilateral';
                 dose_units: number;
-                guidance: string;
                 note: string | null;
                 position: number;
               }> | null ?? []
@@ -230,7 +230,6 @@ export function useClinicianPatientData(
                 muscle: i.muscle,
                 side: i.side,
                 doseUnits: Number(i.dose_units),
-                guidance: i.guidance,
                 note: i.note,
                 position: i.position
               }))
@@ -315,12 +314,12 @@ export interface SaveTreatmentSessionInput {
   drugProduct: string;
   totalUnits: number;
   dilution?: string;
+  guidance: string;
   notes?: string;
   injections: {
     muscle: string;
     side: 'left' | 'right' | 'bilateral';
     doseUnits: number;
-    guidance: string;
     note?: string;
   }[];
 }
@@ -338,12 +337,12 @@ export function useSaveTreatmentSession() {
         p_drug_product: input.drugProduct,
         p_total_units: input.totalUnits,
         p_dilution: input.dilution ?? null,
+        p_guidance: input.guidance,
         p_notes: input.notes ?? null,
         p_injections: input.injections.map((i) => ({
           muscle: i.muscle,
           side: i.side,
           dose_units: i.doseUnits,
-          guidance: i.guidance,
           note: i.note ?? null
         }))
       });

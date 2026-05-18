@@ -228,7 +228,6 @@ export interface MuscleInjection {
   muscle: string; // free text — see slice-5 design notes
   side: InjectionSide;
   doseUnits: number;
-  guidance: GuidanceMethod;
   /** Short clinical observation, e.g. "high EMG activity". Optional. */
   note?: string;
 }
@@ -241,6 +240,7 @@ export interface TreatmentSession {
   drugProduct: string; // free text — see slice-5 design notes
   totalUnits: number;
   dilution?: string; // free text, e.g. "250 IU/ml" — optional
+  guidance: GuidanceMethod;
   injections: MuscleInjection[];
   notes?: string;
   recordedByClinicianId: string;

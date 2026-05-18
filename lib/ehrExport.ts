@@ -29,7 +29,6 @@ export interface ExportInjection {
   muscle: string;
   side: InjectionSide;
   doseUnits: number;
-  guidance: GuidanceMethod;
   note?: string;
 }
 
@@ -38,6 +37,7 @@ export interface ExportTreatment {
   drugProduct: string;
   totalUnits: number;
   dilution?: string;
+  guidance: GuidanceMethod;
   injections: ExportInjection[];
   notes?: string;
 }
@@ -85,15 +85,20 @@ export function buildEhrExport({
   // Treatment session -----------------------------------------------------
   if (treatment) {
     lines.push('Treatment');
-    lines.push(
-      `Date: ${formatLongDate(treatment.date, locale)} · ${treatment.drugProduct} · ${treatment.totalUnits} units total`
-    );
+    const headerParts = [
+      `Date: ${formatLongDate(treatment.date, locale)}`,
+      treatment.drugProduct,
+      `${treatment.totalUnits} units total`
+    ];
+    if (treatment.dilution) headerParts.push(`Dilution: ${treatment.dilution}`);
+    headerParts.push(`Guidance: ${guidanceLabel(treatment.guidance)}`);
+    lines.push(headerParts.join(' · '));
     if (treatment.injections.length > 0) {
       lines.push('Injections:');
       for (const inj of treatment.injections) {
         const noteSuffix = inj.note ? ` — ${inj.note}` : '';
         lines.push(
-          `- ${inj.muscle} (${sideLabel(inj.side)}) — ${inj.doseUnits} units, ${guidanceLabel(inj.guidance)}${noteSuffix}`
+          `- ${inj.muscle} (${sideLabel(inj.side)}) — ${inj.doseUnits} units${noteSuffix}`
         );
       }
     }

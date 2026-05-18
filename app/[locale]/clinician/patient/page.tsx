@@ -182,11 +182,10 @@ export default function ClinicianPatientPage() {
                     {treatment.drugProduct} · {treatment.totalUnits} units ·{' '}
                     {formatLongDate(treatment.date, locale)}
                   </p>
-                  {treatment.dilution && (
-                    <p className="mt-0.5 text-[13px] text-ink-soft">
-                      Dilution: {treatment.dilution}
-                    </p>
-                  )}
+                  <p className="mt-0.5 text-[13px] text-ink-soft">
+                    {labelForGuidance(treatment.guidance)}
+                    {treatment.dilution && ` · Dilution: ${treatment.dilution}`}
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -207,8 +206,7 @@ export default function ClinicianPatientPage() {
                 {treatment.injections.map((inj) => (
                   <li key={inj.id}>
                     <span>
-                      {inj.muscle} · {inj.side} · {inj.doseUnits} units ·{' '}
-                      {inj.guidance}
+                      {inj.muscle} · {inj.side} · {inj.doseUnits} units
                     </span>
                     {inj.note && (
                       <span className="ml-1 italic text-ink-muted">
@@ -377,11 +375,11 @@ export default function ClinicianPatientPage() {
                   drugProduct: treatment.drugProduct,
                   totalUnits: treatment.totalUnits,
                   dilution: treatment.dilution ?? undefined,
+                  guidance: treatment.guidance as GuidanceMethod,
                   injections: treatment.injections.map((i) => ({
                     muscle: i.muscle,
                     side: i.side,
                     doseUnits: i.doseUnits,
-                    guidance: i.guidance as GuidanceMethod,
                     note: i.note ?? undefined
                   })),
                   notes: treatment.notes ?? undefined
@@ -433,4 +431,25 @@ export default function ClinicianPatientPage() {
       )}
     </div>
   );
+}
+
+function labelForGuidance(g: string): string {
+  switch (g) {
+    case 'emg':
+      return 'EMG';
+    case 'ultrasound':
+      return 'Ultrasound';
+    case 'usEmg':
+      return 'Ultrasound + EMG';
+    case 'electricalStimulation':
+      return 'Electrical stimulation';
+    case 'anatomicalLandmarks':
+      return 'Anatomical landmarks';
+    case 'none':
+      return 'No guidance';
+    case 'other':
+      return 'Other';
+    default:
+      return g;
+  }
 }

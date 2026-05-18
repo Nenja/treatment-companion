@@ -24,12 +24,11 @@ interface InjectionDraft {
   muscle: string;
   side: InjectionSide;
   doseUnits: string;
-  guidance: GuidanceMethod;
   note: string;
 }
 
 function emptyInjection(): InjectionDraft {
-  return { muscle: '', side: 'left', doseUnits: '', guidance: 'ultrasound', note: '' };
+  return { muscle: '', side: 'left', doseUnits: '', note: '' };
 }
 
 export default function TreatmentRecordPage() {
@@ -48,7 +47,6 @@ export default function TreatmentRecordPage() {
   const save = useSaveTreatmentSession();
   const touchSession = useTouchClinicianSession();
 
-  // Auth gating.
   useEffect(() => {
     if (authLoading) return;
     if (!user || !profile) {
@@ -60,7 +58,6 @@ export default function TreatmentRecordPage() {
     }
   }, [authLoading, user, profile, router, locale]);
 
-  // Bounce if session timed out.
   useEffect(() => {
     if (!sessionQuery.isLoading && sessionQuery.data === null) {
       router.replace(
@@ -70,18 +67,18 @@ export default function TreatmentRecordPage() {
     }
   }, [sessionQuery.isLoading, sessionQuery.data, router, locale]);
 
-  // Form state. Initialised from existing record once data loads.
+  // Form state.
   const [date, setDate] = useState(todayIso());
   const [drugProduct, setDrugProduct] = useState('');
   const [totalUnits, setTotalUnits] = useState('');
   const [dilution, setDilution] = useState('');
+  const [guidance, setGuidance] = useState<GuidanceMethod>('ultrasound');
   const [notes, setNotes] = useState('');
   const [injections, setInjections] = useState<InjectionDraft[]>([
     emptyInjection()
   ]);
   const [hydrated, setHydrated] = useState(false);
 
-  // Hydrate form from existing session once data is available.
   useEffect(() => {
     if (hydrated) return;
     if (!dataQuery.data) return;
@@ -91,13 +88,13 @@ export default function TreatmentRecordPage() {
       setDrugProduct(existing.drugProduct);
       setTotalUnits(String(existing.totalUnits));
       setDilution(existing.dilution ?? '');
+      setGuidance(existing.guidance as GuidanceMethod);
       setNotes(existing.notes ?? '');
       setInjections(
         existing.injections.map((i) => ({
           muscle: i.muscle,
           side: i.side,
           doseUnits: String(i.doseUnits),
-          guidance: i.guidance as GuidanceMethod,
           note: i.note ?? ''
         }))
       );
@@ -157,12 +154,12 @@ export default function TreatmentRecordPage() {
       drugProduct,
       totalUnits: totalUnitsNum,
       dilution: dilution.trim() || undefined,
+      guidance,
       notes: notes.trim() || undefined,
       injections: validInjections.map((i) => ({
         muscle: i.muscle,
         side: i.side,
         doseUnits: parseFloat(i.doseUnits),
-        guidance: i.guidance,
         note: i.note.trim() || undefined
       }))
     });
@@ -194,51 +191,73 @@ export default function TreatmentRecordPage() {
           For {patient.displayName} · Cycle {cycle.cycleNumber}
         </p>
 
-        <Field label="Date of treatment">
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className={inputClasses}
-          />
-        </Field>
+        {/* Row 1: Date + Drug product (date is narrow, product is wider) */}
+        <div className="mt-6 grid gap-3 sm:grid-cols-[140px_1fr]">
+          <Field label="Date" inline>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className={inputClasses}
+            />
+          </Field>
+          <Field label="Drug product" inline>
+            <input
+              type="text"
+              value={drugProduct}
+              onChange={(e) => setDrugProduct(e.target.value)}
+              className={inputClasses}
+              maxLength={60}
+              placeholder="e.g. Botox"
+            />
+          </Field>
+        </div>
+
+        {/* Row 2: Total units + Dilution (both compact) */}
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Field label="Total units" inline>
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="any"
+              value={totalUnits}
+              onChange={(e) => setTotalUnits(e.target.value)}
+              className={inputClasses}
+            />
+          </Field>
+          <Field label="Dilution" inline>
+            <input
+              type="text"
+              value={dilution}
+              onChange={(e) => setDilution(e.target.value)}
+              className={inputClasses}
+              maxLength={40}
+              placeholder="e.g. 250 IU/ml"
+            />
+          </Field>
+        </div>
+
+        {/* Row 3: Guidance technique — full width because dropdown labels
+            can be long ("Electrical stimulation"). */}
         <Field
-          label="Drug product"
-          helper="Free text — e.g. Botox, Dysport, Xeomin"
+          label="Guidance technique"
+          helper="Used for all muscles in this session."
         >
-          <input
-            type="text"
-            value={drugProduct}
-            onChange={(e) => setDrugProduct(e.target.value)}
+          <select
+            value={guidance}
+            onChange={(e) => setGuidance(e.target.value as GuidanceMethod)}
             className={inputClasses}
-            maxLength={60}
-          />
-        </Field>
-        <Field label="Total units">
-          <input
-            type="number"
-            inputMode="decimal"
-            min={0}
-            step="any"
-            value={totalUnits}
-            onChange={(e) => setTotalUnits(e.target.value)}
-            className={inputClasses}
-          />
-        </Field>
-        <Field
-          label="Dilution"
-          helper="Free text — e.g. 250 IU/ml. Optional."
-        >
-          <input
-            type="text"
-            value={dilution}
-            onChange={(e) => setDilution(e.target.value)}
-            className={inputClasses}
-            maxLength={40}
-            placeholder="250 IU/ml"
-          />
+          >
+            {GUIDANCE_METHODS.map((g) => (
+              <option key={g} value={g}>
+                {labelForGuidance(g)}
+              </option>
+            ))}
+          </select>
         </Field>
 
+        {/* Muscles section */}
         <h2 className="mt-8 font-display text-[18px] text-ink">
           Muscles injected
         </h2>
@@ -263,6 +282,8 @@ export default function TreatmentRecordPage() {
                   </button>
                 )}
               </div>
+
+              {/* Muscle name — full width */}
               <Field label="Muscle name" inline>
                 <input
                   type="text"
@@ -275,7 +296,9 @@ export default function TreatmentRecordPage() {
                   maxLength={80}
                 />
               </Field>
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+
+              {/* Side + dose — two columns */}
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <Field label="Side" inline>
                   <select
                     value={inj.side}
@@ -310,25 +333,14 @@ export default function TreatmentRecordPage() {
                     className={inputClasses}
                   />
                 </Field>
-                <Field label="Guidance" inline>
-                  <select
-                    value={inj.guidance}
-                    onChange={(e) =>
-                      updateInjection(i, {
-                        guidance: e.target.value as GuidanceMethod
-                      })
-                    }
-                    className={inputClasses}
-                  >
-                    {GUIDANCE_METHODS.map((g) => (
-                      <option key={g} value={g}>
-                        {labelForGuidance(g)}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
               </div>
-              <Field label="Note" helper="Optional. E.g. 'high EMG activity'." inline>
+
+              {/* Per-muscle note */}
+              <Field
+                label="Note"
+                helper="Optional. E.g. 'high EMG activity'."
+                inline
+              >
                 <input
                   type="text"
                   value={inj.note}
@@ -350,7 +362,8 @@ export default function TreatmentRecordPage() {
           + Add another muscle
         </button>
 
-        <Field label="Notes" helper="Optional">
+        {/* Session notes */}
+        <Field label="Session notes" helper="Optional">
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -397,7 +410,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className={inline ? 'mt-3' : 'mt-6'}>
+    <div className={inline ? 'mt-0' : 'mt-6'}>
       <label className="block text-[13px] font-semibold text-ink">
         {label}
       </label>
