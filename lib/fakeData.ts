@@ -433,34 +433,31 @@ export function buildSeed(): Seed {
     date: annaCycleStart,
     drugProduct: 'Botox',
     totalUnits: 400,
+    guidance: 'ultrasound',
     injections: [
       {
         id: 'tx-anna-2-i1',
         muscle: 'Flexor digitorum superficialis',
         side: 'left',
-        doseUnits: 50,
-        guidance: 'ultrasound'
+        doseUnits: 50
       },
       {
         id: 'tx-anna-2-i2',
         muscle: 'Flexor digitorum profundus',
         side: 'left',
-        doseUnits: 50,
-        guidance: 'ultrasound'
+        doseUnits: 50
       },
       {
         id: 'tx-anna-2-i3',
         muscle: 'Gastrocnemius',
         side: 'left',
-        doseUnits: 150,
-        guidance: 'anatomicalLandmarks'
+        doseUnits: 150
       },
       {
         id: 'tx-anna-2-i4',
         muscle: 'Soleus',
         side: 'left',
-        doseUnits: 150,
-        guidance: 'anatomicalLandmarks'
+        doseUnits: 150
       }
     ],
     notes: 'Patient tolerated procedure well. Repeat at cycle review.',
