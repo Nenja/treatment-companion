@@ -187,6 +187,7 @@
     "patient": {
       "viewingLabel": "Viewing",
       "cycleContext": "Week {week} of {total} · Cycle {cycle}",
+      "cycleLength": "Cycle length: {weeks} weeks",
       "nextVisit": "Next visit: {date}",
       "suggestionsTitle": "Suggested goals",
       "suggestionsEmpty": "No suggestions awaiting review.",
