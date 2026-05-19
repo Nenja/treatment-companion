@@ -15,6 +15,7 @@ import {
   useSetSuggestionStatus
 } from '@/lib/supabase/clinicianPatient';
 import { formatLongDate } from '@/lib/dates';
+import { AccountMenu } from '@/components/layout/AccountMenu';
 
 export default function SuggestionReviewPage() {
   return (
@@ -186,7 +187,7 @@ function Inner() {
             ← {t('back')}
           </button>
           <span className="eyebrow">{t('title')}</span>
-          <span className="w-10" aria-hidden />
+          <AccountMenu />
         </div>
       </header>
 

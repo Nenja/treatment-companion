@@ -19,6 +19,7 @@ import {
   type GuidanceMethod,
   type InjectionSide
 } from '@/lib/types';
+import { AccountMenu } from '@/components/layout/AccountMenu';
 
 interface InjectionDraft {
   muscle: string;
@@ -179,7 +180,7 @@ export default function TreatmentRecordPage() {
             ← Back
           </button>
           <span className="eyebrow">Treatment record</span>
-          <span className="w-10" aria-hidden />
+          <AccountMenu />
         </div>
       </header>
 

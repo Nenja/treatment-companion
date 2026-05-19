@@ -9,6 +9,7 @@ import {
   useGenerateVisitCode
 } from '@/lib/supabase/visitCode';
 import { formatVisitCode } from '@/lib/visitCode';
+import { AccountMenu } from '@/components/layout/AccountMenu';
 
 /**
  * Patient's visit-code screen. Shows the current active code (if any)
@@ -96,7 +97,7 @@ export default function VisitCodePage() {
             ← {t('back')}
           </button>
           <span className="eyebrow">{t('pageTitle')}</span>
-          <span className="w-10" aria-hidden />
+          <AccountMenu />
         </div>
       </header>
 

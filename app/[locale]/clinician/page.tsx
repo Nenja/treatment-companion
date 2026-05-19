@@ -8,6 +8,7 @@ import {
   useCurrentClinicianSession,
   useUnlockWithCode
 } from '@/lib/supabase/clinicianSession';
+import { AccountMenu } from '@/components/layout/AccountMenu';
 
 /**
  * Clinician landing screen.
@@ -92,6 +93,11 @@ export default function ClinicianUnlockPage() {
 
   return (
     <div className="min-h-dvh bg-cream">
+      <header className="border-b border-stone/70 bg-cream-soft/50">
+        <div className="mx-auto flex max-w-[480px] items-center justify-end px-5 py-3">
+          <AccountMenu />
+        </div>
+      </header>
       <main className="mx-auto max-w-[480px] px-5 py-10">
         <h1 className="font-display text-[28px] leading-tight text-ink">
           {t('title')}

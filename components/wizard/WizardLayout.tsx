@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import { AccountMenu } from '@/components/layout/AccountMenu';
 
 interface WizardLayoutProps {
   currentStep: number;
@@ -46,8 +47,7 @@ export function WizardLayout({
           <span className="eyebrow">
             {t('stepOf', { current: currentStep, total: totalSteps })}
           </span>
-          {/* Spacer to balance the layout */}
-          <span className="w-10" aria-hidden />
+          <AccountMenu />
         </div>
         {/* Progress dots */}
         <div className="mx-auto flex max-w-[480px] gap-1.5 px-5 pb-4">

@@ -17,6 +17,7 @@ import { weekOfCycle, formatLongDate } from '@/lib/dates';
 import type { GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { ExportModal } from '@/components/clinician/ExportModal';
+import { AccountMenu } from '@/components/layout/AccountMenu';
 import { buildEhrExport } from '@/lib/ehrExport';
 
 export default function ClinicianPatientPage() {
@@ -149,13 +150,16 @@ export default function ClinicianPatientPage() {
               {patient.displayName}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setConfirmEnd(true)}
-            className="text-[13px] font-semibold text-ink-soft hover:text-ink"
-          >
-            {tSession('endSession')}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setConfirmEnd(true)}
+              className="text-[13px] font-semibold text-ink-soft hover:text-ink"
+            >
+              {tSession('endSession')}
+            </button>
+            <AccountMenu />
+          </div>
         </div>
       </header>
 
@@ -316,32 +320,9 @@ export default function ClinicianPatientPage() {
           )}
         </section>
 
-        {/* Patient comments across the cycle */}
-        {checkins.some((c) => c.comment?.trim()) && (
-          <section className="mt-10">
-            <h2 className="font-display text-[20px] leading-tight text-ink">
-              Patient comments
-            </h2>
-            <ul className="mt-3 space-y-3">
-              {checkins
-                .filter((c) => c.comment?.trim())
-                .sort((a, b) => b.weekNumber - a.weekNumber)
-                .map((c) => (
-                  <li
-                    key={c.id}
-                    className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
-                  >
-                    <div className="eyebrow text-ink-muted">
-                      Week {c.weekNumber}
-                    </div>
-                    <p className="mt-1 whitespace-pre-wrap text-[14px] leading-relaxed text-ink">
-                      {c.comment}
-                    </p>
-                  </li>
-                ))}
-            </ul>
-          </section>
-        )}
+        {/* Patient comments are now reachable from the chart — tap any
+            dot showing a speech-bubble icon to see the comment in the
+            caption below the chart. */}
 
         {/* EHR export */}
         {(treatment || activeGoals.length > 0 || checkins.length > 0) && (

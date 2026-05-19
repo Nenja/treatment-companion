@@ -1,11 +1,14 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
+import { AccountMenu } from './AccountMenu';
 
 export function TopBar() {
   const t = useTranslations('app');
 
   return (
     <header className="border-b border-stone/70 bg-cream-soft/50 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
+      <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-3">
         <div className="flex items-center gap-2.5">
           {/* Mark: a soft sage chevron — a quiet visual identity, no logotype */}
           <svg
@@ -37,6 +40,7 @@ export function TopBar() {
             {t('name')}
           </span>
         </div>
+        <AccountMenu />
       </div>
     </header>
   );

@@ -268,20 +268,51 @@ export function GoalProgressView({
                 style={{ cursor: 'pointer' }}
               />
               {entry?.reported && typeof entry.value === 'number' ? (
-                <circle
-                  cx={x}
-                  cy={yFor(entry.value)}
-                  r={isSelected ? 5 : isCurrent ? 4.5 : 4}
-                  fill="var(--color-sage-deep)"
-                  stroke={
-                    isSelected
-                      ? 'var(--color-ink)'
-                      : isCurrent
-                      ? 'var(--color-sage)'
-                      : 'var(--color-cream-soft)'
-                  }
-                  strokeWidth={isSelected ? 2 : 1.5}
-                />
+                <>
+                  <circle
+                    cx={x}
+                    cy={yFor(entry.value)}
+                    r={isSelected ? 5 : isCurrent ? 4.5 : 4}
+                    fill="var(--color-sage-deep)"
+                    stroke={
+                      isSelected
+                        ? 'var(--color-ink)'
+                        : isCurrent
+                        ? 'var(--color-sage)'
+                        : 'var(--color-cream-soft)'
+                    }
+                    strokeWidth={isSelected ? 2 : 1.5}
+                  />
+                  {/* Speech bubble icon for weeks with a patient comment.
+                      Positioned up-and-right of the dot, drawn as a
+                      small rounded rect with a tail. Subtle ink colour
+                      so it reads as an annotation, not data. */}
+                  {entry.comment && (
+                    <g
+                      transform={`translate(${x + 5}, ${yFor(entry.value) - 11})`}
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      <rect
+                        x={0}
+                        y={0}
+                        width={9}
+                        height={6}
+                        rx={1.5}
+                        ry={1.5}
+                        fill="var(--color-cream-soft)"
+                        stroke="var(--color-ink-soft)"
+                        strokeWidth={0.7}
+                      />
+                      <path
+                        d="M 2 6 L 1.5 7.5 L 3.5 6 Z"
+                        fill="var(--color-cream-soft)"
+                        stroke="var(--color-ink-soft)"
+                        strokeWidth={0.7}
+                        strokeLinejoin="round"
+                      />
+                    </g>
+                  )}
+                </>
               ) : (
                 <circle
                   cx={x}
