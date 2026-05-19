@@ -47,7 +47,7 @@ export function AccountMenu() {
   if (!user || !profile) return null;
 
   const initials =
-    (profile.display_name ?? user.email ?? '?')
+    (profile.displayName ?? user.email ?? '?')
       .split(/\s+/)
       .map((p) => p[0])
       .filter(Boolean)
@@ -88,7 +88,7 @@ export function AccountMenu() {
         >
           <div className="border-b border-stone/70 px-4 py-3">
             <p className="font-display text-[15px] leading-tight text-ink">
-              {profile.display_name ?? 'Account'}
+              {profile.displayName ?? 'Account'}
             </p>
             {user.email && (
               <p className="mt-0.5 truncate text-[12px] text-ink-muted">
