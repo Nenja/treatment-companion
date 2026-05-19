@@ -57,9 +57,7 @@ export interface ClinicianPatientData {
   cycle: {
     id: string;
     cycleNumber: number;
-    lengthWeeks: number;
     startDate: string;
-    reviewDate: string;
   };
   suggestions: ClinicianPatientSuggestion[];
   activeGoals: ClinicianPatientGoal[];
@@ -105,7 +103,7 @@ export function useClinicianPatientData(
       // 2. Active cycle
       const { data: cycleRow, error: cErr } = await supabase
         .from('treatment_cycle')
-        .select('id, cycle_number, length_weeks, start_date, review_date')
+        .select('id, cycle_number, start_date')
         .eq('patient_id', patient.id)
         .eq('status', 'active')
         .order('cycle_number', { ascending: false })
@@ -117,9 +115,7 @@ export function useClinicianPatientData(
       const cycle = {
         id: cycleRow.id as string,
         cycleNumber: cycleRow.cycle_number as number,
-        lengthWeeks: cycleRow.length_weeks as number,
-        startDate: cycleRow.start_date as string,
-        reviewDate: cycleRow.review_date as string
+        startDate: cycleRow.start_date as string
       };
 
       // 3. Parallel queries for the rest
@@ -351,6 +347,113 @@ export function useSaveTreatmentSession() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
+/**
+ * Loads the most recent treatment session from a PREVIOUS cycle for
+ * this patient — the "previous" being any cycle with cycle_number less
+ * than the current. Used by "Copy from previous treatment".
+ *
+ * Returns null when there's no prior cycle (e.g. this is the patient's
+ * first cycle).
+ */
+export function usePreviousTreatment(
+  patientId: string | null,
+  currentCycleNumber: number | null,
+  enabled: boolean
+) {
+  return useQuery({
+    queryKey: ['previousTreatment', patientId, currentCycleNumber],
+    enabled:
+      enabled && !!patientId && typeof currentCycleNumber === 'number',
+    queryFn: async (): Promise<ClinicianTreatmentRecord | null> => {
+      const supabase = createSupabaseBrowserClient();
+      // Find any past cycle (cycle_number < current). Their treatment
+      // sessions ordered by date desc.
+      const { data: prevCycles, error: cErr } = await supabase
+        .from('treatment_cycle')
+        .select('id, cycle_number')
+        .eq('patient_id', patientId!)
+        .lt('cycle_number', currentCycleNumber!)
+        .order('cycle_number', { ascending: false });
+      if (cErr) throw cErr;
+      if (!prevCycles || prevCycles.length === 0) return null;
+
+      const prevCycleIds = prevCycles.map((c) => c.id as string);
+      const { data: sessions, error: sErr } = await supabase
+        .from('treatment_session')
+        .select(
+          'id, date, drug_product, total_units, dilution, guidance, notes, injections:muscle_injection (id, muscle, side, dose_units, note, position)'
+        )
+        .in('treatment_cycle_id', prevCycleIds)
+        .order('date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (sErr) throw sErr;
+      if (!sessions) return null;
+
+      return {
+        id: sessions.id as string,
+        date: sessions.date as string,
+        drugProduct: sessions.drug_product as string,
+        totalUnits: Number(sessions.total_units),
+        dilution: (sessions.dilution as string | null) ?? null,
+        guidance: sessions.guidance as string,
+        notes: (sessions.notes as string | null) ?? null,
+        injections: (
+          sessions.injections as Array<{
+            id: string;
+            muscle: string;
+            side: 'left' | 'right' | 'bilateral';
+            dose_units: number;
+            note: string | null;
+            position: number;
+          }> | null ?? []
+        )
+          .map((i) => ({
+            id: i.id,
+            muscle: i.muscle,
+            side: i.side,
+            doseUnits: Number(i.dose_units),
+            note: i.note,
+            position: i.position
+          }))
+          .sort((a, b) => a.position - b.position)
+      };
+    }
+  });
+}
+
+/**
+ * Starts a new treatment cycle: closes the current active cycle and
+ * opens a new one with the given treatment date. The new cycle gets
+ * 16 pending weekly prompts seeded. The previous cycle's goals stay
+ * with the previous cycle (they're not copied forward — that's a
+ * future workflow if needed).
+ *
+ * Returns the new cycle id so the caller can navigate to the treatment
+ * record form for it.
+ */
+export function useStartNewCycle() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      patientId: string;
+      treatmentDate: string;
+    }): Promise<string> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc('start_new_cycle', {
+        p_patient_id: input.patientId,
+        p_treatment_date: input.treatmentDate
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+      qc.invalidateQueries({ queryKey: ['previousTreatment'] });
     }
   });
 }

@@ -13,7 +13,7 @@ import {
   useClinicianPatientData,
   useSetSuggestionStatus
 } from '@/lib/supabase/clinicianPatient';
-import { weekOfCycle, formatLongDate } from '@/lib/dates';
+import { formatLongDate } from '@/lib/dates';
 import type { GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { ExportModal } from '@/components/clinician/ExportModal';
@@ -99,9 +99,13 @@ export default function ClinicianPatientPage() {
   const { patient, cycle, suggestions, activeGoals, checkins, treatment } =
     patientData.data;
 
-  const nowIso = new Date().toISOString().slice(0, 10);
-  const weekNumber = weekOfCycle(cycle.startDate, nowIso);
-  const totalWeeks = cycle.lengthWeeks;
+  // Compute current week from cycle.start_date and today.
+  const startMs = new Date(cycle.startDate).getTime();
+  const todayMs = Date.now();
+  const daysSinceStart = Math.floor(
+    (todayMs - startMs) / (24 * 60 * 60 * 1000)
+  );
+  const weekNumber = Math.max(1, Math.floor(daysSinceStart / 7) + 1);
 
   // Build per-goal ratings for the progress views.
   const ratingsByGoal = new Map<
@@ -167,12 +171,13 @@ export default function ClinicianPatientPage() {
         <div className="eyebrow">
           {t('cycleContext', {
             cycle: cycle.cycleNumber,
-            week: weekNumber,
-            total: totalWeeks
+            week: weekNumber
           })}
         </div>
         <p className="mt-1 text-[15px] text-ink-soft">
-          {t('cycleLength', { weeks: totalWeeks })}
+          {t('treatmentDate', {
+            date: formatLongDate(cycle.startDate, locale)
+          })}
         </p>
 
         {/* Treatment record card */}
@@ -266,7 +271,6 @@ export default function ClinicianPatientPage() {
                 <li key={g.id}>
                   <GoalProgressView
                     goalText={g.patientFacingText}
-                    totalWeeks={totalWeeks}
                     currentWeek={weekNumber}
                     ratings={ratingsByGoal.get(g.id) ?? []}
                   />
@@ -347,8 +351,7 @@ export default function ClinicianPatientPage() {
             patient: { displayName: patient.displayName },
             cycle: {
               cycleNumber: cycle.cycleNumber,
-              lengthWeeks: cycle.lengthWeeks,
-              reviewDate: cycle.reviewDate
+              startDate: cycle.startDate
             },
             treatment: treatment
               ? {

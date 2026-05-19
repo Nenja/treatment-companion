@@ -3,31 +3,30 @@
 import { useTranslations } from 'next-intl';
 
 interface CheckinDotsProps {
-  totalWeeks: number;
+  /** Current week number since treatment (1-indexed). */
+  currentWeek: number;
   completedWeeks: Set<number>;
   pendingPromptWeek?: number;
 }
 
 /**
- * Visual cycle progress: one circle per week.
+ * Visual cycle progress: one circle per week up to current.
  *
  *   ●  solid sage      = check-in completed for that week
  *   ⊙  sage ring       = current pending prompt (this is "now")
- *   ○  grey ring       = future week, or skipped past week
+ *   ○  grey ring       = skipped past week
  *
- * Note: skipped past weeks render identically to future weeks on purpose.
- * The brief is firm that the app must not punish missed entries.
- *
- * Decorative for sighted users; the sr-only line gives the screen-reader
- * equivalent.
+ * The strip grows by one dot each week — no fixed cap is shown.
+ * Skipped past weeks render identically to current to avoid punishing
+ * missed entries.
  */
 export function CheckinDots({
-  totalWeeks,
+  currentWeek,
   completedWeeks,
   pendingPromptWeek
 }: CheckinDotsProps) {
   const t = useTranslations('patient.home');
-  const weeks = Array.from({ length: totalWeeks }, (_, i) => i + 1);
+  const weeks = Array.from({ length: Math.max(1, currentWeek) }, (_, i) => i + 1);
 
   return (
     <div className="mt-3">

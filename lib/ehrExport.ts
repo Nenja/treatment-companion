@@ -21,8 +21,7 @@ export interface ExportPatient {
 
 export interface ExportCycle {
   cycleNumber: number;
-  lengthWeeks?: number;
-  reviewDate: string;
+  startDate: string;
 }
 
 export interface ExportInjection {
@@ -78,7 +77,7 @@ export function buildEhrExport({
   // Header ----------------------------------------------------------------
   lines.push(`Treatment companion summary — ${patient.displayName}`);
   lines.push(
-    `Cycle ${cycle.cycleNumber} · Length ${cycle.lengthWeeks ?? 12} weeks · Review ${formatLongDate(cycle.reviewDate, locale)}`
+    `Cycle ${cycle.cycleNumber} · Treatment date ${formatLongDate(cycle.startDate, locale)}`
   );
   lines.push('');
 

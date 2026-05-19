@@ -15,9 +15,7 @@ export interface PatientHomeData {
   cycle: {
     id: string;
     cycleNumber: number;
-    lengthWeeks: number;
     startDate: string;
-    reviewDate: string;
   } | null;
   /** Approved, currently-active goals. */
   goals: {
@@ -33,8 +31,8 @@ export interface PatientHomeData {
     weekNumber: number;
     dueDate: string;
   } | null;
-  /** Total weeks of the cycle (= cycle.lengthWeeks). */
-  totalWeeks: number;
+  /** Current week number since treatment (1-indexed). */
+  currentWeek: number;
   /** Week numbers that have a completed check-in. */
   completedWeeks: number[];
 }
@@ -83,7 +81,7 @@ export function usePatientHomeData(
       // 2. Active cycle (most recent)
       const { data: cycleRow, error: cErr } = await supabase
         .from('treatment_cycle')
-        .select('id, cycle_number, length_weeks, start_date, review_date')
+        .select('id, cycle_number, start_date')
         .eq('patient_id', patient.id)
         .eq('status', 'active')
         .order('cycle_number', { ascending: false })
@@ -95,9 +93,7 @@ export function usePatientHomeData(
         ? {
             id: cycleRow.id as string,
             cycleNumber: cycleRow.cycle_number as number,
-            lengthWeeks: cycleRow.length_weeks as number,
-            startDate: cycleRow.start_date as string,
-            reviewDate: cycleRow.review_date as string
+            startDate: cycleRow.start_date as string
           }
         : null;
 
@@ -107,7 +103,7 @@ export function usePatientHomeData(
           cycle: null,
           goals: [],
           pendingPrompt: null,
-          totalWeeks: 0,
+          currentWeek: 0,
           completedWeeks: []
         };
       }
@@ -147,12 +143,21 @@ export function usePatientHomeData(
           }
         : null;
 
+      // Compute current week from cycle.start_date and today.
+      // Day 0-6 of treatment = week 1, days 7-13 = week 2, etc.
+      const startMs = new Date(cycle.startDate).getTime();
+      const todayMs = Date.now();
+      const daysSinceStart = Math.floor(
+        (todayMs - startMs) / (24 * 60 * 60 * 1000)
+      );
+      const currentWeek = Math.max(1, Math.floor(daysSinceStart / 7) + 1);
+
       return {
         patient,
         cycle,
         goals,
         pendingPrompt,
-        totalWeeks: cycle.lengthWeeks,
+        currentWeek,
         completedWeeks: completed
       };
     }

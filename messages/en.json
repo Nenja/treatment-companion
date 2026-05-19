@@ -9,7 +9,7 @@
   "patient": {
     "home": {
       "greeting": "Hello, {name}",
-      "cycleContext": "Week {week} of {total} · Cycle {cycle}",
+      "cycleContext": "Week {week} since treatment · Cycle {cycle}",
       "nextVisit": "Next visit: {date}",
       "checkinReadyTitle": "Your weekly check-in is ready",
       "checkinReadyBody": "Takes about two minutes.",
@@ -186,9 +186,8 @@
     },
     "patient": {
       "viewingLabel": "Viewing",
-      "cycleContext": "Week {week} of {total} · Cycle {cycle}",
-      "cycleLength": "Cycle length: {weeks} weeks",
-      "nextVisit": "Next visit: {date}",
+      "cycleContext": "Week {week} since treatment · Cycle {cycle}",
+      "treatmentDate": "Treatment date: {date}",
       "suggestionsTitle": "Suggested goals",
       "suggestionsEmpty": "No suggestions awaiting review.",
       "activeGoalsTitle": "Active goals",

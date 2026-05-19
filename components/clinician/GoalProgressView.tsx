@@ -12,13 +12,15 @@ interface WeekRating {
 
 interface GoalProgressViewProps {
   goalText: string;
-  totalWeeks: number;
+  /** Current week number since treatment (1-indexed). Drives the x-axis size. */
   currentWeek: number;
   ratings: WeekRating[];
 }
 
 /**
- * Single chart per goal, with five colored bands behind the data:
+ * Single chart per goal, with five colored bands behind the data.
+ * The x-axis grows with the cycle: it shows weeks 1 through max(currentWeek, latest reported week).
+ * No fixed cycle length; the chart extends as time passes.
  *
  *   +2 / +1  →  sage (soft → medium): "as expected or better"
  *      0     →  cream:                "expected"
@@ -34,16 +36,23 @@ interface GoalProgressViewProps {
  * always included.
  *
  * Tapping a reported dot shows the rating + any patient comment in a
- * caption below the chart. Tapping a missing-week ring shows "not
- * reported" so the clinician knows what they clicked.
+ * caption below the chart. Weeks with a comment show a small speech
+ * bubble marker above the dot.
  */
 export function GoalProgressView({
   goalText,
-  totalWeeks,
   currentWeek,
   ratings
 }: GoalProgressViewProps) {
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+
+  // Total weeks shown: max of current week and latest reported week,
+  // with a minimum of 4 so the chart doesn't look squashed at the start.
+  const latestReported = ratings.reduce(
+    (m, r) => Math.max(m, r.weekNumber),
+    0
+  );
+  const totalWeeks = Math.max(currentWeek, latestReported, 4);
 
   // Week-indexed lookup. Each slot is either a known rating or null.
   const byWeek: (WeekRating | null)[] = Array.from(

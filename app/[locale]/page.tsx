@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { weekOfCycle, addDaysIso, formatLongDate } from '@/lib/dates';
+import { addDaysIso } from '@/lib/dates';
 import { useAuth } from '@/lib/supabase/auth';
 import { usePatientHomeData } from '@/lib/supabase/patientHome';
 import { AppShell } from '@/components/layout/AppShell';
@@ -110,11 +110,7 @@ export default function PatientHomePage() {
 
   // --- Derive view data --------------------------------------------------
 
-  // Use the cycle's start_date with today's date (no virtual-date dev
-  // hack anymore — we're on a real backend).
-  const nowIso = new Date().toISOString().slice(0, 10);
-  const weekNumber = weekOfCycle(data.cycle.startDate, nowIso);
-  const totalWeeks = data.totalWeeks;
+  const weekNumber = data.currentWeek;
 
   const nextDueDate = data.pendingPrompt
     ? undefined
@@ -124,12 +120,11 @@ export default function PatientHomePage() {
 
   return (
     <AppShell>
-      {/* Cycle context eyebrow */}
+      {/* Cycle context eyebrow — no fixed total now */}
       <div className="eyebrow mb-2">
         {t('cycleContext', {
           cycle: data.cycle.cycleNumber,
-          week: weekNumber,
-          total: totalWeeks
+          week: weekNumber
         })}
       </div>
 
@@ -137,13 +132,6 @@ export default function PatientHomePage() {
       <h1 className="font-display text-[30px] leading-tight text-ink">
         {t('greeting', { name: data.patient.displayName })}
       </h1>
-
-      {/* Next visit — orientation info, once, near the top */}
-      <p className="mt-1.5 text-[15px] text-ink-soft">
-        {t('nextVisit', {
-          date: formatLongDate(data.cycle.reviewDate, locale)
-        })}
-      </p>
 
       {/* Check-in CTA / next-due */}
       <div className="mt-6">
@@ -155,10 +143,10 @@ export default function PatientHomePage() {
         />
       </div>
 
-      {/* Visual cycle progress — only shown when there are active goals */}
+      {/* Visual cycle progress — grows each week, only shown when there are active goals */}
       {data.goals.length > 0 && (
         <CheckinDots
-          totalWeeks={totalWeeks}
+          currentWeek={weekNumber}
           completedWeeks={completedWeeksSet}
           pendingPromptWeek={data.pendingPrompt?.weekNumber}
         />
