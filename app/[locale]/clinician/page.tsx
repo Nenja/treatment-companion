@@ -149,6 +149,22 @@ export default function ClinicianUnlockPage() {
             {unlock.isPending ? '…' : t('submit')}
           </button>
         </form>
+
+        <div className="mt-8 border-t border-stone/70 pt-6">
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                locale === 'en'
+                  ? '/clinician/admin'
+                  : `/${locale}/clinician/admin`
+              )
+            }
+            className="flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+          >
+            Admin: create or list accounts
+          </button>
+        </div>
       </main>
     </div>
   );
