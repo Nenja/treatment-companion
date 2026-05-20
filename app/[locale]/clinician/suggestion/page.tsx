@@ -15,6 +15,7 @@ import {
   useSetSuggestionStatus
 } from '@/lib/supabase/clinicianPatient';
 import { formatLongDate } from '@/lib/dates';
+import type { NrsDirection } from '@/lib/types';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 
 export default function SuggestionReviewPage() {
@@ -92,11 +93,13 @@ function Inner() {
   const [showApproveForm, setShowApproveForm] = useState(false);
   const [patientText, setPatientText] = useState('');
   const [smartText, setSmartText] = useState('');
-  const [aM2, setAM2] = useState('');
-  const [aM1, setAM1] = useState('');
-  const [aZ, setAZ] = useState('');
-  const [aP1, setAP1] = useState('');
-  const [aP2, setAP2] = useState('');
+  const [nrsQuestion, setNrsQuestion] = useState('');
+  const [nrsDirection, setNrsDirection] = useState<NrsDirection>('higherIsBetter');
+  // Default cut points for the higherIsBetter case. Clinician can edit.
+  const [cutLowLow, setCutLowLow] = useState<string>('2');
+  const [cutLow, setCutLow] = useState<string>('4');
+  const [cutZero, setCutZero] = useState<string>('5');
+  const [cutHigh, setCutHigh] = useState<string>('7');
 
   if (
     authLoading ||
@@ -148,14 +151,27 @@ function Inner() {
     setShowApproveForm(true);
   };
 
+  // Parse cut points to numbers; require monotonic increasing and in range.
+  const cutLowLowN = parseInt(cutLowLow, 10);
+  const cutLowN = parseInt(cutLow, 10);
+  const cutZeroN = parseInt(cutZero, 10);
+  const cutHighN = parseInt(cutHigh, 10);
+  const cutsValid =
+    Number.isInteger(cutLowLowN) &&
+    Number.isInteger(cutLowN) &&
+    Number.isInteger(cutZeroN) &&
+    Number.isInteger(cutHighN) &&
+    cutLowLowN >= 0 &&
+    cutHighN <= 9 &&
+    cutLowLowN < cutLowN &&
+    cutLowN < cutZeroN &&
+    cutZeroN < cutHighN;
+
   const canSubmitApprove =
     patientText.trim() &&
     smartText.trim() &&
-    aM2.trim() &&
-    aM1.trim() &&
-    aZ.trim() &&
-    aP1.trim() &&
-    aP2.trim();
+    nrsQuestion.trim() &&
+    cutsValid;
 
   const submitApprove = async () => {
     if (!canSubmitApprove || approve.isPending) return;
@@ -163,13 +179,12 @@ function Inner() {
       suggestionId: suggestion.id,
       patientFacingText: patientText,
       smartText,
-      anchors: {
-        minus2: aM2,
-        minus1: aM1,
-        zero: aZ,
-        plus1: aP1,
-        plus2: aP2
-      }
+      nrsQuestion,
+      nrsDirection,
+      cutLowLow: cutLowLowN,
+      cutLow: cutLowN,
+      cutZero: cutZeroN,
+      cutHigh: cutHighN
     });
     touchSession.mutate();
     back();
@@ -278,40 +293,79 @@ function Inner() {
             </Field>
 
             <h3 className="mt-8 font-display text-[17px] text-ink">
-              {tApprove('anchorsTitle')}
+              NRS rating setup
             </h3>
+            <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">
+              The patient will rate this goal on a 0-10 scale each week.
+              You decide the question they see and how to map their
+              answer to a GAS bucket.
+            </p>
 
-            <AnchorField
-              label={tApprove('anchorMinus2')}
-              value={aM2}
-              onChange={setAM2}
-              placeholder={tApprove('anchorPlaceholder')}
-            />
-            <AnchorField
-              label={tApprove('anchorMinus1')}
-              value={aM1}
-              onChange={setAM1}
-              placeholder={tApprove('anchorPlaceholder')}
-            />
-            <AnchorField
-              label={tApprove('anchorZero')}
-              value={aZ}
-              onChange={setAZ}
-              placeholder={tApprove('anchorPlaceholder')}
-              emphasised
-            />
-            <AnchorField
-              label={tApprove('anchorPlus1')}
-              value={aP1}
-              onChange={setAP1}
-              placeholder={tApprove('anchorPlaceholder')}
-            />
-            <AnchorField
-              label={tApprove('anchorPlus2')}
-              value={aP2}
-              onChange={setAP2}
-              placeholder={tApprove('anchorPlaceholder')}
-            />
+            <Field
+              label="NRS question (patient-facing)"
+              helper="Write the exact question the patient sees each week."
+            >
+              <textarea
+                value={nrsQuestion}
+                onChange={(e) => setNrsQuestion(e.target.value)}
+                rows={3}
+                placeholder="e.g. On a scale of 0-10, how easy is it to open your hand for washing? (0 = impossible, 10 = completely easy)"
+                className={inputClasses}
+                maxLength={300}
+              />
+            </Field>
+
+            <Field
+              label="Direction"
+              helper="Pick what 'higher' means on the 0-10 scale for this goal."
+            >
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setNrsDirection('higherIsBetter')}
+                  className={`flex-1 rounded-[var(--radius-button)] border px-3 py-2.5 text-[14px] font-semibold ${
+                    nrsDirection === 'higherIsBetter'
+                      ? 'border-sage bg-sage-soft text-sage-deep'
+                      : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
+                  }`}
+                >
+                  Higher is better
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNrsDirection('lowerIsBetter')}
+                  className={`flex-1 rounded-[var(--radius-button)] border px-3 py-2.5 text-[14px] font-semibold ${
+                    nrsDirection === 'lowerIsBetter'
+                      ? 'border-sage bg-sage-soft text-sage-deep'
+                      : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
+                  }`}
+                >
+                  Lower is better
+                </button>
+              </div>
+            </Field>
+
+            <Field
+              label="GAS cut points"
+              helper={
+                nrsDirection === 'higherIsBetter'
+                  ? 'NRS \u2264 cut₁ → -2; \u2264 cut₂ → -1; \u2264 cut₃ → 0; \u2264 cut₄ → +1; > cut₄ → +2'
+                  : 'NRS \u2264 cut₁ → +2; \u2264 cut₂ → +1; \u2264 cut₃ → 0; \u2264 cut₄ → -1; > cut₄ → -2'
+              }
+            >
+              <div className="mt-2 grid grid-cols-4 gap-2">
+                <CutInput label="cut₁" value={cutLowLow} onChange={setCutLowLow} />
+                <CutInput label="cut₂" value={cutLow} onChange={setCutLow} />
+                <CutInput label="cut₃" value={cutZero} onChange={setCutZero} />
+                <CutInput label="cut₄" value={cutHigh} onChange={setCutHigh} />
+              </div>
+              {!cutsValid && (cutLowLow || cutLow || cutZero || cutHigh) && (
+                <p className="mt-2 text-[12px] text-amber-deep">
+                  Cut points must be whole numbers in 0-9 and strictly
+                  increasing.
+                </p>
+              )}
+            </Field>
 
             <div className="mt-8 flex gap-3">
               <button
@@ -403,41 +457,28 @@ function Field({
   );
 }
 
-function AnchorField({
+function CutInput({
   label,
   value,
-  onChange,
-  placeholder,
-  emphasised
+  onChange
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
-  placeholder: string;
-  emphasised?: boolean;
 }) {
   return (
-    <div
-      className={`mt-3 rounded-[var(--radius-button)] border p-3 ${
-        emphasised
-          ? 'border-sage/40 bg-sage-soft/30 border-l-[3px] border-l-sage'
-          : 'border-stone bg-cream-soft'
-      }`}
-    >
-      <label
-        className={`block text-[11px] font-semibold uppercase tracking-wider ${
-          emphasised ? 'text-sage-deep' : 'text-ink-muted'
-        }`}
-      >
+    <div>
+      <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
         {label}
       </label>
-      <textarea
+      <input
+        type="number"
+        min={0}
+        max={9}
+        step={1}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={2}
-        className="mt-1 block w-full resize-none border-none bg-transparent p-0 text-[14px] leading-relaxed text-ink placeholder:text-ink-muted focus:outline-none"
-        maxLength={200}
+        className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-2 py-2 text-center text-[16px] font-semibold tabular-nums text-ink focus:border-sage focus:outline-none"
       />
     </div>
   );

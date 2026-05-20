@@ -2,13 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from './browser';
-import type { GasAnchors } from '../types';
+import type { NrsConfig, NrsDirection } from '../types';
 
 export interface ClinicianPatientGoal {
   id: string;
   patientFacingText: string;
   smartText: string;
-  gasAnchors: GasAnchors;
+  nrs: NrsConfig;
 }
 
 export interface ClinicianPatientSuggestion {
@@ -28,6 +28,7 @@ export interface ClinicianPatientCheckin {
   ratings: {
     approvedGoalId: string;
     ratingValue: number | null;
+    nrsValue: number | null;
   }[];
 }
 
@@ -132,7 +133,7 @@ export function useClinicianPatientData(
           supabase
             .from('approved_goal')
             .select(
-              'id, patient_facing_text, smart_text, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2'
+              'id, patient_facing_text, smart_text, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high'
             )
             .eq('treatment_cycle_id', cycle.id)
             .eq('status', 'active')
@@ -140,7 +141,7 @@ export function useClinicianPatientData(
           supabase
             .from('weekly_checkin')
             .select(
-              'id, week_number, comment, ratings:weekly_goal_rating (approved_goal_id, rating_value)'
+              'id, week_number, comment, ratings:weekly_goal_rating (approved_goal_id, rating_value, nrs_value)'
             )
             .eq('treatment_cycle_id', cycle.id)
             .order('week_number', { ascending: true }),
@@ -177,12 +178,13 @@ export function useClinicianPatientData(
           id: g.id as string,
           patientFacingText: g.patient_facing_text as string,
           smartText: g.smart_text as string,
-          gasAnchors: {
-            minus2: g.anchor_minus2 as string,
-            minus1: g.anchor_minus1 as string,
-            zero: g.anchor_zero as string,
-            plus1: g.anchor_plus1 as string,
-            plus2: g.anchor_plus2 as string
+          nrs: {
+            question: g.nrs_question as string,
+            direction: g.nrs_direction as NrsDirection,
+            cutLowLow: g.nrs_cut_low_low as number,
+            cutLow: g.nrs_cut_low as number,
+            cutZero: g.nrs_cut_zero as number,
+            cutHigh: g.nrs_cut_high as number
           }
         })
       );
@@ -195,9 +197,11 @@ export function useClinicianPatientData(
           ratings: (c.ratings as Array<{
             approved_goal_id: string;
             rating_value: number | null;
+            nrs_value: number | null;
           }> | null ?? []).map((r) => ({
             approvedGoalId: r.approved_goal_id,
-            ratingValue: r.rating_value
+            ratingValue: r.rating_value,
+            nrsValue: r.nrs_value
           }))
         })
       );
@@ -253,7 +257,12 @@ export interface ApproveSuggestionInput {
   suggestionId: string;
   patientFacingText: string;
   smartText: string;
-  anchors: GasAnchors;
+  nrsQuestion: string;
+  nrsDirection: NrsDirection;
+  cutLowLow: number;
+  cutLow: number;
+  cutZero: number;
+  cutHigh: number;
 }
 
 export function useApproveSuggestion() {
@@ -265,11 +274,12 @@ export function useApproveSuggestion() {
         p_suggestion_id: input.suggestionId,
         p_patient_facing_text: input.patientFacingText,
         p_smart_text: input.smartText,
-        p_anchor_minus2: input.anchors.minus2,
-        p_anchor_minus1: input.anchors.minus1,
-        p_anchor_zero: input.anchors.zero,
-        p_anchor_plus1: input.anchors.plus1,
-        p_anchor_plus2: input.anchors.plus2
+        p_nrs_question: input.nrsQuestion,
+        p_nrs_direction: input.nrsDirection,
+        p_nrs_cut_low_low: input.cutLowLow,
+        p_nrs_cut_low: input.cutLow,
+        p_nrs_cut_zero: input.cutZero,
+        p_nrs_cut_high: input.cutHigh
       });
       if (error) throw error;
       return data as string;

@@ -2,12 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from './browser';
-import type { GasAnchors, RatingLabel } from '../types';
+import type { NrsConfig, NrsDirection } from '../types';
 
 export interface CheckinGoal {
   id: string;
   patientFacingText: string;
-  gasAnchors: GasAnchors;
+  nrs: NrsConfig;
 }
 
 export interface CheckinData {
@@ -20,9 +20,8 @@ export interface CheckinData {
 
 /**
  * Loads everything the check-in page needs: the patient's pending
- * prompt for the current cycle, plus every active approved goal
- * (including all five GAS anchors). Returns null if there's no
- * pending prompt — the page redirects home in that case.
+ * prompt (specified or oldest), plus every active approved goal with
+ * its NRS configuration. Returns null if there's no pending prompt.
  */
 export function useCheckinData(
   profileId: string | null,
@@ -35,7 +34,6 @@ export function useCheckinData(
     queryFn: async (): Promise<CheckinData | null> => {
       const supabase = createSupabaseBrowserClient();
 
-      // Find the patient ID
       const { data: patientRow, error: pErr } = await supabase
         .from('patient')
         .select('id')
@@ -46,7 +44,6 @@ export function useCheckinData(
 
       const patientId = patientRow.id as string;
 
-      // Find the active cycle
       const { data: cycleRow, error: cErr } = await supabase
         .from('treatment_cycle')
         .select('id')
@@ -60,9 +57,8 @@ export function useCheckinData(
 
       const cycleId = cycleRow.id as string;
 
-      // Find the prompt to use. If promptId was passed in the URL, use
-      // that one (and verify it's still pending and belongs to this
-      // cycle). Otherwise pick the oldest pending prompt as before.
+      // Targeted prompt id (from ?promptId=X) takes priority — used for
+      // the catch-up flow. Otherwise pick the oldest pending prompt.
       let promptRow: { id: string; week_number: number } | null = null;
       if (promptId) {
         const { data, error } = await supabase
@@ -99,10 +95,10 @@ export function useCheckinData(
         };
       }
 
-      // Load all active goals with their anchors
+      // Load active goals with their NRS configs.
       const { data: goalRows, error: gErr } = await supabase
         .from('approved_goal')
-        .select('id, patient_facing_text, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2')
+        .select('id, patient_facing_text, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high')
         .eq('treatment_cycle_id', cycleId)
         .eq('status', 'active')
         .order('approved_at', { ascending: true });
@@ -111,12 +107,13 @@ export function useCheckinData(
       const goals: CheckinGoal[] = (goalRows ?? []).map((g) => ({
         id: g.id as string,
         patientFacingText: g.patient_facing_text as string,
-        gasAnchors: {
-          minus2: g.anchor_minus2 as string,
-          minus1: g.anchor_minus1 as string,
-          zero: g.anchor_zero as string,
-          plus1: g.anchor_plus1 as string,
-          plus2: g.anchor_plus2 as string
+        nrs: {
+          question: g.nrs_question as string,
+          direction: g.nrs_direction as NrsDirection,
+          cutLowLow: g.nrs_cut_low_low as number,
+          cutLow: g.nrs_cut_low as number,
+          cutZero: g.nrs_cut_zero as number,
+          cutHigh: g.nrs_cut_high as number
         }
       }));
 
@@ -135,17 +132,14 @@ export interface SubmitCheckinInput {
   promptId: string;
   ratings: {
     approvedGoalId: string;
-    ratingLabel: RatingLabel;
-    ratingValue: -2 | -1 | 0 | 1 | 2 | null;
+    nrsValue: number;
   }[];
   comment?: string;
 }
 
 /**
- * Submits a complete check-in via the submit_weekly_checkin RPC.
- * Atomic on the server side — all or nothing.
- * On success, invalidates the patientHome and checkin caches so the
- * UI refetches fresh state.
+ * Submits a check-in via the submit_weekly_checkin RPC. Server-side
+ * computes GAS from NRS for each rating.
  */
 export function useSubmitCheckin() {
   const qc = useQueryClient();
@@ -156,8 +150,7 @@ export function useSubmitCheckin() {
         p_prompt_id: input.promptId,
         p_ratings: input.ratings.map((r) => ({
           approved_goal_id: r.approvedGoalId,
-          rating_label: r.ratingLabel,
-          rating_value: r.ratingValue
+          nrs_value: r.nrsValue
         })),
         p_comment: input.comment ?? null
       });

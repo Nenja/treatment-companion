@@ -1,141 +1,107 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import type { GasAnchors, RatingValue } from '@/lib/types';
+import type { NrsDirection } from '@/lib/types';
 
 interface GoalRatingPickerProps {
-  goalText: string;
-  anchors: GasAnchors;
-  value: Exclude<RatingValue, null> | undefined;
-  onChange: (value: -2 | -1 | 0 | 1 | 2) => void;
   ariaLabel: string;
+  goalText: string;
+  /** The clinician-written NRS question for this goal. */
+  question: string;
+  direction: NrsDirection;
+  /** Current value, 0-10. Undefined when not yet picked. */
+  value: number | undefined;
+  onChange: (value: number) => void;
 }
 
 /**
- * Horizontal 5-point scale.
+ * Patient-facing NRS slider for a single goal.
  *
- * Visual-first: big dots in a row, no per-dot text. Direction is implied
- * by the muted amber → cream → sage palette. The middle dot is slightly
- * larger than its neighbours; we no longer show a permanent tick — the
- * size difference is enough.
- *
- * The selected option's goal-specific anchor text appears as a caption
- * directly below the row. Before any selection, a quiet prompt sits in
- * its place so the area never empties out.
+ *  - Big numeric display above the slider showing current value
+ *  - Native range input 0..10 (step 1), styled to match the app
+ *  - Endpoint labels reflect the goal's direction:
+ *      higherIsBetter:  0 = Worst   10 = Best
+ *      lowerIsBetter:   0 = Best    10 = Worst
+ *  - Until the patient interacts at least once, the value remains
+ *    undefined so we know they haven't answered yet. We initialise
+ *    the visible slider to 5 (midpoint) but don't count it as
+ *    "selected" until they move it or tap.
  */
 export function GoalRatingPicker({
+  ariaLabel,
   goalText,
-  anchors,
+  question,
+  direction,
   value,
-  onChange,
-  ariaLabel
+  onChange
 }: GoalRatingPickerProps) {
-  const t = useTranslations('patient.checkin');
+  const interacted = typeof value === 'number';
+  // Displayed slider position. Falls back to 5 when no value yet, so
+  // the thumb has somewhere to live before interaction.
+  const sliderValue = interacted ? value! : 5;
 
-  const points = [
-    {
-      value: -2 as const,
-      text: anchors.minus2,
-      bgUnselected: 'bg-amber-soft/60',
-      bgSelected: 'bg-amber-soft',
-      size: 52,
-      shortLabel: t('scaleMuchHarder')
-    },
-    {
-      value: -1 as const,
-      text: anchors.minus1,
-      bgUnselected: 'bg-amber-soft/30',
-      bgSelected: 'bg-amber-soft/80',
-      size: 44,
-      shortLabel: t('scaleALittleHarder')
-    },
-    {
-      value: 0 as const,
-      text: anchors.zero,
-      bgUnselected: 'bg-stone-soft',
-      bgSelected: 'bg-cream',
-      size: 60,
-      shortLabel: t('scaleAsExpected')
-    },
-    {
-      value: 1 as const,
-      text: anchors.plus1,
-      bgUnselected: 'bg-sage-soft/60',
-      bgSelected: 'bg-sage-soft',
-      size: 44,
-      shortLabel: t('scaleBetter')
-    },
-    {
-      value: 2 as const,
-      text: anchors.plus2,
-      bgUnselected: 'bg-sage/40',
-      bgSelected: 'bg-sage/80',
-      size: 52,
-      shortLabel: t('scaleMuchBetter')
-    }
-  ];
-
-  const selectedPoint = points.find((p) => p.value === value);
+  const lowLabel = direction === 'higherIsBetter' ? 'Worst' : 'Best';
+  const highLabel = direction === 'higherIsBetter' ? 'Best' : 'Worst';
 
   return (
     <div>
-      {/* Goal header */}
-      <div className="mb-8">
-        <div className="eyebrow">{t('scaleYourGoal')}</div>
-        <p className="mt-1 font-display text-[22px] leading-snug text-ink">
-          {goalText}
-        </p>
-      </div>
+      <p className="font-display text-[20px] leading-snug text-ink">
+        {goalText}
+      </p>
+      <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
+        {question}
+      </p>
 
-      {/* Scale row */}
       <div
-        role="radiogroup"
+        className="mt-6 flex flex-col items-center"
         aria-label={ariaLabel}
-        className="flex items-center justify-between gap-2"
       >
-        {points.map((p) => {
-          const selected = value === p.value;
-          return (
-            <button
-              key={p.value}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              aria-label={p.shortLabel}
-              onClick={() => onChange(p.value)}
-              className="flex min-w-0 flex-1 items-center justify-center rounded-lg py-3 hover:bg-stone-soft/40 focus-visible:bg-stone-soft/40"
-            >
-              <span
-                aria-hidden
-                style={{ width: `${p.size}px`, height: `${p.size}px` }}
-                className={`inline-block rounded-full transition-all ${
-                  selected
-                    ? `${p.bgSelected} ring-[3px] ring-sage ring-offset-2 ring-offset-cream`
-                    : `${p.bgUnselected} border border-stone`
-                }`}
-              />
-            </button>
-          );
-        })}
+        {/* Big numeric display */}
+        <div
+          aria-live="polite"
+          className={`font-display tabular-nums leading-none ${
+            interacted ? 'text-[72px] text-ink' : 'text-[72px] text-ink-muted'
+          }`}
+        >
+          {interacted ? value : '—'}
+          <span className="ml-2 align-top text-[20px] text-ink-muted">
+            / 10
+          </span>
+        </div>
+
+        {/* Slider */}
+        <input
+          type="range"
+          min={0}
+          max={10}
+          step={1}
+          value={sliderValue}
+          onChange={(e) => onChange(Number(e.target.value))}
+          aria-label={ariaLabel}
+          className="mt-6 h-2 w-full max-w-[320px] cursor-pointer appearance-none rounded-full bg-stone accent-sage-deep
+            [&::-webkit-slider-thumb]:h-7 [&::-webkit-slider-thumb]:w-7
+            [&::-webkit-slider-thumb]:appearance-none
+            [&::-webkit-slider-thumb]:rounded-full
+            [&::-webkit-slider-thumb]:bg-sage-deep
+            [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-cream
+            [&::-webkit-slider-thumb]:shadow-md
+            [&::-moz-range-thumb]:h-7 [&::-moz-range-thumb]:w-7
+            [&::-moz-range-thumb]:rounded-full
+            [&::-moz-range-thumb]:bg-sage-deep
+            [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-cream"
+        />
+
+        {/* Endpoint labels */}
+        <div className="mt-3 flex w-full max-w-[320px] justify-between text-[12px] uppercase tracking-wider text-ink-muted">
+          <span>0 · {lowLabel}</span>
+          <span>10 · {highLabel}</span>
+        </div>
       </div>
 
-      {/* Caption: anchor text for selected dot, or quiet prompt */}
-      <div className="mt-6 min-h-[72px]">
-        {selectedPoint ? (
-          <>
-            <div className="eyebrow text-sage-deep">
-              {selectedPoint.shortLabel}
-            </div>
-            <p className="mt-1 text-[15px] leading-relaxed text-ink">
-              {selectedPoint.text}
-            </p>
-          </>
-        ) : (
-          <p className="text-center text-[14px] leading-relaxed text-ink-muted">
-            {t('scaleTapPrompt')}
-          </p>
-        )}
-      </div>
+      {!interacted && (
+        <p className="mt-6 text-center text-[13px] text-ink-muted">
+          Move the slider to choose your rating.
+        </p>
+      )}
     </div>
   );
 }

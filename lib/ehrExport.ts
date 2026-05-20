@@ -52,6 +52,7 @@ export interface ExportCheckin {
   ratings: {
     approvedGoalId: string;
     ratingValue: -2 | -1 | 0 | 1 | 2 | null;
+    nrsValue: number | null;
   }[];
 }
 
@@ -141,16 +142,16 @@ export function buildEhrExport({
 /**
  * Builds the one-line summary sentence for a goal across a cycle.
  *
- * Pattern (NRS omitted — we don't capture an NRS yet):
- *   "Peak GAS [x]. GAS ≥0 from W[x], sustained [n] weeks.
+ * Pattern:
+ *   "Peak GAS [x] / NRS [n]/10 (W[x]). GAS ≥0 from W[x], sustained [n] weeks.
  *    Wearing-off [none / possible from W[x] / clear from W[x]].
- *    End-cycle GAS [x]."
+ *    End-cycle GAS [x] / NRS [n]/10 (W[x])."
  *
- * Wearing-off detection:
+ * Wearing-off detection (on GAS):
  *   - "possible from W[x]" if any post-peak rating drops by ≥1 from
- *     the peak value;
+ *     the peak GAS value;
  *   - "clear from W[x]" if any post-peak rating drops by ≥2 from peak,
- *     OR returns to the patient's initial (first) measurement;
+ *     OR returns to the patient's initial (first) GAS;
  *   - "none" otherwise.
  *
  * "Sustained" counts CONSECUTIVE reported weeks at GAS ≥0 from the
@@ -161,7 +162,13 @@ function buildGoalSentence(goalId: string, checkins: ExportCheckin[]): string {
     .flatMap((c) => {
       const r = c.ratings.find((rr) => rr.approvedGoalId === goalId);
       if (!r || typeof r.ratingValue !== 'number') return [];
-      return [{ week: c.weekNumber, value: r.ratingValue as number }];
+      return [
+        {
+          week: c.weekNumber,
+          gas: r.ratingValue as number,
+          nrs: typeof r.nrsValue === 'number' ? r.nrsValue : null
+        }
+      ];
     })
     .sort((a, b) => a.week - b.week);
 
@@ -169,23 +176,18 @@ function buildGoalSentence(goalId: string, checkins: ExportCheckin[]): string {
     return 'No ratings reported this cycle.';
   }
 
-  const peak = reports.reduce((m, r) => Math.max(m, r.value), -Infinity);
-  const peakWeek = reports.find((r) => r.value === peak)!.week;
-  const initial = reports[0].value;
+  const peak = reports.reduce((m, r) => Math.max(m, r.gas), -Infinity);
+  const peakReport = reports.find((r) => r.gas === peak)!;
+  const initial = reports[0].gas;
 
   // GAS ≥0 onset + sustained
   let zeroPlusClause = 'Did not reach GAS ≥0 this cycle.';
-  const firstZeroPlusIdx = reports.findIndex((r) => r.value >= 0);
+  const firstZeroPlusIdx = reports.findIndex((r) => r.gas >= 0);
   if (firstZeroPlusIdx !== -1) {
     const firstWeek = reports[firstZeroPlusIdx].week;
-    // Count consecutive reported weeks ≥0 starting from there.
     let sustained = 0;
     for (let i = firstZeroPlusIdx; i < reports.length; i++) {
-      const r = reports[i];
-      // Note: skipped weeks (e.g. W5 reported, W6 missing, W7 reported)
-      // would break the streak only if W6 was reported <0. We treat
-      // skipped weeks as not-breaking since we have no negative data.
-      if (r.value < 0) break;
+      if (reports[i].gas < 0) break;
       sustained++;
     }
     zeroPlusClause = `GAS ≥0 from W${firstWeek}, sustained ${sustained} week${
@@ -194,16 +196,15 @@ function buildGoalSentence(goalId: string, checkins: ExportCheckin[]): string {
   }
 
   // Wearing-off detection (uses reports AFTER the peak week)
-  const postPeak = reports.filter((r) => r.week > peakWeek);
+  const postPeak = reports.filter((r) => r.week > peakReport.week);
   let wearingOff = 'Wearing-off: none.';
-  // "Clear" check first since it's the stronger signal.
   const clearReport = postPeak.find(
-    (r) => peak - r.value >= 2 || r.value <= initial
+    (r) => peak - r.gas >= 2 || r.gas <= initial
   );
   if (clearReport) {
     wearingOff = `Clear wearing-off from W${clearReport.week}.`;
   } else {
-    const possibleReport = postPeak.find((r) => peak - r.value >= 1);
+    const possibleReport = postPeak.find((r) => peak - r.gas >= 1);
     if (possibleReport) {
       wearingOff = `Possible wearing-off from W${possibleReport.week}.`;
     }
@@ -211,12 +212,16 @@ function buildGoalSentence(goalId: string, checkins: ExportCheckin[]): string {
 
   const endCycle = reports[reports.length - 1];
 
-  return [
-    `Peak GAS ${formatSigned(peak)} (W${peakWeek}).`,
-    zeroPlusClause,
-    wearingOff,
-    `End-cycle GAS ${formatSigned(endCycle.value)} (W${endCycle.week}).`
-  ].join(' ');
+  const peakStr =
+    peakReport.nrs !== null
+      ? `Peak GAS ${formatSigned(peak)} / NRS ${peakReport.nrs}/10 (W${peakReport.week}).`
+      : `Peak GAS ${formatSigned(peak)} (W${peakReport.week}).`;
+  const endStr =
+    endCycle.nrs !== null
+      ? `End-cycle GAS ${formatSigned(endCycle.gas)} / NRS ${endCycle.nrs}/10 (W${endCycle.week}).`
+      : `End-cycle GAS ${formatSigned(endCycle.gas)} (W${endCycle.week}).`;
+
+  return [peakStr, zeroPlusClause, wearingOff, endStr].join(' ');
 }
 
 // --- Helpers ------------------------------------------------------------

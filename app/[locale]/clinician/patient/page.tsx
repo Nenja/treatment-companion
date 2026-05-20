@@ -115,6 +115,7 @@ export default function ClinicianPatientPage() {
     {
       weekNumber: number;
       value: -2 | -1 | 0 | 1 | 2 | null;
+      nrs: number | null;
       reported: boolean;
       comment?: string;
     }[]
@@ -128,6 +129,7 @@ export default function ClinicianPatientPage() {
           {
             weekNumber: c.weekNumber,
             value: r.ratingValue as -2 | -1 | 0 | 1 | 2 | null,
+            nrs: r.nrsValue,
             reported: true,
             comment: c.comment ?? undefined
           }
@@ -392,7 +394,8 @@ export default function ClinicianPatientPage() {
               comment: c.comment ?? undefined,
               ratings: c.ratings.map((r) => ({
                 approvedGoalId: r.approvedGoalId,
-                ratingValue: r.ratingValue as -2 | -1 | 0 | 1 | 2 | null
+                ratingValue: r.ratingValue as -2 | -1 | 0 | 1 | 2 | null,
+                nrsValue: r.nrsValue
               }))
             })),
             locale

@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import type { RatingValue } from '@/lib/types';
 
 interface WeekRating {
   weekNumber: number;
-  value: Exclude<RatingValue, null> | null;
+  value: -2 | -1 | 0 | 1 | 2 | null;
+  /** Raw NRS value (0-10) reported by the patient. */
+  nrs: number | null;
   reported: boolean;
   comment?: string;
 }
@@ -341,13 +342,28 @@ export function GoalProgressView({
         })}
       </svg>
 
-      {/* Caption: shows the numeric value + any patient comment for the
-          selected week, or a gentle hint when nothing is selected. */}
+      {/* Caption: shows NRS value + derived GAS + any patient comment for
+          the selected week, or a gentle hint when nothing is selected. */}
       <div className="mt-2 min-h-[20px] space-y-1 text-[12px]">
         {selected && selected.reported ? (
           <>
             <p className="text-ink-soft">
-              Week {selected.weekNumber}: {formatValue(selected.value)}
+              Week {selected.weekNumber}:{' '}
+              {typeof selected.nrs === 'number' ? (
+                <>
+                  <span className="font-semibold text-ink">
+                    NRS {selected.nrs}/10
+                  </span>
+                  {selected.value !== null && (
+                    <span className="text-ink-muted">
+                      {' '}
+                      · GAS {formatGas(selected.value)}
+                    </span>
+                  )}
+                </>
+              ) : (
+                formatGas(selected.value)
+              )}
             </p>
             {selected.comment && (
               <p className="rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1.5 text-[13px] leading-relaxed text-ink">
@@ -368,8 +384,8 @@ export function GoalProgressView({
   );
 }
 
-function formatValue(v: Exclude<RatingValue, null> | null): string {
+function formatGas(v: -2 | -1 | 0 | 1 | 2 | null): string {
   if (v === null) return '—';
-  if (v === 0) return '0 (as expected)';
+  if (v === 0) return '0';
   return v > 0 ? `+${v}` : String(v);
 }

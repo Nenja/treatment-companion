@@ -72,7 +72,7 @@ export function useCheckinDraft({ patient, prompt }: UseCheckinDraftArgs) {
   }, []);
 
   const setRating = useCallback(
-    (approvedGoalId: string, value: -2 | -1 | 0 | 1 | 2) => {
+    (approvedGoalId: string, value: number) => {
       setDraft((prev) => {
         const next = {
           ...prev,

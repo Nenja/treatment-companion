@@ -7,7 +7,6 @@ import { useAuth } from '@/lib/supabase/auth';
 import { useCheckinData, useSubmitCheckin } from '@/lib/supabase/checkin';
 import { useCheckinDraft, checkinDraftStorage } from '@/lib/useCheckinDraft';
 import { isCheckinComplete } from '@/lib/checkinDraft';
-import { ratingLabelForValue } from '@/lib/types';
 import { WizardLayout } from '@/components/wizard/WizardLayout';
 import { GoalRatingPicker } from '@/components/wizard/GoalRatingPicker';
 
@@ -186,11 +185,9 @@ function CheckinPageInner() {
         if (typeof v !== 'number') {
           throw new Error('Missing rating for goal ' + g.id);
         }
-        const value = v as -2 | -1 | 0 | 1 | 2;
         return {
           approvedGoalId: g.id,
-          ratingLabel: ratingLabelForValue(value),
-          ratingValue: value
+          nrsValue: v
         };
       });
 
@@ -206,7 +203,6 @@ function CheckinPageInner() {
     } catch (err) {
       console.error('submitCheckin failed', err);
       submittingRef.current = false;
-      // Could show an inline error toast here — left for a polish slice.
     }
   };
 
@@ -223,8 +219,9 @@ function CheckinPageInner() {
       <GoalRatingPicker
         ariaLabel={`${goal.patientFacingText} — ${title}`}
         goalText={goal.patientFacingText}
-        anchors={goal.gasAnchors}
-        value={draft.ratings[goal.id] as -2 | -1 | 0 | 1 | 2 | undefined}
+        question={goal.nrs.question}
+        direction={goal.nrs.direction}
+        value={draft.ratings[goal.id]}
         onChange={(v) => setRating(goal.id, v)}
       />
     );
@@ -259,14 +256,8 @@ function CheckinPageInner() {
           <dl className="mt-4 space-y-3 text-[14px]">
             {activeGoals.map((g, i) => {
               const rating = draft.ratings[g.id];
-              let answer = '—';
-              if (typeof rating === 'number') {
-                if (rating === -2) answer = g.gasAnchors.minus2;
-                else if (rating === -1) answer = g.gasAnchors.minus1;
-                else if (rating === 0) answer = g.gasAnchors.zero;
-                else if (rating === 1) answer = g.gasAnchors.plus1;
-                else if (rating === 2) answer = g.gasAnchors.plus2;
-              }
+              const answer =
+                typeof rating === 'number' ? `${rating} / 10` : '—';
               return (
                 <SummaryRow
                   key={g.id}

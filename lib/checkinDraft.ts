@@ -1,16 +1,14 @@
 // ---------------------------------------------------------------------------
 // Weekly check-in draft
 //
-// A check-in is one rating per active goal (no "not sure" — patient must
-// pick) plus an optional free-text comment. The draft auto-saves to
-// localStorage so the patient can close mid-flow and resume.
+// A check-in is one NRS rating (0..10) per active goal, plus an optional
+// free-text comment. Draft auto-saves to localStorage so the patient can
+// close mid-flow and resume.
 //
 // Wizard step shape:
 //   - Steps 1..N  — one step per active goal
 //   - Step N+1    — optional comment + summary review
 // ---------------------------------------------------------------------------
-
-import type { RatingValue } from './types';
 
 export interface CheckinDraft {
   weeklyPromptId: string;
@@ -19,8 +17,8 @@ export interface CheckinDraft {
   weekNumber: number;
   /** 1-indexed step counter. */
   currentStep: number;
-  /** Map of approvedGoalId → rating value (-2..2). Missing = not yet rated. */
-  ratings: Record<string, Exclude<RatingValue, null>>;
+  /** Map of approvedGoalId → NRS value (0..10). Missing = not yet rated. */
+  ratings: Record<string, number>;
   comment?: string;
   startedAt: string;
 }

@@ -104,18 +104,45 @@ export function ratingLabelForValue(v: -2 | -1 | 0 | 1 | 2): RatingLabel {
   }
 }
 
-// --- Entity-related types still used by Supabase hooks ---------------
+// --- NRS goal configuration ------------------------------------------
+
+export const NRS_DIRECTIONS = ['higherIsBetter', 'lowerIsBetter'] as const;
+export type NrsDirection = (typeof NRS_DIRECTIONS)[number];
 
 /**
- * Five-anchor scale for a single goal. Each anchor is patient-facing
- * descriptive text. Stored per approved_goal in the database.
+ * NRS-to-GAS mapping for a goal. Four cut points partition 0-10 into
+ * five GAS buckets (-2..+2). For higherIsBetter:
+ *   nrs ≤ cutLowLow      → -2
+ *   cutLowLow < nrs ≤ cutLow  → -1
+ *   cutLow < nrs ≤ cutZero    →  0
+ *   cutZero < nrs ≤ cutHigh   → +1
+ *   nrs > cutHigh             → +2
+ * For lowerIsBetter, the sign of the resulting GAS is flipped.
  */
-export interface GasAnchors {
-  minus2: string;
-  minus1: string;
-  zero: string;
-  plus1: string;
-  plus2: string;
+export interface NrsConfig {
+  question: string;
+  direction: NrsDirection;
+  cutLowLow: number;
+  cutLow: number;
+  cutZero: number;
+  cutHigh: number;
+}
+
+/**
+ * Maps an NRS value (0-10) to a GAS bucket (-2..+2) given a goal's
+ * configuration. Mirrors the server-side nrs_to_gas function.
+ */
+export function nrsToGas(nrs: number, config: NrsConfig): -2 | -1 | 0 | 1 | 2 {
+  let gas: -2 | -1 | 0 | 1 | 2;
+  if (nrs <= config.cutLowLow) gas = -2;
+  else if (nrs <= config.cutLow) gas = -1;
+  else if (nrs <= config.cutZero) gas = 0;
+  else if (nrs <= config.cutHigh) gas = 1;
+  else gas = 2;
+  if (config.direction === 'lowerIsBetter') {
+    gas = (-gas) as -2 | -1 | 0 | 1 | 2;
+  }
+  return gas;
 }
 
 // --- Treatment record -------------------------------------------------
