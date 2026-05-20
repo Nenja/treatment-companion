@@ -91,39 +91,69 @@ begin
     (v_treatment_id, 'Gastrocnemius', 'left', 150, null, 2),
     (v_treatment_id, 'Soleus', 'left', 150, null, 3);
 
-  -- Active goals for cycle 1
-  insert into approved_goal (
-    patient_id, treatment_cycle_id,
-    patient_facing_text, smart_text,
-    anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2,
-    approved_by_clinician_id, status
-  ) values (
-    v_patient_id, v_cycle_id,
-    'Make it easier to open my hand for washing',
-    'Patient will be able to open their left hand sufficiently to wash the palm without assistance, at least once per day, within 6 weeks.',
-    'Hand cannot be opened at all without assistance',
-    'Hand opens partially with significant effort',
-    'Hand opens enough to wash palm with effort, most days',
-    'Hand opens easily for washing, daily',
-    'Hand opens fully and easily, multiple times daily',
-    v_clinician_id, 'active'
-  ) returning id into v_goal_hand;
+  -- Goal 1: suggestion + approved goal
+  declare
+    v_suggestion_hand uuid;
+    v_suggestion_sleep uuid;
+  begin
+    insert into goal_suggestion (
+      patient_id, treatment_cycle_id,
+      domain, patient_wording, importance, hoped_timeframe,
+      difficulty_context, status
+    ) values (
+      v_patient_id, v_cycle_id,
+      'handUse', 'I want to open my hand more easily for washing',
+      'high', '12w',
+      'Hand stays curled most of the day, hard to clean.',
+      'active'
+    ) returning id into v_suggestion_hand;
 
-  insert into approved_goal (
-    patient_id, treatment_cycle_id,
-    patient_facing_text, smart_text,
-    anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2,
-    approved_by_clinician_id, status
-  ) values (
-    v_patient_id, v_cycle_id,
-    'Have fewer night-time leg spasms',
-    'Patient will report ≤2 spasm episodes per week disrupting sleep, within 4 weeks.',
-    'Spasms wake me almost every night',
-    'Spasms wake me 4-5 nights per week',
-    'Spasms wake me 2-3 nights per week',
-    'Spasms wake me 0-1 nights per week',
-    'No night-time spasms at all'
-  , v_clinician_id, 'active') returning id into v_goal_sleep;
+    insert into approved_goal (
+      suggestion_id, patient_id, treatment_cycle_id,
+      patient_facing_text, smart_text,
+      anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2,
+      approved_by_clinician_id, status
+    ) values (
+      v_suggestion_hand, v_patient_id, v_cycle_id,
+      'Make it easier to open my hand for washing',
+      'Patient will be able to open their left hand sufficiently to wash the palm without assistance, at least once per day, within 6 weeks.',
+      'Hand cannot be opened at all without assistance',
+      'Hand opens partially with significant effort',
+      'Hand opens enough to wash palm with effort, most days',
+      'Hand opens easily for washing, daily',
+      'Hand opens fully and easily, multiple times daily',
+      v_clinician_id, 'active'
+    ) returning id into v_goal_hand;
+
+    insert into goal_suggestion (
+      patient_id, treatment_cycle_id,
+      domain, patient_wording, importance, hoped_timeframe,
+      difficulty_context, status
+    ) values (
+      v_patient_id, v_cycle_id,
+      'sleep', 'I want fewer leg spasms at night',
+      'high', '4w',
+      'Wakes me 4-5 nights a week.',
+      'active'
+    ) returning id into v_suggestion_sleep;
+
+    insert into approved_goal (
+      suggestion_id, patient_id, treatment_cycle_id,
+      patient_facing_text, smart_text,
+      anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2,
+      approved_by_clinician_id, status
+    ) values (
+      v_suggestion_sleep, v_patient_id, v_cycle_id,
+      'Have fewer night-time leg spasms',
+      'Patient will report ≤2 spasm episodes per week disrupting sleep, within 4 weeks.',
+      'Spasms wake me almost every night',
+      'Spasms wake me 4-5 nights per week',
+      'Spasms wake me 2-3 nights per week',
+      'Spasms wake me 0-1 nights per week',
+      'No night-time spasms at all',
+      v_clinician_id, 'active'
+    ) returning id into v_goal_sleep;
+  end;
 
   -- 16 weekly prompts (the soft cap for botox cycles).
   -- Weeks 1-7 are completed with realistic ratings.

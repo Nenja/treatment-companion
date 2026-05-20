@@ -17,6 +17,7 @@ import { formatLongDate } from '@/lib/dates';
 import type { GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { ExportModal } from '@/components/clinician/ExportModal';
+import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { buildEhrExport } from '@/lib/ehrExport';
 
@@ -45,6 +46,7 @@ export default function ClinicianPatientPage() {
 
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showNewCycle, setShowNewCycle] = useState(false);
 
   // Auth + role gating.
   useEffect(() => {
@@ -256,6 +258,18 @@ export default function ClinicianPatientPage() {
           )}
         </section>
 
+        {/* Start new cycle */}
+        <button
+          type="button"
+          onClick={() => {
+            touch();
+            setShowNewCycle(true);
+          }}
+          className="mt-3 flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
+        >
+          Start new treatment cycle
+        </button>
+
         {/* Active goals with progress visualisation */}
         <section className="mt-10">
           <h2 className="font-display text-[20px] leading-tight text-ink">
@@ -384,6 +398,13 @@ export default function ClinicianPatientPage() {
             locale
           })}
           onClose={() => setShowExport(false)}
+        />
+      )}
+
+      {showNewCycle && (
+        <NewCycleDialog
+          patientId={patient.id}
+          onClose={() => setShowNewCycle(false)}
         />
       )}
 

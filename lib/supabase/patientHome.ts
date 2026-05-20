@@ -23,14 +23,28 @@ export interface PatientHomeData {
     patientFacingText: string;
   }[];
   /**
-   * The pending weekly prompt for the current week, if any. Null when
-   * the patient is up to date.
+   * The pending prompt for the patient's current week, if any. This is
+   * what the "Your check-in is ready" card highlights. Null when the
+   * current week has already been filled in (so the patient is up to
+   * date for now).
    */
-  pendingPrompt: {
+  currentPrompt: {
     id: string;
     weekNumber: number;
     dueDate: string;
   } | null;
+  /**
+   * Pending prompts from the last 2 weeks (within the catch-up window)
+   * that the patient still hasn't filled in. Excludes the current week
+   * (that's currentPrompt). Older pending prompts beyond the catch-up
+   * window are NOT included — they remain in the database but invisible
+   * to the patient.
+   */
+  catchUpPrompts: {
+    id: string;
+    weekNumber: number;
+    dueDate: string;
+  }[];
   /** Current week number since treatment (1-indexed). */
   currentWeek: number;
   /** Week numbers that have a completed check-in. */
@@ -102,7 +116,8 @@ export function usePatientHomeData(
           patient,
           cycle: null,
           goals: [],
-          pendingPrompt: null,
+          currentPrompt: null,
+          catchUpPrompts: [],
           currentWeek: 0,
           completedWeeks: []
         };
@@ -130,18 +145,9 @@ export function usePatientHomeData(
         .order('week_number', { ascending: true });
       if (prErr) throw prErr;
 
-      const pending = (promptRows ?? []).find((p) => p.status === 'pending');
       const completed = (promptRows ?? [])
         .filter((p) => p.status === 'completed')
         .map((p) => p.week_number as number);
-
-      const pendingPrompt = pending
-        ? {
-            id: pending.id as string,
-            weekNumber: pending.week_number as number,
-            dueDate: pending.due_date as string
-          }
-        : null;
 
       // Compute current week from cycle.start_date and today.
       // Day 0-6 of treatment = week 1, days 7-13 = week 2, etc.
@@ -152,11 +158,43 @@ export function usePatientHomeData(
       );
       const currentWeek = Math.max(1, Math.floor(daysSinceStart / 7) + 1);
 
+      // Catch-up window: patient can fill in current week + 2 weeks back.
+      // Older pending prompts stay in the DB but aren't surfaced.
+      const CATCH_UP_WEEKS = 2;
+      const oldestVisibleWeek = currentWeek - CATCH_UP_WEEKS;
+
+      const pendingPrompts = (promptRows ?? []).filter(
+        (p) =>
+          p.status === 'pending' &&
+          (p.week_number as number) >= oldestVisibleWeek &&
+          (p.week_number as number) <= currentWeek
+      );
+
+      const currentRow = pendingPrompts.find(
+        (p) => (p.week_number as number) === currentWeek
+      );
+      const currentPrompt = currentRow
+        ? {
+            id: currentRow.id as string,
+            weekNumber: currentRow.week_number as number,
+            dueDate: currentRow.due_date as string
+          }
+        : null;
+
+      const catchUpPrompts = pendingPrompts
+        .filter((p) => (p.week_number as number) !== currentWeek)
+        .map((p) => ({
+          id: p.id as string,
+          weekNumber: p.week_number as number,
+          dueDate: p.due_date as string
+        }));
+
       return {
         patient,
         cycle,
         goals,
-        pendingPrompt,
+        currentPrompt,
+        catchUpPrompts,
         currentWeek,
         completedWeeks: completed
       };

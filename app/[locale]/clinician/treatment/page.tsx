@@ -10,7 +10,8 @@ import {
 } from '@/lib/supabase/clinicianSession';
 import {
   useClinicianPatientData,
-  useSaveTreatmentSession
+  useSaveTreatmentSession,
+  usePreviousTreatment
 } from '@/lib/supabase/clinicianPatient';
 import { todayIso } from '@/lib/dates';
 import {
@@ -47,6 +48,17 @@ export default function TreatmentRecordPage() {
   );
   const save = useSaveTreatmentSession();
   const touchSession = useTouchClinicianSession();
+
+  // Previous-cycle treatment for "Copy from previous". The hook only
+  // fires once we know the current cycle's number (i.e. when dataQuery
+  // resolves), and looks at all cycles with cycle_number < current.
+  const previousTreatment = usePreviousTreatment(
+    dataQuery.data?.patient.id ?? null,
+    dataQuery.data?.cycle.cycleNumber ?? null,
+    !!dataQuery.data
+  );
+
+  const [showCopyConfirm, setShowCopyConfirm] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -122,6 +134,35 @@ export default function TreatmentRecordPage() {
       locale === 'en' ? '/clinician/patient' : `/${locale}/clinician/patient`
     );
 
+  /**
+   * Fill all form fields from the previous cycle's treatment session,
+   * EXCEPT the date — that defaults to today (the new treatment is
+   * happening now, not at the date of the previous session). Per-muscle
+   * notes are copied verbatim along with everything else, per the
+   * user's preference: "Today's date + everything else verbatim".
+   */
+  const doCopyFromPrevious = () => {
+    const prev = previousTreatment.data;
+    if (!prev) return;
+    setDate(todayIso());
+    setDrugProduct(prev.drugProduct);
+    setTotalUnits(String(prev.totalUnits));
+    setDilution(prev.dilution ?? '');
+    setGuidance(prev.guidance as GuidanceMethod);
+    setNotes(prev.notes ?? '');
+    setInjections(
+      prev.injections.length > 0
+        ? prev.injections.map((i) => ({
+            muscle: i.muscle,
+            side: i.side,
+            doseUnits: String(i.doseUnits),
+            note: i.note ?? ''
+          }))
+        : [emptyInjection()]
+    );
+    setShowCopyConfirm(false);
+  };
+
   const updateInjection = (idx: number, patch: Partial<InjectionDraft>) => {
     setInjections((prev) =>
       prev.map((inj, i) => (i === idx ? { ...inj, ...patch } : inj))
@@ -191,6 +232,32 @@ export default function TreatmentRecordPage() {
         <p className="mt-1 text-[14px] text-ink-soft">
           For {patient.displayName} · Cycle {cycle.cycleNumber}
         </p>
+
+        {/* Copy from previous treatment — only when a previous one exists */}
+        {previousTreatment.data && (
+          <button
+            type="button"
+            onClick={() => {
+              // If the form already has content (anything beyond defaults)
+              // we ask for confirmation before overwriting. Otherwise copy
+              // immediately.
+              const hasContent =
+                drugProduct.trim() ||
+                totalUnits.trim() ||
+                dilution.trim() ||
+                notes.trim() ||
+                injections.some((i) => i.muscle.trim() || i.doseUnits.trim());
+              if (hasContent) {
+                setShowCopyConfirm(true);
+              } else {
+                doCopyFromPrevious();
+              }
+            }}
+            className="mt-4 flex h-10 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
+          >
+            Copy from previous treatment
+          </button>
+        )}
 
         {/* Row 1: Date + Drug product (date is narrow, product is wider) */}
         <div className="mt-6 grid gap-3 sm:grid-cols-[140px_1fr]">
@@ -392,6 +459,37 @@ export default function TreatmentRecordPage() {
           </button>
         </div>
       </main>
+
+      {showCopyConfirm && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
+          <div className="w-full max-w-[400px] rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl">
+            <h2 className="font-display text-[20px] leading-tight text-ink">
+              Overwrite current entries?
+            </h2>
+            <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+              You&apos;ve already entered some details. Copying from the
+              previous treatment will replace what&apos;s here. The date
+              will be set to today.
+            </p>
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={doCopyFromPrevious}
+                className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-cream-soft hover:bg-ink-soft"
+              >
+                Yes, copy and overwrite
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCopyConfirm(false)}
+                className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

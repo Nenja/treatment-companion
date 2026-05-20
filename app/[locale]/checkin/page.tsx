@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useCheckinData, useSubmitCheckin } from '@/lib/supabase/checkin';
@@ -14,23 +14,34 @@ import { GoalRatingPicker } from '@/components/wizard/GoalRatingPicker';
 /**
  * Weekly check-in wizard. Lives at /checkin (or /<locale>/checkin).
  *
+ * Optional ?promptId=X query param targets a specific pending prompt
+ * (used when the patient taps a catch-up week from the home page).
+ * Without the param, the oldest pending prompt is used.
+ *
  * Step plan:
  *   1..N — one step per active goal, rating with the 5 goal-specific
  *          GAS anchors. Middle option is visually highlighted but not
  *          labelled as "expected" — the goal-specific text carries the
  *          meaning.
  *   N+1  — optional comment field with safety nudge + summary review.
- *
- * If the patient has no active goals or no pending prompt, the page
- * redirects home.
  */
 export default function CheckinPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-cream" />}>
+      <CheckinPageInner />
+    </Suspense>
+  );
+}
+
+function CheckinPageInner() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('patient.checkin');
+  const searchParams = useSearchParams();
+  const promptIdParam = searchParams.get('promptId');
 
   const { user, profile, loading: authLoading } = useAuth();
-  const checkinQuery = useCheckinData(profile?.id ?? null, profile?.role);
+  const checkinQuery = useCheckinData(profile?.id ?? null, profile?.role, promptIdParam);
   const submitMutation = useSubmitCheckin();
 
   const homePath = locale === 'en' ? '/' : `/${locale}`;

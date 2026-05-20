@@ -24,9 +24,13 @@ export interface CheckinData {
  * (including all five GAS anchors). Returns null if there's no
  * pending prompt — the page redirects home in that case.
  */
-export function useCheckinData(profileId: string | null, role: string | null | undefined) {
+export function useCheckinData(
+  profileId: string | null,
+  role: string | null | undefined,
+  promptId: string | null
+) {
   return useQuery({
-    queryKey: ['checkin', profileId],
+    queryKey: ['checkin', profileId, promptId],
     enabled: !!profileId && role === 'patient',
     queryFn: async (): Promise<CheckinData | null> => {
       const supabase = createSupabaseBrowserClient();
@@ -56,17 +60,44 @@ export function useCheckinData(profileId: string | null, role: string | null | u
 
       const cycleId = cycleRow.id as string;
 
-      // Find the pending prompt
-      const { data: promptRow, error: prErr } = await supabase
-        .from('weekly_prompt')
-        .select('id, week_number')
-        .eq('treatment_cycle_id', cycleId)
-        .eq('status', 'pending')
-        .order('week_number', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      if (prErr) throw prErr;
-      if (!promptRow) return null;
+      // Find the prompt to use. If promptId was passed in the URL, use
+      // that one (and verify it's still pending and belongs to this
+      // cycle). Otherwise pick the oldest pending prompt as before.
+      let promptRow: { id: string; week_number: number } | null = null;
+      if (promptId) {
+        const { data, error } = await supabase
+          .from('weekly_prompt')
+          .select('id, week_number, status, treatment_cycle_id')
+          .eq('id', promptId)
+          .maybeSingle();
+        if (error) throw error;
+        if (
+          data &&
+          data.status === 'pending' &&
+          data.treatment_cycle_id === cycleId
+        ) {
+          promptRow = {
+            id: data.id as string,
+            week_number: data.week_number as number
+          };
+        }
+      }
+      if (!promptRow) {
+        const { data, error } = await supabase
+          .from('weekly_prompt')
+          .select('id, week_number')
+          .eq('treatment_cycle_id', cycleId)
+          .eq('status', 'pending')
+          .order('week_number', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (error) throw error;
+        if (!data) return null;
+        promptRow = {
+          id: data.id as string,
+          week_number: data.week_number as number
+        };
+      }
 
       // Load all active goals with their anchors
       const { data: goalRows, error: gErr } = await supabase

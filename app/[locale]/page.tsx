@@ -11,6 +11,7 @@ import { PatientHomeSkeleton } from '@/components/layout/PatientHomeSkeleton';
 import { SafetyNotice } from '@/components/layout/SafetyNotice';
 import { GoalCard } from '@/components/cards/GoalCard';
 import { CheckinPromptCard } from '@/components/cards/CheckinPromptCard';
+import { CatchUpCard } from '@/components/cards/CatchUpCard';
 import { CheckinDots } from '@/components/cards/CheckinDots';
 import { Card } from '@/components/cards/Card';
 
@@ -112,7 +113,7 @@ export default function PatientHomePage() {
 
   const weekNumber = data.currentWeek;
 
-  const nextDueDate = data.pendingPrompt
+  const nextDueDate = data.currentPrompt
     ? undefined
     : addDaysIso(data.cycle.startDate, weekNumber * 7);
 
@@ -136,19 +137,24 @@ export default function PatientHomePage() {
       {/* Check-in CTA / next-due */}
       <div className="mt-6">
         <CheckinPromptCard
-          pendingPromptId={data.pendingPrompt?.id}
+          pendingPromptId={data.currentPrompt?.id}
           nextDueDate={nextDueDate}
           patientId={data.patient.id}
           hasActiveGoals={data.goals.length > 0}
         />
       </div>
 
+      {/* Catch-up card: older pending check-ins within the 2-week window */}
+      {data.catchUpPrompts.length > 0 && data.goals.length > 0 && (
+        <CatchUpCard prompts={data.catchUpPrompts} />
+      )}
+
       {/* Visual cycle progress — grows each week, only shown when there are active goals */}
       {data.goals.length > 0 && (
         <CheckinDots
           currentWeek={weekNumber}
           completedWeeks={completedWeeksSet}
-          pendingPromptWeek={data.pendingPrompt?.weekNumber}
+          pendingPromptWeek={data.currentPrompt?.weekNumber}
         />
       )}
 
