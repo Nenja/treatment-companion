@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { actions } from '@/lib/store';
 import { formatLongDate } from '@/lib/dates';
 
 interface CheckinPromptCardProps {
@@ -41,13 +40,9 @@ export function CheckinPromptCard({
         <button
           type="button"
           onClick={() => {
-            actions.log({
-              actorId: patientId,
-              actorRole: 'patient',
-              action: 'checkin_started',
-              entity: 'weekly_prompt',
-              entityId: pendingPromptId
-            });
+            // Audit logging happens server-side when the check-in is
+            // actually submitted (submit_weekly_checkin RPC). No need
+            // to log the navigation event here.
             router.push(locale === 'en' ? '/checkin' : `/${locale}/checkin`);
           }}
           className="mt-5 inline-flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft active:bg-ink"

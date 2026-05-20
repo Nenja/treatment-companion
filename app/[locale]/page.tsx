@@ -182,31 +182,7 @@ export default function PatientHomePage() {
           <ul className="mt-4 space-y-3">
             {data.goals.map((g) => (
               <li key={g.id}>
-                {/* Minimal goal shape — GoalCard accepts more fields
-                    but only renders patientFacingText. Pass a partial
-                    cast to its expected shape. */}
-                <GoalCard
-                  goal={{
-                    id: g.id,
-                    patientFacingText: g.patientFacingText,
-                    // The fields below are unused by GoalCard but its
-                    // prop type needs them. Stable empty placeholders.
-                    suggestionId: '',
-                    patientId: data.patient.id,
-                    treatmentCycleId: data.cycle!.id,
-                    smartText: '',
-                    gasAnchors: {
-                      minus2: '',
-                      minus1: '',
-                      zero: '',
-                      plus1: '',
-                      plus2: ''
-                    },
-                    approvedByClinicianId: '',
-                    approvedAt: '',
-                    status: 'active'
-                  }}
-                />
+                <GoalCard patientFacingText={g.patientFacingText} />
               </li>
             ))}
           </ul>

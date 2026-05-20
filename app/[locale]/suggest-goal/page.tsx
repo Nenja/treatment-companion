@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { useStore, actions } from '@/lib/store';
+import { useAuth } from '@/lib/supabase/auth';
+import { useSubmitSuggestion } from '@/lib/supabase/suggestGoal';
 import { useSuggestGoalDraft, draftStorage } from '@/lib/useSuggestGoalDraft';
 import {
   GOAL_DOMAINS,
@@ -44,23 +45,33 @@ export default function SuggestGoalPage() {
   const t = useTranslations('patient.suggestGoal');
   const tDomain = useTranslations('domain');
   const tImportance = useTranslations('importance');
-  const state = useStore();
+  const { user, profile, loading: authLoading } = useAuth();
+  const submit = useSubmitSuggestion();
 
-  const patient = state.patients.find((p) => p.id === state.currentPatientId);
+  // Use the profile id as the draft key. localStorage drafts survive
+  // tab close/reopen but are scoped to the signed-in user.
   const { draft, update, goToStep, reset, hydrated } = useSuggestGoalDraft(
-    patient?.id ?? ''
+    profile?.id ?? ''
   );
 
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
 
+  // Auth gating: must be a patient to submit suggestions.
   useEffect(() => {
-    if (hydrated && !patient) {
+    if (authLoading) return;
+    if (!user || !profile) {
+      router.replace(locale === 'en' ? '/login' : `/${locale}/login`);
+      return;
+    }
+    if (profile.role !== 'patient') {
       router.replace(locale === 'en' ? '/' : `/${locale}`);
     }
-  }, [hydrated, patient, router, locale]);
+  }, [authLoading, user, profile, router, locale]);
 
-  if (!patient) return null;
+  if (authLoading || !user || !profile || profile.role !== 'patient' || !hydrated) {
+    return null;
+  }
 
   const homePath = locale === 'en' ? '/' : `/${locale}`;
   const goHome = () => router.push(homePath);
@@ -102,20 +113,37 @@ export default function SuggestGoalPage() {
     if (step > 1) goToStep((step - 1) as WizardStep);
   };
 
-  const doSubmit = () => {
+  const doSubmit = async () => {
     if (!canSubmit(draft)) return;
-    const id = actions.submitGoalSuggestion(draft);
-    if (id) {
-      draftStorage.clear(patient.id);
+    if (submit.isPending) return;
+    try {
+      const id = await submit.mutateAsync({
+        domain: draft.domain!,
+        otherDomainText: draft.otherDomainText,
+        patientWording: draft.patientWording!,
+        importance: draft.importance!,
+        difficultyContext: draft.difficultyContext
+      });
+      draftStorage.clear(profile.id);
       reset();
       setSubmittedId(id);
+    } catch (err) {
+      // Stay on the page so the patient can retry. The button label
+      // shows "Submit" again automatically because isPending resets.
+      console.error('submit suggestion failed', err);
     }
   };
 
   const stepComplete = isStepComplete(draft, step);
   const isLastStep = step === TOTAL_STEPS;
-  const primaryLabel = isLastStep ? t('submit') : t('next');
-  const primaryDisabled = isLastStep ? !canSubmit(draft) : !stepComplete;
+  const primaryLabel = isLastStep
+    ? submit.isPending
+      ? '…'
+      : t('submit')
+    : t('next');
+  const primaryDisabled = isLastStep
+    ? !canSubmit(draft) || submit.isPending
+    : !stepComplete;
 
   // Step bodies --------------------------------------------------------
 
