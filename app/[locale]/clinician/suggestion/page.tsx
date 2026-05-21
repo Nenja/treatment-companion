@@ -18,6 +18,11 @@ import { formatLongDate } from '@/lib/dates';
 import type { NrsDirection } from '@/lib/types';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { useToast } from '@/components/feedback/Toast';
+import {
+  SkeletonBlock,
+  SkeletonParagraph,
+  SkeletonScreen
+} from '@/components/feedback/Skeleton';
 import { classifyError } from '@/lib/feedback';
 
 export default function SuggestionReviewPage() {
@@ -110,10 +115,46 @@ function Inner() {
     !profile ||
     profile.role !== 'clinician' ||
     sessionQuery.isLoading ||
-    !sessionQuery.data ||
-    suggestionQuery.isLoading
+    !sessionQuery.data
   ) {
     return <div className="min-h-dvh bg-cream" />;
+  }
+
+  if (suggestionQuery.isLoading) {
+    return (
+      <div className="min-h-dvh bg-cream">
+        <header className="border-b border-stone/70 bg-cream-soft/50">
+          <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
+            <SkeletonBlock width="w-16" height="h-4" />
+            <SkeletonBlock width="w-8" height="h-8" shape="rounded-full" />
+          </div>
+        </header>
+        <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
+          <SkeletonScreen label="Loading suggestion">
+            <SkeletonBlock width="w-3/4" height="h-7" />
+            <SkeletonBlock width="w-1/3" height="h-4" className="mt-2" />
+
+            {/* Patient wording card */}
+            <div className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5">
+              <SkeletonBlock width="w-1/3" height="h-5" />
+              <SkeletonParagraph lines={3} className="mt-3" />
+            </div>
+
+            {/* Action buttons row */}
+            <div className="mt-8 space-y-2">
+              {[0, 1, 2, 3].map((i) => (
+                <SkeletonBlock
+                  key={i}
+                  width="w-full"
+                  height="h-12"
+                  shape="rounded-[var(--radius-button)]"
+                />
+              ))}
+            </div>
+          </SkeletonScreen>
+        </main>
+      </div>
+    );
   }
 
   if (!suggestionQuery.data) {

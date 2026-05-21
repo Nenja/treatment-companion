@@ -19,6 +19,10 @@ import {
 } from '@/lib/suggestGoalDraft';
 import { classifyError } from '@/lib/feedback';
 import { useToast } from '@/components/feedback/Toast';
+import {
+  SkeletonBlock,
+  SkeletonScreen
+} from '@/components/feedback/Skeleton';
 import { WizardLayout } from '@/components/wizard/WizardLayout';
 import { OptionList, ExamplesBlock } from '@/components/wizard/OptionList';
 
@@ -74,7 +78,7 @@ export default function SuggestGoalPage() {
   }, [authLoading, user, profile, router, locale]);
 
   if (authLoading || !user || !profile || profile.role !== 'patient' || !hydrated) {
-    return null;
+    return <SuggestGoalSkeleton />;
   }
 
   const homePath = locale === 'en' ? '/' : `/${locale}`;
@@ -424,6 +428,40 @@ function ThanksView({ onBackHome }: { onBackHome: () => void }) {
         >
           {t('backHome')}
         </button>
+      </main>
+    </div>
+  );
+}
+
+/**
+ * Loading skeleton for the suggest-goal wizard. Shape matches the
+ * wizard layout (header + heading + body + sticky bottom button).
+ */
+function SuggestGoalSkeleton() {
+  return (
+    <div className="min-h-dvh bg-cream">
+      <header className="border-b border-stone/70 bg-cream-soft/50">
+        <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
+          <SkeletonBlock width="w-16" height="h-4" />
+          <SkeletonBlock width="w-12" height="h-4" />
+          <SkeletonBlock width="w-8" height="h-8" shape="rounded-full" />
+        </div>
+      </header>
+      <main className="mx-auto max-w-[480px] px-5 pb-32 pt-6">
+        <SkeletonScreen label="Loading">
+          <SkeletonBlock width="w-3/5" height="h-7" />
+          <SkeletonBlock width="w-4/5" height="h-4" className="mt-2" />
+          <div className="mt-8 space-y-3">
+            {[0, 1, 2, 3].map((i) => (
+              <SkeletonBlock
+                key={i}
+                width="w-full"
+                height="h-14"
+                shape="rounded-[var(--radius-button)]"
+              />
+            ))}
+          </div>
+        </SkeletonScreen>
       </main>
     </div>
   );

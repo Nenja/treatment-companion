@@ -19,6 +19,11 @@ import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
 import { AccountMenu } from '@/components/layout/AccountMenu';
+import {
+  SkeletonBlock,
+  SkeletonParagraph,
+  SkeletonScreen
+} from '@/components/feedback/Skeleton';
 import { buildEhrExport } from '@/lib/ehrExport';
 
 export default function ClinicianPatientPage() {
@@ -86,13 +91,44 @@ export default function ClinicianPatientPage() {
   if (patientData.isLoading || !patientData.data) {
     return (
       <div className="min-h-dvh bg-cream">
-        <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
-          <div className="animate-pulse space-y-3">
-            <div className="h-4 w-24 rounded bg-stone" />
-            <div className="h-6 w-2/3 rounded bg-stone" />
-            <div className="h-32 rounded bg-stone-soft" />
-            <div className="h-48 rounded bg-stone-soft" />
+        {/* Header bar — matches real header height */}
+        <header className="border-b border-stone/70 bg-cream-soft/50">
+          <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
+            <SkeletonBlock width="w-16" height="h-4" />
+            <SkeletonBlock width="w-8" height="h-8" shape="rounded-full" />
           </div>
+        </header>
+        <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
+          <SkeletonScreen label="Loading patient">
+            {/* Patient name heading */}
+            <SkeletonBlock width="w-3/4" height="h-8" />
+            <SkeletonBlock width="w-1/2" height="h-4" className="mt-2" />
+
+            {/* Treatment record card */}
+            <div className="mt-8 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5">
+              <SkeletonBlock width="w-1/3" height="h-5" />
+              <SkeletonParagraph lines={3} className="mt-3" />
+            </div>
+
+            {/* Active goals title + cards */}
+            <div className="mt-10">
+              <SkeletonBlock width="w-1/3" height="h-6" />
+              {[0, 1].map((i) => (
+                <div
+                  key={i}
+                  className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5"
+                >
+                  <SkeletonBlock width="w-4/5" height="h-5" />
+                  {/* Pretend chart area */}
+                  <SkeletonBlock
+                    width="w-full"
+                    height="h-32"
+                    className="mt-4"
+                  />
+                </div>
+              ))}
+            </div>
+          </SkeletonScreen>
         </main>
       </div>
     );

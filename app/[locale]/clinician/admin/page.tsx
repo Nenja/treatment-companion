@@ -12,6 +12,7 @@ import {
 } from '@/lib/supabase/admin';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { useToast } from '@/components/feedback/Toast';
+import { SkeletonBlock } from '@/components/feedback/Skeleton';
 import { classifyError } from '@/lib/feedback';
 
 /**
@@ -84,7 +85,20 @@ export default function AdminPage() {
         <section className="mt-10">
           <h2 className="font-display text-[18px] text-ink">Accounts</h2>
           {accountsQuery.isLoading && (
-            <p className="mt-3 text-[14px] text-ink-muted">Loading…</p>
+            <ul className="mt-3 divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
+              {[0, 1, 2].map((i) => (
+                <li key={i} className="px-4 py-3">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <SkeletonBlock width="w-2/5" height="h-4" />
+                      <SkeletonBlock width="w-3/5" height="h-3" />
+                    </div>
+                    <SkeletonBlock width="w-16" height="h-4" shape="rounded-full" />
+                  </div>
+                  <SkeletonBlock width="w-1/3" height="h-3" className="mt-1.5" />
+                </li>
+              ))}
+            </ul>
           )}
           {accountsQuery.isError && (
             <p className="mt-3 text-[14px] text-amber-deep">

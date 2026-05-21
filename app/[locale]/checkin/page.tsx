@@ -9,6 +9,10 @@ import { useCheckinDraft, checkinDraftStorage } from '@/lib/useCheckinDraft';
 import { isCheckinComplete } from '@/lib/checkinDraft';
 import { classifyError } from '@/lib/feedback';
 import { useToast } from '@/components/feedback/Toast';
+import {
+  SkeletonBlock,
+  SkeletonScreen
+} from '@/components/feedback/Skeleton';
 import { WizardLayout } from '@/components/wizard/WizardLayout';
 import { GoalRatingPicker } from '@/components/wizard/GoalRatingPicker';
 
@@ -28,7 +32,7 @@ import { GoalRatingPicker } from '@/components/wizard/GoalRatingPicker';
  */
 export default function CheckinPage() {
   return (
-    <Suspense fallback={<div className="min-h-dvh bg-cream" />}>
+    <Suspense fallback={<CheckinSkeleton />}>
       <CheckinPageInner />
     </Suspense>
   );
@@ -118,14 +122,15 @@ function CheckinPageInner() {
     return <ThanksView onBackHome={goHomeHard} />;
   }
 
-  // Auth or data still loading → render nothing (could add a spinner).
+  // Auth or data still loading → render a wizard-shaped skeleton so
+  // the page feels structured rather than blank.
   if (
     authLoading ||
     !profile ||
     profile.role !== 'patient' ||
     checkinQuery.isLoading
   ) {
-    return null;
+    return <CheckinSkeleton />;
   }
 
   // Query errored or there's no pending prompt → redirect home (the
@@ -411,6 +416,64 @@ function ThanksView({ onBackHome }: { onBackHome: () => void }) {
         >
           {t('backToHome')}
         </button>
+      </main>
+    </div>
+  );
+}
+
+/**
+ * Loading skeleton for the check-in wizard. Matches the WizardLayout
+ * shape so the page feels structured before the goals and prompt
+ * actually load. Real wizard has: header bar with back + step counter,
+ * heading + helper text, body content, primary + secondary action row.
+ */
+function CheckinSkeleton() {
+  return (
+    <div className="min-h-dvh bg-cream">
+      <header className="border-b border-stone/70 bg-cream-soft/50">
+        <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
+          <SkeletonBlock width="w-16" height="h-4" />
+          <SkeletonBlock width="w-12" height="h-4" />
+          <SkeletonBlock width="w-8" height="h-8" shape="rounded-full" />
+        </div>
+      </header>
+      <main className="mx-auto max-w-[480px] px-5 pb-32 pt-6">
+        <SkeletonScreen label="Loading check-in">
+          {/* Step heading */}
+          <SkeletonBlock width="w-3/5" height="h-7" />
+          <SkeletonBlock width="w-4/5" height="h-4" className="mt-2" />
+
+          {/* Body content area (mimics the slider step) */}
+          <div className="mt-10">
+            <SkeletonBlock width="w-4/5" height="h-5" />
+            <SkeletonBlock width="w-3/5" height="h-4" className="mt-2" />
+
+            <div className="mt-8 flex flex-col items-center">
+              <SkeletonBlock width="w-24" height="h-16" />
+              <SkeletonBlock
+                width="w-full max-w-[320px]"
+                height="h-2"
+                shape="rounded-full"
+                className="mt-6"
+              />
+              <div className="mt-3 flex w-full max-w-[320px] justify-between">
+                <SkeletonBlock width="w-16" height="h-3" />
+                <SkeletonBlock width="w-16" height="h-3" />
+              </div>
+            </div>
+          </div>
+        </SkeletonScreen>
+
+        {/* Sticky action row at bottom */}
+        <div className="fixed inset-x-0 bottom-0 border-t border-stone/70 bg-cream-soft/95 px-5 py-4">
+          <div className="mx-auto max-w-[480px]">
+            <SkeletonBlock
+              width="w-full"
+              height="h-12"
+              shape="rounded-[var(--radius-button)]"
+            />
+          </div>
+        </div>
       </main>
     </div>
   );
