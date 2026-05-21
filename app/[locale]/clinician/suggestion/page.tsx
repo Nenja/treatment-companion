@@ -17,6 +17,8 @@ import {
 import { formatLongDate } from '@/lib/dates';
 import type { NrsDirection } from '@/lib/types';
 import { AccountMenu } from '@/components/layout/AccountMenu';
+import { useToast } from '@/components/feedback/Toast';
+import { classifyError } from '@/lib/feedback';
 
 export default function SuggestionReviewPage() {
   return (
@@ -45,6 +47,8 @@ function Inner() {
   const touchSession = useTouchClinicianSession();
   const approve = useApproveSuggestion();
   const setStatus = useSetSuggestionStatus();
+  const toast = useToast();
+  const tFeedback = useTranslations('feedback');
 
   const patientHomePath =
     locale === 'en' ? '/clinician/patient' : `/${locale}/clinician/patient`;
@@ -121,30 +125,35 @@ function Inner() {
   const suggestion = suggestionQuery.data;
   const back = () => router.push(patientHomePath);
 
-  const onDefer = async () => {
-    await setStatus.mutateAsync({
-      suggestionId: suggestion.id,
-      status: 'discussAtNextVisit'
-    });
-    touchSession.mutate();
-    back();
+  // Shared helper for the three "defer / combine / not suitable" actions.
+  // They differ only in the target status string; the error handling is
+  // identical and prone to clinician-unlock-expiry like the others.
+  const doSetStatus = async (
+    status: 'discussAtNextVisit' | 'combinedWithAnother' | 'notSuitableThisCycle'
+  ) => {
+    try {
+      await setStatus.mutateAsync({
+        suggestionId: suggestion.id,
+        status
+      });
+      touchSession.mutate();
+      back();
+    } catch (err) {
+      const key = classifyError(err);
+      toast.error(tFeedback(key));
+      if (key === 'errorClinicianUnlockExpired') {
+        setTimeout(() => {
+          router.push(
+            locale === 'en' ? '/clinician' : `/${locale}/clinician`
+          );
+        }, 1500);
+      }
+    }
   };
-  const onCombine = async () => {
-    await setStatus.mutateAsync({
-      suggestionId: suggestion.id,
-      status: 'combinedWithAnother'
-    });
-    touchSession.mutate();
-    back();
-  };
-  const onNotSuitable = async () => {
-    await setStatus.mutateAsync({
-      suggestionId: suggestion.id,
-      status: 'notSuitableThisCycle'
-    });
-    touchSession.mutate();
-    back();
-  };
+
+  const onDefer = () => doSetStatus('discussAtNextVisit');
+  const onCombine = () => doSetStatus('combinedWithAnother');
+  const onNotSuitable = () => doSetStatus('notSuitableThisCycle');
 
   const startApprove = (prefilled: boolean) => {
     if (prefilled) setPatientText(suggestion.patient_wording as string);
@@ -175,19 +184,32 @@ function Inner() {
 
   const submitApprove = async () => {
     if (!canSubmitApprove || approve.isPending) return;
-    await approve.mutateAsync({
-      suggestionId: suggestion.id,
-      patientFacingText: patientText,
-      smartText,
-      nrsQuestion,
-      nrsDirection,
-      cutLowLow: cutLowLowN,
-      cutLow: cutLowN,
-      cutZero: cutZeroN,
-      cutHigh: cutHighN
-    });
-    touchSession.mutate();
-    back();
+    try {
+      await approve.mutateAsync({
+        suggestionId: suggestion.id,
+        patientFacingText: patientText,
+        smartText,
+        nrsQuestion,
+        nrsDirection,
+        cutLowLow: cutLowLowN,
+        cutLow: cutLowN,
+        cutZero: cutZeroN,
+        cutHigh: cutHighN
+      });
+      touchSession.mutate();
+      toast.success(tFeedback('successApproved'));
+      back();
+    } catch (err) {
+      const key = classifyError(err);
+      toast.error(tFeedback(key));
+      if (key === 'errorClinicianUnlockExpired') {
+        setTimeout(() => {
+          router.push(
+            locale === 'en' ? '/clinician' : `/${locale}/clinician`
+          );
+        }, 1500);
+      }
+    }
   };
 
   return (

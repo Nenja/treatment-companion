@@ -17,6 +17,8 @@ import {
   canSubmit,
   type WizardStep
 } from '@/lib/suggestGoalDraft';
+import { classifyError } from '@/lib/feedback';
+import { useToast } from '@/components/feedback/Toast';
 import { WizardLayout } from '@/components/wizard/WizardLayout';
 import { OptionList, ExamplesBlock } from '@/components/wizard/OptionList';
 
@@ -47,6 +49,8 @@ export default function SuggestGoalPage() {
   const tImportance = useTranslations('importance');
   const { user, profile, loading: authLoading } = useAuth();
   const submit = useSubmitSuggestion();
+  const toast = useToast();
+  const tFeedback = useTranslations('feedback');
 
   // Use the profile id as the draft key. localStorage drafts survive
   // tab close/reopen but are scoped to the signed-in user.
@@ -127,10 +131,12 @@ export default function SuggestGoalPage() {
       draftStorage.clear(profile.id);
       reset();
       setSubmittedId(id);
+      toast.success(tFeedback('successSuggestion'));
     } catch (err) {
       // Stay on the page so the patient can retry. The button label
       // shows "Submit" again automatically because isPending resets.
       console.error('submit suggestion failed', err);
+      toast.error(tFeedback(classifyError(err)));
     }
   };
 

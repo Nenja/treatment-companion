@@ -2,6 +2,23 @@
   "app": {
     "name": "Treatment Companion"
   },
+  "feedback": {
+    "successCheckin": "Check-in saved",
+    "successSuggestion": "Suggestion sent",
+    "successTreatment": "Treatment recorded",
+    "successApproved": "Goal approved",
+    "successAccountCreated": "Account created",
+    "successCycleStarted": "New cycle started",
+    "successNotifications": "Notifications enabled",
+    "errorGeneric": "Something went wrong. Please try again.",
+    "errorNetwork": "Network problem. Check your connection and try again.",
+    "errorSessionExpired": "Your session expired. Please sign in again.",
+    "errorClinicianUnlockExpired": "Patient session expired. Please re-enter the visit code.",
+    "errorPermission": "You don't have permission for that action.",
+    "errorNotFound": "We couldn't find what you were looking for.",
+    "errorDuplicate": "That already exists.",
+    "errorInvalidInput": "Some of the information you entered isn't valid."
+  },
   "safety": {
     "title": "Not for urgent care",
     "body": "This app is not monitored for urgent care. If you experience severe weakness, breathing problems, swallowing problems, serious falls, or other urgent symptoms, contact your clinic or emergency services."

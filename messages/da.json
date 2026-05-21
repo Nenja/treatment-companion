@@ -6,6 +6,23 @@
   "app": {
     "name": "Behandlingsledsager"
   },
+  "feedback": {
+    "successCheckin": "Status gemt",
+    "successSuggestion": "Forslag sendt",
+    "successTreatment": "Behandling registreret",
+    "successApproved": "Mål godkendt",
+    "successAccountCreated": "Konto oprettet",
+    "successCycleStarted": "Nyt forløb startet",
+    "successNotifications": "Notifikationer aktiveret",
+    "errorGeneric": "Noget gik galt. Prøv venligst igen.",
+    "errorNetwork": "Netværksproblem. Tjek din forbindelse og prøv igen.",
+    "errorSessionExpired": "Din session er udløbet. Log venligst ind igen.",
+    "errorClinicianUnlockExpired": "Patientsession udløbet. Indtast venligst besøgskoden igen.",
+    "errorPermission": "Du har ikke tilladelse til den handling.",
+    "errorNotFound": "Vi kunne ikke finde det, du ledte efter.",
+    "errorDuplicate": "Det findes allerede.",
+    "errorInvalidInput": "Nogle af de oplysninger, du indtastede, er ikke gyldige."
+  },
   "safety": {
     "title": "Ikke til akut hjælp",
     "body": "Denne app overvåges ikke for akutte tilfælde. Hvis du oplever alvorlig muskelsvaghed, vejrtrækningsproblemer, synkebesvær, alvorlige fald eller andre akutte symptomer, kontakt da din klinik eller alarmcentralen."

@@ -4,11 +4,14 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode
 } from 'react';
 import type { User } from '@supabase/supabase-js';
+import { useTranslations } from 'next-intl';
 import { createSupabaseBrowserClient } from './browser';
+import { useToast } from '@/components/feedback/Toast';
 
 /**
  * Application-level profile fetched from the `profile` table once the
@@ -49,6 +52,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<AppProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const toast = useToast();
+  const tFeedback = useTranslations('feedback');
+  // Track previous user so we can tell "logged out by user" (initial
+  // mount) apart from "session expired mid-use" (was logged in, now
+  // not). Only the latter deserves the expiry toast.
+  const previousUserRef = useRef<User | null>(null);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -74,6 +83,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!mounted) return;
       const u = data.session?.user ?? null;
+      previousUserRef.current = u;
       setUser(u);
       setProfile(u ? await fetchProfile(u.id) : null);
       setLoading(false);
@@ -87,9 +97,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // We defer the profile fetch with setTimeout(..., 0) so it runs
     // after the callback returns and the lock releases.
     // See https://github.com/supabase/auth-js/issues/762
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       const u = session?.user ?? null;
+      // Distinguish a true session expiry from a user-initiated sign-out
+      // (handled in AccountMenu) and from initial mount. Only show the
+      // expiry toast for TOKEN_REFRESHED failures or SIGNED_OUT events
+      // that originate outside our own sign-out path.
+      const wasSignedIn = previousUserRef.current !== null;
+      if (wasSignedIn && !u && event !== 'SIGNED_OUT') {
+        // TOKEN_REFRESHED failure or USER_DELETED with no session — show
+        // a clear message instead of silently dropping the user.
+        toast.error(tFeedback('errorSessionExpired'));
+      }
+      previousUserRef.current = u;
       setUser(u);
       if (u) {
         setTimeout(async () => {

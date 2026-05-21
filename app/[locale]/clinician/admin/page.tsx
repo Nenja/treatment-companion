@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import {
   useAdminAccounts,
@@ -11,6 +11,8 @@ import {
   type AdminAccount
 } from '@/lib/supabase/admin';
 import { AccountMenu } from '@/components/layout/AccountMenu';
+import { useToast } from '@/components/feedback/Toast';
+import { classifyError } from '@/lib/feedback';
 
 /**
  * Clinician-facing admin: create new patient/clinician accounts and
@@ -100,6 +102,8 @@ export default function AdminPage() {
 
 function CreateAccountSection() {
   const create = useCreateAccount();
+  const toast = useToast();
+  const tFeedback = useTranslations('feedback');
 
   const [role, setRole] = useState<'patient' | 'clinician'>('patient');
   const [email, setEmail] = useState('');
@@ -139,12 +143,15 @@ function CreateAccountSection() {
         role: res.role,
         tempPassword
       });
+      toast.success(tFeedback('successAccountCreated'));
       // Reset form for the next account.
       setEmail('');
       setDisplayName('');
       setTempPassword(generateTempPassword());
-    } catch {
-      // Error message surfaces via create.error
+    } catch (err) {
+      // Error already surfaces in create.error and is shown inline,
+      // but also show a toast so it's visible regardless of scroll.
+      toast.error(tFeedback(classifyError(err)));
     }
   };
 

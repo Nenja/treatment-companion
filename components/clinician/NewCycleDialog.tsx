@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useStartNewCycle } from '@/lib/supabase/clinicianPatient';
 import { todayIso } from '@/lib/dates';
+import { useToast } from '@/components/feedback/Toast';
+import { classifyError } from '@/lib/feedback';
 
 interface NewCycleDialogProps {
   patientId: string;
@@ -26,12 +28,12 @@ export function NewCycleDialog({ patientId, onClose }: NewCycleDialogProps) {
   const locale = useLocale();
   const startNewCycle = useStartNewCycle();
   const [date, setDate] = useState(todayIso());
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
+  const tFeedback = useTranslations('feedback');
 
   const onConfirm = async () => {
-    setError(null);
     if (!date) {
-      setError('Pick a date.');
+      toast.error(tFeedback('errorInvalidInput'));
       return;
     }
     try {
@@ -39,14 +41,23 @@ export function NewCycleDialog({ patientId, onClose }: NewCycleDialogProps) {
         patientId,
         treatmentDate: date
       });
+      toast.success(tFeedback('successCycleStarted'));
       onClose();
       // Navigate to treatment record form for the new cycle.
       router.push(
         locale === 'en' ? '/clinician/treatment' : `/${locale}/clinician/treatment`
       );
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Could not start a new cycle.';
-      setError(msg);
+    } catch (err) {
+      const key = classifyError(err);
+      toast.error(tFeedback(key));
+      if (key === 'errorClinicianUnlockExpired') {
+        onClose();
+        setTimeout(() => {
+          router.push(
+            locale === 'en' ? '/clinician' : `/${locale}/clinician`
+          );
+        }, 1500);
+      }
     }
   };
 
@@ -71,12 +82,6 @@ export function NewCycleDialog({ patientId, onClose }: NewCycleDialogProps) {
           onChange={(e) => setDate(e.target.value)}
           className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] text-ink focus:border-sage focus:outline-none"
         />
-
-        {error && (
-          <p className="mt-3 text-[13px] text-amber-deep" role="alert">
-            {error}
-          </p>
-        )}
 
         <div className="mt-6 flex flex-col gap-2">
           <button

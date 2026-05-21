@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import {
   useCurrentClinicianSession,
@@ -21,6 +21,8 @@ import {
   type InjectionSide
 } from '@/lib/types';
 import { AccountMenu } from '@/components/layout/AccountMenu';
+import { useToast } from '@/components/feedback/Toast';
+import { classifyError } from '@/lib/feedback';
 
 interface InjectionDraft {
   muscle: string;
@@ -48,6 +50,8 @@ export default function TreatmentRecordPage() {
   );
   const save = useSaveTreatmentSession();
   const touchSession = useTouchClinicianSession();
+  const toast = useToast();
+  const tFeedback = useTranslations('feedback');
 
   // Previous-cycle treatment for "Copy from previous". The hook only
   // fires once we know the current cycle's number (i.e. when dataQuery
@@ -190,23 +194,40 @@ export default function TreatmentRecordPage() {
 
   const submit = async () => {
     if (!canSubmit || save.isPending) return;
-    await save.mutateAsync({
-      treatmentCycleId: cycle.id,
-      date,
-      drugProduct,
-      totalUnits: totalUnitsNum,
-      dilution: dilution.trim() || undefined,
-      guidance,
-      notes: notes.trim() || undefined,
-      injections: validInjections.map((i) => ({
-        muscle: i.muscle,
-        side: i.side,
-        doseUnits: parseFloat(i.doseUnits),
-        note: i.note.trim() || undefined
-      }))
-    });
-    touchSession.mutate();
-    back();
+    try {
+      await save.mutateAsync({
+        treatmentCycleId: cycle.id,
+        date,
+        drugProduct,
+        totalUnits: totalUnitsNum,
+        dilution: dilution.trim() || undefined,
+        guidance,
+        notes: notes.trim() || undefined,
+        injections: validInjections.map((i) => ({
+          muscle: i.muscle,
+          side: i.side,
+          doseUnits: parseFloat(i.doseUnits),
+          note: i.note.trim() || undefined
+        }))
+      });
+      touchSession.mutate();
+      toast.success(tFeedback('successTreatment'));
+      back();
+    } catch (err) {
+      const key = classifyError(err);
+      toast.error(tFeedback(key));
+      // Unlock expired — kick back to the unlock screen with the
+      // visit code so the clinician can re-enter and try again. The
+      // form's data is lost, but that's accepted; the alternative is
+      // keeping treatment data half-saved which is worse.
+      if (key === 'errorClinicianUnlockExpired') {
+        setTimeout(() => {
+          router.push(
+            locale === 'en' ? '/clinician' : `/${locale}/clinician`
+          );
+        }, 1500);
+      }
+    }
   };
 
   return (

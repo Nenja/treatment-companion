@@ -7,6 +7,8 @@ import { useAuth } from '@/lib/supabase/auth';
 import { useCheckinData, useSubmitCheckin } from '@/lib/supabase/checkin';
 import { useCheckinDraft, checkinDraftStorage } from '@/lib/useCheckinDraft';
 import { isCheckinComplete } from '@/lib/checkinDraft';
+import { classifyError } from '@/lib/feedback';
+import { useToast } from '@/components/feedback/Toast';
 import { WizardLayout } from '@/components/wizard/WizardLayout';
 import { GoalRatingPicker } from '@/components/wizard/GoalRatingPicker';
 
@@ -42,6 +44,8 @@ function CheckinPageInner() {
   const { user, profile, loading: authLoading } = useAuth();
   const checkinQuery = useCheckinData(profile?.id ?? null, profile?.role, promptIdParam);
   const submitMutation = useSubmitCheckin();
+  const toast = useToast();
+  const tFeedback = useTranslations('feedback');
 
   const homePath = locale === 'en' ? '/' : `/${locale}`;
   const goHome = () => router.push(homePath);
@@ -200,9 +204,11 @@ function CheckinPageInner() {
       checkinDraftStorage.clear(prompt.id);
       reset();
       setSubmittedId(id);
+      toast.success(tFeedback('successCheckin'));
     } catch (err) {
       console.error('submitCheckin failed', err);
       submittingRef.current = false;
+      toast.error(tFeedback(classifyError(err)));
     }
   };
 
