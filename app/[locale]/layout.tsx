@@ -1,6 +1,7 @@
 import { AuthProvider } from '@/lib/supabase/auth';
 import { QueryClientProvider } from '@/lib/queryClient';
 import { ToastProvider } from '@/components/feedback/Toast';
+import { TextScaleApplier } from '@/components/feedback/TextScaleApplier';
 import type { ReactNode } from 'react';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
@@ -81,7 +82,10 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={messages} locale={locale}>
           <QueryClientProvider>
             <ToastProvider>
-              <AuthProvider>{children}</AuthProvider>
+              <AuthProvider>
+                <TextScaleApplier />
+                {children}
+              </AuthProvider>
             </ToastProvider>
           </QueryClientProvider>
         </NextIntlClientProvider>

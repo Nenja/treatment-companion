@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
+import { useSetTextScale } from '@/lib/supabase/textScale';
 
 /**
  * Account menu button. Designed to be placed inline in a page header
@@ -84,7 +85,7 @@ export function AccountMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-[calc(100%+8px)] z-40 w-[240px] overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream shadow-lg"
+          className="absolute right-0 top-[calc(100%+8px)] z-40 w-[260px] overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream shadow-lg"
         >
           <div className="border-b border-stone/70 px-4 py-3">
             <p className="font-display text-[15px] leading-tight text-ink">
@@ -99,6 +100,22 @@ export function AccountMenu() {
               {roleLabel}
             </p>
           </div>
+
+          {/* Text size picker. Three preset sizes. The current
+              selection is highlighted; tapping a non-current one
+              applies the new scale immediately and saves it to the
+              profile. */}
+          <div className="border-b border-stone/70 px-4 py-3">
+            <p className="text-[13px] font-semibold text-ink-soft">
+              Text size
+            </p>
+            <div className="mt-2 flex gap-1.5">
+              <TextScaleButton scale={1.0} label="A" />
+              <TextScaleButton scale={1.25} label="A+" />
+              <TextScaleButton scale={1.5} label="A++" />
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={doSignOut}
@@ -110,5 +127,40 @@ export function AccountMenu() {
         </div>
       )}
     </div>
+  );
+}
+
+function TextScaleButton({
+  scale,
+  label
+}: {
+  scale: 1.0 | 1.25 | 1.5;
+  label: string;
+}) {
+  const { profile } = useAuth();
+  const setScale = useSetTextScale();
+  const current = profile?.textScale ?? 1.0;
+  // Use small epsilon since numeric comparison can be fragile.
+  const isCurrent = Math.abs(current - scale) < 0.01;
+  return (
+    <button
+      type="button"
+      role="menuitemradio"
+      aria-checked={isCurrent}
+      onClick={() => setScale.mutate(scale)}
+      className={`flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border font-semibold ${
+        isCurrent
+          ? 'border-sage bg-sage-soft text-sage-deep'
+          : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
+      }`}
+      style={{
+        // The label itself should reflect the visual outcome of the
+        // choice — bigger button = bigger sample. Set inline so it
+        // overrides the button's inherited font-size.
+        fontSize: `${14 * scale}px`
+      }}
+    >
+      {label}
+    </button>
   );
 }

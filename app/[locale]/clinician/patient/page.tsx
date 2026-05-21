@@ -155,6 +155,7 @@ export default function ClinicianPatientPage() {
       nrs: number | null;
       reported: boolean;
       comment?: string;
+      submitterLabel?: 'self' | 'caregiver';
     }[]
   >();
   for (const goal of activeGoals) {
@@ -168,7 +169,8 @@ export default function ClinicianPatientPage() {
             value: r.ratingValue as -2 | -1 | 0 | 1 | 2 | null,
             nrs: r.nrsValue,
             reported: true,
-            comment: c.comment ?? undefined
+            comment: c.comment ?? undefined,
+            submitterLabel: c.submitterLabel
           }
         ];
       })

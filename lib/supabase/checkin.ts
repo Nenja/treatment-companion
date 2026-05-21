@@ -135,6 +135,7 @@ export interface SubmitCheckinInput {
     nrsValue: number;
   }[];
   comment?: string;
+  submitterLabel?: 'self' | 'caregiver';
 }
 
 /**
@@ -152,7 +153,8 @@ export function useSubmitCheckin() {
           approved_goal_id: r.approvedGoalId,
           nrs_value: r.nrsValue
         })),
-        p_comment: input.comment ?? null
+        p_comment: input.comment ?? null,
+        p_submitter_label: input.submitterLabel ?? 'self'
       });
       if (error) throw error;
       return data as string;

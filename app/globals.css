@@ -48,6 +48,17 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Patient-controlled text scaling. We use `zoom` on the body so that
+   * everything (text, padding, button heights) scales proportionally.
+   * Without scaling everything, big text in normal-size buttons looks
+   * cramped and breaks layout. Default 1 = no zoom.
+   *
+   * Note: `zoom` is non-standard but supported in Chrome, Edge, Safari,
+   * and Firefox 126+ (April 2024). Older Firefox just shows 1.0. */
+  body {
+    zoom: var(--text-scale, 1);
+  }
+
   h1,
   h2,
   h3 {

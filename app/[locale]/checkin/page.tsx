@@ -204,7 +204,8 @@ function CheckinPageInner() {
       const id = await submitMutation.mutateAsync({
         promptId: prompt.id,
         ratings,
-        comment: draft.comment?.trim() || undefined
+        comment: draft.comment?.trim() || undefined,
+        submitterLabel: draft.submitterLabel ?? 'self'
       });
 
       checkinDraftStorage.clear(prompt.id);
@@ -257,6 +258,44 @@ function CheckinPageInner() {
         <p className="mt-2 text-[14px] text-ink-muted">
           {t('commentSafetyNote')}
         </p>
+
+        {/* Submitter attribution — ask who filled this in, default to
+            'self' if the patient just continues without choosing. Two
+            big buttons so it's reachable with reduced motor control. */}
+        <section className="mt-8">
+          <p className="font-display text-[16px] text-ink">
+            {t('submitterTitle')}
+          </p>
+          <p className="mt-1 text-[14px] text-ink-soft">
+            {t('submitterHelper')}
+          </p>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => update({ submitterLabel: 'self' })}
+              aria-pressed={draft.submitterLabel !== 'caregiver'}
+              className={`flex h-14 flex-1 items-center justify-center rounded-[var(--radius-button)] border-2 text-[15px] font-semibold ${
+                draft.submitterLabel !== 'caregiver'
+                  ? 'border-sage bg-sage-soft text-sage-deep'
+                  : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
+              }`}
+            >
+              {t('submitterSelf')}
+            </button>
+            <button
+              type="button"
+              onClick={() => update({ submitterLabel: 'caregiver' })}
+              aria-pressed={draft.submitterLabel === 'caregiver'}
+              className={`flex h-14 flex-1 items-center justify-center rounded-[var(--radius-button)] border-2 text-[15px] font-semibold ${
+                draft.submitterLabel === 'caregiver'
+                  ? 'border-sage bg-sage-soft text-sage-deep'
+                  : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
+              }`}
+            >
+              {t('submitterCaregiver')}
+            </button>
+          </div>
+        </section>
 
         {/* Summary card */}
         <section className="mt-8 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5">

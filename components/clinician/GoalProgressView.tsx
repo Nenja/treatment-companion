@@ -9,6 +9,9 @@ interface WeekRating {
   nrs: number | null;
   reported: boolean;
   comment?: string;
+  /** Who filled this check-in in. 'caregiver' shows a chip in the
+   *  selected-week caption so the clinician has context. */
+  submitterLabel?: 'self' | 'caregiver';
 }
 
 interface GoalProgressViewProps {
@@ -363,6 +366,11 @@ export function GoalProgressView({
                 </>
               ) : (
                 formatGas(selected.value)
+              )}
+              {selected.submitterLabel === 'caregiver' && (
+                <span className="ml-2 inline-flex items-center rounded-full border border-stone bg-cream-soft px-2 py-0.5 text-[12px] uppercase tracking-wider text-ink-muted">
+                  with caregiver
+                </span>
               )}
             </p>
             {selected.comment && (

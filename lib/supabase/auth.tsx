@@ -24,6 +24,9 @@ export interface AppProfile {
   displayName: string;
   preferredLocale: 'en' | 'da';
   email: string | null;
+  /** Text-size multiplier: 1.00, 1.25, or 1.50. Applied as a CSS
+   *  variable on <html> so every relative unit scales. */
+  textScale: number;
 }
 
 interface AuthState {
@@ -66,7 +69,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async function fetchProfile(userId: string): Promise<AppProfile | null> {
       const { data, error } = await supabase
         .from('profile')
-        .select('id, role, display_name, preferred_locale, email')
+        .select('id, role, display_name, preferred_locale, email, text_scale')
         .eq('id', userId)
         .maybeSingle();
       if (error || !data) return null;
@@ -75,7 +78,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         role: data.role,
         displayName: data.display_name,
         preferredLocale: data.preferred_locale,
-        email: data.email
+        email: data.email,
+        textScale: Number(data.text_scale) || 1.0
       };
     }
 

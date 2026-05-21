@@ -20,6 +20,10 @@ export interface CheckinDraft {
   /** Map of approvedGoalId → NRS value (0..10). Missing = not yet rated. */
   ratings: Record<string, number>;
   comment?: string;
+  /** Who filled this in: patient themself, or someone helping them.
+   *  Defaults to undefined until the patient explicitly picks; we ask
+   *  on the summary step. */
+  submitterLabel?: 'self' | 'caregiver';
   startedAt: string;
 }
 

@@ -25,6 +25,7 @@ export interface ClinicianPatientCheckin {
   id: string;
   weekNumber: number;
   comment: string | null;
+  submitterLabel: 'self' | 'caregiver';
   ratings: {
     approvedGoalId: string;
     ratingValue: number | null;
@@ -141,7 +142,7 @@ export function useClinicianPatientData(
           supabase
             .from('weekly_checkin')
             .select(
-              'id, week_number, comment, ratings:weekly_goal_rating (approved_goal_id, rating_value, nrs_value)'
+              'id, week_number, comment, submitter_label, ratings:weekly_goal_rating (approved_goal_id, rating_value, nrs_value)'
             )
             .eq('treatment_cycle_id', cycle.id)
             .order('week_number', { ascending: true }),
@@ -194,6 +195,7 @@ export function useClinicianPatientData(
           id: c.id as string,
           weekNumber: c.week_number as number,
           comment: (c.comment as string | null) ?? null,
+          submitterLabel: (c.submitter_label as 'self' | 'caregiver') ?? 'self',
           ratings: (c.ratings as Array<{
             approved_goal_id: string;
             rating_value: number | null;
