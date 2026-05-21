@@ -32,13 +32,24 @@ const atkinson = Atkinson_Hyperlegible({
 export const metadata = {
   title: 'Treatment Companion',
   description:
-    'A patient-first companion for adults receiving botulinum toxin treatment for spasticity.'
+    'A patient-first companion for adults receiving botulinum toxin treatment for spasticity.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default' as const,
+    title: 'Treatment'
+  },
+  icons: {
+    icon: '/icon-192.svg',
+    apple: '/icon-192.svg'
+  }
 };
 
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5
+  maximumScale: 5,
+  themeColor: '#3f5a4b'
 };
 
 export function generateStaticParams() {

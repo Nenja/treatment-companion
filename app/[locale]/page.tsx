@@ -13,6 +13,7 @@ import { GoalCard } from '@/components/cards/GoalCard';
 import { CheckinPromptCard } from '@/components/cards/CheckinPromptCard';
 import { CatchUpCard } from '@/components/cards/CatchUpCard';
 import { CheckinDots } from '@/components/cards/CheckinDots';
+import { NotificationsCard } from '@/components/cards/NotificationsCard';
 import { Card } from '@/components/cards/Card';
 
 export default function PatientHomePage() {
@@ -133,6 +134,9 @@ export default function PatientHomePage() {
       <h1 className="font-display text-[30px] leading-tight text-ink">
         {t('greeting', { name: data.patient.displayName })}
       </h1>
+
+      {/* Notifications opt-in (hidden once subscribed or dismissed) */}
+      <NotificationsCard profileId={data.patient.id} />
 
       {/* Check-in CTA / next-due */}
       <div className="mt-6">
