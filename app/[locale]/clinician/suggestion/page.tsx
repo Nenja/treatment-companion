@@ -325,7 +325,7 @@ function Inner() {
             <h2 className="font-display text-[20px] leading-tight text-ink">
               {tApprove('title')}
             </h2>
-            <p className="mt-2 rounded-[var(--radius-button)] border border-stone bg-cream-soft p-3 text-[13px] leading-relaxed text-ink-soft">
+            <p className="mt-2 rounded-[var(--radius-button)] border border-stone bg-cream-soft p-3 text-[14px] leading-relaxed text-ink-soft">
               {tApprove('headerNote')}
             </p>
 
@@ -358,7 +358,7 @@ function Inner() {
             <h3 className="mt-8 font-display text-[17px] text-ink">
               NRS rating setup
             </h3>
-            <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">
+            <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
               The patient will rate this goal on a 0-10 scale each week.
               You decide the question they see and how to map their
               answer to a GAS bucket.
@@ -423,7 +423,7 @@ function Inner() {
                 <CutInput label="cut₄" value={cutHigh} onChange={setCutHigh} />
               </div>
               {!cutsValid && (cutLowLow || cutLow || cutZero || cutHigh) && (
-                <p className="mt-2 text-[12px] text-amber-deep">
+                <p className="mt-2 text-[14px] text-amber-deep">
                   Cut points must be whole numbers in 0-9 and strictly
                   increasing.
                 </p>
@@ -463,7 +463,7 @@ function Row({
 }) {
   return (
     <div>
-      <dt className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
+      <dt className="text-[14px] font-semibold uppercase tracking-wider text-ink-muted">
         {label}
       </dt>
       <dd className="mt-1">{children}</dd>
@@ -508,12 +508,12 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="mt-6">
+    <div className="mt-7">
       <label className="block text-[14px] font-semibold text-ink">
         {label}
       </label>
       {helper && (
-        <p className="mt-0.5 text-[12px] text-ink-muted">{helper}</p>
+        <p className="mt-1 text-[14px] text-ink-muted">{helper}</p>
       )}
       {children}
     </div>
@@ -531,7 +531,7 @@ function CutInput({
 }) {
   return (
     <div>
-      <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
+      <label className="block text-[14px] font-semibold uppercase tracking-wider text-ink-muted">
         {label}
       </label>
       <input

@@ -254,7 +254,7 @@ function CheckinPageInner() {
           className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-3 text-[16px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
           maxLength={500}
         />
-        <p className="mt-2 text-[13px] text-ink-muted">
+        <p className="mt-2 text-[14px] text-ink-muted">
           {t('commentSafetyNote')}
         </p>
 
@@ -345,11 +345,11 @@ function SummaryRow({
   return (
     <div className="border-t border-stone pt-3 first:border-t-0 first:pt-0">
       <div className="flex items-baseline justify-between gap-2">
-        <dt className="text-[12px] font-semibold text-ink-soft">{label}</dt>
+        <dt className="text-[14px] font-semibold text-ink-soft">{label}</dt>
         <button
           type="button"
           onClick={onEdit}
-          className="shrink-0 text-[13px] font-semibold text-sage-deep hover:underline"
+          className="shrink-0 text-[14px] font-semibold text-sage-deep hover:underline"
         >
           {editLabel}
         </button>

@@ -55,7 +55,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         // Keep at most 3 visible.
         return next.slice(-3);
       });
-      const timeoutMs = kind === 'error' ? 6000 : 3000;
+      const timeoutMs = kind === 'error' ? 10000 : 5000;
       setTimeout(() => dismiss(id), timeoutMs);
     },
     [dismiss]
@@ -150,7 +150,7 @@ function ToastItem({
         type="button"
         onClick={onDismiss}
         aria-label="Dismiss"
-        className="-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[18px] leading-none text-ink-muted hover:bg-stone-soft hover:text-ink"
+        className="-mr-1 -mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[18px] leading-none text-ink-muted hover:bg-stone-soft hover:text-ink"
       >
         ×
       </button>

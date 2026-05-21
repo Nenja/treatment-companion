@@ -82,7 +82,7 @@ export function NewCycleDialog({ patientId, onClose }: NewCycleDialogProps) {
           preserved.
         </p>
 
-        <label className="mt-5 block text-[13px] font-semibold text-ink">
+        <label className="mt-5 block text-[14px] font-semibold text-ink">
           Date of treatment
         </label>
         <input

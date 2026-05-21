@@ -76,7 +76,7 @@ export function AccountMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Account menu"
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-stone bg-cream-soft text-[12px] font-semibold text-ink-soft hover:bg-stone-soft focus:outline-none focus:ring-2 focus:ring-sage/40"
+        className="flex h-11 w-11 items-center justify-center rounded-full border border-stone bg-cream-soft text-[14px] font-semibold text-ink-soft hover:bg-stone-soft focus:outline-none focus:ring-2 focus:ring-sage/40"
       >
         {initials}
       </button>
@@ -91,11 +91,11 @@ export function AccountMenu() {
               {profile.displayName ?? 'Account'}
             </p>
             {user.email && (
-              <p className="mt-0.5 truncate text-[12px] text-ink-muted">
+              <p className="mt-0.5 truncate text-[14px] text-ink-muted">
                 {user.email}
               </p>
             )}
-            <p className="mt-0.5 text-[11px] uppercase tracking-wider text-ink-muted">
+            <p className="mt-0.5 text-[14px] uppercase tracking-wider text-ink-muted">
               {roleLabel}
             </p>
           </div>

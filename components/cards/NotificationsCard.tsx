@@ -116,7 +116,7 @@ export function NotificationsCard({ profileId }: NotificationsCardProps) {
           <p className="font-display text-[16px] leading-snug text-ink">
             Get reminded about your weekly check-in
           </p>
-          <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">
+          <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
             We&apos;ll send a notification to this device when your
             check-in is due, and one reminder if it&apos;s a couple of
             days late. Nothing else.
@@ -126,7 +126,7 @@ export function NotificationsCard({ profileId }: NotificationsCardProps) {
           type="button"
           onClick={onDismiss}
           aria-label="Dismiss"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[16px] text-ink-muted hover:bg-stone-soft hover:text-ink-soft"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[16px] text-ink-muted hover:bg-stone-soft hover:text-ink-soft"
         >
           ×
         </button>
@@ -152,24 +152,24 @@ export function NotificationsCard({ profileId }: NotificationsCardProps) {
       )}
 
       {status === 'pending' && (
-        <p className="mt-3 text-[13px] text-ink-soft">Requesting…</p>
+        <p className="mt-3 text-[14px] text-ink-soft">Requesting…</p>
       )}
 
       {status === 'subscribed' && (
-        <p className="mt-3 text-[13px] font-semibold text-sage-deep">
+        <p className="mt-3 text-[14px] font-semibold text-sage-deep">
           You&apos;re all set. Notifications enabled.
         </p>
       )}
 
       {status === 'denied' && (
-        <p className="mt-3 text-[13px] text-ink-soft">
+        <p className="mt-3 text-[14px] text-ink-soft">
           Notifications were blocked. To turn them on later, open your
           browser settings for this site and allow notifications.
         </p>
       )}
 
       {status === 'ios_install' && (
-        <div className="mt-3 text-[13px] text-ink-soft">
+        <div className="mt-3 text-[14px] text-ink-soft">
           <p className="font-semibold">To get reminders on iPhone:</p>
           <ol className="mt-1 ml-4 list-decimal space-y-1">
             <li>
@@ -186,7 +186,7 @@ export function NotificationsCard({ profileId }: NotificationsCardProps) {
       )}
 
       {status === 'error' && (
-        <p className="mt-3 text-[13px] text-amber-deep">
+        <p className="mt-3 text-[14px] text-amber-deep">
           {errorMsg ?? 'Something went wrong.'}
         </p>
       )}

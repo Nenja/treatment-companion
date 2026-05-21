@@ -199,7 +199,7 @@ export default function ClinicianPatientPage() {
             <button
               type="button"
               onClick={() => setConfirmEnd(true)}
-              className="text-[13px] font-semibold text-ink-soft hover:text-ink"
+              className="text-[14px] font-semibold text-ink-soft hover:text-ink"
             >
               {tSession('endSession')}
             </button>
@@ -232,7 +232,7 @@ export default function ClinicianPatientPage() {
                     {treatment.drugProduct} · {treatment.totalUnits} units ·{' '}
                     {formatLongDate(treatment.date, locale)}
                   </p>
-                  <p className="mt-0.5 text-[13px] text-ink-soft">
+                  <p className="mt-0.5 text-[14px] text-ink-soft">
                     {labelForGuidance(treatment.guidance)}
                     {treatment.dilution && ` · Dilution: ${treatment.dilution}`}
                   </p>
@@ -247,12 +247,12 @@ export default function ClinicianPatientPage() {
                         : `/${locale}/clinician/treatment`
                     );
                   }}
-                  className="shrink-0 text-[13px] font-semibold text-sage-deep hover:underline"
+                  className="shrink-0 text-[14px] font-semibold text-sage-deep hover:underline"
                 >
                   Edit
                 </button>
               </div>
-              <ul className="mt-3 space-y-1.5 text-[13px] text-ink-soft">
+              <ul className="mt-3 space-y-1.5 text-[14px] text-ink-soft">
                 {treatment.injections.map((inj) => (
                   <li key={inj.id}>
                     <span>
@@ -267,7 +267,7 @@ export default function ClinicianPatientPage() {
                 ))}
               </ul>
               {treatment.notes && (
-                <p className="mt-3 whitespace-pre-wrap text-[13px] leading-relaxed text-ink-soft">
+                <p className="mt-3 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
                   <span className="text-ink-muted">Notes: </span>
                   {treatment.notes}
                 </p>
@@ -304,7 +304,7 @@ export default function ClinicianPatientPage() {
             touch();
             setShowNewCycle(true);
           }}
-          className="mt-3 flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
+          className="mt-3 flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
         >
           Start new treatment cycle
         </button>

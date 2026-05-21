@@ -26,7 +26,7 @@
   "patient": {
     "home": {
       "greeting": "Hello, {name}",
-      "cycleContext": "Week {week} since treatment · Cycle {cycle}",
+      "cycleContext": "Week {week} since your last treatment",
       "catchUpTitle": "{count, plural, =1 {1 earlier check-in to catch up} other {# earlier check-ins to catch up}}",
       "catchUpWeek": "Week {week}",
       "nextVisit": "Next visit: {date}",
@@ -120,7 +120,7 @@
       "cancelConfirmDiscard": "Leave for now",
       "cancelConfirmKeep": "Keep going",
       "rateGoalTitle": "How did this week go for this goal?",
-      "rateGoalHelper": "The middle option is what your care team realistically expects this week. Pick the one that best describes how the week went.",
+      "rateGoalHelper": "Slide to the number that best fits how this week went, or use the − and + buttons.",
       "scaleYourGoal": "Your goal",
       "scaleTapPrompt": "Tap a point above to see what it means for this goal.",
       "scaleMuchHarder": "Much worse",

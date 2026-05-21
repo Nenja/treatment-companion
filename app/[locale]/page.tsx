@@ -122,10 +122,10 @@ export default function PatientHomePage() {
 
   return (
     <AppShell>
-      {/* Cycle context eyebrow — no fixed total now */}
+      {/* Cycle context eyebrow — plain language, just "weeks since
+          treatment" so the patient doesn't have to think in cycles. */}
       <div className="eyebrow mb-2">
         {t('cycleContext', {
-          cycle: data.cycle.cycleNumber,
           week: weekNumber
         })}
       </div>

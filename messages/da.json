@@ -30,7 +30,7 @@
   "patient": {
     "home": {
       "greeting": "Hej, {name}",
-      "cycleContext": "Uge {week} siden behandling · Forløb {cycle}",
+      "cycleContext": "Uge {week} siden din sidste behandling",
       "catchUpTitle": "{count, plural, =1 {1 tidligere status at indhente} other {# tidligere status at indhente}}",
       "catchUpWeek": "Uge {week}",
       "nextVisit": "Næste besøg: {date}",
@@ -124,7 +124,7 @@
       "cancelConfirmDiscard": "Forlad for nu",
       "cancelConfirmKeep": "Fortsæt",
       "rateGoalTitle": "Hvordan gik denne uge for dette mål?",
-      "rateGoalHelper": "Det midterste valg er det, dit behandlerteam realistisk forventer denne uge. Vælg det, der bedst beskriver, hvordan ugen gik.",
+      "rateGoalHelper": "Skub til det tal, der passer bedst til hvordan ugen gik, eller brug − og + knapperne.",
       "scaleYourGoal": "Dit mål",
       "scaleTapPrompt": "Tryk på et punkt ovenfor for at se, hvad det betyder for dette mål.",
       "scaleMuchHarder": "Meget værre",

@@ -340,13 +340,13 @@ function SummaryRow({
   return (
     <div className="border-t border-stone pt-3 first:border-t-0 first:pt-0">
       <div className="flex items-baseline justify-between gap-2">
-        <dt className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
+        <dt className="text-[14px] font-semibold uppercase tracking-wider text-ink-muted">
           {label}
         </dt>
         <button
           type="button"
           onClick={onEdit}
-          className="text-[13px] font-semibold text-sage-deep hover:underline"
+          className="text-[14px] font-semibold text-sage-deep hover:underline"
         >
           {editLabel}
         </button>

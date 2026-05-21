@@ -54,7 +54,7 @@ export function CatchUpCard({ prompts }: CatchUpCardProps) {
         </span>
         <span
           aria-hidden
-          className={`text-[12px] text-ink-muted transition-transform ${
+          className={`text-[14px] text-ink-muted transition-transform ${
             expanded ? 'rotate-180' : ''
           }`}
         >

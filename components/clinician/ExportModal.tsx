@@ -62,14 +62,14 @@ export function ExportModal({ initialText, onClose }: ExportModalProps) {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="flex h-9 w-9 items-center justify-center rounded-md text-ink-soft hover:bg-stone-soft hover:text-ink"
+            className="flex h-11 w-11 items-center justify-center rounded-md text-ink-soft hover:bg-stone-soft hover:text-ink"
           >
             ✕
           </button>
         </div>
 
         <div className="flex flex-1 flex-col gap-3 p-5">
-          <p className="text-[13px] text-ink-muted">
+          <p className="text-[14px] text-ink-muted">
             Edit if needed, then copy. Nothing here is sent anywhere — copy
             it into your EHR yourself.
           </p>
@@ -78,12 +78,12 @@ export function ExportModal({ initialText, onClose }: ExportModalProps) {
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={16}
-            className="block w-full flex-1 rounded-[var(--radius-button)] border border-stone bg-cream-soft p-3 font-mono text-[13px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+            className="block w-full flex-1 rounded-[var(--radius-button)] border border-stone bg-cream-soft p-3 font-mono text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
             spellCheck={false}
           />
           <div className="flex items-center justify-between gap-3">
             <span
-              className={`text-[13px] font-semibold ${copied ? 'text-sage-deep' : 'text-transparent'}`}
+              className={`text-[14px] font-semibold ${copied ? 'text-sage-deep' : 'text-transparent'}`}
               aria-live="polite"
             >
               {copied ? 'Copied to clipboard' : 'placeholder'}

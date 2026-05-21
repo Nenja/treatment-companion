@@ -68,37 +68,65 @@ export function GoalRatingPicker({
           </span>
         </div>
 
-        {/* Slider */}
-        <input
-          type="range"
-          min={0}
-          max={10}
-          step={1}
-          value={sliderValue}
-          onChange={(e) => onChange(Number(e.target.value))}
-          aria-label={ariaLabel}
-          className="mt-6 h-2 w-full max-w-[320px] cursor-pointer appearance-none rounded-full bg-stone accent-sage-deep
-            [&::-webkit-slider-thumb]:h-7 [&::-webkit-slider-thumb]:w-7
-            [&::-webkit-slider-thumb]:appearance-none
-            [&::-webkit-slider-thumb]:rounded-full
-            [&::-webkit-slider-thumb]:bg-sage-deep
-            [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-cream
-            [&::-webkit-slider-thumb]:shadow-md
-            [&::-moz-range-thumb]:h-7 [&::-moz-range-thumb]:w-7
-            [&::-moz-range-thumb]:rounded-full
-            [&::-moz-range-thumb]:bg-sage-deep
-            [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-cream"
-        />
+        {/* Slider + ± buttons row.
+            ± buttons offer an alternative for patients with tremor or
+            limited fine motor control. They sit either side of the
+            slider, large enough for confident one-finger taps. Tapping
+            outside [0,10] is a no-op (button disables at the bound). */}
+        <div className="mt-6 flex w-full max-w-[400px] items-center gap-3">
+          <button
+            type="button"
+            onClick={() => onChange(Math.max(0, sliderValue - 1))}
+            disabled={interacted && value === 0}
+            aria-label={`Decrease by 1${interacted ? `, currently ${value}` : ''}`}
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-sage-deep bg-cream-soft text-[28px] font-semibold leading-none text-sage-deep hover:bg-sage-soft disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            −
+          </button>
+
+          <input
+            type="range"
+            min={0}
+            max={10}
+            step={1}
+            value={sliderValue}
+            onChange={(e) => onChange(Number(e.target.value))}
+            aria-label={ariaLabel}
+            className="h-3 flex-1 cursor-pointer appearance-none rounded-full bg-stone accent-sage-deep
+              [&::-webkit-slider-thumb]:h-10 [&::-webkit-slider-thumb]:w-10
+              [&::-webkit-slider-thumb]:appearance-none
+              [&::-webkit-slider-thumb]:rounded-full
+              [&::-webkit-slider-thumb]:bg-sage-deep
+              [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-cream
+              [&::-webkit-slider-thumb]:shadow-md
+              [&::-webkit-slider-thumb]:cursor-grab
+              [&::-moz-range-thumb]:h-10 [&::-moz-range-thumb]:w-10
+              [&::-moz-range-thumb]:rounded-full
+              [&::-moz-range-thumb]:bg-sage-deep
+              [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-cream
+              [&::-moz-range-thumb]:cursor-grab"
+          />
+
+          <button
+            type="button"
+            onClick={() => onChange(Math.min(10, sliderValue + 1))}
+            disabled={interacted && value === 10}
+            aria-label={`Increase by 1${interacted ? `, currently ${value}` : ''}`}
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-sage-deep bg-cream-soft text-[28px] font-semibold leading-none text-sage-deep hover:bg-sage-soft disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            +
+          </button>
+        </div>
 
         {/* Endpoint labels */}
-        <div className="mt-3 flex w-full max-w-[320px] justify-between text-[12px] uppercase tracking-wider text-ink-muted">
+        <div className="mt-3 flex w-full max-w-[400px] justify-between text-[14px] uppercase tracking-wider text-ink-muted">
           <span>0 · {lowLabel}</span>
           <span>10 · {highLabel}</span>
         </div>
       </div>
 
       {!interacted && (
-        <p className="mt-6 text-center text-[13px] text-ink-muted">
+        <p className="mt-6 text-center text-[14px] text-ink-muted">
           Move the slider to choose your rating.
         </p>
       )}

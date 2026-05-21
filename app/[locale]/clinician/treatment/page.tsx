@@ -275,7 +275,7 @@ export default function TreatmentRecordPage() {
                 doCopyFromPrevious();
               }
             }}
-            className="mt-4 flex h-10 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
+            className="mt-4 flex h-10 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
             Copy from previous treatment
           </button>
@@ -351,7 +351,7 @@ export default function TreatmentRecordPage() {
         <h2 className="mt-8 font-display text-[18px] text-ink">
           Muscles injected
         </h2>
-        <p className="mt-1 text-[12px] text-ink-muted">
+        <p className="mt-1 text-[14px] text-ink-muted">
           Add one row per muscle.
         </p>
         <ul className="mt-3 space-y-3">
@@ -366,7 +366,7 @@ export default function TreatmentRecordPage() {
                   <button
                     type="button"
                     onClick={() => removeInjection(i)}
-                    className="text-[12px] font-semibold text-ink-soft hover:text-ink"
+                    className="text-[14px] font-semibold text-ink-soft hover:text-ink"
                   >
                     Remove
                   </button>
@@ -557,10 +557,10 @@ function Field({
 }) {
   return (
     <div className={inline ? 'mt-0' : 'mt-6'}>
-      <label className="block text-[13px] font-semibold text-ink">
+      <label className="block text-[14px] font-semibold text-ink">
         {label}
       </label>
-      {helper && <p className="mt-0.5 text-[12px] text-ink-muted">{helper}</p>}
+      {helper && <p className="mt-0.5 text-[14px] text-ink-muted">{helper}</p>}
       {children}
     </div>
   );

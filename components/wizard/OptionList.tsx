@@ -64,7 +64,7 @@ export function OptionList<T extends string>({
               {opt.label}
             </span>
             {opt.description && (
-              <span className="mt-0.5 block text-[13px] text-ink-soft">
+              <span className="mt-0.5 block text-[14px] text-ink-soft">
                 {opt.description}
               </span>
             )}

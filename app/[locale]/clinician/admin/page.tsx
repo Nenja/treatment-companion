@@ -178,7 +178,7 @@ function CreateAccountSection() {
           <p className="font-display text-[15px] text-ink">
             Account created: {createdInfo.email}
           </p>
-          <p className="mt-1 text-[13px] text-ink-soft">
+          <p className="mt-1 text-[14px] text-ink-soft">
             Role: {createdInfo.role}. Share the temporary password with
             them; they should change it at first sign-in.
           </p>
@@ -191,7 +191,7 @@ function CreateAccountSection() {
               onClick={() => {
                 navigator.clipboard?.writeText(createdInfo.tempPassword);
               }}
-              className="flex h-10 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream px-3 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
+              className="flex h-10 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream px-3 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
             >
               Copy
             </button>
@@ -199,7 +199,7 @@ function CreateAccountSection() {
           <button
             type="button"
             onClick={() => setCreatedInfo(null)}
-            className="mt-3 text-[13px] font-semibold text-ink-muted hover:text-ink-soft"
+            className="mt-3 text-[14px] font-semibold text-ink-muted hover:text-ink-soft"
           >
             Dismiss
           </button>
@@ -273,7 +273,7 @@ function CreateAccountSection() {
           <button
             type="button"
             onClick={() => setTempPassword(generateTempPassword())}
-            className="flex h-[44px] items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
+            className="flex h-[44px] items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
             Regenerate
           </button>
@@ -281,7 +281,7 @@ function CreateAccountSection() {
       </Field>
 
       {create.isError && (
-        <p className="mt-3 text-[13px] text-amber-deep">
+        <p className="mt-3 text-[14px] text-amber-deep">
           {(create.error as Error).message}
         </p>
       )}
@@ -313,13 +313,13 @@ function AccountsList({ accounts }: { accounts: AdminAccount[] }) {
               <p className="truncate font-display text-[15px] text-ink">
                 {a.displayName || '(no name)'}
               </p>
-              <p className="truncate text-[12px] text-ink-soft">{a.email}</p>
+              <p className="truncate text-[14px] text-ink-soft">{a.email}</p>
             </div>
-            <span className="shrink-0 rounded-full border border-stone bg-cream px-2 py-0.5 text-[11px] uppercase tracking-wider text-ink-muted">
+            <span className="shrink-0 rounded-full border border-stone bg-cream px-2 py-0.5 text-[14px] uppercase tracking-wider text-ink-muted">
               {a.role}
             </span>
           </div>
-          <p className="mt-1 text-[11px] text-ink-muted">
+          <p className="mt-1 text-[14px] text-ink-muted">
             Created {new Date(a.createdAt).toLocaleDateString()}
           </p>
         </li>
@@ -341,11 +341,11 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="mt-4">
-      <label className="block text-[13px] font-semibold text-ink">
+    <div className="mt-6">
+      <label className="block text-[14px] font-semibold text-ink">
         {label}
       </label>
-      {helper && <p className="mt-0.5 text-[12px] text-ink-muted">{helper}</p>}
+      {helper && <p className="mt-1 text-[14px] text-ink-muted">{helper}</p>}
       {children}
     </div>
   );

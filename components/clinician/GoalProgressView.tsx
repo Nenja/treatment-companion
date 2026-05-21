@@ -125,7 +125,7 @@ export function GoalProgressView({
       <p className="font-display text-[16px] leading-snug text-ink">
         {goalText}
       </p>
-      <p className="mt-0.5 text-[12px] text-ink-muted">
+      <p className="mt-0.5 text-[14px] text-ink-muted">
         {reportedCount} of {currentWeek} weeks reported
       </p>
 
@@ -344,7 +344,7 @@ export function GoalProgressView({
 
       {/* Caption: shows NRS value + derived GAS + any patient comment for
           the selected week, or a gentle hint when nothing is selected. */}
-      <div className="mt-2 min-h-[20px] space-y-1 text-[12px]">
+      <div className="mt-2 min-h-[20px] space-y-1 text-[14px]">
         {selected && selected.reported ? (
           <>
             <p className="text-ink-soft">
@@ -366,7 +366,7 @@ export function GoalProgressView({
               )}
             </p>
             {selected.comment && (
-              <p className="rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1.5 text-[13px] leading-relaxed text-ink">
+              <p className="rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1.5 text-[14px] leading-relaxed text-ink">
                 <span className="text-ink-muted">Patient note: </span>
                 {selected.comment}
               </p>
