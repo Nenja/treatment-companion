@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useStartNewCycle } from '@/lib/supabase/clinicianPatient';
 import { todayIso } from '@/lib/dates';
+import { useModalA11y } from '@/lib/useModalA11y';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
 
@@ -61,10 +62,18 @@ export function NewCycleDialog({ patientId, onClose }: NewCycleDialogProps) {
     }
   };
 
+  const containerRef = useModalA11y(onClose);
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
-      <div className="w-full max-w-[400px] rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl">
-        <h2 className="font-display text-[20px] leading-tight text-ink">
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="new-cycle-title"
+        className="w-full max-w-[400px] rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl"
+      >
+        <h2 id="new-cycle-title" className="font-display text-[20px] leading-tight text-ink">
           Start a new treatment cycle
         </h2>
         <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">

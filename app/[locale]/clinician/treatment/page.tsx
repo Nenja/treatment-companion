@@ -22,6 +22,7 @@ import {
 } from '@/lib/types';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { useToast } from '@/components/feedback/Toast';
+import { useModalA11y } from '@/lib/useModalA11y';
 import { classifyError } from '@/lib/feedback';
 
 interface InjectionDraft {
@@ -482,35 +483,60 @@ export default function TreatmentRecordPage() {
       </main>
 
       {showCopyConfirm && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
-          <div className="w-full max-w-[400px] rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl">
-            <h2 className="font-display text-[20px] leading-tight text-ink">
-              Overwrite current entries?
-            </h2>
-            <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
-              You&apos;ve already entered some details. Copying from the
-              previous treatment will replace what&apos;s here. The date
-              will be set to today.
-            </p>
-            <div className="mt-5 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={doCopyFromPrevious}
-                className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-cream-soft hover:bg-ink-soft"
-              >
-                Yes, copy and overwrite
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowCopyConfirm(false)}
-                className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+        <CopyConfirmDialog
+          onConfirm={doCopyFromPrevious}
+          onCancel={() => setShowCopyConfirm(false)}
+        />
       )}
+    </div>
+  );
+}
+
+function CopyConfirmDialog({
+  onConfirm,
+  onCancel
+}: {
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const containerRef = useModalA11y(onCancel);
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="copy-confirm-title"
+        className="w-full max-w-[400px] rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl"
+      >
+        <h2
+          id="copy-confirm-title"
+          className="font-display text-[20px] leading-tight text-ink"
+        >
+          Overwrite current entries?
+        </h2>
+        <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+          You&apos;ve already entered some details. Copying from the
+          previous treatment will replace what&apos;s here. The date
+          will be set to today.
+        </p>
+        <div className="mt-5 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-cream-soft hover:bg-ink-soft"
+          >
+            Yes, copy and overwrite
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

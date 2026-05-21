@@ -150,7 +150,7 @@ function ToastItem({
         type="button"
         onClick={onDismiss}
         aria-label="Dismiss"
-        className="-mr-1 -mt-1 shrink-0 text-[18px] leading-none text-ink-muted hover:text-ink"
+        className="-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[18px] leading-none text-ink-muted hover:bg-stone-soft hover:text-ink"
       >
         ×
       </button>

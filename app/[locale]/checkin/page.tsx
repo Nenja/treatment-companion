@@ -9,6 +9,7 @@ import { useCheckinDraft, checkinDraftStorage } from '@/lib/useCheckinDraft';
 import { isCheckinComplete } from '@/lib/checkinDraft';
 import { classifyError } from '@/lib/feedback';
 import { useToast } from '@/components/feedback/Toast';
+import { useModalA11y } from '@/lib/useModalA11y';
 import {
   SkeletonBlock,
   SkeletonScreen
@@ -368,10 +369,17 @@ function CancelConfirmDialog({
   onLeave: () => void;
 }) {
   const t = useTranslations('patient.checkin');
+  const containerRef = useModalA11y(onKeep);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
-      <div className="w-full max-w-[400px] rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl">
-        <h2 className="font-display text-[20px] text-ink">
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="checkin-cancel-title"
+        className="w-full max-w-[400px] rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl"
+      >
+        <h2 id="checkin-cancel-title" className="font-display text-[20px] text-ink">
           {t('cancelConfirmTitle')}
         </h2>
         <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">

@@ -24,6 +24,7 @@ import {
   SkeletonParagraph,
   SkeletonScreen
 } from '@/components/feedback/Skeleton';
+import { useModalA11y } from '@/lib/useModalA11y';
 import { buildEhrExport } from '@/lib/ehrExport';
 
 export default function ClinicianPatientPage() {
@@ -448,31 +449,65 @@ export default function ClinicianPatientPage() {
       )}
 
       {confirmEnd && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
-          <div className="w-full max-w-[400px] rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl">
-            <h2 className="font-display text-[20px] text-ink">
-              {tSession('endSessionConfirm')}
-            </h2>
-            <div className="mt-5 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmEnd(false)}
-                className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-cream-soft hover:bg-ink-soft"
-              >
-                {tSession('endSessionConfirmKeep')}
-              </button>
-              <button
-                type="button"
-                onClick={onEndSession}
-                disabled={endSession.isPending}
-                className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
-              >
-                {tSession('endSessionConfirmEnd')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <EndSessionConfirmDialog
+          keepLabel={tSession('endSessionConfirmKeep')}
+          endLabel={tSession('endSessionConfirmEnd')}
+          title={tSession('endSessionConfirm')}
+          onKeep={() => setConfirmEnd(false)}
+          onEnd={onEndSession}
+          endDisabled={endSession.isPending}
+        />
       )}
+    </div>
+  );
+}
+
+function EndSessionConfirmDialog({
+  title,
+  keepLabel,
+  endLabel,
+  onKeep,
+  onEnd,
+  endDisabled
+}: {
+  title: string;
+  keepLabel: string;
+  endLabel: string;
+  onKeep: () => void;
+  onEnd: () => void;
+  endDisabled: boolean;
+}) {
+  const containerRef = useModalA11y(onKeep);
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="end-session-title"
+        className="w-full max-w-[400px] rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl"
+      >
+        <h2 id="end-session-title" className="font-display text-[20px] text-ink">
+          {title}
+        </h2>
+        <div className="mt-5 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={onKeep}
+            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-cream-soft hover:bg-ink-soft"
+          >
+            {keepLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onEnd}
+            disabled={endDisabled}
+            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft disabled:opacity-60"
+          >
+            {endLabel}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

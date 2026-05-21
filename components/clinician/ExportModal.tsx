@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useModalA11y } from '@/lib/useModalA11y';
 
 interface ExportModalProps {
   initialText: string;
@@ -42,18 +43,26 @@ export function ExportModal({ initialText, onClose }: ExportModalProps) {
     }
   };
 
+  const containerRef = useModalA11y(onClose);
+
   return (
     <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-ink/40 p-4 sm:items-center">
-      <div className="flex w-full max-w-[560px] flex-col rounded-[var(--radius-card)] border border-stone bg-cream shadow-xl">
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="export-modal-title"
+        className="flex w-full max-w-[560px] flex-col rounded-[var(--radius-card)] border border-stone bg-cream shadow-xl"
+      >
         <div className="flex items-center justify-between border-b border-stone/70 px-5 py-3">
-          <h2 className="font-display text-[18px] text-ink">
+          <h2 id="export-modal-title" className="font-display text-[18px] text-ink">
             Export for EHR
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-md px-2 py-1 text-ink-soft hover:bg-stone-soft hover:text-ink"
+            className="flex h-9 w-9 items-center justify-center rounded-md text-ink-soft hover:bg-stone-soft hover:text-ink"
           >
             ✕
           </button>

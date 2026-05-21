@@ -126,7 +126,7 @@ export function NotificationsCard({ profileId }: NotificationsCardProps) {
           type="button"
           onClick={onDismiss}
           aria-label="Dismiss"
-          className="shrink-0 text-[14px] text-ink-muted hover:text-ink-soft"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[16px] text-ink-muted hover:bg-stone-soft hover:text-ink-soft"
         >
           ×
         </button>
