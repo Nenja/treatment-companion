@@ -11,6 +11,7 @@ import {
 import { usePhysioPatientData } from '@/lib/supabase/physioPatient';
 import { PhysioProgressForm } from '@/components/physio/PhysioProgressForm';
 import { PhysioGoalSuggestionForm } from '@/components/physio/PhysioGoalSuggestionForm';
+import { PhysioMuscleSuggestionForm } from '@/components/physio/PhysioMuscleSuggestionForm';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import {
   SkeletonBlock,
@@ -152,7 +153,8 @@ export default function PhysioPatientPage() {
               )}
             </section>
 
-            {/* Progress reporting + goal suggestions — slices 2 & 3. */}
+            {/* Progress reporting + goal & muscle suggestions —
+                slices 2, 3 & 4. */}
             {patientData.data.cycle &&
             patientData.data.goals.length > 0 ? (
               <>
@@ -163,19 +165,29 @@ export default function PhysioPatientPage() {
                 <PhysioGoalSuggestionForm
                   patientId={patientData.data.patient.id}
                 />
+                <PhysioMuscleSuggestionForm
+                  patientId={patientData.data.patient.id}
+                  goals={patientData.data.goals}
+                />
               </>
             ) : patientData.data.cycle ? (
               // Active cycle but no goals yet — progress reporting needs
-              // goals, but the physiotherapist can still suggest one.
-              <PhysioGoalSuggestionForm
-                patientId={patientData.data.patient.id}
-              />
+              // goals, but the physiotherapist can still suggest a goal
+              // or flag a muscle.
+              <>
+                <PhysioGoalSuggestionForm
+                  patientId={patientData.data.patient.id}
+                />
+                <PhysioMuscleSuggestionForm
+                  patientId={patientData.data.patient.id}
+                  goals={patientData.data.goals}
+                />
+              </>
             ) : (
               <div className="mt-10 rounded-[var(--radius-card)] border border-dashed border-stone bg-cream-soft/60 p-5">
                 <p className="text-[14px] leading-relaxed text-ink-soft">
-                  Progress reporting and goal suggestions become
-                  available once the patient has an active treatment
-                  cycle.
+                  Progress reporting and suggestions become available
+                  once the patient has an active treatment cycle.
                 </p>
               </div>
             )}

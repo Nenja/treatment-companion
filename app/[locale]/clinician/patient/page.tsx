@@ -143,7 +143,8 @@ export default function ClinicianPatientPage() {
     checkins,
     treatment,
     physioAssessments,
-    physioGoalSuggestions
+    physioGoalSuggestions,
+    physioMuscleSuggestions
   } = patientData.data;
 
   // Compute current week from cycle.start_date and today.
@@ -461,6 +462,57 @@ export default function ClinicianPatientPage() {
                   </p>
                 </li>
               ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Physiotherapist muscle suggestions — read-only in slice 4.
+            The act-on-it workflow is slice 5. */}
+        <section className="mt-10">
+          <h2 className="font-display text-[20px] leading-tight text-ink">
+            Muscles flagged by physiotherapist
+          </h2>
+          {physioMuscleSuggestions.length === 0 ? (
+            <p className="mt-3 text-[14px] text-ink-muted">
+              No muscles flagged by the physiotherapist this cycle.
+            </p>
+          ) : (
+            <ul className="mt-3 space-y-3">
+              {physioMuscleSuggestions.map((s) => {
+                const linkedGoal = activeGoals.find(
+                  (g) => g.id === s.relatedGoalId
+                );
+                const sideLabel =
+                  s.side === 'left'
+                    ? 'Left'
+                    : s.side === 'right'
+                      ? 'Right'
+                      : 'Bilateral';
+                return (
+                  <li
+                    key={s.id}
+                    className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
+                  >
+                    <p className="font-display text-[16px] leading-snug text-ink">
+                      {s.muscle}{' '}
+                      <span className="text-ink-muted">
+                        · {sideLabel}
+                      </span>
+                    </p>
+                    <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                      <span className="text-ink-muted">
+                        Rationale:{' '}
+                      </span>
+                      {s.rationale}
+                    </p>
+                    {linkedGoal && (
+                      <p className="mt-2 text-[13px] text-ink-muted">
+                        Related goal: {linkedGoal.patientFacingText}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

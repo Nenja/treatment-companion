@@ -69,6 +69,16 @@ export interface ClinicianPhysioGoalSuggestion {
   createdAt: string;
 }
 
+export interface ClinicianPhysioMuscleSuggestion {
+  id: string;
+  muscle: string;
+  side: 'left' | 'right' | 'bilateral';
+  rationale: string;
+  relatedGoalId: string | null;
+  status: string;
+  createdAt: string;
+}
+
 export interface ClinicianPatientData {
   patient: {
     id: string;
@@ -85,6 +95,7 @@ export interface ClinicianPatientData {
   treatment: ClinicianTreatmentRecord | null;
   physioAssessments: ClinicianPhysioAssessment[];
   physioGoalSuggestions: ClinicianPhysioGoalSuggestion[];
+  physioMuscleSuggestions: ClinicianPhysioMuscleSuggestion[];
 }
 
 /**
@@ -147,7 +158,8 @@ export function useClinicianPatientData(
         checkinsRes,
         treatmentRes,
         physioRes,
-        physioSuggRes
+        physioSuggRes,
+        physioMuscleRes
       ] = await Promise.all([
           supabase
             .from('goal_suggestion')
@@ -192,6 +204,13 @@ export function useClinicianPatientData(
             .from('physio_goal_suggestion')
             .select('id, suggested_goal, rationale, status, created_at')
             .eq('treatment_cycle_id', cycle.id)
+            .order('created_at', { ascending: true }),
+          supabase
+            .from('physio_muscle_suggestion')
+            .select(
+              'id, muscle, side, rationale, related_goal_id, status, created_at'
+            )
+            .eq('treatment_cycle_id', cycle.id)
             .order('created_at', { ascending: true })
         ]);
 
@@ -201,6 +220,7 @@ export function useClinicianPatientData(
       if (treatmentRes.error) throw treatmentRes.error;
       if (physioRes.error) throw physioRes.error;
       if (physioSuggRes.error) throw physioSuggRes.error;
+      if (physioMuscleRes.error) throw physioMuscleRes.error;
 
       const suggestions: ClinicianPatientSuggestion[] = (
         suggestionsRes.data ?? []
@@ -304,6 +324,18 @@ export function useClinicianPatientData(
         createdAt: s.created_at as string
       }));
 
+      const physioMuscleSuggestions: ClinicianPhysioMuscleSuggestion[] = (
+        physioMuscleRes.data ?? []
+      ).map((s) => ({
+        id: s.id as string,
+        muscle: s.muscle as string,
+        side: s.side as 'left' | 'right' | 'bilateral',
+        rationale: s.rationale as string,
+        relatedGoalId: (s.related_goal_id as string | null) ?? null,
+        status: s.status as string,
+        createdAt: s.created_at as string
+      }));
+
       return {
         patient,
         cycle,
@@ -312,7 +344,8 @@ export function useClinicianPatientData(
         checkins,
         treatment,
         physioAssessments,
-        physioGoalSuggestions
+        physioGoalSuggestions,
+        physioMuscleSuggestions
       };
     }
   });
