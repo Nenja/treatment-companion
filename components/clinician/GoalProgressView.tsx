@@ -14,11 +14,22 @@ interface WeekRating {
   submitterLabel?: 'self' | 'caregiver';
 }
 
+interface PhysioPoint {
+  weekNumber: number;
+  nrs: number;
+  value: -2 | -1 | 0 | 1 | 2;
+  note: string | null;
+}
+
 interface GoalProgressViewProps {
   goalText: string;
   /** Current week number since treatment (1-indexed). Drives the x-axis size. */
   currentWeek: number;
   ratings: WeekRating[];
+  /** Physiotherapist assessments, snapped to the nearest check-in week.
+   *  Drawn as a second, amber line so the clinician can compare patient
+   *  self-report against physiotherapist assessment. */
+  physioRatings?: PhysioPoint[];
 }
 
 /**
@@ -46,17 +57,27 @@ interface GoalProgressViewProps {
 export function GoalProgressView({
   goalText,
   currentWeek,
-  ratings
+  ratings,
+  physioRatings = []
 }: GoalProgressViewProps) {
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
 
-  // Total weeks shown: max of current week and latest reported week,
-  // with a minimum of 4 so the chart doesn't look squashed at the start.
+  // Total weeks shown: max of current week, latest reported week, and
+  // latest physio-rated week, with a minimum of 4.
   const latestReported = ratings.reduce(
     (m, r) => Math.max(m, r.weekNumber),
     0
   );
-  const totalWeeks = Math.max(currentWeek, latestReported, 4);
+  const latestPhysio = physioRatings.reduce(
+    (m, r) => Math.max(m, r.weekNumber),
+    0
+  );
+  const totalWeeks = Math.max(
+    currentWeek,
+    latestReported,
+    latestPhysio,
+    4
+  );
 
   // Week-indexed lookup. Each slot is either a known rating or null.
   const byWeek: (WeekRating | null)[] = Array.from(
@@ -66,6 +87,10 @@ export function GoalProgressView({
 
   const reportedCount = ratings.filter((r) => r.reported).length;
   const selected = selectedWeek !== null ? byWeek[selectedWeek - 1] : null;
+  const selectedPhysio =
+    selectedWeek !== null
+      ? physioRatings.find((p) => p.weekNumber === selectedWeek) ?? null
+      : null;
 
   // SVG layout. Width is set by the parent; viewBox handles scaling.
   const width = 360;
@@ -121,6 +146,32 @@ export function GoalProgressView({
         y2: yFor(b.value)
       });
     }
+  }
+
+  // Physio ratings, deduped by snapped week (if two assessments snap to
+  // the same week, the later one — last in the date-sorted input —
+  // wins). Then a week-indexed lookup and connecting segments, same
+  // approach as the patient line.
+  const physioByWeek = new Map<number, PhysioPoint>();
+  for (const p of physioRatings) physioByWeek.set(p.weekNumber, p);
+  const physioWeeks = Array.from(physioByWeek.keys()).sort(
+    (a, b) => a - b
+  );
+  const physioSegments: {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+  }[] = [];
+  for (let i = 0; i < physioWeeks.length - 1; i++) {
+    const wa = physioWeeks[i];
+    const wb = physioWeeks[i + 1];
+    physioSegments.push({
+      x1: xFor(wa),
+      y1: yFor(physioByWeek.get(wa)!.value),
+      x2: xFor(wb),
+      y2: yFor(physioByWeek.get(wb)!.value)
+    });
   }
 
   return (
@@ -343,10 +394,65 @@ export function GoalProgressView({
             </g>
           );
         })}
+        {/* Physiotherapist line + dots — amber, dashed, to distinguish
+            from the patient's sage self-report line. Drawn on top so
+            it's visible where the two overlap. */}
+        {physioSegments.map((s, i) => (
+          <line
+            key={`ps-${i}`}
+            x1={s.x1}
+            y1={s.y1}
+            x2={s.x2}
+            y2={s.y2}
+            stroke="var(--color-amber-deep)"
+            strokeWidth={1.5}
+            strokeDasharray="3 2.5"
+            strokeLinecap="round"
+          />
+        ))}
+        {physioWeeks.map((w) => {
+          const p = physioByWeek.get(w)!;
+          return (
+            <rect
+              key={`pt-${w}`}
+              x={xFor(w) - 4}
+              y={yFor(p.value) - 4}
+              width={8}
+              height={8}
+              transform={`rotate(45 ${xFor(w)} ${yFor(p.value)})`}
+              fill="var(--color-amber-deep)"
+              stroke="var(--color-cream-soft)"
+              strokeWidth={1.25}
+            />
+          );
+        })}
       </svg>
 
+      {/* Legend — only shown when there are physio ratings to explain. */}
+      {physioWeeks.length > 0 && (
+        <div className="mt-1 flex gap-4 text-[13px] text-ink-muted">
+          <span className="flex items-center gap-1.5">
+            <span
+              aria-hidden
+              className="inline-block h-2 w-4 rounded-full"
+              style={{ background: 'var(--color-sage-deep)' }}
+            />
+            Patient
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span
+              aria-hidden
+              className="inline-block h-2 w-2 rotate-45"
+              style={{ background: 'var(--color-amber-deep)' }}
+            />
+            Physiotherapist
+          </span>
+        </div>
+      )}
+
       {/* Caption: shows NRS value + derived GAS + any patient comment for
-          the selected week, or a gentle hint when nothing is selected. */}
+          the selected week, or a gentle hint when nothing is selected.
+          If the physiotherapist also rated this week, that's shown too. */}
       <div className="mt-2 min-h-[20px] space-y-1 text-[14px]">
         {selected && selected.reported ? (
           <>
@@ -377,6 +483,52 @@ export function GoalProgressView({
               <p className="rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1.5 text-[14px] leading-relaxed text-ink">
                 <span className="text-ink-muted">Patient note: </span>
                 {selected.comment}
+              </p>
+            )}
+            {selectedPhysio && (
+              <p className="text-ink-soft">
+                <span style={{ color: 'var(--color-amber-deep)' }}>
+                  Physiotherapist:
+                </span>{' '}
+                <span className="font-semibold text-ink">
+                  NRS {selectedPhysio.nrs}/10
+                </span>
+                <span className="text-ink-muted">
+                  {' '}
+                  · GAS {formatGas(selectedPhysio.value)}
+                </span>
+              </p>
+            )}
+            {selectedPhysio?.note && (
+              <p className="rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1.5 text-[14px] leading-relaxed text-ink">
+                <span className="text-ink-muted">
+                  Physiotherapist note:{' '}
+                </span>
+                {selectedPhysio.note}
+              </p>
+            )}
+          </>
+        ) : selectedWeek !== null && selectedPhysio ? (
+          // No patient rating that week, but the physio rated it.
+          <>
+            <p className="text-ink-soft">
+              <span style={{ color: 'var(--color-amber-deep)' }}>
+                Physiotherapist:
+              </span>{' '}
+              <span className="font-semibold text-ink">
+                NRS {selectedPhysio.nrs}/10
+              </span>
+              <span className="text-ink-muted">
+                {' '}
+                · GAS {formatGas(selectedPhysio.value)}
+              </span>
+            </p>
+            {selectedPhysio.note && (
+              <p className="rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1.5 text-[14px] leading-relaxed text-ink">
+                <span className="text-ink-muted">
+                  Physiotherapist note:{' '}
+                </span>
+                {selectedPhysio.note}
               </p>
             )}
           </>

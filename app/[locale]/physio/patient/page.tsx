@@ -9,6 +9,7 @@ import {
   useEndClinicianSession
 } from '@/lib/supabase/clinicianSession';
 import { usePhysioPatientData } from '@/lib/supabase/physioPatient';
+import { PhysioProgressForm } from '@/components/physio/PhysioProgressForm';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import {
   SkeletonBlock,
@@ -150,14 +151,21 @@ export default function PhysioPatientPage() {
               )}
             </section>
 
-            {/* Placeholder note — slice 1 has no actions yet. */}
-            <div className="mt-10 rounded-[var(--radius-card)] border border-dashed border-stone bg-cream-soft/60 p-5">
-              <p className="text-[14px] leading-relaxed text-ink-soft">
-                Progress reporting and goal/muscle suggestions will
-                appear here. For now this view confirms you can unlock
-                and see the patient&apos;s goals.
-              </p>
-            </div>
+            {/* Progress reporting — slice 2. */}
+            {patientData.data.cycle &&
+            patientData.data.goals.length > 0 ? (
+              <PhysioProgressForm
+                patientId={patientData.data.patient.id}
+                goals={patientData.data.goals}
+              />
+            ) : (
+              <div className="mt-10 rounded-[var(--radius-card)] border border-dashed border-stone bg-cream-soft/60 p-5">
+                <p className="text-[14px] leading-relaxed text-ink-soft">
+                  Progress reporting becomes available once the patient
+                  has an active treatment cycle with approved goals.
+                </p>
+              </div>
+            )}
           </>
         )}
       </main>

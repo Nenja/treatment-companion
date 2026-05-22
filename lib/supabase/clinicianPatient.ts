@@ -51,6 +51,16 @@ export interface ClinicianTreatmentRecord {
   }[];
 }
 
+export interface ClinicianPhysioAssessment {
+  id: string;
+  assessmentDate: string;
+  note: string | null;
+  ratings: {
+    approvedGoalId: string;
+    nrsValue: number;
+  }[];
+}
+
 export interface ClinicianPatientData {
   patient: {
     id: string;
@@ -65,6 +75,7 @@ export interface ClinicianPatientData {
   activeGoals: ClinicianPatientGoal[];
   checkins: ClinicianPatientCheckin[];
   treatment: ClinicianTreatmentRecord | null;
+  physioAssessments: ClinicianPhysioAssessment[];
 }
 
 /**
@@ -121,8 +132,13 @@ export function useClinicianPatientData(
       };
 
       // 3. Parallel queries for the rest
-      const [suggestionsRes, goalsRes, checkinsRes, treatmentRes] =
-        await Promise.all([
+      const [
+        suggestionsRes,
+        goalsRes,
+        checkinsRes,
+        treatmentRes,
+        physioRes
+      ] = await Promise.all([
           supabase
             .from('goal_suggestion')
             .select(
@@ -154,13 +170,21 @@ export function useClinicianPatientData(
             .eq('treatment_cycle_id', cycle.id)
             .order('date', { ascending: false })
             .limit(1)
-            .maybeSingle()
+            .maybeSingle(),
+          supabase
+            .from('physio_assessment')
+            .select(
+              'id, assessment_date, note, ratings:physio_goal_rating (approved_goal_id, nrs_value)'
+            )
+            .eq('treatment_cycle_id', cycle.id)
+            .order('assessment_date', { ascending: true })
         ]);
 
       if (suggestionsRes.error) throw suggestionsRes.error;
       if (goalsRes.error) throw goalsRes.error;
       if (checkinsRes.error) throw checkinsRes.error;
       if (treatmentRes.error) throw treatmentRes.error;
+      if (physioRes.error) throw physioRes.error;
 
       const suggestions: ClinicianPatientSuggestion[] = (
         suggestionsRes.data ?? []
@@ -239,13 +263,29 @@ export function useClinicianPatientData(
           }
         : null;
 
+      const physioAssessments: ClinicianPhysioAssessment[] = (
+        physioRes.data ?? []
+      ).map((a) => ({
+        id: a.id as string,
+        assessmentDate: a.assessment_date as string,
+        note: (a.note as string | null) ?? null,
+        ratings: ((a.ratings as Array<{
+          approved_goal_id: string;
+          nrs_value: number;
+        }> | null) ?? []).map((r) => ({
+          approvedGoalId: r.approved_goal_id,
+          nrsValue: r.nrs_value
+        }))
+      }));
+
       return {
         patient,
         cycle,
         suggestions,
         activeGoals,
         checkins,
-        treatment
+        treatment,
+        physioAssessments
       };
     }
   });

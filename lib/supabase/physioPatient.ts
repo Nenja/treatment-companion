@@ -16,6 +16,9 @@ export interface PhysioPatientData {
   goals: {
     id: string;
     patientFacingText: string;
+    /** NRS question + direction, needed to render the rating picker. */
+    nrsQuestion: string;
+    nrsDirection: 'higherIsBetter' | 'lowerIsBetter';
   }[];
 }
 
@@ -75,14 +78,20 @@ export function usePhysioPatientData(
       if (cycleRow) {
         const { data: goalRows, error: gErr } = await supabase
           .from('approved_goal')
-          .select('id, patient_facing_text')
+          .select(
+            'id, patient_facing_text, nrs_question, nrs_direction'
+          )
           .eq('treatment_cycle_id', cycleRow.id as string)
           .eq('status', 'active')
           .order('approved_at', { ascending: true });
         if (gErr) throw gErr;
         goals = (goalRows ?? []).map((g) => ({
           id: g.id as string,
-          patientFacingText: g.patient_facing_text as string
+          patientFacingText: g.patient_facing_text as string,
+          nrsQuestion: (g.nrs_question as string) ?? '',
+          nrsDirection:
+            (g.nrs_direction as 'higherIsBetter' | 'lowerIsBetter') ??
+            'higherIsBetter'
         }));
       }
 

@@ -14,7 +14,7 @@ import {
   useSetSuggestionStatus
 } from '@/lib/supabase/clinicianPatient';
 import { formatLongDate } from '@/lib/dates';
-import type { GuidanceMethod } from '@/lib/types';
+import { nrsToGas, type GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
@@ -135,8 +135,15 @@ export default function ClinicianPatientPage() {
     );
   }
 
-  const { patient, cycle, suggestions, activeGoals, checkins, treatment } =
-    patientData.data;
+  const {
+    patient,
+    cycle,
+    suggestions,
+    activeGoals,
+    checkins,
+    treatment,
+    physioAssessments
+  } = patientData.data;
 
   // Compute current week from cycle.start_date and today.
   const startMs = new Date(cycle.startDate).getTime();
@@ -176,6 +183,52 @@ export default function ClinicianPatientPage() {
       })
       .sort((a, b) => a.weekNumber - b.weekNumber);
     ratingsByGoal.set(goal.id, perWeek);
+  }
+
+  // Build per-goal physiotherapist ratings. Physio assessments happen
+  // on arbitrary dates; we snap each to the nearest weekly check-in
+  // week so it can be drawn on the same week-numbered axis. The snap
+  // is: weeksSinceStart = round(daysSinceCycleStart / 7), clamped to
+  // at least week 1. NRS is converted to GAS with the goal's own cut
+  // points, the same mapping the patient's ratings use, so physio and
+  // patient points share the chart's GAS y-axis.
+  const cycleStartMs = new Date(cycle.startDate).getTime();
+  const physioRatingsByGoal = new Map<
+    string,
+    {
+      weekNumber: number;
+      nrs: number;
+      value: -2 | -1 | 0 | 1 | 2;
+      note: string | null;
+    }[]
+  >();
+  for (const goal of activeGoals) {
+    const points = physioAssessments
+      .flatMap((a) => {
+        const r = a.ratings.find((x) => x.approvedGoalId === goal.id);
+        if (!r) return [];
+        const days =
+          (new Date(a.assessmentDate).getTime() - cycleStartMs) /
+          (24 * 60 * 60 * 1000);
+        const snappedWeek = Math.max(1, Math.round(days / 7));
+        return [
+          {
+            weekNumber: snappedWeek,
+            nrs: r.nrsValue,
+            value: nrsToGas(r.nrsValue, {
+              question: goal.nrs.question,
+              direction: goal.nrs.direction,
+              cutLowLow: goal.nrs.cutLowLow,
+              cutLow: goal.nrs.cutLow,
+              cutZero: goal.nrs.cutZero,
+              cutHigh: goal.nrs.cutHigh
+            }),
+            note: a.note
+          }
+        ];
+      })
+      .sort((a, b) => a.weekNumber - b.weekNumber);
+    physioRatingsByGoal.set(goal.id, points);
   }
 
   const onEndSession = async () => {
@@ -328,6 +381,7 @@ export default function ClinicianPatientPage() {
                     goalText={g.patientFacingText}
                     currentWeek={weekNumber}
                     ratings={ratingsByGoal.get(g.id) ?? []}
+                    physioRatings={physioRatingsByGoal.get(g.id) ?? []}
                   />
                 </li>
               ))}

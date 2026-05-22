@@ -44,9 +44,11 @@ export function GoalRatingPicker({
 
   return (
     <div>
-      <p className="font-display text-[20px] leading-snug text-ink">
-        {goalText}
-      </p>
+      {goalText && (
+        <p className="font-display text-[20px] leading-snug text-ink">
+          {goalText}
+        </p>
+      )}
       <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
         {question}
       </p>
