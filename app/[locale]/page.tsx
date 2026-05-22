@@ -143,10 +143,9 @@ export default function PatientHomePage() {
         {t('greeting', { name: data.patient.displayName })}
       </h1>
 
-      {/* Notifications opt-in (hidden once subscribed or dismissed) */}
-      <NotificationsCard profileId={data.patient.id} />
-
-      {/* Check-in CTA / next-due */}
+      {/* PRIMARY ACTION — the check-in CTA. The one thing the patient
+          is here to do, so it leads the screen, directly under the
+          greeting, before anything secondary. */}
       <div className="mt-6">
         <CheckinPromptCard
           pendingPromptId={data.currentPrompt?.id}
@@ -156,10 +155,16 @@ export default function PatientHomePage() {
         />
       </div>
 
-      {/* Catch-up card: older pending check-ins within the 2-week window */}
+      {/* Catch-up card — older pending check-ins. Sits right under the
+          primary CTA because it IS check-in work. */}
       {data.catchUpPrompts.length > 0 && data.goals.length > 0 && (
         <CatchUpCard prompts={data.catchUpPrompts} />
       )}
+
+      {/* Notifications opt-in — secondary. Demoted below the check-in
+          CTA and styled quietly so it doesn't compete with the primary
+          action. Hidden once subscribed or dismissed. */}
+      <NotificationsCard profileId={data.patient.id} />
 
       {/* Visual cycle progress — grows each week, only shown when there are active goals */}
       {data.goals.length > 0 && (
