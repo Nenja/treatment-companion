@@ -9,7 +9,6 @@ import { useCheckinDraft, checkinDraftStorage } from '@/lib/useCheckinDraft';
 import { isCheckinComplete } from '@/lib/checkinDraft';
 import { classifyError } from '@/lib/feedback';
 import { useToast } from '@/components/feedback/Toast';
-import { useModalA11y } from '@/lib/useModalA11y';
 import {
   SkeletonBlock,
   SkeletonScreen
@@ -116,8 +115,6 @@ function CheckinPageInner() {
     prompt: safePrompt
   });
 
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-
   // Thanks view comes first — see ref comment above.
   if (submittedId) {
     return <ThanksView onBackHome={goHomeHard} />;
@@ -159,16 +156,12 @@ function CheckinPageInner() {
     return typeof draft.ratings[goal.id] === 'number';
   })();
 
-  const hasContent =
-    Object.keys(draft.ratings).length > 0 ||
-    Boolean(draft.comment?.trim());
-
+  // Forgiving exit: the draft is persisted on every change, so leaving
+  // is always safe. "Save & finish later" just navigates home — no
+  // discard, no confirmation dialog. The patient resumes exactly where
+  // they left off next time they open the check-in.
   const onCancel = () => {
-    if (hasContent) {
-      setShowCancelConfirm(true);
-    } else {
-      goHome();
-    }
+    goHome();
   };
 
   const goNext = () => {
@@ -342,6 +335,19 @@ function CheckinPageInner() {
         helper={helper}
         onBack={step > 1 ? goBack : undefined}
         onCancel={onCancel}
+        forgiving
+        stepLabels={[
+          ...activeGoals.map((g) => ({
+            label: g.patientFacingText,
+            done: typeof draft.ratings[g.id] === 'number'
+          })),
+          {
+            label: t('summaryStepLabel'),
+            // The summary step is "done" only once submitted; while the
+            // patient is on it, it just shows as current.
+            done: false
+          }
+        ]}
         primaryAction={{
           label: isLastStep
             ? submitMutation.isPending
@@ -354,16 +360,6 @@ function CheckinPageInner() {
       >
         {body}
       </WizardLayout>
-
-      {showCancelConfirm && (
-        <CancelConfirmDialog
-          onKeep={() => setShowCancelConfirm(false)}
-          onLeave={() => {
-            setShowCancelConfirm(false);
-            goHome();
-          }}
-        />
-      )}
     </>
   );
 }
@@ -396,51 +392,6 @@ function SummaryRow({
       <dd className="mt-1 whitespace-pre-wrap text-[14px] leading-relaxed text-ink">
         {value}
       </dd>
-    </div>
-  );
-}
-
-function CancelConfirmDialog({
-  onKeep,
-  onLeave
-}: {
-  onKeep: () => void;
-  onLeave: () => void;
-}) {
-  const t = useTranslations('patient.checkin');
-  const containerRef = useModalA11y(onKeep);
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
-      <div
-        ref={containerRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="checkin-cancel-title"
-        className="w-full max-w-[400px] rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl"
-      >
-        <h2 id="checkin-cancel-title" className="font-display text-[20px] text-ink">
-          {t('cancelConfirmTitle')}
-        </h2>
-        <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
-          {t('cancelConfirmBody')}
-        </p>
-        <div className="mt-5 flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={onKeep}
-            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-cream-soft hover:bg-ink-soft"
-          >
-            {t('cancelConfirmKeep')}
-          </button>
-          <button
-            type="button"
-            onClick={onLeave}
-            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
-          >
-            {t('cancelConfirmLeave')}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
