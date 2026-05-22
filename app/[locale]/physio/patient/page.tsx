@@ -9,9 +9,7 @@ import {
   useEndClinicianSession
 } from '@/lib/supabase/clinicianSession';
 import { usePhysioPatientData } from '@/lib/supabase/physioPatient';
-import { PhysioProgressForm } from '@/components/physio/PhysioProgressForm';
-import { PhysioGoalSuggestionForm } from '@/components/physio/PhysioGoalSuggestionForm';
-import { PhysioMuscleSuggestionForm } from '@/components/physio/PhysioMuscleSuggestionForm';
+import { PhysioTabs } from '@/components/physio/PhysioTabs';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import {
   SkeletonBlock,
@@ -153,36 +151,14 @@ export default function PhysioPatientPage() {
               )}
             </section>
 
-            {/* Progress reporting + goal & muscle suggestions —
-                slices 2, 3 & 4. */}
-            {patientData.data.cycle &&
-            patientData.data.goals.length > 0 ? (
-              <>
-                <PhysioProgressForm
-                  patientId={patientData.data.patient.id}
-                  goals={patientData.data.goals}
-                />
-                <PhysioGoalSuggestionForm
-                  patientId={patientData.data.patient.id}
-                />
-                <PhysioMuscleSuggestionForm
-                  patientId={patientData.data.patient.id}
-                  goals={patientData.data.goals}
-                />
-              </>
-            ) : patientData.data.cycle ? (
-              // Active cycle but no goals yet — progress reporting needs
-              // goals, but the physiotherapist can still suggest a goal
-              // or flag a muscle.
-              <>
-                <PhysioGoalSuggestionForm
-                  patientId={patientData.data.patient.id}
-                />
-                <PhysioMuscleSuggestionForm
-                  patientId={patientData.data.patient.id}
-                  goals={patientData.data.goals}
-                />
-              </>
+            {/* Progress reporting + goal & muscle suggestions, in tabs
+                so each task is one tap away rather than a long scroll
+                (slices 2-4; tabs added later). */}
+            {patientData.data.cycle ? (
+              <PhysioTabs
+                patientId={patientData.data.patient.id}
+                goals={patientData.data.goals}
+              />
             ) : (
               <div className="mt-10 rounded-[var(--radius-card)] border border-dashed border-stone bg-cream-soft/60 p-5">
                 <p className="text-[14px] leading-relaxed text-ink-soft">
