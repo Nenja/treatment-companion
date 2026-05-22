@@ -17,6 +17,20 @@ interface WizardLayoutProps {
     onClick: () => void;
     disabled?: boolean;
   };
+  /**
+   * Optional per-step labels. When provided, the progress strip shows
+   * a named list (goal names, etc.) instead of abstract dots — concrete
+   * orientation for patients with slowed processing. Each entry's
+   * `done` drives a checkmark; the current step is highlighted.
+   */
+  stepLabels?: { label: string; done: boolean }[];
+  /**
+   * When true, shows a persistent "saved" reassurance line and labels
+   * the top-left exit as "Save & finish later" rather than "Cancel".
+   * The check-in draft is persisted on every change, so leaving is
+   * always safe — this just makes that visible.
+   */
+  forgiving?: boolean;
   children: ReactNode;
 }
 
@@ -28,9 +42,12 @@ export function WizardLayout({
   onBack,
   onCancel,
   primaryAction,
+  stepLabels,
+  forgiving = false,
   children
 }: WizardLayoutProps) {
   const t = useTranslations('patient.suggestGoal');
+  const tc = useTranslations('patient.checkin');
 
   return (
     <div className="min-h-dvh bg-cream">
@@ -42,29 +59,79 @@ export function WizardLayout({
             onClick={onCancel}
             className="text-[14px] font-semibold text-ink-soft hover:text-ink"
           >
-            {t('cancel')}
+            {forgiving ? tc('saveAndFinishLater') : t('cancel')}
           </button>
           <span className="eyebrow">
             {t('stepOf', { current: currentStep, total: totalSteps })}
           </span>
           <AccountMenu />
         </div>
-        {/* Progress dots */}
-        <div className="mx-auto flex max-w-[480px] gap-1.5 px-5 pb-4">
-          {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => {
-            const isPast = step < currentStep;
-            const isCurrent = step === currentStep;
-            return (
-              <div
-                key={step}
-                className={`h-1.5 flex-1 rounded-full ${
-                  isPast || isCurrent ? 'bg-sage' : 'bg-stone'
-                }`}
-                aria-hidden
-              />
-            );
-          })}
-        </div>
+
+        {/* Progress — named list when stepLabels given, else dots. */}
+        {stepLabels && stepLabels.length > 0 ? (
+          <div className="mx-auto max-w-[480px] px-5 pb-4">
+            <ol className="flex flex-col gap-1">
+              {stepLabels.map((s, i) => {
+                const stepNum = i + 1;
+                const isCurrent = stepNum === currentStep;
+                return (
+                  <li
+                    key={i}
+                    className={`flex items-center gap-2 text-[14px] ${
+                      isCurrent
+                        ? 'font-semibold text-ink'
+                        : s.done
+                          ? 'text-ink-soft'
+                          : 'text-ink-muted'
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] ${
+                        s.done
+                          ? 'bg-sage text-cream-soft'
+                          : isCurrent
+                            ? 'border-2 border-sage bg-cream-soft text-sage-deep'
+                            : 'border border-stone bg-cream-soft text-ink-muted'
+                      }`}
+                    >
+                      {s.done ? '✓' : stepNum}
+                    </span>
+                    <span className="truncate">{s.label}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        ) : (
+          <div className="mx-auto flex max-w-[480px] gap-1.5 px-5 pb-4">
+            {Array.from({ length: totalSteps }, (_, i) => i + 1).map(
+              (step) => {
+                const isPast = step < currentStep;
+                const isCurrent = step === currentStep;
+                return (
+                  <div
+                    key={step}
+                    className={`h-1.5 flex-1 rounded-full ${
+                      isPast || isCurrent ? 'bg-sage' : 'bg-stone'
+                    }`}
+                    aria-hidden
+                  />
+                );
+              }
+            )}
+          </div>
+        )}
+
+        {/* Persistent "saved" reassurance — only in forgiving mode. */}
+        {forgiving && (
+          <div className="mx-auto max-w-[480px] px-5 pb-3">
+            <p className="flex items-center gap-1.5 text-[13px] text-ink-muted">
+              <span aria-hidden>✓</span>
+              {tc('savedReassurance')}
+            </p>
+          </div>
+        )}
       </header>
 
       {/* Body */}

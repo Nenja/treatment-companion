@@ -110,6 +110,9 @@
     "checkin": {
       "pageTitle": "Weekly check-in",
       "stepOf": "Step {current} of {total}",
+      "saveAndFinishLater": "Save & finish later",
+      "savedReassurance": "Saved — you can leave and come back anytime",
+      "summaryStepLabel": "Review & send",
       "back": "Back",
       "next": "Continue",
       "submit": "Send my check-in",

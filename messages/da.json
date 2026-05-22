@@ -114,6 +114,9 @@
     "checkin": {
       "pageTitle": "Ugentlig status",
       "stepOf": "Trin {current} af {total}",
+      "saveAndFinishLater": "Gem & afslut senere",
+      "savedReassurance": "Gemt — du kan forlade siden og vende tilbage når som helst",
+      "summaryStepLabel": "Gennemse & send",
       "back": "Tilbage",
       "next": "Fortsæt",
       "submit": "Send min status",
