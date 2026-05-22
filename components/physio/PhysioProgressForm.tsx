@@ -98,7 +98,7 @@ export function PhysioProgressForm({
 
   return (
     <div>
-      <section className="mt-10">
+      <section className="mt-6">
         <h2 className="font-display text-[20px] text-ink">
           Record an assessment
         </h2>

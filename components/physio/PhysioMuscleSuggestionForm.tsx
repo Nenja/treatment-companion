@@ -83,7 +83,7 @@ export function PhysioMuscleSuggestionForm({
 
   return (
     <div>
-      <section className="mt-12">
+      <section className="mt-6">
         <h2 className="font-display text-[20px] text-ink">
           Suggest a muscle
         </h2>
