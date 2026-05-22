@@ -55,6 +55,35 @@ export interface PhysioMuscleSuggestionSummary {
 }
 
 /**
+ * Physician action on a physiotherapist muscle suggestion: 'reviewed'
+ * (considered in injection planning) or 'dismissed' (not relevant).
+ * Calls the set_physio_muscle_suggestion_status RPC.
+ */
+export function useSetPhysioMuscleSuggestionStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      suggestionId: string;
+      status: 'reviewed' | 'dismissed';
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc(
+        'set_physio_muscle_suggestion_status',
+        {
+          p_suggestion_id: input.suggestionId,
+          p_status: input.status
+        }
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['physioMuscleSuggestions'] });
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
+/**
  * Lists physiotherapist muscle suggestions for a patient in the current
  * cycle, newest first. RLS limits results to patients the caller has an
  * active unlock for.

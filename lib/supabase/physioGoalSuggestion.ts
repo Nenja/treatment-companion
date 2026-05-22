@@ -47,6 +47,36 @@ export interface PhysioGoalSuggestionSummary {
 }
 
 /**
+ * Physician action on a physiotherapist goal suggestion: 'accepted'
+ * (will take it forward) or 'dismissed' (not this cycle). Calls the
+ * set_physio_goal_suggestion_status RPC, which gates to the physician
+ * role + active unlock.
+ */
+export function useSetPhysioGoalSuggestionStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      suggestionId: string;
+      status: 'accepted' | 'dismissed';
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc(
+        'set_physio_goal_suggestion_status',
+        {
+          p_suggestion_id: input.suggestionId,
+          p_status: input.status
+        }
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['physioGoalSuggestions'] });
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
+/**
  * Lists physiotherapist goal suggestions already recorded for a patient
  * in the current cycle, newest first. RLS limits results to patients
  * the caller has an active unlock for.

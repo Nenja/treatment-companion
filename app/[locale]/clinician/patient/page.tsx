@@ -26,6 +26,9 @@ import {
 } from '@/components/feedback/Skeleton';
 import { useModalA11y } from '@/lib/useModalA11y';
 import { buildEhrExport } from '@/lib/ehrExport';
+import { useToast } from '@/components/feedback/Toast';
+import { useSetPhysioGoalSuggestionStatus } from '@/lib/supabase/physioGoalSuggestion';
+import { useSetPhysioMuscleSuggestionStatus } from '@/lib/supabase/physioMuscleSuggestion';
 
 export default function ClinicianPatientPage() {
   const router = useRouter();
@@ -460,6 +463,10 @@ export default function ClinicianPatientPage() {
                     <span className="text-ink-muted">Rationale: </span>
                     {s.rationale}
                   </p>
+                  <PhysioGoalSuggestionActions
+                    suggestionId={s.id}
+                    status={s.status}
+                  />
                 </li>
               ))}
             </ul>
@@ -510,6 +517,10 @@ export default function ClinicianPatientPage() {
                         Related goal: {linkedGoal.patientFacingText}
                       </p>
                     )}
+                    <PhysioMuscleSuggestionActions
+                      suggestionId={s.id}
+                      status={s.status}
+                    />
                   </li>
                 );
               })}
@@ -671,4 +682,120 @@ function labelForGuidance(g: string): string {
     default:
       return g;
   }
+}
+
+/**
+ * Action row for a physiotherapist goal suggestion. While the
+ * suggestion is awaiting review, shows Accept / Dismiss buttons. Once
+ * acted on, shows the final status instead. "Accept" here records the
+ * physician's intent to take the goal forward — the actual goal
+ * approval still happens via the normal goal-approval flow.
+ */
+function PhysioGoalSuggestionActions({
+  suggestionId,
+  status
+}: {
+  suggestionId: string;
+  status: string;
+}) {
+  const setStatus = useSetPhysioGoalSuggestionStatus();
+  const toast = useToast();
+
+  if (status !== 'needsReview') {
+    return (
+      <p className="mt-3 text-[13px] uppercase tracking-wider text-ink-muted">
+        {status === 'accepted'
+          ? 'Accepted — take forward via goal approval'
+          : 'Dismissed'}
+      </p>
+    );
+  }
+
+  const act = async (next: 'accepted' | 'dismissed') => {
+    try {
+      await setStatus.mutateAsync({ suggestionId, status: next });
+      toast.success(
+        next === 'accepted' ? 'Marked accepted' : 'Suggestion dismissed'
+      );
+    } catch {
+      toast.error('Could not update the suggestion.');
+    }
+  };
+
+  return (
+    <div className="mt-3 flex gap-2">
+      <button
+        type="button"
+        onClick={() => act('accepted')}
+        disabled={setStatus.isPending}
+        className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-cream-soft hover:bg-ink-soft disabled:opacity-50"
+      >
+        Accept
+      </button>
+      <button
+        type="button"
+        onClick={() => act('dismissed')}
+        disabled={setStatus.isPending}
+        className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft disabled:opacity-50"
+      >
+        Dismiss
+      </button>
+    </div>
+  );
+}
+
+/**
+ * Action row for a physiotherapist muscle suggestion. "Mark considered"
+ * records that the physician has factored this muscle into injection
+ * planning; "Dismiss" marks it not relevant.
+ */
+function PhysioMuscleSuggestionActions({
+  suggestionId,
+  status
+}: {
+  suggestionId: string;
+  status: string;
+}) {
+  const setStatus = useSetPhysioMuscleSuggestionStatus();
+  const toast = useToast();
+
+  if (status !== 'needsReview') {
+    return (
+      <p className="mt-3 text-[13px] uppercase tracking-wider text-ink-muted">
+        {status === 'reviewed' ? 'Considered' : 'Dismissed'}
+      </p>
+    );
+  }
+
+  const act = async (next: 'reviewed' | 'dismissed') => {
+    try {
+      await setStatus.mutateAsync({ suggestionId, status: next });
+      toast.success(
+        next === 'reviewed' ? 'Marked considered' : 'Suggestion dismissed'
+      );
+    } catch {
+      toast.error('Could not update the suggestion.');
+    }
+  };
+
+  return (
+    <div className="mt-3 flex gap-2">
+      <button
+        type="button"
+        onClick={() => act('reviewed')}
+        disabled={setStatus.isPending}
+        className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-cream-soft hover:bg-ink-soft disabled:opacity-50"
+      >
+        Mark considered
+      </button>
+      <button
+        type="button"
+        onClick={() => act('dismissed')}
+        disabled={setStatus.isPending}
+        className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft disabled:opacity-50"
+      >
+        Dismiss
+      </button>
+    </div>
+  );
 }
