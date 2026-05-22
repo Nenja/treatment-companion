@@ -10,6 +10,7 @@ import {
 } from '@/lib/supabase/clinicianSession';
 import { usePhysioPatientData } from '@/lib/supabase/physioPatient';
 import { PhysioProgressForm } from '@/components/physio/PhysioProgressForm';
+import { PhysioGoalSuggestionForm } from '@/components/physio/PhysioGoalSuggestionForm';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import {
   SkeletonBlock,
@@ -151,18 +152,30 @@ export default function PhysioPatientPage() {
               )}
             </section>
 
-            {/* Progress reporting — slice 2. */}
+            {/* Progress reporting + goal suggestions — slices 2 & 3. */}
             {patientData.data.cycle &&
             patientData.data.goals.length > 0 ? (
-              <PhysioProgressForm
+              <>
+                <PhysioProgressForm
+                  patientId={patientData.data.patient.id}
+                  goals={patientData.data.goals}
+                />
+                <PhysioGoalSuggestionForm
+                  patientId={patientData.data.patient.id}
+                />
+              </>
+            ) : patientData.data.cycle ? (
+              // Active cycle but no goals yet — progress reporting needs
+              // goals, but the physiotherapist can still suggest one.
+              <PhysioGoalSuggestionForm
                 patientId={patientData.data.patient.id}
-                goals={patientData.data.goals}
               />
             ) : (
               <div className="mt-10 rounded-[var(--radius-card)] border border-dashed border-stone bg-cream-soft/60 p-5">
                 <p className="text-[14px] leading-relaxed text-ink-soft">
-                  Progress reporting becomes available once the patient
-                  has an active treatment cycle with approved goals.
+                  Progress reporting and goal suggestions become
+                  available once the patient has an active treatment
+                  cycle.
                 </p>
               </div>
             )}

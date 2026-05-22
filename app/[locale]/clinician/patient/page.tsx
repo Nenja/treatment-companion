@@ -142,7 +142,8 @@ export default function ClinicianPatientPage() {
     activeGoals,
     checkins,
     treatment,
-    physioAssessments
+    physioAssessments,
+    physioGoalSuggestions
   } = patientData.data;
 
   // Compute current week from cycle.start_date and today.
@@ -427,6 +428,37 @@ export default function ClinicianPatientPage() {
                   >
                     {t('review')}
                   </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Physiotherapist goal suggestions — a distinct section from
+            patient suggestions above. Read-only here in slice 3; the
+            act-on-it workflow is slice 5. */}
+        <section className="mt-10">
+          <h2 className="font-display text-[20px] leading-tight text-ink">
+            Physiotherapist recommends
+          </h2>
+          {physioGoalSuggestions.length === 0 ? (
+            <p className="mt-3 text-[14px] text-ink-muted">
+              No goal suggestions from the physiotherapist this cycle.
+            </p>
+          ) : (
+            <ul className="mt-3 space-y-3">
+              {physioGoalSuggestions.map((s) => (
+                <li
+                  key={s.id}
+                  className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
+                >
+                  <p className="font-display text-[16px] leading-snug text-ink">
+                    {s.suggestedGoal}
+                  </p>
+                  <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                    <span className="text-ink-muted">Rationale: </span>
+                    {s.rationale}
+                  </p>
                 </li>
               ))}
             </ul>

@@ -61,6 +61,14 @@ export interface ClinicianPhysioAssessment {
   }[];
 }
 
+export interface ClinicianPhysioGoalSuggestion {
+  id: string;
+  suggestedGoal: string;
+  rationale: string;
+  status: string;
+  createdAt: string;
+}
+
 export interface ClinicianPatientData {
   patient: {
     id: string;
@@ -76,6 +84,7 @@ export interface ClinicianPatientData {
   checkins: ClinicianPatientCheckin[];
   treatment: ClinicianTreatmentRecord | null;
   physioAssessments: ClinicianPhysioAssessment[];
+  physioGoalSuggestions: ClinicianPhysioGoalSuggestion[];
 }
 
 /**
@@ -137,7 +146,8 @@ export function useClinicianPatientData(
         goalsRes,
         checkinsRes,
         treatmentRes,
-        physioRes
+        physioRes,
+        physioSuggRes
       ] = await Promise.all([
           supabase
             .from('goal_suggestion')
@@ -177,7 +187,12 @@ export function useClinicianPatientData(
               'id, assessment_date, note, ratings:physio_goal_rating (approved_goal_id, nrs_value)'
             )
             .eq('treatment_cycle_id', cycle.id)
-            .order('assessment_date', { ascending: true })
+            .order('assessment_date', { ascending: true }),
+          supabase
+            .from('physio_goal_suggestion')
+            .select('id, suggested_goal, rationale, status, created_at')
+            .eq('treatment_cycle_id', cycle.id)
+            .order('created_at', { ascending: true })
         ]);
 
       if (suggestionsRes.error) throw suggestionsRes.error;
@@ -185,6 +200,7 @@ export function useClinicianPatientData(
       if (checkinsRes.error) throw checkinsRes.error;
       if (treatmentRes.error) throw treatmentRes.error;
       if (physioRes.error) throw physioRes.error;
+      if (physioSuggRes.error) throw physioSuggRes.error;
 
       const suggestions: ClinicianPatientSuggestion[] = (
         suggestionsRes.data ?? []
@@ -278,6 +294,16 @@ export function useClinicianPatientData(
         }))
       }));
 
+      const physioGoalSuggestions: ClinicianPhysioGoalSuggestion[] = (
+        physioSuggRes.data ?? []
+      ).map((s) => ({
+        id: s.id as string,
+        suggestedGoal: s.suggested_goal as string,
+        rationale: s.rationale as string,
+        status: s.status as string,
+        createdAt: s.created_at as string
+      }));
+
       return {
         patient,
         cycle,
@@ -285,7 +311,8 @@ export function useClinicianPatientData(
         activeGoals,
         checkins,
         treatment,
-        physioAssessments
+        physioAssessments,
+        physioGoalSuggestions
       };
     }
   });
