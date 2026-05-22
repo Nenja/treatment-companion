@@ -57,12 +57,30 @@ export function CheckinPromptCard({
   }
 
   if (nextDueDate && hasActiveGoals) {
+    // "All caught up" — nothing due. This should read as a calm,
+    // resolved state, not a muted task. A checkmark + affirming title
+    // make it clearly "you're done", with the next date as quiet
+    // supporting detail.
     return (
-      <section className="rounded-[var(--radius-card)] border border-stone bg-stone-soft p-5">
-        <div className="eyebrow">{t('nextCheckinTitle')}</div>
-        <p className="mt-1 text-[16px] text-ink">
-          {t('nextCheckinBody', { date: formatLongDate(nextDueDate, locale) })}
-        </p>
+      <section className="rounded-[var(--radius-card)] border border-sage/30 bg-cream-soft p-5">
+        <div className="flex items-start gap-3">
+          <span
+            aria-hidden
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sage-soft text-[18px] text-sage-deep"
+          >
+            ✓
+          </span>
+          <div>
+            <p className="font-display text-[18px] leading-snug text-ink">
+              {t('allCaughtUpTitle')}
+            </p>
+            <p className="mt-1 text-[14px] text-ink-soft">
+              {t('nextCheckinBody', {
+                date: formatLongDate(nextDueDate, locale)
+              })}
+            </p>
+          </div>
+        </div>
       </section>
     );
   }

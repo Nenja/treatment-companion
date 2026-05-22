@@ -39,6 +39,7 @@
       "checkinReadyAction": "Start status",
       "nextCheckinTitle": "Næste status",
       "nextCheckinBody": "Forfalder {date}",
+      "allCaughtUpTitle": "Du er helt ajour",
       "checkinsThisCycle": "{count, plural, =0 {Ingen statusser i dette forløb endnu} one {# status i dette forløb} other {# statusser i dette forløb}}",
       "yourGoals": "Dine mål",
       "noActiveGoalsTitle": "Ingen mål endnu",

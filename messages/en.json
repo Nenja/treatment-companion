@@ -35,6 +35,7 @@
       "checkinReadyAction": "Start check-in",
       "nextCheckinTitle": "Next check-in",
       "nextCheckinBody": "Due {date}",
+      "allCaughtUpTitle": "You're all caught up",
       "checkinsThisCycle": "{count, plural, =0 {No check-ins yet this cycle} one {# check-in this cycle} other {# check-ins this cycle}}",
       "yourGoals": "Your goals",
       "noActiveGoalsTitle": "No goals yet",

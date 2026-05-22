@@ -109,11 +109,11 @@ export function NotificationsCard({ profileId }: NotificationsCardProps) {
     <section
       role="region"
       aria-label="Enable notifications"
-      className="mt-4 rounded-[var(--radius-card)] border border-sage/30 bg-sage-soft/30 p-4"
+      className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
-          <p className="font-display text-[16px] leading-snug text-ink">
+          <p className="text-[15px] font-semibold leading-snug text-ink">
             Get reminded about your weekly check-in
           </p>
           <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
@@ -137,7 +137,7 @@ export function NotificationsCard({ profileId }: NotificationsCardProps) {
           <button
             type="button"
             onClick={onEnable}
-            className="flex h-10 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-cream-soft hover:bg-ink-soft"
+            className="flex h-10 flex-1 items-center justify-center rounded-[var(--radius-button)] border border-sage/50 bg-cream px-4 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
           >
             Enable notifications
           </button>
