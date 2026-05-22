@@ -27,6 +27,10 @@ export interface AppProfile {
   /** Text-size multiplier: 1.00, 1.25, or 1.50. Applied as a CSS
    *  variable on <html> so every relative unit scales. */
   textScale: number;
+  /** True while the account is still on its clinic-issued temporary
+   *  password. The app routes such a user to set-password until they
+   *  choose their own. */
+  mustChangePassword: boolean;
 }
 
 interface AuthState {
@@ -69,7 +73,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async function fetchProfile(userId: string): Promise<AppProfile | null> {
       const { data, error } = await supabase
         .from('profile')
-        .select('id, role, display_name, preferred_locale, email, text_scale')
+        .select(
+          'id, role, display_name, preferred_locale, email, text_scale, must_change_password'
+        )
         .eq('id', userId)
         .maybeSingle();
       if (error || !data) return null;
@@ -79,7 +85,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         displayName: data.display_name,
         preferredLocale: data.preferred_locale,
         email: data.email,
-        textScale: Number(data.text_scale) || 1.0
+        textScale: Number(data.text_scale) || 1.0,
+        mustChangePassword: Boolean(data.must_change_password)
       };
     }
 

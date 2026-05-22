@@ -119,9 +119,16 @@ export async function POST(req: NextRequest) {
 
   // 4. The auth signup trigger creates a profile row with role 'patient'
   //    by default. Update its role + display_name to match the request.
+  //    must_change_password is set true so the new account is routed
+  //    through the set-password screen on first login — they replace
+  //    the clinic-issued temp password with one of their own.
   const { error: profileErr } = await admin
     .from('profile')
-    .update({ role, display_name: displayName })
+    .update({
+      role,
+      display_name: displayName,
+      must_change_password: true
+    })
     .eq('id', newUserId);
 
   if (profileErr) {

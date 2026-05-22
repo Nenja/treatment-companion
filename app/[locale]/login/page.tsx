@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
+import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useAuth } from '@/lib/supabase/auth';
 
@@ -18,17 +19,22 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const prefix = locale === 'en' ? '' : `/${locale}`;
 
   // If a session already exists when the user lands here, send them on.
   useEffect(() => {
     if (loading) return;
     if (user && profile) {
-      // Each role has its own landing area. Patients land on the
-      // home/check-in surface at root; physicians on /clinician;
-      // physiotherapists on /physio. Admin has no dedicated landing
-      // (admin tasks are reached from the clinician unlock screen).
+      // An account still on its temporary password goes straight to
+      // set-password — not to its role home.
+      if (profile.mustChangePassword) {
+        router.replace(`${prefix}/reset-password`);
+        return;
+      }
       let target = '/';
       if (profile.role === 'clinician') target = '/clinician';
       else if (profile.role === 'physiotherapist') target = '/physio';
@@ -38,7 +44,29 @@ export default function LoginPage() {
           : `/${locale}${target === '/' ? '' : target}`
       );
     }
-  }, [loading, user, profile, router, locale]);
+  }, [loading, user, profile, router, locale, prefix]);
+
+  /**
+   * Turn a raw Supabase auth error into a short, plain-language message
+   * that tells the person what to DO. We never show Supabase's raw
+   * string to the user — it's technical and gives no next step.
+   */
+  const friendlyError = (raw: string): string => {
+    const m = raw.toLowerCase();
+    if (m.includes('invalid login') || m.includes('credentials')) {
+      return 'That email or password didn\u2019t match. Check both and try again \u2014 or use "Forgot password?" below.';
+    }
+    if (m.includes('email not confirmed')) {
+      return 'This account isn\u2019t activated yet. Please contact your clinic.';
+    }
+    if (m.includes('rate limit') || m.includes('too many')) {
+      return 'Too many attempts. Please wait a minute, then try again.';
+    }
+    if (m.includes('network') || m.includes('fetch')) {
+      return 'Network problem. Check your connection and try again.';
+    }
+    return 'Something went wrong signing in. Please try again.';
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,13 +81,12 @@ export default function LoginPage() {
     });
 
     if (signInError) {
-      setError(signInError.message);
+      setError(friendlyError(signInError.message));
       setSubmitting(false);
       return;
     }
-
-    // The auth state listener in AuthProvider will pick up the new
-    // session and the useEffect above will redirect.
+    // The auth state listener in AuthProvider picks up the new session
+    // and the useEffect above redirects.
   };
 
   return (
@@ -98,19 +125,34 @@ export default function LoginPage() {
             >
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[16px] text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
-            />
+            <div className="relative mt-1.5">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft py-2.5 pl-3 pr-20 text-[16px] text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
+              />
+              {/* Show/hide toggle — lets the person verify a clinic-
+                  issued password they're typing on a phone. */}
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-pressed={showPassword}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-[14px] font-semibold text-sage-deep hover:text-ink"
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
           </div>
 
           {error && (
-            <p className="text-[14px] text-amber-deep" role="alert">
+            <p
+              className="rounded-[var(--radius-button)] border border-amber-deep/40 bg-amber-soft px-3 py-2.5 text-[14px] leading-relaxed text-ink"
+              role="alert"
+            >
               {error}
             </p>
           )}
@@ -120,9 +162,19 @@ export default function LoginPage() {
             disabled={submitting || !email || !password}
             className="flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
           >
-            {submitting ? 'Signing in…' : 'Sign in'}
+            {submitting ? 'Signing in\u2026' : 'Sign in'}
           </button>
         </form>
+
+        {/* Forgot password — the recovery path for a locked-out user. */}
+        <p className="mt-6 text-center text-[14px]">
+          <Link
+            href={`${prefix}/forgot-password`}
+            className="font-semibold text-sage-deep hover:text-ink"
+          >
+            Forgot password?
+          </Link>
+        </p>
       </main>
     </div>
   );
