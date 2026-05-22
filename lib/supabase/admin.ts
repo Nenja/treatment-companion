@@ -33,7 +33,7 @@ export function useAdminAccounts(enabled: boolean) {
 }
 
 export interface CreateAccountInput {
-  role: 'patient' | 'clinician';
+  role: 'patient' | 'clinician' | 'physiotherapist';
   email: string;
   displayName: string;
   tempPassword: string;

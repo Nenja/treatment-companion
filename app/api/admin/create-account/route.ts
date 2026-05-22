@@ -61,9 +61,16 @@ export async function POST(req: NextRequest) {
   const displayName = body.displayName?.trim();
   const tempPassword = body.tempPassword;
 
-  if (role !== 'patient' && role !== 'clinician') {
+  if (
+    role !== 'patient' &&
+    role !== 'clinician' &&
+    role !== 'physiotherapist'
+  ) {
     return NextResponse.json(
-      { error: 'role must be "patient" or "clinician"' },
+      {
+        error:
+          'role must be "patient", "clinician", or "physiotherapist"'
+      },
       { status: 400 }
     );
   }
@@ -128,6 +135,10 @@ export async function POST(req: NextRequest) {
   }
 
   // 5. Insert the matching role-specific row.
+  //    Patients get a `patient` row. Physicians AND physiotherapists
+  //    both get a `clinician` row — the `clinician` table means "any
+  //    professional who unlocks patients via a visit code", and the
+  //    profile.role column distinguishes physician from physiotherapist.
   if (role === 'patient') {
     const { error: pErr } = await admin
       .from('patient')
@@ -139,6 +150,7 @@ export async function POST(req: NextRequest) {
       );
     }
   } else {
+    // clinician OR physiotherapist
     const { error: cErr } = await admin
       .from('clinician')
       .insert({ profile_id: newUserId });

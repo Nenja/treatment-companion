@@ -25,10 +25,18 @@ export default function LoginPage() {
   useEffect(() => {
     if (loading) return;
     if (user && profile) {
-      const target = profile.role === 'clinician'
-        ? `/clinician`
-        : `/`;
-      router.replace(locale === 'en' ? target : `/${locale}${target === '/' ? '' : target}`);
+      // Each role has its own landing area. Patients land on the
+      // home/check-in surface at root; physicians on /clinician;
+      // physiotherapists on /physio. Admin has no dedicated landing
+      // (admin tasks are reached from the clinician unlock screen).
+      let target = '/';
+      if (profile.role === 'clinician') target = '/clinician';
+      else if (profile.role === 'physiotherapist') target = '/physio';
+      router.replace(
+        locale === 'en'
+          ? target
+          : `/${locale}${target === '/' ? '' : target}`
+      );
     }
   }, [loading, user, profile, router, locale]);
 

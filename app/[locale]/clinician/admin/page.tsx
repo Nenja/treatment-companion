@@ -119,7 +119,9 @@ function CreateAccountSection() {
   const toast = useToast();
   const tFeedback = useTranslations('feedback');
 
-  const [role, setRole] = useState<'patient' | 'clinician'>('patient');
+  const [role, setRole] = useState<
+    'patient' | 'clinician' | 'physiotherapist'
+  >('patient');
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [tempPassword, setTempPassword] = useState('');
@@ -207,11 +209,11 @@ function CreateAccountSection() {
       )}
 
       <Field label="Role">
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2 flex flex-col gap-2">
           <button
             type="button"
             onClick={() => setRole('patient')}
-            className={`flex-1 rounded-[var(--radius-button)] border px-3 py-2.5 text-[14px] font-semibold ${
+            className={`rounded-[var(--radius-button)] border px-3 py-3 text-left text-[14px] font-semibold ${
               role === 'patient'
                 ? 'border-sage bg-sage-soft text-sage-deep'
                 : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
@@ -222,13 +224,24 @@ function CreateAccountSection() {
           <button
             type="button"
             onClick={() => setRole('clinician')}
-            className={`flex-1 rounded-[var(--radius-button)] border px-3 py-2.5 text-[14px] font-semibold ${
+            className={`rounded-[var(--radius-button)] border px-3 py-3 text-left text-[14px] font-semibold ${
               role === 'clinician'
                 ? 'border-sage bg-sage-soft text-sage-deep'
                 : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
             }`}
           >
-            Clinician
+            Physician
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole('physiotherapist')}
+            className={`rounded-[var(--radius-button)] border px-3 py-3 text-left text-[14px] font-semibold ${
+              role === 'physiotherapist'
+                ? 'border-sage bg-sage-soft text-sage-deep'
+                : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
+            }`}
+          >
+            Physiotherapist
           </button>
         </div>
       </Field>

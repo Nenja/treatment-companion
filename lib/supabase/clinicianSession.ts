@@ -12,10 +12,11 @@ export interface CurrentClinicianSession {
 }
 
 /**
- * The clinician's currently active session, if any. Active is defined
- * as: ended_at is null AND last_activity_at > now() - 1h. RLS enforces
- * the same boundary, but we apply it client-side so the UI updates
- * immediately when a session goes stale.
+ * The unlocking professional's currently active session, if any.
+ * "Professional" = physician (role 'clinician') or physiotherapist —
+ * both unlock patients via the same visit-code mechanism and both get
+ * a row in clinician_session. Active is defined as: ended_at is null
+ * AND last_activity_at > now() - 1h. RLS enforces the same boundary.
  */
 export function useCurrentClinicianSession(
   profileId: string | null,
@@ -23,7 +24,9 @@ export function useCurrentClinicianSession(
 ) {
   return useQuery({
     queryKey: ['clinicianSession', profileId],
-    enabled: !!profileId && role === 'clinician',
+    enabled:
+      !!profileId &&
+      (role === 'clinician' || role === 'physiotherapist'),
     queryFn: async (): Promise<CurrentClinicianSession | null> => {
       const supabase = createSupabaseBrowserClient();
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();

@@ -31,8 +31,12 @@ export default function PatientHomePage() {
       router.replace(locale === 'en' ? '/login' : `/${locale}/login`);
       return;
     }
+    // Non-patients don't belong on the patient home — bounce them to
+    // their own area.
     if (profile.role === 'clinician') {
       router.replace(locale === 'en' ? '/clinician' : `/${locale}/clinician`);
+    } else if (profile.role === 'physiotherapist') {
+      router.replace(locale === 'en' ? '/physio' : `/${locale}/physio`);
     }
   }, [authLoading, user, profile, router, locale]);
 

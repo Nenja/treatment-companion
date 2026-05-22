@@ -58,9 +58,13 @@ export function AccountMenu() {
 
   const roleLabel =
     profile.role === 'clinician'
-      ? 'Clinician'
+      ? 'Physician'
+      : profile.role === 'physiotherapist'
+      ? 'Physiotherapist'
       : profile.role === 'patient'
       ? 'Patient'
+      : profile.role === 'admin'
+      ? 'Admin'
       : profile.role;
 
   const doSignOut = async () => {

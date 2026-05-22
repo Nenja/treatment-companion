@@ -20,7 +20,7 @@ import { useToast } from '@/components/feedback/Toast';
  */
 export interface AppProfile {
   id: string;
-  role: 'patient' | 'clinician' | 'admin';
+  role: 'patient' | 'clinician' | 'physiotherapist' | 'admin';
   displayName: string;
   preferredLocale: 'en' | 'da';
   email: string | null;
