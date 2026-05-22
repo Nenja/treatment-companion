@@ -122,12 +122,15 @@ export async function POST(req: NextRequest) {
   //    must_change_password is set true so the new account is routed
   //    through the set-password screen on first login — they replace
   //    the clinic-issued temp password with one of their own.
+  //    has_seen_intro is set false so the new account sees the one-time
+  //    orientation panel on its main screen.
   const { error: profileErr } = await admin
     .from('profile')
     .update({
       role,
       display_name: displayName,
-      must_change_password: true
+      must_change_password: true,
+      has_seen_intro: false
     })
     .eq('id', newUserId);
 

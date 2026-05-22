@@ -15,6 +15,7 @@ import { CatchUpCard } from '@/components/cards/CatchUpCard';
 import { CheckinDots } from '@/components/cards/CheckinDots';
 import { NotificationsCard } from '@/components/cards/NotificationsCard';
 import { Card } from '@/components/cards/Card';
+import { IntroPanel } from '@/components/feedback/IntroPanel';
 
 export default function PatientHomePage() {
   const router = useRouter();
@@ -126,6 +127,9 @@ export default function PatientHomePage() {
 
   return (
     <AppShell>
+      {/* One-time orientation — shown only on a new patient's first visit. */}
+      <IntroPanel role="patient" />
+
       {/* Cycle context eyebrow — plain language, just "weeks since
           treatment" so the patient doesn't have to think in cycles. */}
       <div className="eyebrow mb-2">

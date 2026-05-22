@@ -31,6 +31,9 @@ export interface AppProfile {
    *  password. The app routes such a user to set-password until they
    *  choose their own. */
   mustChangePassword: boolean;
+  /** False until the user dismisses the one-time orientation panel on
+   *  their main screen. */
+  hasSeenIntro: boolean;
 }
 
 interface AuthState {
@@ -74,7 +77,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data, error } = await supabase
         .from('profile')
         .select(
-          'id, role, display_name, preferred_locale, email, text_scale, must_change_password'
+          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro'
         )
         .eq('id', userId)
         .maybeSingle();
@@ -86,7 +89,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         preferredLocale: data.preferred_locale,
         email: data.email,
         textScale: Number(data.text_scale) || 1.0,
-        mustChangePassword: Boolean(data.must_change_password)
+        mustChangePassword: Boolean(data.must_change_password),
+        hasSeenIntro: Boolean(data.has_seen_intro)
       };
     }
 
