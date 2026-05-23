@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -44,6 +45,13 @@ interface AuthState {
   /** Application profile joined from the `profile` table — null if no row. */
   profile: AppProfile | null;
   signOut: () => Promise<void>;
+  /**
+   * Re-read the profile row from the database and update the in-memory
+   * profile. Call this after mutating own-profile fields (password
+   * change clearing must_change_password, dismissing the intro, text
+   * scale) so guards and UI see the new values without a full reload.
+   */
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -69,11 +77,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // not). Only the latter deserves the expiry toast.
   const previousUserRef = useRef<User | null>(null);
 
-  useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
-    let mounted = true;
-
-    async function fetchProfile(userId: string): Promise<AppProfile | null> {
+  // Read the profile row for a user id. Lifted to component scope (as
+  // a stable callback) so it can back both the auth-state effect and
+  // the exposed refreshProfile().
+  const fetchProfile = useCallback(
+    async (userId: string): Promise<AppProfile | null> => {
+      const supabase = createSupabaseBrowserClient();
       const { data, error } = await supabase
         .from('profile')
         .select(
@@ -92,7 +101,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         mustChangePassword: Boolean(data.must_change_password),
         hasSeenIntro: Boolean(data.has_seen_intro)
       };
-    }
+    },
+    []
+  );
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    let mounted = true;
 
     // Initial session check — runs on mount.
     supabase.auth.getSession().then(async ({ data }) => {
@@ -142,7 +157,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       mounted = false;
       sub.subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchProfile, toast, tFeedback]);
+
+  // Re-read the current user's profile on demand. Used after own-row
+  // mutations so guards/UI see new values without a page reload.
+  const refreshProfile = useCallback(async () => {
+    const supabase = createSupabaseBrowserClient();
+    const { data } = await supabase.auth.getUser();
+    const u = data.user;
+    setProfile(u ? await fetchProfile(u.id) : null);
+  }, [fetchProfile]);
 
   const signOut = async () => {
     const supabase = createSupabaseBrowserClient();
@@ -152,7 +176,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   return (
-    <AuthContext.Provider value={{ loading, user, profile, signOut }}>
+    <AuthContext.Provider
+      value={{ loading, user, profile, signOut, refreshProfile }}
+    >
       {children}
     </AuthContext.Provider>
   );
