@@ -20,6 +20,18 @@ export interface PhysioPatientData {
     nrsQuestion: string;
     nrsDirection: 'higherIsBetter' | 'lowerIsBetter';
   }[];
+  /**
+   * The patient's most recent treatment session — date plus the
+   * muscles injected — so the physiotherapist knows what was treated
+   * when planning exercise work. Read-only; doses are deliberately
+   * omitted (the physiotherapist needs to know which muscles and
+   * sides, not the physician's dosing detail). Null when the patient
+   * has had no treatment recorded yet.
+   */
+  latestTreatment: {
+    date: string;
+    muscles: { muscle: string; side: 'left' | 'right' | 'bilateral' }[];
+  } | null;
 }
 
 /**
@@ -95,6 +107,36 @@ export function usePhysioPatientData(
         }));
       }
 
+      // Most recent treatment session for this patient, with the
+      // muscles injected. Latest only — the physiotherapist needs the
+      // current picture, not a history. Doses are not selected.
+      const { data: tsRow, error: tsErr } = await supabase
+        .from('treatment_session')
+        .select(
+          'id, date, injections:muscle_injection (muscle, side, position)'
+        )
+        .eq('patient_id', patientId)
+        .order('date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (tsErr) throw tsErr;
+
+      let latestTreatment: PhysioPatientData['latestTreatment'] = null;
+      if (tsRow) {
+        const injections = (tsRow.injections as Array<{
+          muscle: string;
+          side: 'left' | 'right' | 'bilateral';
+          position: number;
+        }> | null) ?? [];
+        latestTreatment = {
+          date: tsRow.date as string,
+          muscles: injections
+            .slice()
+            .sort((a, b) => a.position - b.position)
+            .map((m) => ({ muscle: m.muscle, side: m.side }))
+        };
+      }
+
       return {
         patient: {
           id: patientId,
@@ -107,7 +149,8 @@ export function usePhysioPatientData(
               startDate: cycleRow.start_date as string
             }
           : null,
-        goals
+        goals,
+        latestTreatment
       };
     }
   });

@@ -367,6 +367,59 @@ export interface ApproveSuggestionInput {
   cutHigh: number;
 }
 
+/**
+ * Input for create_goal_for_patient — a physician recording a goal the
+ * patient voiced in clinic. Same fields as ApproveSuggestionInput but
+ * keyed by patientId instead of an existing suggestionId.
+ */
+export interface CreateGoalForPatientInput {
+  patientId: string;
+  patientFacingText: string;
+  smartText: string;
+  nrsQuestion: string;
+  nrsDirection: NrsDirection;
+  cutLowLow: number;
+  cutLow: number;
+  cutZero: number;
+  cutHigh: number;
+}
+
+/**
+ * Physician records + approves a goal on the patient's behalf in one
+ * step. The goal still originates from the patient (they voiced it in
+ * clinic); the physician is the scribe. No goal_suggestion row is
+ * involved — the RPC inserts the approved_goal with a null suggestion.
+ */
+export function useCreateGoalForPatient() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (
+      input: CreateGoalForPatientInput
+    ): Promise<string> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc(
+        'create_goal_for_patient',
+        {
+          p_patient_id: input.patientId,
+          p_patient_facing_text: input.patientFacingText,
+          p_smart_text: input.smartText,
+          p_nrs_question: input.nrsQuestion,
+          p_nrs_direction: input.nrsDirection,
+          p_nrs_cut_low_low: input.cutLowLow,
+          p_nrs_cut_low: input.cutLow,
+          p_nrs_cut_zero: input.cutZero,
+          p_nrs_cut_high: input.cutHigh
+        }
+      );
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
 export function useApproveSuggestion() {
   const qc = useQueryClient();
   return useMutation({
