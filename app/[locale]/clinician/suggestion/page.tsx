@@ -17,6 +17,7 @@ import {
 import { formatLongDate } from '@/lib/dates';
 import type { NrsDirection } from '@/lib/types';
 import { AccountMenu } from '@/components/layout/AccountMenu';
+import { GasCutPoints } from '@/components/clinician/GasCutPoints';
 import { useToast } from '@/components/feedback/Toast';
 import {
   SkeletonBlock,
@@ -409,23 +410,26 @@ function Inner() {
             </Field>
 
             <Field
-              label="GAS cut points"
-              helper={
-                nrsDirection === 'higherIsBetter'
-                  ? 'NRS \u2264 cut₁ → -2; \u2264 cut₂ → -1; \u2264 cut₃ → 0; \u2264 cut₄ → +1; > cut₄ → +2'
-                  : 'NRS \u2264 cut₁ → +2; \u2264 cut₂ → +1; \u2264 cut₃ → 0; \u2264 cut₄ → -1; > cut₄ → -2'
-              }
+              label="GAS outcome levels"
+              helper="Set the highest NRS answer that counts as each outcome. The patient's weekly 0-10 answer falls into the matching level."
             >
-              <div className="mt-2 grid grid-cols-4 gap-2">
-                <CutInput label="cut₁" value={cutLowLow} onChange={setCutLowLow} />
-                <CutInput label="cut₂" value={cutLow} onChange={setCutLow} />
-                <CutInput label="cut₃" value={cutZero} onChange={setCutZero} />
-                <CutInput label="cut₄" value={cutHigh} onChange={setCutHigh} />
-              </div>
+              <GasCutPoints
+                direction={nrsDirection}
+                cutLowLow={cutLowLow}
+                cutLow={cutLow}
+                cutZero={cutZero}
+                cutHigh={cutHigh}
+                onChange={(which, v) => {
+                  if (which === 'lowLow') setCutLowLow(v);
+                  else if (which === 'low') setCutLow(v);
+                  else if (which === 'zero') setCutZero(v);
+                  else setCutHigh(v);
+                }}
+              />
               {!cutsValid && (cutLowLow || cutLow || cutZero || cutHigh) && (
                 <p className="mt-2 text-[14px] text-amber-deep">
-                  Cut points must be whole numbers in 0-9 and strictly
-                  increasing.
+                  Each NRS cut-off must be a whole number from 0 to 9,
+                  and each one higher than the one above it.
                 </p>
               )}
             </Field>
@@ -520,29 +524,4 @@ function Field({
   );
 }
 
-function CutInput({
-  label,
-  value,
-  onChange
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div>
-      <label className="block text-[14px] font-semibold uppercase tracking-wider text-ink-muted">
-        {label}
-      </label>
-      <input
-        type="number"
-        min={0}
-        max={9}
-        step={1}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-2 py-2 text-center text-[16px] font-semibold tabular-nums text-ink focus:border-sage focus:outline-none"
-      />
-    </div>
-  );
-}
+

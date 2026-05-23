@@ -29,7 +29,7 @@ export default function ResetPasswordPage() {
   const router = useRouter();
   const locale = useLocale();
   const prefix = locale === 'en' ? '' : `/${locale}`;
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
 
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -95,6 +95,10 @@ export default function ResetPasswordPage() {
         .from('profile')
         .update({ must_change_password: false })
         .eq('id', user.id);
+      // Re-read the profile into auth state so PasswordChangeGuard sees
+      // must_change_password is now false — otherwise tapping Continue
+      // navigates home and the guard immediately bounces back here.
+      await refreshProfile();
     }
 
     setDone(true);
