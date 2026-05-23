@@ -5,6 +5,7 @@ import { useLocale } from 'next-intl';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
 import { formatLongDate } from '@/lib/dates';
+import { physioSuggestionStatusLabel } from '@/lib/physioSuggestionStatus';
 import {
   useSubmitPhysioGoalSuggestion,
   usePhysioGoalSuggestions
@@ -140,9 +141,7 @@ export function PhysioGoalSuggestionForm({
                     {s.suggestedGoal}
                   </p>
                   <span className="shrink-0 rounded-full border border-stone bg-cream px-2 py-0.5 text-[12px] uppercase tracking-wider text-ink-muted">
-                    {s.status === 'needsReview'
-                      ? 'Awaiting review'
-                      : s.status}
+                    {physioSuggestionStatusLabel(s.status)}
                   </span>
                 </div>
                 <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
