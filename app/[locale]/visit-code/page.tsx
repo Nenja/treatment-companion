@@ -57,10 +57,14 @@ export default function VisitCodePage() {
     }
   }, [authLoading, profile, activeQuery, didAutoGenerate, generate]);
 
-  // Tick once a second so the countdown updates.
+  // Re-check expiry periodically. We deliberately do NOT tick every
+  // second — a live countdown on the patient's screen creates time
+  // pressure at exactly the wrong moment (standing at the clinic while
+  // a clinician types the code). A 15-second check is enough to flip
+  // the "expired" / "expiring soon" states without a stopwatch.
   const [nowMs, setNowMs] = useState(() => Date.now());
   useEffect(() => {
-    const i = setInterval(() => setNowMs(Date.now()), 1000);
+    const i = setInterval(() => setNowMs(Date.now()), 15000);
     return () => clearInterval(i);
   }, []);
 
@@ -83,10 +87,10 @@ export default function VisitCodePage() {
   const code = activeQuery.data;
   const expiresAtMs = code ? new Date(code.expiresAt).getTime() : 0;
   const remainingMs = Math.max(0, expiresAtMs - nowMs);
-  const totalSeconds = Math.floor(remainingMs / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
   const expired = code !== null && remainingMs === 0;
+  // "Expiring soon" once under ~1 minute — a gentle nudge to regenerate
+  // rather than a ticking number.
+  const expiringSoon = !expired && remainingMs > 0 && remainingMs < 60_000;
 
   // Copy the PLAIN code (no display spacing) — whoever receives it
   // types the raw characters into the unlock screen. Uses the async
@@ -135,15 +139,18 @@ export default function VisitCodePage() {
               {formatVisitCode(code.code)}
             </div>
 
-            {!expired ? (
+            {expired ? (
               <p className="mt-4 text-[15px] text-ink-soft">
-                {t('expiresIn', {
-                  minutes: String(minutes),
-                  seconds: String(seconds).padStart(2, '0')
-                })}
+                {t('expired')}
+              </p>
+            ) : expiringSoon ? (
+              <p className="mt-4 text-[15px] text-amber-deep">
+                {t('expiringSoon')}
               </p>
             ) : (
-              <p className="mt-4 text-[15px] text-ink-soft">{t('expired')}</p>
+              <p className="mt-4 text-[15px] text-ink-soft">
+                {t('validFor')}
+              </p>
             )}
 
             {/* Copy button — only for a live code. Lets the patient
@@ -168,7 +175,7 @@ export default function VisitCodePage() {
           </div>
         )}
 
-        {(expired || (!code && !generate.isPending)) && (
+        {(expired || expiringSoon || (!code && !generate.isPending)) && (
           <button
             type="button"
             onClick={() => generate.mutate()}
@@ -181,7 +188,8 @@ export default function VisitCodePage() {
 
         {generate.isError && (
           <p className="mt-3 text-[14px] text-amber-deep" role="alert">
-            Could not generate a code. Please try again.
+            Could not generate a code. Please try again. If it keeps
+            happening, contact your clinic.
           </p>
         )}
       </main>

@@ -74,7 +74,8 @@ export default function PatientHomePage() {
       <AppShell>
         <Card tone="muted">
           <p className="font-display text-[18px] text-ink">
-            Could not load your information right now.
+            Could not load your information right now. Please try again
+            in a moment. If it keeps happening, contact your clinic.
           </p>
           <p className="mt-1.5 text-[14px] text-ink-soft">
             Check your internet connection and try refreshing.
