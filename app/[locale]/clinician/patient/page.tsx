@@ -371,9 +371,27 @@ export default function ClinicianPatientPage() {
 
         {/* Active goals with progress visualisation */}
         <section className="mt-10">
-          <h2 className="font-display text-[20px] leading-tight text-ink">
-            {t('activeGoalsTitle')}
-          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display text-[20px] leading-tight text-ink">
+              {t('activeGoalsTitle')}
+            </h2>
+            {/* Record a goal the patient voiced in clinic. The goal
+                still originates from the patient; the physician is the
+                scribe — see create_goal_for_patient. */}
+            <button
+              type="button"
+              onClick={() =>
+                router.push(
+                  locale === 'en'
+                    ? `/clinician/new-goal?patient=${patient.id}`
+                    : `/${locale}/clinician/new-goal?patient=${patient.id}`
+                )
+              }
+              className="shrink-0 rounded-[var(--radius-button)] border border-sage/50 bg-cream-soft px-3 py-2 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
+            >
+              + Record a goal
+            </button>
+          </div>
           {activeGoals.length === 0 ? (
             <p className="mt-3 text-[14px] text-ink-muted">
               {t('activeGoalsEmpty')}

@@ -9,6 +9,7 @@ import {
   useEndClinicianSession
 } from '@/lib/supabase/clinicianSession';
 import { usePhysioPatientData } from '@/lib/supabase/physioPatient';
+import { formatLongDate } from '@/lib/dates';
 import { PhysioTabs } from '@/components/physio/PhysioTabs';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import {
@@ -150,6 +151,51 @@ export default function PhysioPatientPage() {
                 </ul>
               )}
             </section>
+
+            {/* Most recent treatment — which muscles were injected, so
+                the physiotherapist can plan exercise work around it.
+                Read-only; latest session only. */}
+            {patientData.data.latestTreatment && (
+              <section className="mt-8">
+                <h2 className="font-display text-[18px] text-ink">
+                  Muscles treated
+                </h2>
+                <p className="mt-1 text-[13px] text-ink-muted">
+                  From the most recent treatment on{' '}
+                  {formatLongDate(
+                    patientData.data.latestTreatment.date,
+                    locale
+                  )}
+                  .
+                </p>
+                {patientData.data.latestTreatment.muscles.length === 0 ? (
+                  <p className="mt-3 text-[14px] text-ink-muted">
+                    No muscles were recorded for that treatment.
+                  </p>
+                ) : (
+                  <ul className="mt-3 flex flex-wrap gap-2">
+                    {patientData.data.latestTreatment.muscles.map(
+                      (m, i) => (
+                        <li
+                          key={`${m.muscle}-${m.side}-${i}`}
+                          className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[14px] text-ink"
+                        >
+                          {m.muscle}
+                          <span className="text-ink-muted">
+                            {' · '}
+                            {m.side === 'left'
+                              ? 'Left'
+                              : m.side === 'right'
+                                ? 'Right'
+                                : 'Bilateral'}
+                          </span>
+                        </li>
+                      )
+                    )}
+                  </ul>
+                )}
+              </section>
+            )}
 
             {/* Progress reporting + goal & muscle suggestions, in tabs
                 so each task is one tap away rather than a long scroll
