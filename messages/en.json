@@ -44,14 +44,17 @@
       "suggestedGoalsTitle": "Suggested goals",
       "suggestedGoalsCount": "{count, plural, one {# goal suggested} other {# goals suggested}}",
       "suggestGoal": "Suggest a new goal",
-      "generateVisitCode": "Generate visit code"
+      "generateVisitCode": "Visit code",
+      "visitCodeExplainer": "Show this to your clinic or physiotherapist at an appointment"
     },
     "visitCode": {
       "pageTitle": "Visit code",
-      "intro": "Show or read this code to your clinician during your visit. It expires after 10 minutes.",
+      "intro": "Show or read this code to your clinician or physiotherapist during your visit. It expires after 10 minutes.",
       "expiresIn": "Expires in {minutes}:{seconds}",
       "expired": "This code has expired.",
       "regenerate": "Generate a new code",
+      "copy": "Copy code",
+      "copied": "Copied",
       "back": "Back to home"
     },
     "suggestGoal": {

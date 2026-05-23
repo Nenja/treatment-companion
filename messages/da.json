@@ -48,14 +48,17 @@
       "suggestedGoalsTitle": "Foreslåede mål",
       "suggestedGoalsCount": "{count, plural, one {# mål foreslået} other {# mål foreslået}}",
       "suggestGoal": "Foreslå et nyt mål",
-      "generateVisitCode": "Generér besøgskode"
+      "generateVisitCode": "Besøgskode",
+      "visitCodeExplainer": "Vis denne til din klinik eller fysioterapeut ved en aftale"
     },
     "visitCode": {
       "pageTitle": "Besøgskode",
-      "intro": "Vis eller læs denne kode for din kliniker under dit besøg. Den udløber efter 10 minutter.",
+      "intro": "Vis eller læs denne kode for din kliniker eller fysioterapeut under dit besøg. Den udløber efter 10 minutter.",
       "expiresIn": "Udløber om {minutes}:{seconds}",
       "expired": "Denne kode er udløbet.",
       "regenerate": "Generér en ny kode",
+      "copy": "Kopiér kode",
+      "copied": "Kopieret",
       "back": "Tilbage til forsiden"
     },
     "suggestGoal": {

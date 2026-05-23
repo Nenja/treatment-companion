@@ -222,7 +222,9 @@ export default function PatientHomePage() {
         {t('suggestGoal')}
       </button>
 
-      {/* Visit code — quiet secondary action for the in-clinic moment */}
+      {/* Visit code — secondary action. Two lines so it explains what
+          it's for: a patient learns its purpose the first time they
+          see it, and can find it under pressure at the clinic. */}
       <button
         type="button"
         onClick={() =>
@@ -230,9 +232,22 @@ export default function PatientHomePage() {
             locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
           )
         }
-        className="mt-3 flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+        className="mt-3 flex w-full items-center gap-3 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-3 text-left hover:bg-stone-soft"
       >
-        {t('generateVisitCode')}
+        <span
+          aria-hidden
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sage-soft text-[16px] text-sage-deep"
+        >
+          ⧉
+        </span>
+        <span className="min-w-0">
+          <span className="block text-[15px] font-semibold text-ink">
+            {t('generateVisitCode')}
+          </span>
+          <span className="block text-[13px] leading-snug text-ink-muted">
+            {t('visitCodeExplainer')}
+          </span>
+        </span>
       </button>
 
       {/* Safety notice */}

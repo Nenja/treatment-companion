@@ -64,6 +64,9 @@ export default function VisitCodePage() {
     return () => clearInterval(i);
   }, []);
 
+  // "Copied" confirmation — reverts after a couple of seconds.
+  const [copied, setCopied] = useState(false);
+
   const homePath = locale === 'en' ? '/' : `/${locale}`;
   const goHome = () => router.push(homePath);
 
@@ -84,6 +87,21 @@ export default function VisitCodePage() {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   const expired = code !== null && remainingMs === 0;
+
+  // Copy the PLAIN code (no display spacing) — whoever receives it
+  // types the raw characters into the unlock screen. Uses the async
+  // clipboard API; if it's unavailable or denied, we just don't show
+  // the confirmation rather than erroring at the patient.
+  const onCopy = async () => {
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code.code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      /* clipboard unavailable — patient can still read the code */
+    }
+  };
 
   return (
     <div className="min-h-dvh bg-cream">
@@ -126,6 +144,20 @@ export default function VisitCodePage() {
               </p>
             ) : (
               <p className="mt-4 text-[15px] text-ink-soft">{t('expired')}</p>
+            )}
+
+            {/* Copy button — only for a live code. Lets the patient
+                send the code (e.g. a phone consultation) instead of
+                transcribing it, and helps low-vision patients. */}
+            {!expired && (
+              <button
+                type="button"
+                onClick={onCopy}
+                className="mt-6 flex h-11 items-center justify-center gap-2 rounded-[var(--radius-button)] border border-sage/50 bg-cream-soft px-6 text-[15px] font-semibold text-sage-deep hover:bg-sage-soft"
+              >
+                <span aria-hidden>{copied ? '✓' : '⧉'}</span>
+                {copied ? t('copied') : t('copy')}
+              </button>
             )}
           </div>
         ) : (
