@@ -8,6 +8,18 @@ export interface CheckinGoal {
   id: string;
   patientFacingText: string;
   nrs: NrsConfig;
+  /**
+   * The patient's most recent NRS rating for this goal from an earlier
+   * week, if any. Shown during the check-in as a quiet "last time"
+   * anchor — it makes this week's rating less abstract and more
+   * consistent, and lightly reassures a patient who isn't sure whether
+   * they checked in before. Null when this is the first rating of the
+   * goal, or the previous check-in skipped it.
+   */
+  previousRating: {
+    nrsValue: number;
+    weekNumber: number;
+  } | null;
 }
 
 export interface CheckinData {
@@ -104,7 +116,48 @@ export function useCheckinData(
         .order('approved_at', { ascending: true });
       if (gErr) throw gErr;
 
-      const goals: CheckinGoal[] = (goalRows ?? []).map((g) => ({
+      const goalRowsArr = goalRows ?? [];
+
+      // For the "last time" anchor: the most recent NRS rating each
+      // goal received in an EARLIER week than the current prompt. We
+      // pull all of this cycle's earlier ratings for these goals in one
+      // query (joined to weekly_checkin for the week number), ordered
+      // newest-first, then keep the first — i.e. most recent — per goal.
+      const goalIds = goalRowsArr.map((g) => g.id as string);
+      const previousByGoal = new Map<
+        string,
+        { nrsValue: number; weekNumber: number }
+      >();
+      if (goalIds.length > 0) {
+        const { data: priorRows, error: prErr } = await supabase
+          .from('weekly_goal_rating')
+          .select(
+            'approved_goal_id, nrs_value, weekly_checkin!inner(week_number, treatment_cycle_id)'
+          )
+          .in('approved_goal_id', goalIds)
+          .not('nrs_value', 'is', null)
+          .eq('weekly_checkin.treatment_cycle_id', cycleId)
+          .lt('weekly_checkin.week_number', promptRow.week_number);
+        if (prErr) throw prErr;
+        // Keep the highest week_number (most recent) per goal. We sort
+        // in JS rather than relying on ordering across the embedded
+        // join, which is brittle in PostgREST.
+        for (const row of priorRows ?? []) {
+          const gid = row.approved_goal_id as string;
+          const wc = row.weekly_checkin as unknown as {
+            week_number: number;
+          };
+          const existing = previousByGoal.get(gid);
+          if (!existing || wc.week_number > existing.weekNumber) {
+            previousByGoal.set(gid, {
+              nrsValue: row.nrs_value as number,
+              weekNumber: wc.week_number
+            });
+          }
+        }
+      }
+
+      const goals: CheckinGoal[] = goalRowsArr.map((g) => ({
         id: g.id as string,
         patientFacingText: g.patient_facing_text as string,
         nrs: {
@@ -114,7 +167,8 @@ export function useCheckinData(
           cutLow: g.nrs_cut_low as number,
           cutZero: g.nrs_cut_zero as number,
           cutHigh: g.nrs_cut_high as number
-        }
+        },
+        previousRating: previousByGoal.get(g.id as string) ?? null
       }));
 
       return {

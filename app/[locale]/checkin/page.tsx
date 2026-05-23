@@ -229,6 +229,7 @@ function CheckinPageInner() {
         direction={goal.nrs.direction}
         value={draft.ratings[goal.id]}
         onChange={(v) => setRating(goal.id, v)}
+        previousRating={goal.previousRating}
       />
     );
   } else {
