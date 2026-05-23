@@ -14,17 +14,28 @@ interface GoalRatingPickerProps {
 }
 
 /**
- * Patient-facing NRS slider for a single goal.
+ * Patient-facing 0-10 rating control for a single goal.
  *
- *  - Big numeric display above the slider showing current value
- *  - Native range input 0..10 (step 1), styled to match the app
- *  - Endpoint labels reflect the goal's direction:
- *      higherIsBetter:  0 = Worst   10 = Best
- *      lowerIsBetter:   0 = Best    10 = Worst
- *  - Until the patient interacts at least once, the value remains
- *    undefined so we know they haven't answered yet. We initialise
- *    the visible slider to 5 (midpoint) but don't count it as
- *    "selected" until they move it or tap.
+ * This is a TAP SCALE, not a slider. The target group (adults with
+ * spasticity — hemiparesis, tremor, limited fine-motor control) finds
+ * landing precisely on a slider value genuinely hard, and a slider
+ * also shows a pre-positioned thumb that can be misread as an answer
+ * the patient never gave. Eleven discrete buttons fix both: one tap
+ * per rating, nothing pre-selected, no fine-motor demand.
+ *
+ * Layout: two rows (0-5, then 6-10) so every button stays comfortably
+ * above a 44px tap target on a phone.
+ *
+ * Direction handling — the consistency fix:
+ *   Earlier, endpoint labels flipped per goal ("0 = Best" on one goal,
+ *   "0 = Worst" on the next), so the same number meant opposite things
+ *   on adjacent screens. Now MEANING IS ANCHORED TO COLOUR: the "good"
+ *   end is always sage, the "poor" end always amber, whichever numeric
+ *   end that is. The patient learns the colour once; the number's
+ *   position no longer has to be re-interpreted each goal.
+ *
+ * Stored value is unchanged — still a 0-10 integer. Only the input
+ * control changed; submit + NRS->GAS mapping are untouched.
  */
 export function GoalRatingPicker({
   ariaLabel,
@@ -35,12 +46,22 @@ export function GoalRatingPicker({
   onChange
 }: GoalRatingPickerProps) {
   const interacted = typeof value === 'number';
-  // Displayed slider position. Falls back to 5 when no value yet, so
-  // the thumb has somewhere to live before interaction.
-  const sliderValue = interacted ? value! : 5;
 
-  const lowLabel = direction === 'higherIsBetter' ? 'Worst' : 'Best';
-  const highLabel = direction === 'higherIsBetter' ? 'Best' : 'Worst';
+  // Which numeric end is "good"? higherIsBetter -> 10 is good;
+  // lowerIsBetter -> 0 is good. Used only for colour + end labels.
+  const goodIsHigh = direction === 'higherIsBetter';
+  const lowLabel = goodIsHigh ? 'Worst' : 'Best';
+  const highLabel = goodIsHigh ? 'Best' : 'Worst';
+
+  // Tint a number by how "good" it is, so the row reads as a gradient
+  // from poor to good in the SAME direction the colour always means.
+  // goodness: 0 (poor) .. 1 (good).
+  const goodness = (n: number) => (goodIsHigh ? n / 10 : 1 - n / 10);
+
+  const rows = [
+    [0, 1, 2, 3, 4, 5],
+    [6, 7, 8, 9, 10]
+  ];
 
   return (
     <div>
@@ -53,83 +74,87 @@ export function GoalRatingPicker({
         {question}
       </p>
 
-      <div
-        className="mt-6 flex flex-col items-center"
-        aria-label={ariaLabel}
-      >
-        {/* Big numeric display */}
+      <div className="mt-6 flex flex-col items-center">
+        {/* Big numeric display of the current pick. */}
         <div
           aria-live="polite"
-          className={`font-display tabular-nums leading-none ${
-            interacted ? 'text-[72px] text-ink' : 'text-[72px] text-ink-muted'
-          }`}
+          className="font-display tabular-nums leading-none"
         >
-          {interacted ? value : '—'}
+          <span
+            className={`text-[72px] ${
+              interacted ? 'text-ink' : 'text-ink-muted'
+            }`}
+          >
+            {interacted ? value : '\u2014'}
+          </span>
           <span className="ml-2 align-top text-[20px] text-ink-muted">
             / 10
           </span>
         </div>
 
-        {/* Slider + ± buttons row.
-            ± buttons offer an alternative for patients with tremor or
-            limited fine motor control. They sit either side of the
-            slider, large enough for confident one-finger taps. Tapping
-            outside [0,10] is a no-op (button disables at the bound). */}
-        <div className="mt-6 flex w-full max-w-[400px] items-center gap-3">
-          <button
-            type="button"
-            onClick={() => onChange(Math.max(0, sliderValue - 1))}
-            disabled={interacted && value === 0}
-            aria-label={`Decrease by 1${interacted ? `, currently ${value}` : ''}`}
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-sage-deep bg-cream-soft text-[28px] font-semibold leading-none text-sage-deep hover:bg-sage-soft disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            −
-          </button>
-
-          <input
-            type="range"
-            min={0}
-            max={10}
-            step={1}
-            value={sliderValue}
-            onChange={(e) => onChange(Number(e.target.value))}
-            aria-label={ariaLabel}
-            className="h-3 flex-1 cursor-pointer appearance-none rounded-full bg-stone accent-sage-deep
-              [&::-webkit-slider-thumb]:h-10 [&::-webkit-slider-thumb]:w-10
-              [&::-webkit-slider-thumb]:appearance-none
-              [&::-webkit-slider-thumb]:rounded-full
-              [&::-webkit-slider-thumb]:bg-sage-deep
-              [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-cream
-              [&::-webkit-slider-thumb]:shadow-md
-              [&::-webkit-slider-thumb]:cursor-grab
-              [&::-moz-range-thumb]:h-10 [&::-moz-range-thumb]:w-10
-              [&::-moz-range-thumb]:rounded-full
-              [&::-moz-range-thumb]:bg-sage-deep
-              [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-cream
-              [&::-moz-range-thumb]:cursor-grab"
-          />
-
-          <button
-            type="button"
-            onClick={() => onChange(Math.min(10, sliderValue + 1))}
-            disabled={interacted && value === 10}
-            aria-label={`Increase by 1${interacted ? `, currently ${value}` : ''}`}
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-sage-deep bg-cream-soft text-[28px] font-semibold leading-none text-sage-deep hover:bg-sage-soft disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            +
-          </button>
+        {/* The 0-10 tap scale — a radiogroup so arrow keys work and a
+            screen reader announces it as a single rating control. */}
+        <div
+          role="radiogroup"
+          aria-label={ariaLabel}
+          className="mt-6 flex w-full max-w-[420px] flex-col gap-2"
+        >
+          {rows.map((row, rowIdx) => (
+            <div key={rowIdx} className="flex justify-center gap-2">
+              {row.map((n) => {
+                const selected = interacted && value === n;
+                const g = goodness(n);
+                // Unselected buttons carry a faint tint toward their
+                // end's colour; the selected one is fully filled.
+                const tint =
+                  g >= 0.6
+                    ? 'border-sage/50'
+                    : g <= 0.4
+                      ? 'border-amber-deep/40'
+                      : 'border-stone';
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    aria-label={`${n}${
+                      n === 0
+                        ? `, ${lowLabel}`
+                        : n === 10
+                          ? `, ${highLabel}`
+                          : ''
+                    }`}
+                    onClick={() => onChange(n)}
+                    className={`flex h-12 w-12 items-center justify-center rounded-[var(--radius-button)] border-2 text-[20px] font-semibold tabular-nums transition-colors ${
+                      selected
+                        ? 'border-sage-deep bg-sage-deep text-cream-soft'
+                        : `${tint} bg-cream-soft text-ink hover:bg-stone-soft`
+                    }`}
+                  >
+                    {n}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
 
-        {/* Endpoint labels */}
-        <div className="mt-3 flex w-full max-w-[400px] justify-between text-[14px] uppercase tracking-wider text-ink-muted">
-          <span>0 · {lowLabel}</span>
-          <span>10 · {highLabel}</span>
+        {/* Endpoint labels — words reinforced by the end colours. The
+            colour is the constant; the words confirm it. */}
+        <div className="mt-3 flex w-full max-w-[420px] justify-between text-[14px] font-semibold uppercase tracking-wider">
+          <span className={goodIsHigh ? 'text-amber-deep' : 'text-sage-deep'}>
+            0 · {lowLabel}
+          </span>
+          <span className={goodIsHigh ? 'text-sage-deep' : 'text-amber-deep'}>
+            10 · {highLabel}
+          </span>
         </div>
       </div>
 
       {!interacted && (
         <p className="mt-6 text-center text-[14px] text-ink-muted">
-          Move the slider to choose your rating.
+          Tap a number to choose your rating.
         </p>
       )}
     </div>
