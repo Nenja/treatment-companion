@@ -59,13 +59,15 @@ export function usePhysioPatientData(
       // exactly one such patient.
       const { data: patientRow, error: pErr } = await supabase
         .from('patient')
-        .select('id, profile_id')
+        .select('id, profile_id, share_muscles_with_physio')
         .limit(1)
         .maybeSingle();
       if (pErr) throw pErr;
       if (!patientRow) return null;
 
       const patientId = patientRow.id as string;
+      const shareMuscles =
+        (patientRow.share_muscles_with_physio as boolean) ?? true;
 
       // Patient display name from their profile.
       const { data: profileRow, error: prErr } = await supabase
@@ -108,33 +110,38 @@ export function usePhysioPatientData(
       }
 
       // Most recent treatment session for this patient, with the
-      // muscles injected. Latest only — the physiotherapist needs the
-      // current picture, not a history. Doses are not selected.
-      const { data: tsRow, error: tsErr } = await supabase
-        .from('treatment_session')
-        .select(
-          'id, date, injections:muscle_injection (muscle, side, position)'
-        )
-        .eq('patient_id', patientId)
-        .order('date', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (tsErr) throw tsErr;
-
+      // muscles injected — but only if the physician has left muscle
+      // sharing on for this patient. When off, we don't fetch it at
+      // all and the physiotherapist sees no "muscles treated" section.
+      // This is a UI preference, not a security boundary — RLS still
+      // permits the read; the physician is choosing what to surface.
       let latestTreatment: PhysioPatientData['latestTreatment'] = null;
-      if (tsRow) {
-        const injections = (tsRow.injections as Array<{
-          muscle: string;
-          side: 'left' | 'right' | 'bilateral';
-          position: number;
-        }> | null) ?? [];
-        latestTreatment = {
-          date: tsRow.date as string,
-          muscles: injections
-            .slice()
-            .sort((a, b) => a.position - b.position)
-            .map((m) => ({ muscle: m.muscle, side: m.side }))
-        };
+      if (shareMuscles) {
+        const { data: tsRow, error: tsErr } = await supabase
+          .from('treatment_session')
+          .select(
+            'id, date, injections:muscle_injection (muscle, side, position)'
+          )
+          .eq('patient_id', patientId)
+          .order('date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (tsErr) throw tsErr;
+
+        if (tsRow) {
+          const injections = (tsRow.injections as Array<{
+            muscle: string;
+            side: 'left' | 'right' | 'bilateral';
+            position: number;
+          }> | null) ?? [];
+          latestTreatment = {
+            date: tsRow.date as string,
+            muscles: injections
+              .slice()
+              .sort((a, b) => a.position - b.position)
+              .map((m) => ({ muscle: m.muscle, side: m.side }))
+          };
+        }
       }
 
       return {

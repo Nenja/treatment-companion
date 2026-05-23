@@ -83,6 +83,8 @@ export interface ClinicianPatientData {
   patient: {
     id: string;
     displayName: string;
+    /** Whether treated muscles are shared with the physiotherapist. */
+    shareMusclesWithPhysio: boolean;
   };
   cycle: {
     id: string;
@@ -118,7 +120,9 @@ export function useClinicianPatientData(
       // 1. Patient + display_name
       const { data: pRow, error: pErr } = await supabase
         .from('patient')
-        .select('id, profile:profile_id (display_name)')
+        .select(
+          'id, share_muscles_with_physio, profile:profile_id (display_name)'
+        )
         .eq('id', patientId!)
         .maybeSingle();
       if (pErr) throw pErr;
@@ -130,7 +134,9 @@ export function useClinicianPatientData(
           (Array.isArray(pRow.profile)
             ? pRow.profile[0]?.display_name
             : (pRow.profile as { display_name?: string } | null)?.display_name) ??
-          'Patient'
+          'Patient',
+        shareMusclesWithPhysio:
+          (pRow.share_muscles_with_physio as boolean) ?? true
       };
 
       // 2. Active cycle
@@ -372,6 +378,32 @@ export interface ApproveSuggestionInput {
  * patient voiced in clinic. Same fields as ApproveSuggestionInput but
  * keyed by patientId instead of an existing suggestionId.
  */
+/**
+ * Toggle whether the physiotherapist sees this patient's treated
+ * muscles, via the set_muscle_sharing RPC. The `patient` table has no
+ * clinician UPDATE policy, so the RPC (SECURITY DEFINER, physician +
+ * active-unlock gated) does the write.
+ */
+export function useSetMuscleSharing() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      patientId: string;
+      share: boolean;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_muscle_sharing', {
+        p_patient_id: input.patientId,
+        p_share: input.share
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
 export interface CreateGoalForPatientInput {
   patientId: string;
   patientFacingText: string;

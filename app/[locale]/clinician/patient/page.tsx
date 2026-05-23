@@ -11,7 +11,8 @@ import {
 } from '@/lib/supabase/clinicianSession';
 import {
   useClinicianPatientData,
-  useSetSuggestionStatus
+  useSetSuggestionStatus,
+  useSetMuscleSharing
 } from '@/lib/supabase/clinicianPatient';
 import { formatLongDate } from '@/lib/dates';
 import { nrsToGas, type GuidanceMethod } from '@/lib/types';
@@ -52,6 +53,8 @@ export default function ClinicianPatientPage() {
   const endSession = useEndClinicianSession();
   const touchSession = useTouchClinicianSession();
   const setStatus = useSetSuggestionStatus();
+  const setMuscleSharing = useSetMuscleSharing();
+  const toast = useToast();
 
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [showExport, setShowExport] = useState(false);
@@ -332,6 +335,56 @@ export default function ClinicianPatientPage() {
                   {treatment.notes}
                 </p>
               )}
+
+              {/* Muscle-sharing toggle — controls whether the
+                  physiotherapist sees the injected muscles for this
+                  patient. */}
+              <div className="mt-4 flex items-start justify-between gap-3 border-t border-stone/70 pt-3">
+                <div className="min-w-0">
+                  <p className="text-[14px] font-semibold text-ink">
+                    Share treated muscles with physiotherapist
+                  </p>
+                  <p className="mt-0.5 text-[13px] text-ink-muted">
+                    {patient.shareMusclesWithPhysio
+                      ? 'The physiotherapist can see which muscles were injected.'
+                      : 'The physiotherapist cannot see the injected muscles.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={patient.shareMusclesWithPhysio}
+                  disabled={setMuscleSharing.isPending}
+                  onClick={() => {
+                    touch();
+                    setMuscleSharing.mutate(
+                      {
+                        patientId: patient.id,
+                        share: !patient.shareMusclesWithPhysio
+                      },
+                      {
+                        onError: () =>
+                          toast.error(
+                            'Could not change the setting. Please try again.'
+                          )
+                      }
+                    );
+                  }}
+                  className={`relative mt-0.5 h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+                    patient.shareMusclesWithPhysio
+                      ? 'bg-sage-deep'
+                      : 'bg-stone'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-1 h-5 w-5 rounded-full bg-cream-soft transition-all ${
+                      patient.shareMusclesWithPhysio
+                        ? 'left-6'
+                        : 'left-1'
+                    }`}
+                  />
+                </button>
+              </div>
             </>
           ) : (
             <>
