@@ -413,7 +413,7 @@ function ThanksView({ onBackHome }: { onBackHome: () => void }) {
           onClick={onBackHome}
           className="mt-8 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft"
         >
-          {t('backToHome')}
+          {t('thanksBackHome')}
         </button>
       </main>
     </div>

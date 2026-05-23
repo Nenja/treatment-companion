@@ -704,9 +704,7 @@ function PhysioGoalSuggestionActions({
   if (status !== 'needsReview') {
     return (
       <p className="mt-3 text-[13px] uppercase tracking-wider text-ink-muted">
-        {status === 'accepted'
-          ? 'Accepted — take forward via goal approval'
-          : 'Dismissed'}
+        {status === 'accepted' ? 'Considered' : 'Dismissed'}
       </p>
     );
   }
@@ -715,7 +713,9 @@ function PhysioGoalSuggestionActions({
     try {
       await setStatus.mutateAsync({ suggestionId, status: next });
       toast.success(
-        next === 'accepted' ? 'Marked accepted' : 'Suggestion dismissed'
+        next === 'accepted'
+          ? 'Marked considered'
+          : 'Suggestion dismissed'
       );
     } catch {
       toast.error('Could not update the suggestion.');
@@ -730,7 +730,7 @@ function PhysioGoalSuggestionActions({
         disabled={setStatus.isPending}
         className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-cream-soft hover:bg-ink-soft disabled:opacity-50"
       >
-        Accept
+        Mark considered
       </button>
       <button
         type="button"
