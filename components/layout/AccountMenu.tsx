@@ -56,16 +56,19 @@ export function AccountMenu() {
       .join('')
       .toUpperCase() || '·';
 
-  const roleLabel =
+  const baseRoleLabel =
     profile.role === 'clinician'
       ? 'Physician'
       : profile.role === 'physiotherapist'
       ? 'Physiotherapist'
       : profile.role === 'patient'
       ? 'Patient'
-      : profile.role === 'admin'
-      ? 'Admin'
       : profile.role;
+  // Admin is orthogonal to the base role — shown as a suffix, not
+  // instead of the role.
+  const roleLabel = profile.isAdmin
+    ? `${baseRoleLabel} · Admin`
+    : baseRoleLabel;
 
   const doSignOut = async () => {
     setOpen(false);

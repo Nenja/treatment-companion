@@ -35,6 +35,9 @@ export interface AppProfile {
   /** False until the user dismisses the one-time orientation panel on
    *  their main screen. */
   hasSeenIntro: boolean;
+  /** Admin capability — orthogonal to role. An admin may also be a
+   *  clinician, physiotherapist, or patient. */
+  isAdmin: boolean;
 }
 
 interface AuthState {
@@ -86,7 +89,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data, error } = await supabase
         .from('profile')
         .select(
-          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro'
+          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin'
         )
         .eq('id', userId)
         .maybeSingle();
@@ -99,7 +102,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         email: data.email,
         textScale: Number(data.text_scale) || 1.0,
         mustChangePassword: Boolean(data.must_change_password),
-        hasSeenIntro: Boolean(data.has_seen_intro)
+        hasSeenIntro: Boolean(data.has_seen_intro),
+        isAdmin: Boolean(data.is_admin)
       };
     },
     []

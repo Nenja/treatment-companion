@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/supabase/auth';
 import {
   useAdminAccounts,
   useCreateAccount,
+  useSetAdmin,
   generateTempPassword,
   type AdminAccount
 } from '@/lib/supabase/admin';
@@ -38,16 +39,16 @@ export default function AdminPage() {
       router.replace(locale === 'en' ? '/login' : `/${locale}/login`);
       return;
     }
-    if (profile.role !== 'clinician') {
+    if (!profile.isAdmin) {
       router.replace(locale === 'en' ? '/' : `/${locale}`);
     }
   }, [authLoading, user, profile, router, locale]);
 
   const accountsQuery = useAdminAccounts(
-    !!profile && profile.role === 'clinician'
+    !!profile && profile.isAdmin
   );
 
-  if (authLoading || !profile || profile.role !== 'clinician') {
+  if (authLoading || !profile || !profile.isAdmin) {
     return <div className="min-h-dvh bg-cream" />;
   }
 
@@ -125,6 +126,7 @@ function CreateAccountSection() {
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [tempPassword, setTempPassword] = useState('');
+  const [makeAdmin, setMakeAdmin] = useState(false);
   const [createdInfo, setCreatedInfo] = useState<{
     email: string;
     role: string;
@@ -152,7 +154,8 @@ function CreateAccountSection() {
         role,
         email: email.trim(),
         displayName: displayName.trim(),
-        tempPassword
+        tempPassword,
+        isAdmin: makeAdmin
       });
       setCreatedInfo({
         email: res.email,
@@ -163,6 +166,7 @@ function CreateAccountSection() {
       // Reset form for the next account.
       setEmail('');
       setDisplayName('');
+      setMakeAdmin(false);
       setTempPassword(generateTempPassword());
     } catch (err) {
       // Error already surfaces in create.error and is shown inline,
@@ -299,6 +303,25 @@ function CreateAccountSection() {
         </p>
       )}
 
+      {/* Admin capability — orthogonal to the role above. */}
+      <label className="mt-5 flex items-start gap-3">
+        <input
+          type="checkbox"
+          checked={makeAdmin}
+          onChange={(e) => setMakeAdmin(e.target.checked)}
+          className="mt-0.5 h-5 w-5 shrink-0 accent-sage-deep"
+        />
+        <span>
+          <span className="block text-[14px] font-semibold text-ink">
+            Also make this account an admin
+          </span>
+          <span className="block text-[13px] text-ink-muted">
+            Admins can create accounts and manage admin access. This is
+            separate from the role above.
+          </span>
+        </span>
+      </label>
+
       <button
         type="button"
         onClick={submit}
@@ -312,31 +335,74 @@ function CreateAccountSection() {
 }
 
 function AccountsList({ accounts }: { accounts: AdminAccount[] }) {
+  const setAdmin = useSetAdmin();
+  const { user } = useAuth();
+  const toast = useToast();
+
   if (accounts.length === 0) {
     return (
       <p className="mt-3 text-[14px] text-ink-muted">No accounts yet.</p>
     );
   }
+
+  const toggleAdmin = (a: AdminAccount) => {
+    setAdmin.mutate(
+      { profileId: a.id, isAdmin: !a.isAdmin },
+      {
+        onError: (err) =>
+          toast.error(
+            (err as Error).message ?? 'Could not update admin status.'
+          )
+      }
+    );
+  };
+
   return (
     <ul className="mt-3 divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
-      {accounts.map((a) => (
-        <li key={a.id} className="px-4 py-3">
-          <div className="flex items-baseline justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-display text-[15px] text-ink">
-                {a.displayName || '(no name)'}
-              </p>
-              <p className="truncate text-[14px] text-ink-soft">{a.email}</p>
+      {accounts.map((a) => {
+        const isSelf = user?.id === a.id;
+        return (
+          <li key={a.id} className="px-4 py-3">
+            <div className="flex items-baseline justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-display text-[15px] text-ink">
+                  {a.displayName || '(no name)'}
+                </p>
+                <p className="truncate text-[14px] text-ink-soft">
+                  {a.email}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                {a.isAdmin && (
+                  <span className="rounded-full border border-sage/50 bg-sage-soft px-2 py-0.5 text-[12px] uppercase tracking-wider text-sage-deep">
+                    Admin
+                  </span>
+                )}
+                <span className="rounded-full border border-stone bg-cream px-2 py-0.5 text-[14px] uppercase tracking-wider text-ink-muted">
+                  {a.role}
+                </span>
+              </div>
             </div>
-            <span className="shrink-0 rounded-full border border-stone bg-cream px-2 py-0.5 text-[14px] uppercase tracking-wider text-ink-muted">
-              {a.role}
-            </span>
-          </div>
-          <p className="mt-1 text-[14px] text-ink-muted">
-            Created {new Date(a.createdAt).toLocaleDateString()}
-          </p>
-        </li>
-      ))}
+            <div className="mt-1 flex items-center justify-between gap-3">
+              <p className="text-[14px] text-ink-muted">
+                Created {new Date(a.createdAt).toLocaleDateString()}
+              </p>
+              {/* Admin toggle. A user cannot revoke their own admin
+                  access — the server enforces this too. */}
+              <button
+                type="button"
+                disabled={
+                  setAdmin.isPending || (isSelf && a.isAdmin)
+                }
+                onClick={() => toggleAdmin(a)}
+                className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {a.isAdmin ? 'Remove admin' : 'Make admin'}
+              </button>
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }

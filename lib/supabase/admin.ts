@@ -7,6 +7,7 @@ export interface AdminAccount {
   email: string;
   displayName: string;
   role: string;
+  isAdmin: boolean;
   createdAt: string;
 }
 
@@ -37,6 +38,7 @@ export interface CreateAccountInput {
   email: string;
   displayName: string;
   tempPassword: string;
+  isAdmin: boolean;
 }
 
 export interface CreateAccountResult {
@@ -64,6 +66,36 @@ export function useCreateAccount() {
         );
       }
       return res.json() as Promise<CreateAccountResult>;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['adminAccounts'] });
+    }
+  });
+}
+
+/**
+ * Grants or revokes the is_admin flag on an existing account, via
+ * /api/admin/set-admin. The server enforces admin-only, refuses
+ * self-revoke, and refuses removing the last admin.
+ */
+export function useSetAdmin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      profileId: string;
+      isAdmin: boolean;
+    }): Promise<void> => {
+      const res = await fetch('/api/admin/set-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input)
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(
+          body.error ?? `Update admin status failed (${res.status})`
+        );
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['adminAccounts'] });

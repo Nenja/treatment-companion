@@ -20,13 +20,13 @@ export async function GET() {
 
   const { data: callerProfile } = await anon
     .from('profile')
-    .select('role')
+    .select('is_admin')
     .eq('id', userResp.user.id)
     .maybeSingle();
 
-  if (!callerProfile || callerProfile.role !== 'clinician') {
+  if (!callerProfile || callerProfile.is_admin !== true) {
     return NextResponse.json(
-      { error: 'Forbidden: clinicians only' },
+      { error: 'Forbidden: admins only' },
       { status: 403 }
     );
   }
@@ -34,7 +34,7 @@ export async function GET() {
   const admin = createSupabaseServiceClient();
   const { data, error } = await admin
     .from('profile')
-    .select('id, email, display_name, role, created_at')
+    .select('id, email, display_name, role, is_admin, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -50,6 +50,7 @@ export async function GET() {
       email: p.email as string,
       displayName: (p.display_name as string | null) ?? '',
       role: p.role as string,
+      isAdmin: Boolean(p.is_admin),
       createdAt: p.created_at as string
     }))
   });

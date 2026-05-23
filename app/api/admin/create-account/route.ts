@@ -32,13 +32,13 @@ export async function POST(req: NextRequest) {
 
   const { data: callerProfile } = await anon
     .from('profile')
-    .select('role')
+    .select('is_admin')
     .eq('id', userResp.user.id)
     .maybeSingle();
 
-  if (!callerProfile || callerProfile.role !== 'clinician') {
+  if (!callerProfile || callerProfile.is_admin !== true) {
     return NextResponse.json(
-      { error: 'Forbidden: clinicians only' },
+      { error: 'Forbidden: admins only' },
       { status: 403 }
     );
   }
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     email?: string;
     displayName?: string;
     tempPassword?: string;
+    isAdmin?: boolean;
   };
   try {
     body = await req.json();
@@ -60,6 +61,7 @@ export async function POST(req: NextRequest) {
   const email = body.email?.trim().toLowerCase();
   const displayName = body.displayName?.trim();
   const tempPassword = body.tempPassword;
+  const newIsAdmin = body.isAdmin === true;
 
   if (
     role !== 'patient' &&
@@ -130,7 +132,8 @@ export async function POST(req: NextRequest) {
       role,
       display_name: displayName,
       must_change_password: true,
-      has_seen_intro: false
+      has_seen_intro: false,
+      is_admin: newIsAdmin
     })
     .eq('id', newUserId);
 
