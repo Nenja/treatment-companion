@@ -125,6 +125,20 @@ export function AccountMenu() {
 
           <button
             type="button"
+            onClick={() => {
+              setOpen(false);
+              router.push(
+                locale === 'en' ? '/privacy' : `/${locale}/privacy`
+              );
+            }}
+            role="menuitem"
+            className="block w-full border-t border-stone/70 px-4 py-3 text-left text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+          >
+            Your data &amp; privacy
+          </button>
+
+          <button
+            type="button"
             onClick={doSignOut}
             role="menuitem"
             className="block w-full px-4 py-3 text-left text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
