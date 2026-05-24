@@ -97,7 +97,25 @@ export default function PhysioPatientPage() {
       </header>
 
       <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
-        {patientData.isLoading || !patientData.data ? (
+        {patientData.isError ? (
+          <div className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+            <p className="font-display text-[18px] text-ink">
+              Could not load this patient
+            </p>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-ink-soft">
+              Please check your connection and try again. If it keeps
+              happening, the patient may need to give you a fresh visit
+              code.
+            </p>
+            <button
+              type="button"
+              onClick={() => patientData.refetch()}
+              className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
+            >
+              Try again
+            </button>
+          </div>
+        ) : patientData.isLoading || !patientData.data ? (
           <SkeletonScreen label="Loading patient">
             <SkeletonBlock width="w-3/4" height="h-8" />
             <SkeletonBlock width="w-1/2" height="h-4" className="mt-2" />
@@ -183,11 +201,7 @@ export default function PhysioPatientPage() {
                           {m.muscle}
                           <span className="text-ink-muted">
                             {' · '}
-                            {m.side === 'left'
-                              ? 'Left'
-                              : m.side === 'right'
-                                ? 'Right'
-                                : 'Bilateral'}
+                            {injectionSideLabel(m.side)}
                           </span>
                         </li>
                       )

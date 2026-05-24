@@ -120,7 +120,10 @@ export default function ClinicianUnlockPage() {
         )}
 
         <form onSubmit={onSubmit} className="mt-8">
-          <label htmlFor="visitCode" className="sr-only">
+          <label
+            htmlFor="visitCode"
+            className="block text-[14px] font-semibold text-ink"
+          >
             {t('title')}
           </label>
           <input
@@ -131,11 +134,11 @@ export default function ClinicianUnlockPage() {
               setInput(e.target.value);
               setError(null);
             }}
-            placeholder={t('placeholder')}
+            placeholder="ABC-DEF"
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
-            className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-4 text-center font-mono text-[28px] font-bold tracking-[0.15em] text-ink placeholder:text-ink-muted/50 focus:border-sage focus:outline-none"
+            className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-4 text-center font-mono text-[26px] font-bold tracking-[0.15em] text-ink placeholder:text-ink-muted/50 focus:border-sage focus:outline-none"
             maxLength={7}
           />
           {error && (

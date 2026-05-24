@@ -17,6 +17,7 @@ import { todayIso } from '@/lib/dates';
 import {
   GUIDANCE_METHODS,
   INJECTION_SIDES,
+  injectionSideLabel,
   type GuidanceMethod,
   type InjectionSide
 } from '@/lib/types';
@@ -401,11 +402,7 @@ export default function TreatmentRecordPage() {
                   >
                     {INJECTION_SIDES.map((s) => (
                       <option key={s} value={s}>
-                        {s === 'left'
-                          ? 'Left'
-                          : s === 'right'
-                          ? 'Right'
-                          : 'Bilateral'}
+                        {injectionSideLabel(s)}
                       </option>
                     ))}
                   </select>

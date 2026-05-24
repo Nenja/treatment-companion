@@ -150,6 +150,25 @@ export function nrsToGas(nrs: number, config: NrsConfig): -2 | -1 | 0 | 1 | 2 {
 export const INJECTION_SIDES = ['left', 'right', 'bilateral'] as const;
 export type InjectionSide = (typeof INJECTION_SIDES)[number];
 
+/**
+ * Display label for an injection side. The raw enum values are
+ * lowercase ('left' / 'right' / 'bilateral') and must never reach the
+ * UI raw — this is the single source for the readable form, used by
+ * the clinician card, the physiotherapist views, and the EHR export.
+ */
+export function injectionSideLabel(side: InjectionSide): string {
+  switch (side) {
+    case 'left':
+      return 'Left';
+    case 'right':
+      return 'Right';
+    case 'bilateral':
+      return 'Bilateral';
+    default:
+      return side;
+  }
+}
+
 export const GUIDANCE_METHODS = [
   'emg',
   'ultrasound',

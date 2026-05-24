@@ -115,11 +115,12 @@ export default function PhysioUnlockPage() {
             inputMode="text"
             autoComplete="off"
             autoCapitalize="characters"
+            spellCheck={false}
             value={input}
             onChange={(e) => setInput(e.target.value.toUpperCase())}
-            placeholder="ABC123"
-            maxLength={8}
-            className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-3 text-center text-[24px] font-semibold tracking-[0.3em] text-ink placeholder:text-ink-muted placeholder:tracking-[0.3em] focus:border-sage focus:outline-none"
+            placeholder="ABC-DEF"
+            maxLength={7}
+            className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-4 text-center font-mono text-[26px] font-bold tracking-[0.15em] text-ink placeholder:text-ink-muted/50 focus:border-sage focus:outline-none"
           />
 
           <button

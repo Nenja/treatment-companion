@@ -15,7 +15,7 @@ import {
   useSetMuscleSharing
 } from '@/lib/supabase/clinicianPatient';
 import { formatLongDate } from '@/lib/dates';
-import { nrsToGas, type GuidanceMethod } from '@/lib/types';
+import { nrsToGas, injectionSideLabel, type GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
@@ -341,7 +341,7 @@ export default function ClinicianPatientPage() {
                         : `/${locale}/clinician/treatment`
                     );
                   }}
-                  className="shrink-0 text-[14px] font-semibold text-sage-deep hover:underline"
+                  className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[14px] font-semibold text-sage-deep hover:bg-stone-soft"
                 >
                   Edit
                 </button>
@@ -350,7 +350,8 @@ export default function ClinicianPatientPage() {
                 {treatment.injections.map((inj) => (
                   <li key={inj.id}>
                     <span>
-                      {inj.muscle} · {inj.side} · {inj.doseUnits} units
+                      {inj.muscle} · {injectionSideLabel(inj.side)} ·{' '}
+                      {inj.doseUnits} units
                     </span>
                     {inj.note && (
                       <span className="ml-1 italic text-ink-muted">
@@ -591,12 +592,7 @@ export default function ClinicianPatientPage() {
                   const linkedGoal = activeGoals.find(
                   (g) => g.id === s.relatedGoalId
                 );
-                const sideLabel =
-                  s.side === 'left'
-                    ? 'Left'
-                    : s.side === 'right'
-                      ? 'Right'
-                      : 'Bilateral';
+                const sideLabel = injectionSideLabel(s.side);
                 return (
                   <li
                     key={s.id}
