@@ -56,7 +56,7 @@ export function IntroPanel({
       <button
         type="button"
         onClick={onDismiss}
-        className="mt-4 flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-6 text-[15px] font-semibold text-cream-soft hover:bg-ink-soft"
+        className="mt-4 flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-6 text-[15px] font-semibold text-on-accent hover:bg-ink-soft"
       >
         Got it
       </button>

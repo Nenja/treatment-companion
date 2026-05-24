@@ -45,7 +45,7 @@ export function CheckinPromptCard({
             // to log the navigation event here.
             router.push(locale === 'en' ? '/checkin' : `/${locale}/checkin`);
           }}
-          className="mt-5 inline-flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft active:bg-ink"
+          className="mt-5 inline-flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft active:bg-ink"
         >
           {t('checkinReadyAction')}
           <span aria-hidden className="ml-2">

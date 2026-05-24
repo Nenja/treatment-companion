@@ -23,6 +23,11 @@
   --color-amber-deep: #705619;
   --color-stone: #e5dfd3;
   --color-stone-soft: #efeae0;
+  /* Text colour that sits on the sage-deep / amber-deep accent fills
+     (buttons). A separate token because cream-soft — used for raised
+     surfaces — must go dark in dark schemes, but button text must stay
+     light. See lib/palettes.ts. */
+  --color-on-accent: #fbf8f2;
 
   --font-display: var(--font-newsreader), Georgia, serif;
   --font-sans: var(--font-atkinson), system-ui, sans-serif;

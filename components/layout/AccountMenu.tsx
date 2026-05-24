@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useSetTextScale } from '@/lib/supabase/textScale';
+import { useSetColorScheme } from '@/lib/supabase/colorScheme';
+import { SCHEMES, type Scheme } from '@/lib/palettes';
 
 /**
  * Account menu button. Designed to be placed inline in a page header
@@ -123,6 +125,19 @@ export function AccountMenu() {
             </div>
           </div>
 
+          {/* Appearance — colour scheme. An accessibility setting:
+              dark for light sensitivity, high-contrast for low vision. */}
+          <div className="border-b border-stone/70 px-4 py-3">
+            <p className="text-[13px] font-semibold text-ink-soft">
+              Appearance
+            </p>
+            <div className="mt-2 grid grid-cols-2 gap-1.5">
+              {SCHEMES.map((s) => (
+                <SchemeButton key={s.id} scheme={s} />
+              ))}
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={() => {
@@ -148,6 +163,48 @@ export function AccountMenu() {
         </div>
       )}
     </div>
+  );
+}
+
+function SchemeButton({ scheme }: { scheme: Scheme }) {
+  const { profile } = useAuth();
+  const setScheme = useSetColorScheme();
+  // The current scheme: the saved choice, or — if none — whichever the
+  // OS resolves to. We mark a button current only when it matches an
+  // explicit saved choice, so an unsaved user sees no false selection.
+  const isCurrent = profile?.colorScheme === scheme.id;
+  return (
+    <button
+      type="button"
+      role="menuitemradio"
+      aria-checked={isCurrent}
+      onClick={() => setScheme.mutate(scheme.id)}
+      className={`flex min-h-11 items-center gap-2 rounded-[var(--radius-button)] border px-2 py-1.5 text-left ${
+        isCurrent
+          ? 'border-sage bg-sage-soft'
+          : 'border-stone bg-cream-soft hover:bg-stone-soft'
+      }`}
+    >
+      {/* Swatch: the scheme's background with its sage accent, so the
+          button previews the actual appearance. */}
+      <span
+        aria-hidden
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-ink/15"
+        style={{ background: scheme.colors['--color-cream'] }}
+      >
+        <span
+          className="h-3 w-3 rounded-sm"
+          style={{ background: scheme.colors['--color-sage-deep'] }}
+        />
+      </span>
+      <span
+        className={`text-[13px] font-semibold leading-tight ${
+          isCurrent ? 'text-sage-deep' : 'text-ink-soft'
+        }`}
+      >
+        {scheme.name}
+      </span>
+    </button>
   );
 }
 

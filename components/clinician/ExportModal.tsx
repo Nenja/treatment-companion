@@ -99,7 +99,7 @@ export function ExportModal({ initialText, onClose }: ExportModalProps) {
               <button
                 type="button"
                 onClick={copy}
-                className="flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-cream-soft hover:bg-ink-soft"
+                className="flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
               >
                 Copy
               </button>

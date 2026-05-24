@@ -89,7 +89,7 @@ export function WizardLayout({
                       aria-hidden
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] ${
                         s.done
-                          ? 'bg-sage text-cream-soft'
+                          ? 'bg-sage text-on-accent'
                           : isCurrent
                             ? 'border-2 border-sage bg-cream-soft text-sage-deep'
                             : 'border border-stone bg-cream-soft text-ink-muted'
@@ -163,7 +163,7 @@ export function WizardLayout({
             type="button"
             onClick={primaryAction.onClick}
             disabled={primaryAction.disabled}
-            className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
+            className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
           >
             {primaryAction.label}
           </button>

@@ -149,7 +149,7 @@ export function GoalRatingPicker({
                     onClick={() => onChange(n)}
                     className={`flex h-12 w-12 items-center justify-center rounded-[var(--radius-button)] border-2 text-[20px] font-semibold tabular-nums transition-colors ${
                       selected
-                        ? 'border-sage-deep bg-sage-deep text-cream-soft'
+                        ? 'border-sage-deep bg-sage-deep text-on-accent'
                         : `${tint} bg-cream-soft text-ink hover:bg-stone-soft`
                     }`}
                   >

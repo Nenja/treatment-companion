@@ -59,7 +59,7 @@ export function PhysioTabs({ patientId, goals }: PhysioTabsProps) {
               onClick={() => setTab(tdef.id)}
               className={`flex h-11 flex-1 items-center justify-center rounded-[calc(var(--radius-button)-2px)] px-2 text-[14px] font-semibold ${
                 selected
-                  ? 'bg-sage-deep text-cream-soft'
+                  ? 'bg-sage-deep text-on-accent'
                   : tdef.disabled
                     ? 'cursor-not-allowed text-ink-muted'
                     : 'text-ink-soft hover:bg-stone-soft'

@@ -475,7 +475,7 @@ export default function TreatmentRecordPage() {
             type="button"
             onClick={submit}
             disabled={!canSubmit || save.isPending}
-            className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
+            className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
           >
             {save.isPending ? '…' : 'Save'}
           </button>
@@ -524,7 +524,7 @@ function CopyConfirmDialog({
           <button
             type="button"
             onClick={onConfirm}
-            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-cream-soft hover:bg-ink-soft"
+            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft"
           >
             Yes, copy and overwrite
           </button>

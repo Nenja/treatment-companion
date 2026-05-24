@@ -446,7 +446,7 @@ function Inner() {
                 type="button"
                 onClick={submitApprove}
                 disabled={!canSubmitApprove || approve.isPending}
-                className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
+                className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
               >
                 {approve.isPending ? '…' : tApprove('submit')}
               </button>
@@ -490,7 +490,7 @@ function ActionButton({
       onClick={onClick}
       className={`flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] px-5 text-[15px] font-semibold ${
         primary
-          ? 'bg-sage-deep text-cream-soft hover:bg-ink-soft'
+          ? 'bg-sage-deep text-on-accent hover:bg-ink-soft'
           : 'border border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
       }`}
     >

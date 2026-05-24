@@ -97,7 +97,7 @@ export function NewCycleDialog({ patientId, onClose }: NewCycleDialogProps) {
             type="button"
             onClick={onConfirm}
             disabled={startNewCycle.isPending}
-            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-cream-soft hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone"
+            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone"
           >
             {startNewCycle.isPending ? '…' : 'Start new cycle'}
           </button>

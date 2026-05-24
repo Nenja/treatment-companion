@@ -1,37 +1,55 @@
 /**
- * Candidate colour palettes for user testing.
+ * Production colour schemes.
  *
- * Each palette defines the same twelve CSS custom properties the app
- * themes from (see globals.css :root). The ThemeSwitcher overrides
- * these on <html> at runtime, so switching re-themes every screen
- * instantly with no component changes.
+ * Four schemes, each a genuine accessibility accommodation for this
+ * patient group (adults with spasticity — older skew, frequent
+ * co-occurring vision differences):
  *
- * Design constraints every candidate respects, for this patient group
- * (adults with spasticity — often older, some with low vision):
- *   - body text on background clears WCAG AA (4.5:1); ink-muted and
- *     amber-deep are kept dark enough to pass on their backgrounds.
- *   - a calm, warm, non-clinical feel — no stark white, no hospital
- *     blue-grey.
- *   - "good" (sage family) and "attention" (amber family) stay clearly
- *     distinct, because the 0-10 rating control colour-codes by them.
+ *   light          — default. Warm, calm, soft contrast. Good vision,
+ *                     good lighting.
+ *   dark           — for light sensitivity / photophobia (common after
+ *                     stroke and with MS) and low-light use.
+ *   high-contrast       — maximum text/background separation for low
+ *                     vision; trades the calm soft contrast for
+ *                     legibility on purpose.
+ *   high-contrast-dark  — low vision AND light sensitivity together.
  *
- * This file and the switcher are test-only — see ThemeSwitcher for how
- * to remove them before the real pilot.
+ * Each scheme defines the same twelve CSS custom properties the app
+ * themes from (globals.css :root). The variable NAMES are fixed; only
+ * their values change. In dark schemes the roles invert — `cream` is a
+ * dark background, `ink` is light text — but the names stay so no
+ * component has to change.
+ *
+ * Contrast: in every scheme, body text (ink / ink-soft) on the
+ * backgrounds (cream / cream-soft) clears WCAG AA (4.5:1); the
+ * high-contrast schemes target AAA (7:1+). ink-muted is tertiary text
+ * only (timestamps, hints) — kept at AA, never used for anything a
+ * user must read to act.
  */
 
-export interface Palette {
-  id: string;
+export type SchemeId =
+  | 'light'
+  | 'dark'
+  | 'high-contrast'
+  | 'high-contrast-dark';
+
+export interface Scheme {
+  id: SchemeId;
   name: string;
   /** One-line description for the picker. */
   note: string;
+  /** Whether this scheme is dark-on-light's opposite — used so the
+   *  picker can group, and so OS prefers-color-scheme can pick one. */
+  isDark: boolean;
   colors: Record<string, string>;
 }
 
-export const PALETTES: Palette[] = [
+export const SCHEMES: Scheme[] = [
   {
-    id: 'current',
-    name: 'Current — Warm Sage',
-    note: 'The palette in use today: cream, sage green, warm ink.',
+    id: 'light',
+    name: 'Light',
+    note: 'Warm and calm. The standard appearance.',
+    isDark: false,
     colors: {
       '--color-cream': '#f6f1e8',
       '--color-cream-soft': '#fbf8f2',
@@ -44,64 +62,98 @@ export const PALETTES: Palette[] = [
       '--color-amber-soft': '#e8d5a0',
       '--color-amber-deep': '#705619',
       '--color-stone': '#e5dfd3',
+      '--color-on-accent': '#fbf8f2',
       '--color-stone-soft': '#efeae0'
     }
   },
   {
-    id: 'mist',
-    name: 'Cool Mist',
-    note: 'Soft blue-grey and teal — calm and slightly more clinical.',
+    id: 'dark',
+    name: 'Dark',
+    note: 'Easier on the eyes in low light or with light sensitivity.',
+    isDark: true,
     colors: {
-      '--color-cream': '#eef1f2',
-      '--color-cream-soft': '#f7f9fa',
-      '--color-ink': '#1d2528',
-      '--color-ink-soft': '#46535a',
-      '--color-ink-muted': '#5f6b71',
-      '--color-sage': '#4f7d80',
-      '--color-sage-deep': '#355c5f',
-      '--color-sage-soft': '#d6e4e4',
-      '--color-amber-soft': '#e7d2a6',
-      '--color-amber-deep': '#6e5418',
-      '--color-stone': '#dde2e4',
-      '--color-stone-soft': '#e9edee'
+      // Warm dark backgrounds — not pure black, to keep the calm feel.
+      '--color-cream': '#1c1f1d',
+      '--color-cream-soft': '#262a27',
+      // Light text. ink is the brightest; muted is dim but still AA.
+      '--color-ink': '#ece7dd',
+      '--color-ink-soft': '#b9bdb6',
+      '--color-ink-muted': '#8f948d',
+      // Sage accent lifted so it reads on a dark ground; sage-deep is
+      // the button fill and must contrast with light button text.
+      '--color-sage': '#7fa08e',
+      '--color-sage-deep': '#5c7a6a',
+      '--color-sage-soft': '#2f3a34',
+      // Amber accent: soft is a dim fill, deep is light enough to read
+      // as text on the dark ground.
+      '--color-amber-soft': '#3d3526',
+      '--color-amber-deep': '#d8bd80',
+      // Borders / subtle fills — low-contrast separators.
+      '--color-stone': '#3a3f3b',
+      '--color-on-accent': '#f3efe6',
+      '--color-stone-soft': '#30342f'
     }
   },
   {
-    id: 'clay',
-    name: 'Warm Clay',
-    note: 'Warmer still — terracotta-leaning neutrals, soft green accent.',
+    id: 'high-contrast',
+    name: 'High contrast',
+    note: 'Maximum clarity — strong dark text on white.',
+    isDark: false,
     colors: {
-      '--color-cream': '#f4ede4',
-      '--color-cream-soft': '#fbf6ee',
-      '--color-ink': '#2a221c',
-      '--color-ink-soft': '#574b41',
-      '--color-ink-muted': '#6f6256',
-      '--color-sage': '#6a7c5d',
-      '--color-sage-deep': '#48583d',
-      '--color-sage-soft': '#dfe4d4',
-      '--color-amber-soft': '#e8cfa2',
-      '--color-amber-deep': '#7a5320',
-      '--color-stone': '#e6dccd',
-      '--color-stone-soft': '#f0e8db'
+      // Pure-white backgrounds, both the same: high contrast removes
+      // the soft surface layering in favour of clarity.
+      '--color-cream': '#ffffff',
+      '--color-cream-soft': '#ffffff',
+      // Near-black text. ink is pure black; even ink-muted is dark
+      // enough to clear AAA — nothing is faint here.
+      '--color-ink': '#000000',
+      '--color-ink-soft': '#1a1a1a',
+      '--color-ink-muted': '#333333',
+      // Accents: dark and saturated so they pass as text on white and
+      // are unmistakably distinct from each other.
+      '--color-sage': '#1f5138',
+      '--color-sage-deep': '#0f3a24',
+      '--color-sage-soft': '#d4e6db',
+      '--color-amber-soft': '#f2e2b0',
+      '--color-amber-deep': '#5a3d00',
+      // Borders are dark and visible — no faint hairlines.
+      '--color-stone': '#6b6b6b',
+      '--color-on-accent': '#ffffff',
+      '--color-stone-soft': '#e0e0e0'
     }
   },
   {
-    id: 'slate',
-    name: 'Quiet Slate',
-    note: 'Cooler, lower-contrast neutrals with a deep green accent.',
+    id: 'high-contrast-dark',
+    name: 'High contrast (dark)',
+    note: 'Maximum clarity without a bright screen.',
+    isDark: true,
     colors: {
-      '--color-cream': '#eef0ee',
-      '--color-cream-soft': '#f8f9f8',
-      '--color-ink': '#212624',
-      '--color-ink-soft': '#4a524e',
-      '--color-ink-muted': '#626a66',
-      '--color-sage': '#54776a',
-      '--color-sage-deep': '#39564b',
-      '--color-sage-soft': '#d9e3df',
-      '--color-amber-soft': '#e6d3a4',
-      '--color-amber-deep': '#6d5519',
-      '--color-stone': '#dfe2e0',
-      '--color-stone-soft': '#eaecea'
+      // True-black backgrounds for maximum separation.
+      '--color-cream': '#000000',
+      '--color-cream-soft': '#000000',
+      // Pure-white and near-white text.
+      '--color-ink': '#ffffff',
+      '--color-ink-soft': '#e6e6e6',
+      '--color-ink-muted': '#cccccc',
+      // Bright accents that pop hard against black.
+      '--color-sage': '#9ed4b4',
+      '--color-sage-deep': '#7fbf9c',
+      '--color-sage-soft': '#16271d',
+      '--color-amber-soft': '#2a2410',
+      '--color-amber-deep': '#f0d488',
+      // Bright, clearly visible borders.
+      '--color-stone': '#8a8a8a',
+      '--color-on-accent': '#06140d',
+      '--color-stone-soft': '#1f1f1f'
     }
   }
 ];
+
+/** First-run default for a given OS prefers-color-scheme. */
+export function schemeForOsPreference(prefersDark: boolean): SchemeId {
+  return prefersDark ? 'dark' : 'light';
+}
+
+export function getScheme(id: string): Scheme {
+  return SCHEMES.find((s) => s.id === id) ?? SCHEMES[0];
+}

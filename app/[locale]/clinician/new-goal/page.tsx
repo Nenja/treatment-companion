@@ -282,7 +282,7 @@ function NewGoalInner() {
             type="button"
             onClick={onSubmit}
             disabled={!canSubmit}
-            className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-cream-soft hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
+            className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
           >
             {create.isPending ? 'Recording…' : 'Record goal'}
           </button>

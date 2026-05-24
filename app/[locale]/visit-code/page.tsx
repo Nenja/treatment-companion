@@ -180,7 +180,7 @@ export default function VisitCodePage() {
             type="button"
             onClick={() => generate.mutate()}
             disabled={generate.isPending}
-            className="mt-10 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone"
+            className="mt-10 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone"
           >
             {t('regenerate')}
           </button>

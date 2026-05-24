@@ -388,7 +388,7 @@ function CancelConfirmDialog({
           <button
             type="button"
             onClick={onKeep}
-            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-cream-soft hover:bg-ink-soft"
+            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft"
           >
             {t('cancelConfirmKeep')}
           </button>
@@ -434,7 +434,7 @@ function ThanksView({ onBackHome }: { onBackHome: () => void }) {
         <button
           type="button"
           onClick={onBackHome}
-          className="mt-8 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft"
+          className="mt-8 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft"
         >
           {t('backHome')}
         </button>

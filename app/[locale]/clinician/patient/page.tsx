@@ -402,7 +402,7 @@ export default function ClinicianPatientPage() {
                       : `/${locale}/clinician/treatment`
                   );
                 }}
-                className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-cream-soft hover:bg-ink-soft"
+                className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
               >
                 Record treatment
               </button>
@@ -499,7 +499,7 @@ export default function ClinicianPatientPage() {
                           : `/${locale}/clinician/suggestion?id=${s.id}`
                       );
                     }}
-                    className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-cream-soft hover:bg-ink-soft"
+                    className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
                   >
                     {t('review')}
                   </button>
@@ -716,7 +716,7 @@ function EndSessionConfirmDialog({
           <button
             type="button"
             onClick={onKeep}
-            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-cream-soft hover:bg-ink-soft"
+            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft"
           >
             {keepLabel}
           </button>
@@ -799,7 +799,7 @@ function PhysioGoalSuggestionActions({
         type="button"
         onClick={() => act('accepted')}
         disabled={setStatus.isPending}
-        className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-cream-soft hover:bg-ink-soft disabled:opacity-50"
+        className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
       >
         Mark considered
       </button>
@@ -855,7 +855,7 @@ function PhysioMuscleSuggestionActions({
         type="button"
         onClick={() => act('reviewed')}
         disabled={setStatus.isPending}
-        className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-cream-soft hover:bg-ink-soft disabled:opacity-50"
+        className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
       >
         Mark considered
       </button>

@@ -38,6 +38,9 @@ export interface AppProfile {
   /** Admin capability — orthogonal to role. An admin may also be a
    *  clinician, physiotherapist, or patient. */
   isAdmin: boolean;
+  /** Chosen colour scheme id, or null if not yet chosen (the app then
+   *  follows the OS light/dark preference). */
+  colorScheme: string | null;
 }
 
 interface AuthState {
@@ -89,7 +92,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data, error } = await supabase
         .from('profile')
         .select(
-          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin'
+          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin, color_scheme'
         )
         .eq('id', userId)
         .maybeSingle();
@@ -103,7 +106,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         textScale: Number(data.text_scale) || 1.0,
         mustChangePassword: Boolean(data.must_change_password),
         hasSeenIntro: Boolean(data.has_seen_intro),
-        isAdmin: Boolean(data.is_admin)
+        isAdmin: Boolean(data.is_admin),
+        colorScheme: (data.color_scheme as string | null) ?? null
       };
     },
     []

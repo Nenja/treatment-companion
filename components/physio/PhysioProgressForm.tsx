@@ -210,7 +210,7 @@ export function PhysioProgressForm({
           type="button"
           onClick={doSubmit}
           disabled={!canSubmit}
-          className="mt-6 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-6 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submit.isPending
             ? 'Saving…'

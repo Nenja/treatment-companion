@@ -3,7 +3,7 @@ import { QueryClientProvider } from '@/lib/queryClient';
 import { ToastProvider } from '@/components/feedback/Toast';
 import { TextScaleApplier } from '@/components/feedback/TextScaleApplier';
 import { PasswordChangeGuard } from '@/components/feedback/PasswordChangeGuard';
-import { ThemeSwitcher } from '@/components/dev/ThemeSwitcher';
+import { ThemeApplier } from '@/components/feedback/ThemeApplier';
 import type { ReactNode } from 'react';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
@@ -86,9 +86,9 @@ export default async function LocaleLayout({
             <ToastProvider>
               <AuthProvider>
                 <TextScaleApplier />
+                <ThemeApplier />
                 <PasswordChangeGuard />
                 {children}
-                <ThemeSwitcher />
               </AuthProvider>
             </ToastProvider>
           </QueryClientProvider>

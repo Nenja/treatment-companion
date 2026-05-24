@@ -118,7 +118,7 @@ export default function ResetPasswordPage() {
           <button
             type="button"
             onClick={() => router.replace(prefix || '/')}
-            className="mt-8 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft"
+            className="mt-8 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft"
           >
             Continue
           </button>
@@ -207,7 +207,7 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={submitting || !password || !confirm}
-            className="flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-cream-soft hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
+            className="flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
           >
             {submitting ? 'Saving\u2026' : 'Save password'}
           </button>
