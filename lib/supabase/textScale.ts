@@ -12,7 +12,7 @@ import { createSupabaseBrowserClient } from './browser';
 export function useSetTextScale() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (scale: 1.0 | 1.25 | 1.5): Promise<void> => {
+    mutationFn: async (scale: 1.0 | 1.25 | 1.5 | 2.0): Promise<void> => {
       const supabase = createSupabaseBrowserClient();
       const { data: userResp } = await supabase.auth.getUser();
       if (!userResp.user) throw new Error('Not signed in');

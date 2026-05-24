@@ -167,15 +167,6 @@ export default function PatientHomePage() {
           action. Hidden once subscribed or dismissed. */}
       <NotificationsCard profileId={data.patient.id} />
 
-      {/* Visual cycle progress — grows each week, only shown when there are active goals */}
-      {data.goals.length > 0 && (
-        <CheckinDots
-          currentWeek={weekNumber}
-          completedWeeks={completedWeeksSet}
-          pendingPromptWeek={data.currentPrompt?.weekNumber}
-        />
-      )}
-
       {/* Goals section */}
       <section className="mt-9" aria-labelledby="goals-heading">
         <h2
@@ -184,6 +175,17 @@ export default function PatientHomePage() {
         >
           {t('yourGoals')}
         </h2>
+
+        {/* Cycle progress — a quiet factual line under the heading,
+            where it reads as context for the goals below rather than
+            floating on its own. Only shown when there are goals. */}
+        {data.goals.length > 0 && (
+          <CheckinDots
+            currentWeek={weekNumber}
+            completedWeeks={completedWeeksSet}
+            pendingPromptWeek={data.currentPrompt?.weekNumber}
+          />
+        )}
 
         {data.goals.length === 0 ? (
           <div className="mt-4">
@@ -205,51 +207,26 @@ export default function PatientHomePage() {
             ))}
           </ul>
         )}
-      </section>
 
-      {/* Suggest goal action */}
-      <button
-        type="button"
-        onClick={() => {
-          router.push(
-            locale === 'en' ? '/suggest-goal' : `/${locale}/suggest-goal`
-          );
-        }}
-        className="mt-6 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] border border-sage/40 bg-cream-soft px-5 text-[15px] font-semibold text-sage-deep hover:bg-sage-soft"
-      >
-        <span aria-hidden className="mr-2 text-[18px] leading-none">
-          +
-        </span>
-        {t('suggestGoal')}
-      </button>
-
-      {/* Visit code — secondary action. Two lines so it explains what
-          it's for: a patient learns its purpose the first time they
-          see it, and can find it under pressure at the clinic. */}
-      <button
-        type="button"
-        onClick={() =>
-          router.push(
-            locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
-          )
-        }
-        className="mt-3 flex w-full items-center gap-3 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-3 text-left hover:bg-stone-soft"
-      >
-        <span
-          aria-hidden
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sage-soft text-[16px] text-sage-deep"
+        {/* Suggest a goal — lives inside the goals section, where its
+            meaning is obvious ("here are your goals — add one"). It is
+            an occasional action, so it's a quiet link, not a competing
+            full-width button. */}
+        <button
+          type="button"
+          onClick={() => {
+            router.push(
+              locale === 'en' ? '/suggest-goal' : `/${locale}/suggest-goal`
+            );
+          }}
+          className="mt-4 flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-sage/40 bg-cream-soft px-5 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
         >
-          ⧉
-        </span>
-        <span className="min-w-0">
-          <span className="block text-[15px] font-semibold text-ink">
-            {t('generateVisitCode')}
+          <span aria-hidden className="mr-2 text-[17px] leading-none">
+            +
           </span>
-          <span className="block text-[13px] leading-snug text-ink-muted">
-            {t('visitCodeExplainer')}
-          </span>
-        </span>
-      </button>
+          {t('suggestGoal')}
+        </button>
+      </section>
 
       {/* Safety notice */}
       <div className="mt-10">

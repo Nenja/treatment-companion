@@ -48,7 +48,11 @@
     background-color: var(--color-cream);
     color: var(--color-ink);
     font-family: var(--font-sans);
-    font-size: 17px;
+    /* 1.0625rem = 17px at the default 16px root, but RELATIVE — so a
+     * user who raises their browser/OS default font size (the standard
+     * OS-level accessibility control) gets larger text here too. An
+     * absolute `17px` would ignore that setting entirely. */
+    font-size: 1.0625rem;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
@@ -105,7 +109,7 @@
 
 /* Small uppercase eyebrow used for cycle/week context. */
 @utility eyebrow {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
