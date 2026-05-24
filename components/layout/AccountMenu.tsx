@@ -122,6 +122,7 @@ export function AccountMenu() {
               <TextScaleButton scale={1.0} label="A" />
               <TextScaleButton scale={1.25} label="A+" />
               <TextScaleButton scale={1.5} label="A++" />
+              <TextScaleButton scale={2.0} label="A+++" />
             </div>
           </div>
 
@@ -137,6 +138,26 @@ export function AccountMenu() {
               ))}
             </div>
           </div>
+
+          {/* Visit code — patient-only. A utility used at clinic
+              appointments, so it lives in the menu rather than on the
+              daily home screen. Clearly labelled so a patient can find
+              it quickly at the clinic counter. */}
+          {profile.role === 'patient' && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                router.push(
+                  locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
+                );
+              }}
+              role="menuitem"
+              className="block w-full border-t border-stone/70 px-4 py-3 text-left text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+            >
+              Visit code for your clinic
+            </button>
+          )}
 
           <button
             type="button"
@@ -212,7 +233,7 @@ function TextScaleButton({
   scale,
   label
 }: {
-  scale: 1.0 | 1.25 | 1.5;
+  scale: 1.0 | 1.25 | 1.5 | 2.0;
   label: string;
 }) {
   const { profile } = useAuth();
