@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
@@ -27,8 +27,20 @@ const inputClasses =
  * suggestion-context panel — same NRS setup, same GAS cut points — and
  * it calls create_goal_for_patient, which inserts an approved_goal
  * with no linked goal_suggestion.
+ *
+ * The default export wraps the worker in <Suspense> because the worker
+ * calls useSearchParams() (it reads ?patient=...); Next.js requires a
+ * Suspense boundary around that for the build to prerender the route.
  */
 export default function NewGoalPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-cream" />}>
+      <NewGoalInner />
+    </Suspense>
+  );
+}
+
+function NewGoalInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const locale = useLocale();
