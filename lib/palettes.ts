@@ -62,6 +62,7 @@ export const SCHEMES: Scheme[] = [
       '--color-amber-soft': '#e8d5a0',
       '--color-amber-deep': '#705619',
       '--color-stone': '#e5dfd3',
+      '--color-focus': '#2f5563',
       '--color-on-accent': '#fbf8f2',
       '--color-stone-soft': '#efeae0'
     }
@@ -90,6 +91,7 @@ export const SCHEMES: Scheme[] = [
       '--color-amber-deep': '#d8bd80',
       // Borders / subtle fills — low-contrast separators.
       '--color-stone': '#3a3f3b',
+      '--color-focus': '#9cc7d6',
       '--color-on-accent': '#f3efe6',
       '--color-stone-soft': '#30342f'
     }
@@ -118,6 +120,7 @@ export const SCHEMES: Scheme[] = [
       '--color-amber-deep': '#5a3d00',
       // Borders are dark and visible — no faint hairlines.
       '--color-stone': '#6b6b6b',
+      '--color-focus': '#0033aa',
       '--color-on-accent': '#ffffff',
       '--color-stone-soft': '#e0e0e0'
     }
@@ -143,6 +146,7 @@ export const SCHEMES: Scheme[] = [
       '--color-amber-deep': '#f0d488',
       // Bright, clearly visible borders.
       '--color-stone': '#8a8a8a',
+      '--color-focus': '#7fd4ff',
       '--color-on-accent': '#06140d',
       '--color-stone-soft': '#1f1f1f'
     }

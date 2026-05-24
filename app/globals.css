@@ -28,6 +28,11 @@
      surfaces — must go dark in dark schemes, but button text must stay
      light. See lib/palettes.ts. */
   --color-on-accent: #fbf8f2;
+  /* Focus ring colour. A dedicated token, not reused from the accents,
+     so it can be tuned for strong contrast against each scheme's
+     background — the focus ring is what a keyboard / switch user
+     depends on and must be unmistakable in every scheme. */
+  --color-focus: #2f5563;
 
   --font-display: var(--font-newsreader), Georgia, serif;
   --font-sans: var(--font-atkinson), system-ui, sans-serif;
@@ -76,9 +81,11 @@
     letter-spacing: -0.01em;
   }
 
-  /* Accessibility: visible focus ring on every interactive element. */
+  /* Accessibility: visible focus ring on every interactive element.
+   * 3px (not 2) so it is clear for low-vision users; uses the
+   * dedicated --color-focus token, tuned per scheme. */
   :focus-visible {
-    outline: 2px solid var(--color-sage-deep);
+    outline: 3px solid var(--color-focus);
     outline-offset: 3px;
     border-radius: 4px;
   }
