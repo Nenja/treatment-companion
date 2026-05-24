@@ -175,6 +175,15 @@ export default function LoginPage() {
             Forgot password?
           </Link>
         </p>
+
+        <p className="mt-4 text-center text-[13px]">
+          <Link
+            href={`${prefix}/privacy`}
+            className="text-ink-muted hover:text-ink-soft"
+          >
+            Your data &amp; privacy
+          </Link>
+        </p>
       </main>
     </div>
   );
