@@ -284,6 +284,37 @@ export default function ClinicianPatientPage() {
           })}
         </p>
 
+        {/* Needs-attention summary. The clinician patient page shows a
+            lot; this lifts the one genuinely actionable thing —
+            patient goal suggestions awaiting review — to the top so a
+            physician sees it immediately instead of scrolling to find
+            it. Physiotherapist input is "consider", not "act", so it
+            is deliberately not counted here. Hidden when nothing is
+            pending. */}
+        {suggestions.length > 0 && (
+          <a
+            href="#patient-suggestions"
+            className="mt-5 flex items-center gap-3 rounded-[var(--radius-card)] border border-sage/50 bg-sage-soft px-4 py-3 hover:bg-sage-soft/70"
+          >
+            <span
+              aria-hidden
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sage-deep text-[16px] font-bold text-on-accent"
+            >
+              {suggestions.length}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[15px] font-semibold text-ink">
+                {suggestions.length === 1
+                  ? '1 goal suggestion to review'
+                  : `${suggestions.length} goal suggestions to review`}
+              </span>
+              <span className="block text-[13px] text-ink-soft">
+                From this patient — tap to jump to them.
+              </span>
+            </span>
+          </a>
+        )}
+
         {/* Treatment record card */}
         <section className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
           {treatment ? (
@@ -410,18 +441,6 @@ export default function ClinicianPatientPage() {
           )}
         </section>
 
-        {/* Start new cycle */}
-        <button
-          type="button"
-          onClick={() => {
-            touch();
-            setShowNewCycle(true);
-          }}
-          className="mt-3 flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
-        >
-          Start new treatment cycle
-        </button>
-
         {/* Active goals with progress visualisation */}
         <section className="mt-10">
           <div className="flex items-center justify-between gap-3">
@@ -466,7 +485,7 @@ export default function ClinicianPatientPage() {
         </section>
 
         {/* Suggestions awaiting review */}
-        <section className="mt-10">
+        <section id="patient-suggestions" className="mt-10">
           <h2 className="font-display text-[20px] leading-tight text-ink">
             {t('suggestionsTitle')}
           </h2>
@@ -509,55 +528,67 @@ export default function ClinicianPatientPage() {
           )}
         </section>
 
-        {/* Physiotherapist goal suggestions — a distinct section from
-            patient suggestions above. Read-only here in slice 3; the
-            act-on-it workflow is slice 5. */}
-        <section className="mt-10">
-          <h2 className="font-display text-[20px] leading-tight text-ink">
-            Physiotherapist recommends
+        {/* Physiotherapist input — goal suggestions and flagged
+            muscles, grouped under one heading so a physician reads
+            them as a single "consider this" zone, distinct from the
+            patient suggestions above which are "act on this". */}
+        <section className="mt-10" aria-labelledby="physio-input-heading">
+          <h2
+            id="physio-input-heading"
+            className="font-display text-[20px] leading-tight text-ink"
+          >
+            Physiotherapist input
           </h2>
-          {physioGoalSuggestions.length === 0 ? (
-            <p className="mt-3 text-[14px] text-ink-muted">
-              No goal suggestions from the physiotherapist this cycle.
-            </p>
-          ) : (
-            <ul className="mt-3 space-y-3">
-              {physioGoalSuggestions.map((s) => (
-                <li
-                  key={s.id}
-                  className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
-                >
-                  <p className="font-display text-[16px] leading-snug text-ink">
-                    {s.suggestedGoal}
-                  </p>
-                  <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
-                    <span className="text-ink-muted">Rationale: </span>
-                    {s.rationale}
-                  </p>
-                  <PhysioGoalSuggestionActions
-                    suggestionId={s.id}
-                    status={s.status}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+          <p className="mt-1 text-[13px] text-ink-muted">
+            Suggestions to consider — not actions you need to take.
+          </p>
 
-        {/* Physiotherapist muscle suggestions — read-only in slice 4.
-            The act-on-it workflow is slice 5. */}
-        <section className="mt-10">
-          <h2 className="font-display text-[20px] leading-tight text-ink">
-            Muscles flagged by physiotherapist
-          </h2>
-          {physioMuscleSuggestions.length === 0 ? (
-            <p className="mt-3 text-[14px] text-ink-muted">
-              No muscles flagged by the physiotherapist this cycle.
-            </p>
-          ) : (
-            <ul className="mt-3 space-y-3">
-              {physioMuscleSuggestions.map((s) => {
-                const linkedGoal = activeGoals.find(
+          {/* Goal suggestions from the physiotherapist. */}
+          <div className="mt-5">
+            <h3 className="text-[15px] font-semibold text-ink-soft">
+              Suggested goals
+            </h3>
+            {physioGoalSuggestions.length === 0 ? (
+              <p className="mt-2 text-[14px] text-ink-muted">
+                No goal suggestions from the physiotherapist this cycle.
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-3">
+                {physioGoalSuggestions.map((s) => (
+                  <li
+                    key={s.id}
+                    className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
+                  >
+                    <p className="font-display text-[16px] leading-snug text-ink">
+                      {s.suggestedGoal}
+                    </p>
+                    <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                      <span className="text-ink-muted">Rationale: </span>
+                      {s.rationale}
+                    </p>
+                    <PhysioGoalSuggestionActions
+                      suggestionId={s.id}
+                      status={s.status}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Muscles flagged by the physiotherapist. */}
+          <div className="mt-6">
+            <h3 className="text-[15px] font-semibold text-ink-soft">
+              Flagged muscles
+            </h3>
+            {physioMuscleSuggestions.length === 0 ? (
+              <p className="mt-2 text-[14px] text-ink-muted">
+                No muscles flagged by the physiotherapist this cycle.
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-3">
+                {physioMuscleSuggestions.map((s) => {
+                  const linkedGoal = activeGoals.find(
                   (g) => g.id === s.relatedGoalId
                 );
                 const sideLabel =
@@ -597,6 +628,7 @@ export default function ClinicianPatientPage() {
               })}
             </ul>
           )}
+          </div>
         </section>
 
         {/* Patient comments are now reachable from the chart — tap any
@@ -618,6 +650,23 @@ export default function ClinicianPatientPage() {
             </button>
           </div>
         )}
+
+        {/* Start a new treatment cycle — a rare, significant action, so
+            it sits apart at the very bottom (not under the treatment
+            card where a mis-tap is easy) and is visually quiet. The
+            NewCycleDialog confirms before doing anything. */}
+        <div className="mt-12 border-t border-stone/70 pt-5">
+          <button
+            type="button"
+            onClick={() => {
+              touch();
+              setShowNewCycle(true);
+            }}
+            className="text-[14px] font-semibold text-ink-muted hover:text-ink-soft"
+          >
+            Start a new treatment cycle
+          </button>
+        </div>
       </main>
 
       {showExport && (
