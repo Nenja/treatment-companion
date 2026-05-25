@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useSetTextScale } from '@/lib/supabase/textScale';
-import { useSetColorScheme } from '@/lib/supabase/colorScheme';
-import { SCHEMES, type Scheme } from '@/lib/palettes';
+import { useSetTheme, useSetHighContrast } from '@/lib/supabase/colorScheme';
+import { THEMES, resolveThemeId, type Theme } from '@/lib/palettes';
 import { professionLabel } from '@/lib/professionLabel';
 
 /**
@@ -135,17 +135,18 @@ export function AccountMenu() {
             </div>
           </div>
 
-          {/* Appearance — colour scheme. An accessibility setting:
-              dark for light sensitivity, high-contrast for low vision. */}
+          {/* Appearance — two independent choices: a colour theme, and
+              a high-contrast toggle layered on top for low vision. */}
           <div className="border-b border-stone/70 px-4 py-3">
             <p className="text-[13px] font-semibold text-ink-soft">
               Appearance
             </p>
             <div className="mt-2 grid grid-cols-2 gap-1.5">
-              {SCHEMES.map((s) => (
-                <SchemeButton key={s.id} scheme={s} />
+              {THEMES.map((t) => (
+                <ThemeButton key={t.id} theme={t} />
               ))}
             </div>
+            <HighContrastToggle />
           </div>
 
           {/* Visit code — patient-only. A utility used at clinic
@@ -196,35 +197,45 @@ export function AccountMenu() {
   );
 }
 
-function SchemeButton({ scheme }: { scheme: Scheme }) {
+function ThemeButton({ theme }: { theme: Theme }) {
   const { profile } = useAuth();
-  const setScheme = useSetColorScheme();
-  // The current scheme: the saved choice, or — if none — whichever the
-  // OS resolves to. We mark a button current only when it matches an
-  // explicit saved choice, so an unsaved user sees no false selection.
-  const isCurrent = profile?.colorScheme === scheme.id;
+  const setTheme = useSetTheme();
+  // The current theme: the saved choice resolved through the legacy
+  // mapping, or — if none saved — left unmarked so an unsaved user
+  // sees no false selection. We only mark a button when the profile
+  // has an explicit color_scheme value.
+  const isCurrent =
+    profile?.colorScheme != null &&
+    resolveThemeId(profile.colorScheme) === theme.id;
+  // Label combines family + day/night, e.g. "Warm · Night".
+  const label = `${theme.name} · ${theme.isDark ? 'Night' : 'Day'}`;
   return (
     <button
       type="button"
       role="menuitemradio"
       aria-checked={isCurrent}
-      onClick={() => setScheme.mutate(scheme.id)}
+      onClick={() =>
+        setTheme.mutate({
+          themeId: theme.id,
+          currentHighContrast: profile?.highContrast ?? false
+        })
+      }
       className={`flex min-h-11 items-center gap-2 rounded-[var(--radius-button)] border px-2 py-1.5 text-left ${
         isCurrent
           ? 'border-sage bg-sage-soft'
           : 'border-stone bg-cream-soft hover:bg-stone-soft'
       }`}
     >
-      {/* Swatch: the scheme's background with its sage accent, so the
+      {/* Swatch: the theme's background with its sage accent, so the
           button previews the actual appearance. */}
       <span
         aria-hidden
         className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-ink/15"
-        style={{ background: scheme.colors['--color-cream'] }}
+        style={{ background: theme.colors['--color-cream'] }}
       >
         <span
           className="h-3 w-3 rounded-sm"
-          style={{ background: scheme.colors['--color-sage-deep'] }}
+          style={{ background: theme.colors['--color-sage-deep'] }}
         />
       </span>
       <span
@@ -232,7 +243,49 @@ function SchemeButton({ scheme }: { scheme: Scheme }) {
           isCurrent ? 'text-sage-deep' : 'text-ink-soft'
         }`}
       >
-        {scheme.name}
+        {label}
+      </span>
+    </button>
+  );
+}
+
+function HighContrastToggle() {
+  const { profile } = useAuth();
+  const setHighContrast = useSetHighContrast();
+  const on = profile?.highContrast ?? false;
+  return (
+    <button
+      type="button"
+      role="menuitemcheckbox"
+      aria-checked={on}
+      onClick={() =>
+        setHighContrast.mutate({
+          highContrast: !on,
+          currentTheme: profile?.colorScheme ?? null
+        })
+      }
+      className="mt-2 flex min-h-11 w-full items-center justify-between gap-3 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-left hover:bg-stone-soft"
+    >
+      <span className="flex flex-col">
+        <span className="text-[13px] font-semibold text-ink-soft">
+          High contrast
+        </span>
+        <span className="text-[12px] text-ink-muted">
+          Stronger contrast for easier reading
+        </span>
+      </span>
+      {/* Switch — sage when on, stone when off. */}
+      <span
+        aria-hidden
+        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+          on ? 'bg-sage-deep' : 'bg-stone'
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 h-6 w-6 rounded-full bg-cream-soft transition-transform ${
+            on ? 'translate-x-[22px]' : 'translate-x-0.5'
+          }`}
+        />
       </span>
     </button>
   );
