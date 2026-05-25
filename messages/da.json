@@ -225,7 +225,6 @@
       "viewingLabel": "Ser på",
       "cycleContext": "Uge {week} siden behandling · Forløb {cycle}",
       "treatmentDate": "Behandlingsdato: {date}",
-      "suggestionsTitle": "Foreslåede mål",
       "suggestionsEmpty": "Ingen forslag afventer gennemgang.",
       "activeGoalsTitle": "Aktive mål",
       "activeGoalsEmpty": "Ingen aktive mål endnu.",
@@ -235,7 +234,19 @@
       "archiveConfirmBody": "Patienten vil ikke længere blive spurgt om dette mål i den ugentlige opfølgning. Opfølgningshistorikken bevares og forbliver i journalen.",
       "archiveConfirmKeep": "Behold målet aktivt",
       "archiveToast": "Målet er arkiveret",
-      "archiveError": "Målet kunne ikke arkiveres. Prøv venligst igen. Hvis det bliver ved, så kontakt din klinik."
+      "archiveError": "Målet kunne ikke arkiveres. Prøv venligst igen. Hvis det bliver ved, så kontakt din klinik.",
+      "patientSuggestionsHeading": "Patientens målforslag",
+      "patientSuggestionsCount": "{count} afventer gennemgang",
+      "physioInputHeading": "Input fra terapeut",
+      "physioInputSubtitle": "Forslag til overvejelse — ikke handlinger, du skal udføre.",
+      "physioInputCount": "{count} til overvejelse",
+      "physioInputNone": "Intet fra terapeuten i denne cyklus.",
+      "physioSuggestedGoals": "Foreslåede mål",
+      "physioFlaggedMuscles": "Markerede muskler",
+      "physioGoalsEmpty": "Ingen målforslag fra terapeuten i denne cyklus.",
+      "physioMusclesEmpty": "Ingen muskler markeret af terapeuten i denne cyklus.",
+      "rationaleLabel": "Begrundelse",
+      "relatedGoalLabel": "Relateret mål"
     },
     "review": {
       "title": "Gennemgå forslag",

@@ -20,6 +20,7 @@ import { nrsToGas, injectionSideLabel, type GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
+import { CollapsibleSection } from '@/components/clinician/CollapsibleSection';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import {
   SkeletonBlock,
@@ -566,147 +567,165 @@ export default function ClinicianPatientPage() {
           )}
         </section>
 
-        {/* Suggestions awaiting review */}
-        <section id="patient-suggestions" className="mt-10">
-          <h2 className="font-display text-[20px] leading-tight text-ink">
-            {t('suggestionsTitle')}
-          </h2>
-          {suggestions.length === 0 ? (
-            <p className="mt-3 text-[14px] text-ink-muted">
-              {t('suggestionsEmpty')}
-            </p>
-          ) : (
-            <ul className="mt-3 space-y-3">
-              {suggestions.map((s) => (
-                <li
-                  key={s.id}
-                  className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
-                >
-                  <div className="flex items-baseline justify-between gap-3">
-                    <div className="eyebrow text-ink-muted">
-                      {tDomain(s.domain)} · {tImportance(s.importance)}
-                    </div>
-                  </div>
-                  <p className="mt-1.5 text-[15px] leading-relaxed text-ink">
-                    &ldquo;{s.patientWording}&rdquo;
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      touch();
-                      router.push(
-                        locale === 'en'
-                          ? `/clinician/suggestion?id=${s.id}`
-                          : `/${locale}/clinician/suggestion?id=${s.id}`
-                      );
-                    }}
-                    className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
-                  >
-                    {t('review')}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        {/* Physiotherapist input — goal suggestions and flagged
-            muscles, grouped under one heading so a physician reads
-            them as a single "consider this" zone, distinct from the
-            patient suggestions above which are "act on this". */}
-        <section className="mt-10" aria-labelledby="physio-input-heading">
-          <h2
-            id="physio-input-heading"
-            className="font-display text-[20px] leading-tight text-ink"
+        {/* Patient goal suggestions — collapsible. Starts open when
+            there is anything awaiting review, so pending work is never
+            hidden; the header count means it is noticed even closed. */}
+        <div id="patient-suggestions">
+          <CollapsibleSection
+            title={t('patientSuggestionsHeading')}
+            count={suggestions.length}
+            defaultOpen={suggestions.length > 0}
           >
-            Physiotherapist input
-          </h2>
-          <p className="mt-1 text-[13px] text-ink-muted">
-            Suggestions to consider — not actions you need to take.
-          </p>
-
-          {/* Goal suggestions from the physiotherapist. */}
-          <div className="mt-5">
-            <h3 className="text-[15px] font-semibold text-ink-soft">
-              Suggested goals
-            </h3>
-            {physioGoalSuggestions.length === 0 ? (
-              <p className="mt-2 text-[14px] text-ink-muted">
-                No goal suggestions from the physiotherapist this cycle.
+            {suggestions.length === 0 ? (
+              <p className="text-[14px] text-ink-muted">
+                {t('suggestionsEmpty')}
               </p>
             ) : (
-              <ul className="mt-3 space-y-3">
-                {physioGoalSuggestions.map((s) => (
+              <ul className="space-y-3">
+                {suggestions.map((s) => (
                   <li
                     key={s.id}
                     className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
                   >
-                    <p className="font-display text-[16px] leading-snug text-ink">
-                      {s.suggestedGoal}
+                    <div className="flex items-baseline justify-between gap-3">
+                      <div className="eyebrow text-ink-muted">
+                        {tDomain(s.domain)} · {tImportance(s.importance)}
+                      </div>
+                    </div>
+                    <p className="mt-1.5 text-[15px] leading-relaxed text-ink">
+                      &ldquo;{s.patientWording}&rdquo;
                     </p>
-                    <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
-                      <span className="text-ink-muted">Rationale: </span>
-                      {s.rationale}
-                    </p>
-                    <PhysioGoalSuggestionActions
-                      suggestionId={s.id}
-                      status={s.status}
-                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        touch();
+                        router.push(
+                          locale === 'en'
+                            ? `/clinician/suggestion?id=${s.id}`
+                            : `/${locale}/clinician/suggestion?id=${s.id}`
+                        );
+                      }}
+                      className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
+                    >
+                      {t('review')}
+                    </button>
                   </li>
                 ))}
               </ul>
             )}
-          </div>
+          </CollapsibleSection>
+        </div>
 
-          {/* Muscles flagged by the physiotherapist. */}
-          <div className="mt-6">
-            <h3 className="text-[15px] font-semibold text-ink-soft">
-              Flagged muscles
-            </h3>
-            {physioMuscleSuggestions.length === 0 ? (
-              <p className="mt-2 text-[14px] text-ink-muted">
-                No muscles flagged by the physiotherapist this cycle.
-              </p>
-            ) : (
-              <ul className="mt-3 space-y-3">
-                {physioMuscleSuggestions.map((s) => {
-                  const linkedGoal = activeGoals.find(
-                  (g) => g.id === s.relatedGoalId
-                );
-                const sideLabel = injectionSideLabel(s.side);
-                return (
-                  <li
-                    key={s.id}
-                    className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
-                  >
-                    <p className="font-display text-[16px] leading-snug text-ink">
-                      {s.muscle}{' '}
-                      <span className="text-ink-muted">
-                        · {sideLabel}
-                      </span>
-                    </p>
-                    <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
-                      <span className="text-ink-muted">
-                        Rationale:{' '}
-                      </span>
-                      {s.rationale}
-                    </p>
-                    {linkedGoal && (
-                      <p className="mt-2 text-[13px] text-ink-muted">
-                        Related goal: {linkedGoal.patientFacingText}
-                      </p>
-                    )}
-                    <PhysioMuscleSuggestionActions
-                      suggestionId={s.id}
-                      status={s.status}
-                    />
-                  </li>
-                );
-              })}
-            </ul>
+        {/* Therapist input — goal suggestions and flagged muscles,
+            grouped so a physician reads them as one "consider this"
+            zone, distinct from the patient suggestions above which are
+            "act on this". Collapsible; starts open when anything is
+            still awaiting the physician (status 'needsReview'). */}
+        <CollapsibleSection
+          title={t('physioInputHeading')}
+          subtitle={t('physioInputSubtitle')}
+          count={
+            physioGoalSuggestions.length + physioMuscleSuggestions.length
+          }
+          defaultOpen={
+            physioGoalSuggestions.some((s) => s.status === 'needsReview') ||
+            physioMuscleSuggestions.some((s) => s.status === 'needsReview')
+          }
+        >
+          {physioGoalSuggestions.length === 0 &&
+          physioMuscleSuggestions.length === 0 ? (
+            <p className="text-[14px] text-ink-muted">
+              {t('physioInputNone')}
+            </p>
+          ) : (
+            <>
+              {/* Goal suggestions from the therapist. */}
+              <div>
+                <h3 className="text-[15px] font-semibold text-ink-soft">
+                  {t('physioSuggestedGoals')}
+                </h3>
+                {physioGoalSuggestions.length === 0 ? (
+                  <p className="mt-2 text-[14px] text-ink-muted">
+                    {t('physioGoalsEmpty')}
+                  </p>
+                ) : (
+                  <ul className="mt-3 space-y-3">
+                    {physioGoalSuggestions.map((s) => (
+                      <li
+                        key={s.id}
+                        className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
+                      >
+                        <p className="font-display text-[16px] leading-snug text-ink">
+                          {s.suggestedGoal}
+                        </p>
+                        <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                          <span className="text-ink-muted">
+                            {t('rationaleLabel')}:{' '}
+                          </span>
+                          {s.rationale}
+                        </p>
+                        <PhysioGoalSuggestionActions
+                          suggestionId={s.id}
+                          status={s.status}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Muscles flagged by the therapist. */}
+              <div className="mt-6">
+                <h3 className="text-[15px] font-semibold text-ink-soft">
+                  {t('physioFlaggedMuscles')}
+                </h3>
+                {physioMuscleSuggestions.length === 0 ? (
+                  <p className="mt-2 text-[14px] text-ink-muted">
+                    {t('physioMusclesEmpty')}
+                  </p>
+                ) : (
+                  <ul className="mt-3 space-y-3">
+                    {physioMuscleSuggestions.map((s) => {
+                      const linkedGoal = activeGoals.find(
+                        (g) => g.id === s.relatedGoalId
+                      );
+                      const sideLabel = injectionSideLabel(s.side);
+                      return (
+                        <li
+                          key={s.id}
+                          className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
+                        >
+                          <p className="font-display text-[16px] leading-snug text-ink">
+                            {s.muscle}{' '}
+                            <span className="text-ink-muted">
+                              · {sideLabel}
+                            </span>
+                          </p>
+                          <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                            <span className="text-ink-muted">
+                              {t('rationaleLabel')}:{' '}
+                            </span>
+                            {s.rationale}
+                          </p>
+                          {linkedGoal && (
+                            <p className="mt-2 text-[13px] text-ink-muted">
+                              {t('relatedGoalLabel')}:{' '}
+                              {linkedGoal.patientFacingText}
+                            </p>
+                          )}
+                          <PhysioMuscleSuggestionActions
+                            suggestionId={s.id}
+                            status={s.status}
+                          />
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            </>
           )}
-          </div>
-        </section>
+        </CollapsibleSection>
 
         {/* Patient comments are now reachable from the chart — tap any
             dot showing a speech-bubble icon to see the comment in the
