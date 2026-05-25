@@ -218,7 +218,8 @@
       "endSessionConfirmKeep": "Fortsæt",
       "endSessionConfirmEnd": "Afslut",
       "timeoutTitle": "Sessionen er afsluttet",
-      "timeoutBody": "Din session blev afsluttet på grund af inaktivitet. Bed patienten om en ny besøgskode for at fortsætte."
+      "timeoutBody": "Din session blev afsluttet på grund af inaktivitet. Bed patienten om en ny besøgskode for at fortsætte.",
+      "endSessionError": "Sessionen kunne ikke afsluttes. Prøv venligst igen."
     },
     "patient": {
       "viewingLabel": "Ser på",

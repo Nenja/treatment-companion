@@ -214,7 +214,8 @@
       "endSessionConfirmKeep": "Keep working",
       "endSessionConfirmEnd": "End session",
       "timeoutTitle": "Session ended",
-      "timeoutBody": "Your session ended after a period of inactivity. Ask the patient for a new visit code to continue."
+      "timeoutBody": "Your session ended after a period of inactivity. Ask the patient for a new visit code to continue.",
+      "endSessionError": "Could not end the session. Please try again."
     },
     "patient": {
       "viewingLabel": "Viewing",

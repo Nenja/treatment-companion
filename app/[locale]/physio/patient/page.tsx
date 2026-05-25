@@ -47,6 +47,11 @@ export default function PhysioPatientPage() {
 
   const unlockPath = locale === 'en' ? '/physio' : `/${locale}/physio`;
 
+  // True once the therapist deliberately ends the session — see the
+  // matching note on the physician patient page. Stops the "no
+  // session" guard from racing onEndSession's own navigation.
+  const endingSessionRef = useRef(false);
+
   // Auth gating.
   useEffect(() => {
     if (authLoading) return;
@@ -59,15 +64,24 @@ export default function PhysioPatientPage() {
     }
   }, [authLoading, user, profile, router, locale]);
 
-  // No active session → back to unlock.
+  // No active session → back to unlock. Stands down while the therapist
+  // is deliberately ending the session, so onEndSession's navigation
+  // is the only one that fires.
   useEffect(() => {
+    if (endingSessionRef.current) return;
     if (!sessionQuery.isLoading && sessionQuery.data === null) {
       router.replace(unlockPath);
     }
   }, [sessionQuery.isLoading, sessionQuery.data, router, unlockPath]);
 
   const onEndSession = async () => {
-    await endSession.mutateAsync();
+    endingSessionRef.current = true;
+    try {
+      await endSession.mutateAsync();
+    } catch {
+      endingSessionRef.current = false;
+      return;
+    }
     router.replace(unlockPath);
   };
 

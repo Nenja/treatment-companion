@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
@@ -61,6 +61,13 @@ export default function ClinicianPatientPage() {
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showNewCycle, setShowNewCycle] = useState(false);
+  // True once the physician has deliberately ended the session. While
+  // this is set, the "no session → timeout" guard stands down: ending
+  // the session naturally makes sessionQuery.data go null, and without
+  // this flag that guard would fire its OWN redirect (with a spurious
+  // ?timeout=1) racing the deliberate one in onEndSession — causing a
+  // redirect stutter and a wrong "session timed out" message.
+  const endingSessionRef = useRef(false);
   // The goal the physician is about to archive — drives the
   // confirmation dialog. Holds { id, text } or null when none pending.
   const [goalToArchive, setGoalToArchive] = useState<{
@@ -84,7 +91,13 @@ export default function ClinicianPatientPage() {
   // surfaces a friendly message there. We can't distinguish "session
   // never existed" from "session timed out" perfectly, but if the
   // sessionQuery completed and returned null we treat it as timeout.
+  //
+  // Exception: when the physician is deliberately ending the session
+  // (endingSessionRef), this guard stands down. onEndSession does its
+  // own clean navigation; letting this guard also fire would race it
+  // and wrongly report a timeout.
   useEffect(() => {
+    if (endingSessionRef.current) return;
     if (!sessionQuery.isLoading && sessionQuery.data === null) {
       router.replace(
         (locale === 'en' ? '/clinician' : `/${locale}/clinician`) +
@@ -249,7 +262,18 @@ export default function ClinicianPatientPage() {
   }
 
   const onEndSession = async () => {
-    await endSession.mutateAsync();
+    // Mark the deliberate end FIRST, so the timeout guard stands down
+    // before endSession makes sessionQuery.data go null.
+    endingSessionRef.current = true;
+    try {
+      await endSession.mutateAsync();
+    } catch {
+      // If ending failed, the session is still live — clear the flag
+      // so the guard works normally again, and let the user retry.
+      endingSessionRef.current = false;
+      toast.error(tSession('endSessionError'));
+      return;
+    }
     router.replace(locale === 'en' ? '/clinician' : `/${locale}/clinician`);
   };
 
