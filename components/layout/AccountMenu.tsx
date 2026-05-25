@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useSetTextScale } from '@/lib/supabase/textScale';
 import { useSetPalette, useSetNightMode } from '@/lib/supabase/colorScheme';
@@ -23,6 +23,7 @@ export function AccountMenu() {
   const { user, profile, signOut } = useAuth();
   const router = useRouter();
   const locale = useLocale();
+  const tAppearance = useTranslations('appearance');
 
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -125,7 +126,7 @@ export function AccountMenu() {
               profile. */}
           <div className="border-b border-stone/70 px-4 py-3">
             <p className="text-[13px] font-semibold text-ink-soft">
-              Text size
+              {tAppearance('textSize')}
             </p>
             <div className="mt-2 flex gap-1.5">
               <TextScaleButton scale={1.0} label="A" />
@@ -140,7 +141,7 @@ export function AccountMenu() {
               vision. */}
           <div className="border-b border-stone/70 px-4 py-3">
             <p className="text-[13px] font-semibold text-ink-soft">
-              Appearance
+              {tAppearance('heading')}
             </p>
             <NightModeToggle />
             <div className="mt-2 grid grid-cols-2 gap-1.5">
@@ -201,6 +202,7 @@ export function AccountMenu() {
 function PaletteButton({ palette }: { palette: Palette }) {
   const { profile } = useAuth();
   const setPalette = useSetPalette();
+  const tAppearance = useTranslations('appearance');
   // Marked current only when the profile has an explicit color_scheme
   // that resolves to this palette — an unsaved user sees no selection.
   const isCurrent =
@@ -210,6 +212,14 @@ function PaletteButton({ palette }: { palette: Palette }) {
   // so the swatch matches what selecting it would actually show.
   const night = profile?.nightMode ?? false;
   const preview = night ? palette.night : palette.day;
+  // Localised display name, keyed by palette id (e.g. paletteGreen).
+  const nameKey =
+    'palette' +
+    palette.id
+      .split('-')
+      .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+      .join('');
+  const displayName = tAppearance(nameKey);
   return (
     <button
       type="button"
@@ -243,7 +253,7 @@ function PaletteButton({ palette }: { palette: Palette }) {
           isCurrent ? 'text-sage-deep' : 'text-ink-soft'
         }`}
       >
-        {palette.name}
+        {displayName}
       </span>
     </button>
   );
@@ -252,6 +262,7 @@ function PaletteButton({ palette }: { palette: Palette }) {
 function NightModeToggle() {
   const { profile } = useAuth();
   const setNightMode = useSetNightMode();
+  const tAppearance = useTranslations('appearance');
   const on = profile?.nightMode ?? false;
   return (
     <button
@@ -268,10 +279,10 @@ function NightModeToggle() {
     >
       <span className="flex flex-col">
         <span className="text-[13px] font-semibold text-ink-soft">
-          Night mode
+          {tAppearance('nightMode')}
         </span>
         <span className="text-[12px] text-ink-muted">
-          Darker colours, easier in low light
+          {tAppearance('nightModeHint')}
         </span>
       </span>
       {/* Switch — sage when on, stone when off. */}
