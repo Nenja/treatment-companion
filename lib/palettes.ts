@@ -3,24 +3,32 @@
  *
  * Appearance is two independent choices:
  *
- *   1. THEME — a colour palette in a day or night form. Four ship:
- *        warm-day    — the original warm sage look. Default.
- *        warm-night  — the warm palette, dark.
- *        cool-day    — a cooler blue-green palette, light.
- *        cool-night  — the cool palette, dark.
+ *   1. THEME — a colour identity in a day or night form. Three
+ *      identities ship, each genuinely distinct (not tints of one
+ *      colour):
+ *        green — the original calm sage identity. Default.
+ *        blue  — a cool slate-blue identity.
+ *        clay  — a warm terracotta/clay identity.
+ *      Each has a day form and a night form: six themes in total.
  *
  *   2. HIGH CONTRAST — an on/off accessibility toggle. When on, a
  *      single dedicated high-contrast palette is applied INSTEAD of the
- *      theme (in a light or dark form, matching whether the chosen
- *      theme is a day or night theme). High contrast is a visual need,
- *      not a fifth colour — so it layers on top of any theme, and the
- *      theme's personality deliberately steps aside while it is on.
+ *      theme (light or dark form, matching the theme's day/night).
+ *      High contrast is a visual need, not another colour — so it
+ *      layers on top of any theme, and the theme's identity steps
+ *      aside while it is on.
  *
  * Every palette defines the same fourteen CSS custom properties the app
  * themes from. The variable NAMES are fixed; only their values change.
- * In night/dark palettes the roles invert — `cream` is a dark
- * background, `ink` is light text — but the names stay, so no component
- * has to change.
+ * The accent role is carried by `--color-sage*` — the name is
+ * historical; in the blue and clay themes those variables hold blue
+ * and clay values. No component has to change.
+ *
+ * Two deliberate constraints on every theme's accent:
+ *   - It must stay clearly distinct from the amber `--color-amber-*`
+ *     used for the "poor end" of the rating scale, so the two signals
+ *     never blur.
+ *   - It must not be a red/alarm hue — this is a calm patient tool.
  *
  * Contrast: in every theme, body text (ink / ink-soft) on the
  * backgrounds (cream / cream-soft) clears WCAG AA (4.5:1). The two
@@ -29,25 +37,32 @@
  * to act.
  */
 
-export type ThemeId = 'warm-day' | 'warm-night' | 'cool-day' | 'cool-night';
+export type ThemeId =
+  | 'green-day'
+  | 'green-night'
+  | 'blue-day'
+  | 'blue-night'
+  | 'clay-day'
+  | 'clay-night';
+
+export type ThemeFamily = 'green' | 'blue' | 'clay';
 
 export interface Theme {
   id: ThemeId;
-  /** Palette family — 'warm' or 'cool'. */
-  family: 'warm' | 'cool';
-  /** Day or night form. */
+  family: ThemeFamily;
   isDark: boolean;
-  /** Display name for the picker. */
+  /** Display name of the colour identity (e.g. "Green"). */
   name: string;
   colors: Record<string, string>;
 }
 
 export const THEMES: Theme[] = [
+  // ---- GREEN — the original sage identity ---------------------------
   {
-    id: 'warm-day',
-    family: 'warm',
+    id: 'green-day',
+    family: 'green',
     isDark: false,
-    name: 'Warm',
+    name: 'Green',
     colors: {
       '--color-cream': '#f6f1e8',
       '--color-cream-soft': '#fbf8f2',
@@ -66,12 +81,11 @@ export const THEMES: Theme[] = [
     }
   },
   {
-    id: 'warm-night',
-    family: 'warm',
+    id: 'green-night',
+    family: 'green',
     isDark: true,
-    name: 'Warm',
+    name: 'Green',
     colors: {
-      // Warm dark backgrounds — not pure black, to keep the calm feel.
       '--color-cream': '#1c1f1d',
       '--color-cream-soft': '#262a27',
       '--color-ink': '#ece7dd',
@@ -88,51 +102,109 @@ export const THEMES: Theme[] = [
       '--color-stone-soft': '#30342f'
     }
   },
+  // ---- BLUE — cool slate-blue identity ------------------------------
   {
-    id: 'cool-day',
-    family: 'cool',
+    id: 'blue-day',
+    family: 'blue',
     isDark: false,
-    name: 'Cool',
+    name: 'Blue',
     colors: {
-      // A cooler palette — soft blue-grey surfaces, a teal-leaning
-      // accent. Same calm, soft-contrast intent as the warm theme.
-      '--color-cream': '#eef1f3',
-      '--color-cream-soft': '#f7f9fa',
-      '--color-ink': '#1c2426',
-      '--color-ink-soft': '#46514f',
-      '--color-ink-muted': '#65706f',
-      '--color-sage': '#4f7d80',
-      '--color-sage-deep': '#365e61',
-      '--color-sage-soft': '#d6e4e4',
-      '--color-amber-soft': '#e6d6ad',
-      '--color-amber-deep': '#6c5320',
-      '--color-stone': '#dbe1e3',
-      '--color-focus': '#2f5563',
-      '--color-on-accent': '#f7f9fa',
-      '--color-stone-soft': '#e7ebed'
+      // Soft cool-grey surfaces with a faint blue cast.
+      '--color-cream': '#eef1f5',
+      '--color-cream-soft': '#f7f9fc',
+      '--color-ink': '#1d2530',
+      '--color-ink-soft': '#465061',
+      '--color-ink-muted': '#646d7d',
+      // Accent: a clear mid blue. sage-deep is the button fill — dark
+      // enough that white-ish on-accent text clears AA on it.
+      '--color-sage': '#3f6f9e',
+      '--color-sage-deep': '#2b5077',
+      '--color-sage-soft': '#d6e2ee',
+      // Amber kept as-is so the "poor end" signal stays warm and
+      // unmistakably separate from the blue accent.
+      '--color-amber-soft': '#e8d5a0',
+      '--color-amber-deep': '#705619',
+      '--color-stone': '#dde2e9',
+      '--color-focus': '#1f4c8a',
+      '--color-on-accent': '#f7f9fc',
+      '--color-stone-soft': '#e8ebf0'
     }
   },
   {
-    id: 'cool-night',
-    family: 'cool',
+    id: 'blue-night',
+    family: 'blue',
     isDark: true,
-    name: 'Cool',
+    name: 'Blue',
     colors: {
-      // Cool dark — slate-blue backgrounds, a lifted teal accent.
-      '--color-cream': '#181c1e',
-      '--color-cream-soft': '#222729',
-      '--color-ink': '#e6eae9',
-      '--color-ink-soft': '#b3bbba',
-      '--color-ink-muted': '#8a9291',
-      '--color-sage': '#74a3a5',
-      '--color-sage-deep': '#4f7d80',
-      '--color-sage-soft': '#283538',
-      '--color-amber-soft': '#332c1e',
-      '--color-amber-deep': '#d6bd84',
-      '--color-stone': '#363c3e',
+      // Deep slate-blue backgrounds — not pure black.
+      '--color-cream': '#161a21',
+      '--color-cream-soft': '#1f242d',
+      '--color-ink': '#e6e9ee',
+      '--color-ink-soft': '#b2b9c4',
+      '--color-ink-muted': '#888f9c',
+      // Accent lifted so it reads on the dark ground.
+      '--color-sage': '#6f9fc9',
+      '--color-sage-deep': '#4f7ba8',
+      '--color-sage-soft': '#243140',
+      '--color-amber-soft': '#3d3526',
+      '--color-amber-deep': '#d8bd80',
+      '--color-stone': '#343b46',
+      '--color-focus': '#8fc0e6',
+      '--color-on-accent': '#0a131c',
+      '--color-stone-soft': '#2a313b'
+    }
+  },
+  // ---- CLAY — warm terracotta identity ------------------------------
+  {
+    id: 'clay-day',
+    family: 'clay',
+    isDark: false,
+    name: 'Clay',
+    colors: {
+      // Warm, slightly pink-tinted neutral surfaces.
+      '--color-cream': '#f4ece6',
+      '--color-cream-soft': '#fbf6f1',
+      '--color-ink': '#2a221e',
+      '--color-ink-soft': '#574b44',
+      '--color-ink-muted': '#766860',
+      // Accent: a muted terracotta. Distinct from the amber/gold of
+      // the rating "poor end" — clay is redder and more muted, amber
+      // is yellower; placed side by side they stay separable.
+      '--color-sage': '#b06245',
+      '--color-sage-deep': '#8a4630',
+      '--color-sage-soft': '#ecd9cf',
+      // Amber shifted slightly more yellow-gold here to hold its
+      // distance from the terracotta accent.
+      '--color-amber-soft': '#e9d29a',
+      '--color-amber-deep': '#6e5410',
+      '--color-stone': '#e6dbd2',
+      '--color-focus': '#2f5563',
+      '--color-on-accent': '#fbf6f1',
+      '--color-stone-soft': '#efe6dd'
+    }
+  },
+  {
+    id: 'clay-night',
+    family: 'clay',
+    isDark: true,
+    name: 'Clay',
+    colors: {
+      // Warm dark brown-charcoal backgrounds.
+      '--color-cream': '#201b18',
+      '--color-cream-soft': '#2b2522',
+      '--color-ink': '#ede4dc',
+      '--color-ink-soft': '#bdb2a9',
+      '--color-ink-muted': '#938880',
+      // Terracotta lifted to read on the dark ground.
+      '--color-sage': '#cf8568',
+      '--color-sage-deep': '#b06245',
+      '--color-sage-soft': '#3a2c25',
+      '--color-amber-soft': '#3d3526',
+      '--color-amber-deep': '#dcc086',
+      '--color-stone': '#3f3833',
       '--color-focus': '#9cc7d6',
-      '--color-on-accent': '#06140d',
-      '--color-stone-soft': '#2b3133'
+      '--color-on-accent': '#1a0f0a',
+      '--color-stone-soft': '#332c27'
     }
   }
 ];
@@ -179,27 +251,35 @@ export const HIGH_CONTRAST: Record<'light' | 'dark', Record<string, string>> = {
   }
 };
 
-const DEFAULT_THEME: ThemeId = 'warm-day';
+const DEFAULT_THEME: ThemeId = 'green-day';
 
 /**
- * Map a stored color_scheme value to a theme id. Accepts the four new
- * theme ids and also the four legacy scheme ids (saved before the
- * appearance split), so an un-migrated or stale value still resolves.
+ * Map a stored color_scheme value to a theme id. Accepts the six theme
+ * ids and also legacy values saved before the appearance work, so an
+ * un-migrated or stale value still resolves cleanly.
  */
 export function resolveThemeId(stored: string | null | undefined): ThemeId {
   switch (stored) {
-    case 'warm-day':
-    case 'warm-night':
-    case 'cool-day':
-    case 'cool-night':
+    case 'green-day':
+    case 'green-night':
+    case 'blue-day':
+    case 'blue-night':
+    case 'clay-day':
+    case 'clay-night':
       return stored;
-    // Legacy values.
+    // Legacy values — the original four flat schemes, and the
+    // intermediate warm/cool ids. All map onto the green identity,
+    // since green is the original look.
     case 'light':
     case 'high-contrast':
-      return 'warm-day';
+    case 'warm-day':
+    case 'cool-day':
+      return 'green-day';
     case 'dark':
     case 'high-contrast-dark':
-      return 'warm-night';
+    case 'warm-night':
+    case 'cool-night':
+      return 'green-night';
     default:
       return DEFAULT_THEME;
   }
@@ -242,5 +322,5 @@ export function resolveColors(
 
 /** First-run default theme for a given OS prefers-color-scheme. */
 export function themeForOsPreference(prefersDark: boolean): ThemeId {
-  return prefersDark ? 'warm-night' : 'warm-day';
+  return prefersDark ? 'green-night' : 'green-day';
 }
