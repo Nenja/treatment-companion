@@ -87,24 +87,32 @@ export default function ClinicianPatientPage() {
     }
   }, [authLoading, user, profile, router, locale]);
 
-  // No session → back to unlock screen, with a "?timeout=1" hint that
-  // surfaces a friendly message there. We can't distinguish "session
-  // never existed" from "session timed out" perfectly, but if the
-  // sessionQuery completed and returned null we treat it as timeout.
+  // No session → back to unlock screen, with a "?timeout=1" hint.
   //
-  // Exception: when the physician is deliberately ending the session
-  // (endingSessionRef), this guard stands down. onEndSession does its
-  // own clean navigation; letting this guard also fire would race it
-  // and wrongly report a timeout.
+  // This must only fire on a SETTLED, CONFIRMED "no session" — never on
+  // a transient null while the session query is still loading or
+  // refetching. React Query's `isLoading` is true only on the first
+  // ever fetch, so it does NOT cover the 30s background refetches;
+  // relying on it let a refetch-in-flight look "settled" and bounce the
+  // physician out, which — paired with the unlock page's mirror
+  // redirect — produced a redirect loop.
+  //
+  // The correct signal: status === 'success' (the query has completed
+  // at least once) AND data === null (it definitively found no active
+  // session). During a refetch, status stays 'success' and data keeps
+  // its last value, so no false negative slips through.
+  //
+  // Also stands down while the physician is deliberately ending the
+  // session (endingSessionRef) — onEndSession does its own navigation.
   useEffect(() => {
     if (endingSessionRef.current) return;
-    if (!sessionQuery.isLoading && sessionQuery.data === null) {
+    if (sessionQuery.status === 'success' && sessionQuery.data === null) {
       router.replace(
         (locale === 'en' ? '/clinician' : `/${locale}/clinician`) +
           '?timeout=1'
       );
     }
-  }, [sessionQuery.isLoading, sessionQuery.data, router, locale]);
+  }, [sessionQuery.status, sessionQuery.data, router, locale]);
 
   if (
     authLoading ||

@@ -72,14 +72,17 @@ function Inner() {
   }, [authLoading, user, profile, router, locale]);
 
   // Bounce if session timed out.
+  // No session → unlock screen. Only on a SETTLED no-session result
+  // (status 'success' + data null), never a transient null during a
+  // background refetch — see the detailed note on the patient page.
   useEffect(() => {
-    if (!sessionQuery.isLoading && sessionQuery.data === null) {
+    if (sessionQuery.status === 'success' && sessionQuery.data === null) {
       router.replace(
         (locale === 'en' ? '/clinician' : `/${locale}/clinician`) +
           '?timeout=1'
       );
     }
-  }, [sessionQuery.isLoading, sessionQuery.data, router, locale]);
+  }, [sessionQuery.status, sessionQuery.data, router, locale]);
 
   // Fetch the suggestion itself
   const suggestionQuery = useQuery({

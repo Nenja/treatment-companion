@@ -69,10 +69,10 @@ export default function PhysioPatientPage() {
   // is the only one that fires.
   useEffect(() => {
     if (endingSessionRef.current) return;
-    if (!sessionQuery.isLoading && sessionQuery.data === null) {
+    if (sessionQuery.status === 'success' && sessionQuery.data === null) {
       router.replace(unlockPath);
     }
-  }, [sessionQuery.isLoading, sessionQuery.data, router, unlockPath]);
+  }, [sessionQuery.status, sessionQuery.data, router, unlockPath]);
 
   const onEndSession = async () => {
     endingSessionRef.current = true;

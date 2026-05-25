@@ -58,10 +58,10 @@ export default function PhysioUnlockPage() {
 
   // If a valid session exists, jump straight to the patient view.
   useEffect(() => {
-    if (sessionQuery.data) {
+    if (sessionQuery.status === 'success' && sessionQuery.data) {
       router.replace(patientPath);
     }
-  }, [sessionQuery.data, router, patientPath]);
+  }, [sessionQuery.status, sessionQuery.data, router, patientPath]);
 
   if (
     authLoading ||

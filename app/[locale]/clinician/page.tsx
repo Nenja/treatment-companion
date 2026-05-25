@@ -61,16 +61,19 @@ export default function ClinicianUnlockPage() {
     }
   }, []);
 
-  // If a valid session exists, jump to the patient view.
+  // If a valid session exists, jump to the patient view. Only act on a
+  // settled query result (status 'success'), not on a transient value
+  // mid-load — consistent with the patient page's guard, so the two
+  // pages cannot ping-pong.
   useEffect(() => {
-    if (sessionQuery.data) {
+    if (sessionQuery.status === 'success' && sessionQuery.data) {
       router.replace(
         locale === 'en'
           ? '/clinician/patient'
           : `/${locale}/clinician/patient`
       );
     }
-  }, [sessionQuery.data, router, locale]);
+  }, [sessionQuery.status, sessionQuery.data, router, locale]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
