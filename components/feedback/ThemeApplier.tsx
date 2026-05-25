@@ -3,53 +3,52 @@
 import { useEffect } from 'react';
 import { useAuth } from '@/lib/supabase/auth';
 import { applyAppearance } from '@/lib/supabase/colorScheme';
-import { themeForOsPreference } from '@/lib/palettes';
 
 /**
- * Applies the active appearance (theme + high-contrast toggle) to the
- * document root. Mount once near the top of the tree (after
- * AuthProvider), alongside TextScaleApplier.
+ * Applies the active appearance (palette + day/night) to the document
+ * root. Mount once near the top of the tree (after AuthProvider),
+ * alongside TextScaleApplier.
  *
  * Resolution order:
- *   1. The signed-in profile's saved theme + high_contrast.
- *   2. If no theme has ever been chosen, follow the device's OS
- *      light/dark preference — so a light-sensitive patient whose
- *      phone is in dark mode gets a dark app on first run, before they
- *      open the picker. The high-contrast toggle still applies if set.
+ *   1. The signed-in profile's saved color_scheme + night_mode.
+ *   2. If no palette has ever been chosen, the default palette is
+ *      used, but day/night still follows the device's OS preference
+ *      on first run — so a light-sensitive patient whose phone is in
+ *      dark mode gets a dark app before they open the picker.
  *
- * globals.css :root holds the warm-day values, so if this never ran
- * the app still renders correctly in the default theme — this only
+ * globals.css :root holds the green-day values, so if this never ran
+ * the app still renders correctly in the default palette — this only
  * ever overrides.
  */
 export function ThemeApplier() {
   const { profile } = useAuth();
-  const savedTheme = profile?.colorScheme ?? null;
-  const highContrast = profile?.highContrast ?? false;
+  const savedPalette = profile?.colorScheme ?? null;
+  const savedNight = profile?.nightMode ?? false;
+  const hasSavedChoice = savedPalette != null;
 
   useEffect(() => {
-    if (savedTheme) {
-      applyAppearance(savedTheme, highContrast);
+    if (hasSavedChoice) {
+      applyAppearance(savedPalette, savedNight);
       return;
     }
-    // No saved theme — follow the OS for day/night, but still honour
-    // the high-contrast toggle if the user has turned it on.
+    // No saved palette — use the default palette, but follow the OS
+    // for day/night.
     const prefersDark =
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-    applyAppearance(themeForOsPreference(!!prefersDark), highContrast);
-  }, [savedTheme, highContrast]);
+    applyAppearance(null, !!prefersDark);
+  }, [hasSavedChoice, savedPalette, savedNight]);
 
-  // When following the OS (no saved theme), react to the OS changing
+  // When following the OS (no saved palette), react to the OS changing
   // mid-session.
   useEffect(() => {
-    if (savedTheme) return;
+    if (hasSavedChoice) return;
     if (typeof window === 'undefined' || !window.matchMedia) return;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = () =>
-      applyAppearance(themeForOsPreference(mq.matches), highContrast);
+    const onChange = () => applyAppearance(null, mq.matches);
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
-  }, [savedTheme, highContrast]);
+  }, [hasSavedChoice]);
 
   return null;
 }
