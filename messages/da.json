@@ -322,5 +322,27 @@
     "sideRight": "Højre",
     "sideLeftRight": "Venstre & højre",
     "sideBoth": "Begge sider"
+  },
+  "profile": {
+    "title": "Din profil",
+    "menuLink": "Din profil og indstillinger",
+    "back": "Tilbage",
+    "nameLabel": "Navn",
+    "nameHelper": "Vises for dit behandlingsteam i hele appen.",
+    "emailLabel": "E-mail",
+    "emailHelper": "Dette er din login-adresse. Kontakt din klinik, hvis den skal ændres.",
+    "passwordLabel": "Adgangskode",
+    "passwordChange": "Skift adgangskode",
+    "professionLabel": "Profession",
+    "professionHelper": "Vises på skærmen og i journaludtrækket.",
+    "professionOtherPlaceholder": "Beskriv professionen",
+    "appearanceHeading": "Farver",
+    "appearanceHelper": "Vælg en farvepalet. Tekststørrelse findes i kontomenuen.",
+    "save": "Gem ændringer",
+    "saving": "Gemmer…",
+    "saved": "Profilen er gemt",
+    "saveError": "Din profil kunne ikke gemmes. Prøv venligst igen.",
+    "nameRequired": "Indtast venligst et navn.",
+    "professionOtherRequired": "Beskriv venligst professionen."
   }
 }

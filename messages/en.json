@@ -318,5 +318,27 @@
     "sideRight": "Right",
     "sideLeftRight": "Left & Right",
     "sideBoth": "Both sides"
+  },
+  "profile": {
+    "title": "Your profile",
+    "menuLink": "Your profile & settings",
+    "back": "Back",
+    "nameLabel": "Name",
+    "nameHelper": "Shown to your care team across the app.",
+    "emailLabel": "Email",
+    "emailHelper": "This is your sign-in address. Contact your clinic if it needs to change.",
+    "passwordLabel": "Password",
+    "passwordChange": "Change password",
+    "professionLabel": "Profession",
+    "professionHelper": "Shown on screen and in the medical-record export.",
+    "professionOtherPlaceholder": "Describe the profession",
+    "appearanceHeading": "Colours",
+    "appearanceHelper": "Choose a colour palette. Text size is in the account menu.",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "saved": "Profile saved",
+    "saveError": "Could not save your profile. Please try again.",
+    "nameRequired": "Please enter a name.",
+    "professionOtherRequired": "Please describe the profession."
   }
 }
