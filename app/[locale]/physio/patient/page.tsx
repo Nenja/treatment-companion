@@ -17,6 +17,7 @@ import {
   SkeletonParagraph,
   SkeletonScreen
 } from '@/components/feedback/Skeleton';
+import { injectionSideLabel } from '@/lib/types';
 
 /**
  * Physiotherapist patient view.
