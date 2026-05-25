@@ -12,7 +12,8 @@ import {
 import {
   useClinicianPatientData,
   useSetSuggestionStatus,
-  useSetMuscleSharing
+  useSetMuscleSharing,
+  useArchiveGoal
 } from '@/lib/supabase/clinicianPatient';
 import { formatLongDate } from '@/lib/dates';
 import { nrsToGas, injectionSideLabel, type GuidanceMethod } from '@/lib/types';
@@ -54,11 +55,18 @@ export default function ClinicianPatientPage() {
   const touchSession = useTouchClinicianSession();
   const setStatus = useSetSuggestionStatus();
   const setMuscleSharing = useSetMuscleSharing();
+  const archiveGoal = useArchiveGoal();
   const toast = useToast();
 
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showNewCycle, setShowNewCycle] = useState(false);
+  // The goal the physician is about to archive — drives the
+  // confirmation dialog. Holds { id, text } or null when none pending.
+  const [goalToArchive, setGoalToArchive] = useState<{
+    id: string;
+    text: string;
+  } | null>(null);
 
   // Auth + role gating.
   useEffect(() => {
@@ -146,6 +154,7 @@ export default function ClinicianPatientPage() {
     cycle,
     suggestions,
     activeGoals,
+    archivedGoals,
     checkins,
     treatment,
     physioAssessments,
@@ -242,6 +251,23 @@ export default function ClinicianPatientPage() {
   const onEndSession = async () => {
     await endSession.mutateAsync();
     router.replace(locale === 'en' ? '/clinician' : `/${locale}/clinician`);
+  };
+
+  // Archive the goal currently held in goalToArchive, then close the
+  // dialog. History is preserved; the goal leaves the patient's future
+  // check-ins. The query invalidation refreshes the goal list.
+  const onArchiveGoal = async () => {
+    if (!goalToArchive) return;
+    try {
+      await archiveGoal.mutateAsync({ goalId: goalToArchive.id });
+      toast.success('Goal archived');
+    } catch {
+      toast.error(
+        'Could not archive the goal. Please try again. If it keeps happening, contact your clinic.'
+      );
+    } finally {
+      setGoalToArchive(null);
+    }
   };
 
   // Touch session on any meaningful click. Safe to call unconditionally
@@ -479,6 +505,24 @@ export default function ClinicianPatientPage() {
                     ratings={ratingsByGoal.get(g.id) ?? []}
                     physioRatings={physioRatingsByGoal.get(g.id) ?? []}
                   />
+                  {/* Archive action — retires a goal that is no longer
+                      relevant. History is kept; the goal leaves the
+                      patient's future check-ins. */}
+                  <div className="mt-1.5 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        touch();
+                        setGoalToArchive({
+                          id: g.id,
+                          text: g.patientFacingText
+                        });
+                      }}
+                      className="text-[13px] font-semibold text-ink-muted hover:text-ink-soft"
+                    >
+                      Archive goal
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -689,7 +733,7 @@ export default function ClinicianPatientPage() {
                   notes: treatment.notes ?? undefined
                 }
               : undefined,
-            goals: activeGoals.map((g) => ({
+            goals: [...activeGoals, ...archivedGoals].map((g) => ({
               id: g.id,
               patientFacingText: g.patientFacingText
             })),
@@ -725,6 +769,78 @@ export default function ClinicianPatientPage() {
           endDisabled={endSession.isPending}
         />
       )}
+
+      {goalToArchive && (
+        <ArchiveGoalConfirmDialog
+          goalText={goalToArchive.text}
+          onCancel={() => setGoalToArchive(null)}
+          onArchive={onArchiveGoal}
+          archiveDisabled={archiveGoal.isPending}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Confirmation before archiving a goal. Archiving is reversible in
+ * principle but changes the patient's check-in, so it is confirmed
+ * rather than fired on a single tap. The dialog states plainly what
+ * archiving does and does not do.
+ */
+function ArchiveGoalConfirmDialog({
+  goalText,
+  onCancel,
+  onArchive,
+  archiveDisabled
+}: {
+  goalText: string;
+  onCancel: () => void;
+  onArchive: () => void;
+  archiveDisabled: boolean;
+}) {
+  const containerRef = useModalA11y(onCancel);
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="archive-goal-title"
+        className="w-full max-w-[400px] rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl"
+      >
+        <h2
+          id="archive-goal-title"
+          className="font-display text-[20px] text-ink"
+        >
+          Archive this goal?
+        </h2>
+        <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
+          &ldquo;{goalText}&rdquo;
+        </p>
+        <p className="mt-3 text-[14px] leading-relaxed text-ink-muted">
+          The patient will no longer be asked about this goal in their
+          weekly check-in. Its check-in history is kept and stays in the
+          record.
+        </p>
+        <div className="mt-5 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={onArchive}
+            disabled={archiveDisabled}
+            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-60"
+          >
+            Archive goal
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
+          >
+            Keep goal active
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

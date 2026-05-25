@@ -8,6 +8,8 @@ export interface ClinicianPatientGoal {
   id: string;
   patientFacingText: string;
   smartText: string;
+  /** Goal lifecycle status: 'active', 'archived', or 'combined'. */
+  status: string;
   nrs: NrsConfig;
 }
 
@@ -93,6 +95,10 @@ export interface ClinicianPatientData {
   };
   suggestions: ClinicianPatientSuggestion[];
   activeGoals: ClinicianPatientGoal[];
+  /** Goals the physician has archived. Excluded from the on-screen
+   *  goal list and from new check-ins, but retained so their check-in
+   *  history still reaches the EHR export. */
+  archivedGoals: ClinicianPatientGoal[];
   checkins: ClinicianPatientCheckin[];
   treatment: ClinicianTreatmentRecord | null;
   physioAssessments: ClinicianPhysioAssessment[];
@@ -178,10 +184,9 @@ export function useClinicianPatientData(
           supabase
             .from('approved_goal')
             .select(
-              'id, patient_facing_text, smart_text, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high'
+              'id, patient_facing_text, smart_text, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, status'
             )
             .eq('treatment_cycle_id', cycle.id)
-            .eq('status', 'active')
             .order('approved_at', { ascending: true }),
           supabase
             .from('weekly_checkin')
@@ -240,11 +245,17 @@ export function useClinicianPatientData(
         createdAt: s.created_at as string
       }));
 
-      const activeGoals: ClinicianPatientGoal[] = (goalsRes.data ?? []).map(
+      // All approved goals for the cycle, mapped. The query no longer
+      // filters by status so that archived goals remain available —
+      // their check-in history must still reach the EHR export. The
+      // page UI uses `activeGoals`; the export also includes
+      // `archivedGoals`.
+      const allGoals: ClinicianPatientGoal[] = (goalsRes.data ?? []).map(
         (g) => ({
           id: g.id as string,
           patientFacingText: g.patient_facing_text as string,
           smartText: g.smart_text as string,
+          status: g.status as string,
           nrs: {
             question: g.nrs_question as string,
             direction: g.nrs_direction as NrsDirection,
@@ -254,6 +265,12 @@ export function useClinicianPatientData(
             cutHigh: g.nrs_cut_high as number
           }
         })
+      );
+      const activeGoals: ClinicianPatientGoal[] = allGoals.filter(
+        (g) => g.status === 'active'
+      );
+      const archivedGoals: ClinicianPatientGoal[] = allGoals.filter(
+        (g) => g.status === 'archived'
       );
 
       const checkins: ClinicianPatientCheckin[] = (checkinsRes.data ?? []).map(
@@ -347,6 +364,7 @@ export function useClinicianPatientData(
         cycle,
         suggestions,
         activeGoals,
+        archivedGoals,
         checkins,
         treatment,
         physioAssessments,
@@ -395,6 +413,30 @@ export function useSetMuscleSharing() {
       const { error } = await supabase.rpc('set_muscle_sharing', {
         p_patient_id: input.patientId,
         p_share: input.share
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
+/**
+ * Archive a goal that is no longer relevant.
+ *
+ * Physician-only (enforced by the archive_goal RPC). Sets the goal's
+ * status to 'archived' — its check-in history is preserved, and it
+ * drops out of the patient's future weekly check-ins because the
+ * check-in only loads active goals.
+ */
+export function useArchiveGoal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { goalId: string }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('archive_goal', {
+        p_goal_id: input.goalId
       });
       if (error) throw error;
     },
