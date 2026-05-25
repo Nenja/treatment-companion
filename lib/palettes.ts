@@ -3,67 +3,74 @@
  *
  * Appearance is two independent choices:
  *
- *   1. THEME — a colour identity in a day or night form. Three
- *      identities ship, each genuinely distinct (not tints of one
- *      colour):
- *        green — the original calm sage identity. Default.
- *        blue  — a cool slate-blue identity.
- *        clay  — a warm terracotta/clay identity.
- *      Each has a day form and a night form: six themes in total.
+ *   1. DAY / NIGHT — a toggle. Independent of the colour choice.
  *
- *   2. HIGH CONTRAST — an on/off accessibility toggle. When on, a
- *      single dedicated high-contrast palette is applied INSTEAD of the
- *      theme (light or dark form, matching the theme's day/night).
- *      High contrast is a visual need, not another colour — so it
- *      layers on top of any theme, and the theme's identity steps
- *      aside while it is on.
+ *   2. PALETTE — one of:
+ *        green          — the original calm sage identity. Default.
+ *        plum           — a soft plum / purple identity.
+ *        slate          — a cool slate-blue identity.
+ *        clay           — a warm terracotta / clay identity.
+ *        high-contrast  — a dedicated maximum-legibility palette for
+ *                         low vision. Not a colour identity: choosing
+ *                         it deliberately drops the colour personality
+ *                         in favour of clarity. It still honours the
+ *                         day/night toggle (light or dark form).
  *
- * Every palette defines the same fourteen CSS custom properties the app
- * themes from. The variable NAMES are fixed; only their values change.
- * The accent role is carried by `--color-sage*` — the name is
- * historical; in the blue and clay themes those variables hold blue
- * and clay values. No component has to change.
+ * The four colour identities each define a `day` and a `night` set of
+ * the fourteen CSS custom properties the app themes from. The variable
+ * NAMES are fixed; only the values change. The accent role is carried
+ * by `--color-sage*` — the name is historical; in the plum, slate, and
+ * clay palettes those variables hold plum, slate, and clay values. No
+ * component has to change.
  *
- * Two deliberate constraints on every theme's accent:
+ * NOTE: this set is intentionally broad — it exists so the team can
+ * compare the identities on real screens and remove some later. Each
+ * identity is one self-contained block below, so deleting one is a
+ * small, safe edit. To remove an identity: delete its block from
+ * PALETTES, remove its id from PaletteId, and remove its legacy
+ * mappings if any.
+ *
+ * Two deliberate constraints on every accent:
  *   - It must stay clearly distinct from the amber `--color-amber-*`
- *     used for the "poor end" of the rating scale, so the two signals
- *     never blur.
+ *     used for the "poor end" of the rating scale.
  *   - It must not be a red/alarm hue — this is a calm patient tool.
  *
- * Contrast: in every theme, body text (ink / ink-soft) on the
- * backgrounds (cream / cream-soft) clears WCAG AA (4.5:1). The two
- * high-contrast palettes target AAA (7:1+). ink-muted is tertiary text
- * only (timestamps, hints) — never used for anything a user must read
- * to act.
+ * Contrast: in every palette, body text (ink / ink-soft) on the
+ * backgrounds (cream / cream-soft) clears WCAG AA (4.5:1). The
+ * high-contrast palette targets AAA (7:1+). ink-muted is tertiary text
+ * only — never used for anything a user must read to act.
  */
 
-export type ThemeId =
-  | 'green-day'
-  | 'green-night'
-  | 'blue-day'
-  | 'blue-night'
-  | 'clay-day'
-  | 'clay-night';
+export type PaletteId = 'green' | 'plum' | 'slate' | 'clay' | 'high-contrast';
 
-export type ThemeFamily = 'green' | 'blue' | 'clay';
+/** The selectable options, in picker order. */
+export const PALETTE_IDS: PaletteId[] = [
+  'green',
+  'plum',
+  'slate',
+  'clay',
+  'high-contrast'
+];
 
-export interface Theme {
-  id: ThemeId;
-  family: ThemeFamily;
-  isDark: boolean;
-  /** Display name of the colour identity (e.g. "Green"). */
+export interface Palette {
+  id: PaletteId;
+  /** Display name for the picker. */
   name: string;
-  colors: Record<string, string>;
+  /** True for the high-contrast palette — the picker can mark it as an
+   *  accessibility option rather than a colour. */
+  isAccessibility: boolean;
+  /** Colour variables for the day form and the night form. */
+  day: Record<string, string>;
+  night: Record<string, string>;
 }
 
-export const THEMES: Theme[] = [
+export const PALETTES: Palette[] = [
   // ---- GREEN — the original sage identity ---------------------------
   {
-    id: 'green-day',
-    family: 'green',
-    isDark: false,
+    id: 'green',
     name: 'Green',
-    colors: {
+    isAccessibility: false,
+    day: {
       '--color-cream': '#f6f1e8',
       '--color-cream-soft': '#fbf8f2',
       '--color-ink': '#1f2421',
@@ -78,14 +85,8 @@ export const THEMES: Theme[] = [
       '--color-focus': '#2f5563',
       '--color-on-accent': '#fbf8f2',
       '--color-stone-soft': '#efeae0'
-    }
-  },
-  {
-    id: 'green-night',
-    family: 'green',
-    isDark: true,
-    name: 'Green',
-    colors: {
+    },
+    night: {
       '--color-cream': '#1c1f1d',
       '--color-cream-soft': '#262a27',
       '--color-ink': '#ece7dd',
@@ -102,47 +103,76 @@ export const THEMES: Theme[] = [
       '--color-stone-soft': '#30342f'
     }
   },
-  // ---- BLUE — cool slate-blue identity ------------------------------
+  // ---- PLUM — soft plum / purple identity ---------------------------
   {
-    id: 'blue-day',
-    family: 'blue',
-    isDark: false,
-    name: 'Blue',
-    colors: {
-      // Soft cool-grey surfaces with a faint blue cast.
+    id: 'plum',
+    name: 'Plum',
+    isAccessibility: false,
+    day: {
+      // Warm-neutral surfaces with a faint mauve cast.
+      '--color-cream': '#f3eef2',
+      '--color-cream-soft': '#faf6f9',
+      '--color-ink': '#26212a',
+      '--color-ink-soft': '#504856',
+      '--color-ink-muted': '#6f6675',
+      // Accent: a muted plum. sage-deep is the button fill.
+      '--color-sage': '#7a5680',
+      '--color-sage-deep': '#5d3d63',
+      '--color-sage-soft': '#e4d8e6',
+      // Amber kept warm-gold so the "poor end" stays separate from plum.
+      '--color-amber-soft': '#e8d5a0',
+      '--color-amber-deep': '#705619',
+      '--color-stone': '#e3dce4',
+      '--color-focus': '#2f5563',
+      '--color-on-accent': '#faf6f9',
+      '--color-stone-soft': '#ece6ed'
+    },
+    night: {
+      // Deep aubergine-charcoal backgrounds.
+      '--color-cream': '#1e1a20',
+      '--color-cream-soft': '#28232b',
+      '--color-ink': '#ebe4ec',
+      '--color-ink-soft': '#bbb2bd',
+      '--color-ink-muted': '#918895',
+      // Plum lifted to read on the dark ground.
+      '--color-sage': '#a884ad',
+      '--color-sage-deep': '#86638c',
+      '--color-sage-soft': '#352a38',
+      '--color-amber-soft': '#3d3526',
+      '--color-amber-deep': '#d8bd80',
+      '--color-stone': '#3c3640',
+      '--color-focus': '#9cc7d6',
+      '--color-on-accent': '#150f17',
+      '--color-stone-soft': '#312b34'
+    }
+  },
+  // ---- SLATE — cool slate-blue identity -----------------------------
+  {
+    id: 'slate',
+    name: 'Slate',
+    isAccessibility: false,
+    day: {
       '--color-cream': '#eef1f5',
       '--color-cream-soft': '#f7f9fc',
       '--color-ink': '#1d2530',
       '--color-ink-soft': '#465061',
       '--color-ink-muted': '#646d7d',
-      // Accent: a clear mid blue. sage-deep is the button fill — dark
-      // enough that white-ish on-accent text clears AA on it.
       '--color-sage': '#3f6f9e',
       '--color-sage-deep': '#2b5077',
       '--color-sage-soft': '#d6e2ee',
-      // Amber kept as-is so the "poor end" signal stays warm and
-      // unmistakably separate from the blue accent.
       '--color-amber-soft': '#e8d5a0',
       '--color-amber-deep': '#705619',
       '--color-stone': '#dde2e9',
       '--color-focus': '#1f4c8a',
       '--color-on-accent': '#f7f9fc',
       '--color-stone-soft': '#e8ebf0'
-    }
-  },
-  {
-    id: 'blue-night',
-    family: 'blue',
-    isDark: true,
-    name: 'Blue',
-    colors: {
-      // Deep slate-blue backgrounds — not pure black.
+    },
+    night: {
       '--color-cream': '#161a21',
       '--color-cream-soft': '#1f242d',
       '--color-ink': '#e6e9ee',
       '--color-ink-soft': '#b2b9c4',
       '--color-ink-muted': '#888f9c',
-      // Accent lifted so it reads on the dark ground.
       '--color-sage': '#6f9fc9',
       '--color-sage-deep': '#4f7ba8',
       '--color-sage-soft': '#243140',
@@ -156,46 +186,32 @@ export const THEMES: Theme[] = [
   },
   // ---- CLAY — warm terracotta identity ------------------------------
   {
-    id: 'clay-day',
-    family: 'clay',
-    isDark: false,
+    id: 'clay',
     name: 'Clay',
-    colors: {
-      // Warm, slightly pink-tinted neutral surfaces.
+    isAccessibility: false,
+    day: {
       '--color-cream': '#f4ece6',
       '--color-cream-soft': '#fbf6f1',
       '--color-ink': '#2a221e',
       '--color-ink-soft': '#574b44',
       '--color-ink-muted': '#766860',
-      // Accent: a muted terracotta. Distinct from the amber/gold of
-      // the rating "poor end" — clay is redder and more muted, amber
-      // is yellower; placed side by side they stay separable.
       '--color-sage': '#b06245',
       '--color-sage-deep': '#8a4630',
       '--color-sage-soft': '#ecd9cf',
-      // Amber shifted slightly more yellow-gold here to hold its
-      // distance from the terracotta accent.
+      // Amber nudged more yellow-gold to hold distance from terracotta.
       '--color-amber-soft': '#e9d29a',
       '--color-amber-deep': '#6e5410',
       '--color-stone': '#e6dbd2',
       '--color-focus': '#2f5563',
       '--color-on-accent': '#fbf6f1',
       '--color-stone-soft': '#efe6dd'
-    }
-  },
-  {
-    id: 'clay-night',
-    family: 'clay',
-    isDark: true,
-    name: 'Clay',
-    colors: {
-      // Warm dark brown-charcoal backgrounds.
+    },
+    night: {
       '--color-cream': '#201b18',
       '--color-cream-soft': '#2b2522',
       '--color-ink': '#ede4dc',
       '--color-ink-soft': '#bdb2a9',
       '--color-ink-muted': '#938880',
-      // Terracotta lifted to read on the dark ground.
       '--color-sage': '#cf8568',
       '--color-sage-deep': '#b06245',
       '--color-sage-soft': '#3a2c25',
@@ -206,121 +222,123 @@ export const THEMES: Theme[] = [
       '--color-on-accent': '#1a0f0a',
       '--color-stone-soft': '#332c27'
     }
+  },
+  // ---- HIGH CONTRAST — dedicated low-vision palette -----------------
+  {
+    id: 'high-contrast',
+    name: 'High contrast',
+    isAccessibility: true,
+    day: {
+      '--color-cream': '#ffffff',
+      '--color-cream-soft': '#ffffff',
+      '--color-ink': '#000000',
+      '--color-ink-soft': '#1a1a1a',
+      '--color-ink-muted': '#333333',
+      '--color-sage': '#1f5138',
+      '--color-sage-deep': '#0f3a24',
+      '--color-sage-soft': '#d4e6db',
+      '--color-amber-soft': '#f2e2b0',
+      '--color-amber-deep': '#5a3d00',
+      '--color-stone': '#6b6b6b',
+      '--color-focus': '#0033aa',
+      '--color-on-accent': '#ffffff',
+      '--color-stone-soft': '#e0e0e0'
+    },
+    night: {
+      '--color-cream': '#000000',
+      '--color-cream-soft': '#000000',
+      '--color-ink': '#ffffff',
+      '--color-ink-soft': '#e6e6e6',
+      '--color-ink-muted': '#cccccc',
+      '--color-sage': '#9ed4b4',
+      '--color-sage-deep': '#7fbf9c',
+      '--color-sage-soft': '#16271d',
+      '--color-amber-soft': '#2a2410',
+      '--color-amber-deep': '#f0d488',
+      '--color-stone': '#8a8a8a',
+      '--color-focus': '#7fd4ff',
+      '--color-on-accent': '#06140d',
+      '--color-stone-soft': '#1f1f1f'
+    }
   }
 ];
 
-/**
- * The two high-contrast palettes. Not user-selectable as themes — the
- * high-contrast TOGGLE applies one of these, choosing the light form
- * for a day theme and the dark form for a night theme. One shared,
- * carefully tuned palette per form keeps the accessibility guarantee
- * reliable.
- */
-export const HIGH_CONTRAST: Record<'light' | 'dark', Record<string, string>> = {
-  light: {
-    '--color-cream': '#ffffff',
-    '--color-cream-soft': '#ffffff',
-    '--color-ink': '#000000',
-    '--color-ink-soft': '#1a1a1a',
-    '--color-ink-muted': '#333333',
-    '--color-sage': '#1f5138',
-    '--color-sage-deep': '#0f3a24',
-    '--color-sage-soft': '#d4e6db',
-    '--color-amber-soft': '#f2e2b0',
-    '--color-amber-deep': '#5a3d00',
-    '--color-stone': '#6b6b6b',
-    '--color-focus': '#0033aa',
-    '--color-on-accent': '#ffffff',
-    '--color-stone-soft': '#e0e0e0'
-  },
-  dark: {
-    '--color-cream': '#000000',
-    '--color-cream-soft': '#000000',
-    '--color-ink': '#ffffff',
-    '--color-ink-soft': '#e6e6e6',
-    '--color-ink-muted': '#cccccc',
-    '--color-sage': '#9ed4b4',
-    '--color-sage-deep': '#7fbf9c',
-    '--color-sage-soft': '#16271d',
-    '--color-amber-soft': '#2a2410',
-    '--color-amber-deep': '#f0d488',
-    '--color-stone': '#8a8a8a',
-    '--color-focus': '#7fd4ff',
-    '--color-on-accent': '#06140d',
-    '--color-stone-soft': '#1f1f1f'
-  }
-};
-
-const DEFAULT_THEME: ThemeId = 'green-day';
+const DEFAULT_PALETTE: PaletteId = 'green';
 
 /**
- * Map a stored color_scheme value to a theme id. Accepts the six theme
- * ids and also legacy values saved before the appearance work, so an
+ * Map a stored palette value to a PaletteId. Accepts the five current
+ * ids and also legacy values saved before this structure, so an
  * un-migrated or stale value still resolves cleanly.
  */
-export function resolveThemeId(stored: string | null | undefined): ThemeId {
+export function resolvePaletteId(
+  stored: string | null | undefined
+): PaletteId {
   switch (stored) {
+    case 'green':
+    case 'plum':
+    case 'slate':
+    case 'clay':
+    case 'high-contrast':
+      return stored;
+    // Legacy: the original flat schemes and the day/night-suffixed ids.
+    case 'light':
     case 'green-day':
     case 'green-night':
+    case 'warm-day':
+    case 'warm-night':
+      return 'green';
+    case 'dark':
+      return 'green';
     case 'blue-day':
     case 'blue-night':
+    case 'cool-day':
+    case 'cool-night':
+      return 'slate';
     case 'clay-day':
     case 'clay-night':
-      return stored;
-    // Legacy values — the original four flat schemes, and the
-    // intermediate warm/cool ids. All map onto the green identity,
-    // since green is the original look.
-    case 'light':
-    case 'high-contrast':
-    case 'warm-day':
-    case 'cool-day':
-      return 'green-day';
-    case 'dark':
+      return 'clay';
     case 'high-contrast-dark':
-    case 'warm-night':
-    case 'cool-night':
-      return 'green-night';
+      return 'high-contrast';
     default:
-      return DEFAULT_THEME;
+      return DEFAULT_PALETTE;
   }
 }
 
-/** True if a stored (possibly legacy) color_scheme value was itself a
- *  high-contrast scheme — used so legacy rows keep high contrast on. */
-export function legacyValueIsHighContrast(
+/** True if a stored (possibly legacy) value implies a night/dark form —
+ *  used to seed the day/night toggle for rows saved before the toggle
+ *  existed. */
+export function legacyValueIsNight(
   stored: string | null | undefined
 ): boolean {
-  return stored === 'high-contrast' || stored === 'high-contrast-dark';
+  return (
+    stored === 'dark' ||
+    stored === 'high-contrast-dark' ||
+    stored === 'green-night' ||
+    stored === 'blue-night' ||
+    stored === 'clay-night' ||
+    stored === 'warm-night' ||
+    stored === 'cool-night'
+  );
 }
 
-export function getTheme(id: string | null | undefined): Theme {
-  const themeId = resolveThemeId(id);
-  return THEMES.find((t) => t.id === themeId) ?? THEMES[0];
+export function getPalette(id: string | null | undefined): Palette {
+  const pid = resolvePaletteId(id);
+  return PALETTES.find((p) => p.id === pid) ?? PALETTES[0];
 }
 
 /**
- * Resolve a theme choice + high-contrast toggle into the actual set of
- * CSS variables to apply. When high contrast is on, the dedicated
- * high-contrast palette replaces the theme — light form for a day
- * theme, dark form for a night theme.
+ * Resolve a palette choice + day/night into the actual CSS variables
+ * to apply.
  */
 export function resolveColors(
-  themeIdOrLegacy: string | null | undefined,
-  highContrast: boolean
+  paletteIdOrLegacy: string | null | undefined,
+  night: boolean
 ): { colors: Record<string, string>; isDark: boolean; appliedId: string } {
-  const theme = getTheme(themeIdOrLegacy);
-  if (highContrast) {
-    const form = theme.isDark ? 'dark' : 'light';
-    return {
-      colors: HIGH_CONTRAST[form],
-      isDark: theme.isDark,
-      appliedId: `high-contrast-${form}`
-    };
-  }
-  return { colors: theme.colors, isDark: theme.isDark, appliedId: theme.id };
-}
-
-/** First-run default theme for a given OS prefers-color-scheme. */
-export function themeForOsPreference(prefersDark: boolean): ThemeId {
-  return prefersDark ? 'green-night' : 'green-day';
+  const palette = getPalette(paletteIdOrLegacy);
+  const colors = night ? palette.night : palette.day;
+  return {
+    colors,
+    isDark: night,
+    appliedId: `${palette.id}-${night ? 'night' : 'day'}`
+  };
 }
