@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
@@ -14,6 +14,7 @@ import {
   usePreviousTreatment
 } from '@/lib/supabase/clinicianPatient';
 import { todayIso } from '@/lib/dates';
+import { useSessionExpiryWarning } from '@/lib/useSessionExpiryWarning';
 import {
   GUIDANCE_METHODS,
   INJECTION_SIDES,
@@ -54,6 +55,26 @@ export default function TreatmentRecordPage() {
   const touchSession = useTouchClinicianSession();
   const toast = useToast();
   const tFeedback = useTranslations('feedback');
+
+  // Keep the unlock session alive while the clinician fills the form.
+  // Filling a long treatment form IS activity and should count — but
+  // we throttle to at most one touch per 60s so it isn't a request per
+  // keystroke. Without this, a clinician spending many minutes on a
+  // multi-muscle entry could have the session expire under them.
+  const lastTouchRef = useRef(0);
+  const touchActivity = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTouchRef.current < 60_000) return;
+    lastTouchRef.current = now;
+    touchSession.mutate();
+  }, [touchSession]);
+
+  // Warn the clinician before the unlock session expires, as a safety
+  // net for when they pause (a phone call mid-form). lastActivityAt is
+  // refetched every 30s by the session query.
+  const expiry = useSessionExpiryWarning(
+    sessionQuery.data?.lastActivityAt
+  );
 
   // Previous-cycle treatment for "Copy from previous". The hook only
   // fires once we know the current cycle's number (i.e. when dataQuery
@@ -186,6 +207,21 @@ export default function TreatmentRecordPage() {
       !Number.isNaN(parseFloat(i.doseUnits))
   );
   const totalUnitsNum = parseFloat(totalUnits);
+
+  // Sum of the per-muscle doses entered so far. Shown to the clinician
+  // as a plain figure — NOT compared to "Total units" and never
+  // flagged. The app states the arithmetic; the clinician does the
+  // reconciling. A comparison/warning would be the app passing
+  // judgement on a clinical entry, which it deliberately does not do.
+  const dosesSum = injections.reduce((sum, i) => {
+    const n = parseFloat(i.doseUnits);
+    return Number.isNaN(n) ? sum : sum + n;
+  }, 0);
+  // Tidy display: avoid a trailing ".0" on whole numbers.
+  const dosesSumLabel = Number.isInteger(dosesSum)
+    ? String(dosesSum)
+    : String(Number(dosesSum.toFixed(2)));
+
   const canSubmit =
     date.trim() &&
     drugProduct.trim() &&
@@ -193,6 +229,21 @@ export default function TreatmentRecordPage() {
     !Number.isNaN(totalUnitsNum) &&
     totalUnitsNum >= 0 &&
     validInjections.length > 0;
+
+  // What the form still needs before it can be saved — so a disabled
+  // Save button is never a silent dead end. Each item names a concrete
+  // missing field; the clinician sees exactly what to fix.
+  const missing: string[] = [];
+  if (!date.trim()) missing.push('a treatment date');
+  if (!drugProduct.trim()) missing.push('the drug product');
+  if (!totalUnits.trim() || Number.isNaN(totalUnitsNum)) {
+    missing.push('the total units');
+  } else if (totalUnitsNum < 0) {
+    missing.push('a total units value of zero or more');
+  }
+  if (validInjections.length === 0) {
+    missing.push('at least one muscle with a name and a dose');
+  }
 
   const submit = async () => {
     if (!canSubmit || save.isPending) return;
@@ -248,13 +299,55 @@ export default function TreatmentRecordPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[480px] px-5 pb-24 pt-6">
+      <main
+        className="mx-auto max-w-[480px] px-5 pb-24 pt-6"
+        onInput={touchActivity}
+      >
         <h1 className="font-display text-[24px] leading-tight text-ink">
           {existing ? 'Edit treatment record' : 'Record treatment'}
         </h1>
         <p className="mt-1 text-[14px] text-ink-soft">
           For {patient.displayName} · Cycle {cycle.cycleNumber}
         </p>
+
+        {/* Session-expiry warning. The unlock lasts one hour from the
+            last activity; typing in this form extends it, but if the
+            clinician pauses (an interruption mid-form) it can still run
+            down. This banner gives clear lead time and a one-tap way to
+            extend, so a long treatment entry isn't lost to a silent
+            timeout. */}
+        {expiry.state === 'expiring' && (
+          <div
+            role="alert"
+            className="mt-5 rounded-[var(--radius-card)] border border-amber-deep/40 bg-amber-soft/40 p-4"
+          >
+            <p className="text-[15px] font-semibold text-ink">
+              Your patient access is about to expire
+            </p>
+            <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
+              You have about {expiry.minutesLeft}{' '}
+              {expiry.minutesLeft === 1 ? 'minute' : 'minutes'} left.
+              Save this treatment, or keep your access open if you need
+              more time.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                lastTouchRef.current = Date.now();
+                touchSession.mutate(undefined, {
+                  // Refetch the session so the new last_activity_at is
+                  // picked up and the banner clears at once, rather
+                  // than waiting up to 30s for the next poll.
+                  onSuccess: () => sessionQuery.refetch()
+                });
+              }}
+              disabled={touchSession.isPending}
+              className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
+            >
+              Keep working
+            </button>
+          </div>
+        )}
 
         {/* Copy from previous treatment — only when a previous one exists */}
         {previousTreatment.data && (
@@ -449,6 +542,19 @@ export default function TreatmentRecordPage() {
           + Add another muscle
         </button>
 
+        {/* Running total of the per-muscle doses entered above. A plain
+            figure for the clinician's own reference — not compared to
+            "Total units", not flagged. Shown once at least one dose is
+            present. */}
+        {dosesSum > 0 && (
+          <p className="mt-3 text-[14px] text-ink-soft">
+            Per-muscle doses entered:{' '}
+            <span className="font-semibold tabular-nums text-ink">
+              {dosesSumLabel} units
+            </span>
+          </p>
+        )}
+
         {/* Session notes */}
         <Field label="Session notes" helper="Optional">
           <textarea
@@ -459,6 +565,17 @@ export default function TreatmentRecordPage() {
             maxLength={500}
           />
         </Field>
+
+        {/* What's still needed — shown only when Save is disabled, so
+            a greyed-out Save button is never unexplained. */}
+        {!canSubmit && missing.length > 0 && (
+          <p className="mt-6 text-[14px] leading-relaxed text-ink-soft">
+            <span className="font-semibold text-ink">
+              Before saving, please add:{' '}
+            </span>
+            {missing.join(', ')}.
+          </p>
+        )}
 
         <div className="mt-8 flex gap-3">
           <button
