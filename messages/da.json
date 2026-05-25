@@ -228,7 +228,13 @@
       "suggestionsEmpty": "Ingen forslag afventer gennemgang.",
       "activeGoalsTitle": "Aktive mål",
       "activeGoalsEmpty": "Ingen aktive mål endnu.",
-      "review": "Gennemgå"
+      "review": "Gennemgå",
+      "archiveGoal": "Arkivér mål",
+      "archiveConfirmTitle": "Arkivér dette mål?",
+      "archiveConfirmBody": "Patienten vil ikke længere blive spurgt om dette mål i den ugentlige opfølgning. Opfølgningshistorikken bevares og forbliver i journalen.",
+      "archiveConfirmKeep": "Behold målet aktivt",
+      "archiveToast": "Målet er arkiveret",
+      "archiveError": "Målet kunne ikke arkiveres. Prøv venligst igen. Hvis det bliver ved, så kontakt din klinik."
     },
     "review": {
       "title": "Gennemgå forslag",
@@ -276,5 +282,32 @@
     "reset": "Nulstil testdata",
     "auditEmpty": "Ingen hændelser endnu.",
     "virtualDate": "Virtuel dato: {date}"
+  },
+  "intro": {
+    "dismiss": "Forstået",
+    "patientTitle": "Velkommen til din behandlingsledsager",
+    "patientBody": "Her følger du op på dine behandlingsmål — som regel én gang om ugen. Hver opfølgning tager et par minutter, og din klinik kan se dine svar, så de kan tilpasse din behandling. Når noget skal udfyldes, kan du se det her på denne skærm.",
+    "physiotherapistTitle": "Velkommen",
+    "physiotherapistBody": "Lås en patient op med den besøgskode, patienten viser dig. Derefter kan du registrere, hvordan patientens behandlingsmål skrider frem, foreslå nye mål og markere muskler, som lægen kan overveje ved næste injektionsbesøg.",
+    "clinicianTitle": "Velkommen",
+    "clinicianBody": "Lås en patient op med patientens besøgskode for at gennemgå mål, registrere en behandling og se, hvordan patienten og terapeuten har vurderet fremskridtene. Forslag fra patient og terapeut vises på patientens side, så du kan handle på dem."
+  },
+  "appearance": {
+    "heading": "Udseende",
+    "textSize": "Tekststørrelse",
+    "nightMode": "Nattilstand",
+    "nightModeHint": "Mørkere farver, nemmere i svagt lys",
+    "paletteGreen": "Grøn",
+    "palettePlum": "Blomme",
+    "paletteSlate": "Skifer",
+    "paletteClay": "Ler",
+    "paletteHighContrast": "Høj kontrast"
+  },
+  "admin": {
+    "roleTherapist": "Terapeut",
+    "roleTherapistHint": "Fysioterapeut, ergoterapeut, sygeplejerske og andre",
+    "professionLabel": "Profession",
+    "professionHelper": "Vises på skærmen og i journaludtrækket.",
+    "professionOtherPlaceholder": "Beskriv professionen"
   }
 }

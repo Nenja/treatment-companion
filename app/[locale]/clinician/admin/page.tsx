@@ -123,6 +123,8 @@ function CreateAccountSection() {
   const create = useCreateAccount();
   const toast = useToast();
   const tFeedback = useTranslations('feedback');
+  const tAdmin = useTranslations('admin');
+  const locale = useLocale();
 
   const [role, setRole] = useState<
     'patient' | 'clinician' | 'physiotherapist'
@@ -271,9 +273,9 @@ function CreateAccountSection() {
                 : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
             }`}
           >
-            Therapist
+            {tAdmin('roleTherapist')}
             <span className="block text-[12px] font-normal text-ink-muted">
-              Physiotherapist, occupational therapist, nurse, and others
+              {tAdmin('roleTherapistHint')}
             </span>
           </button>
         </div>
@@ -284,8 +286,8 @@ function CreateAccountSection() {
           permission. */}
       {role === 'physiotherapist' && (
         <Field
-          label="Profession"
-          helper="Shown on screen and in the medical-record export."
+          label={tAdmin('professionLabel')}
+          helper={tAdmin('professionHelper')}
         >
           <select
             value={profession}
@@ -294,7 +296,7 @@ function CreateAccountSection() {
             }
             className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-3 text-[14px] font-semibold text-ink focus:border-sage focus:outline-none"
           >
-            {professionOptions('en').map((opt) => (
+            {professionOptions(locale === 'da' ? 'da' : 'en').map((opt) => (
               <option key={opt.code} value={opt.code}>
                 {opt.label}
               </option>
@@ -305,7 +307,7 @@ function CreateAccountSection() {
               type="text"
               value={professionOther}
               onChange={(e) => setProfessionOther(e.target.value)}
-              placeholder="Describe the profession"
+              placeholder={tAdmin('professionOtherPlaceholder')}
               maxLength={60}
               className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2.5 text-[14px] text-ink focus:border-sage focus:outline-none"
             />

@@ -260,11 +260,9 @@ export default function ClinicianPatientPage() {
     if (!goalToArchive) return;
     try {
       await archiveGoal.mutateAsync({ goalId: goalToArchive.id });
-      toast.success('Goal archived');
+      toast.success(t('archiveToast'));
     } catch {
-      toast.error(
-        'Could not archive the goal. Please try again. If it keeps happening, contact your clinic.'
-      );
+      toast.error(t('archiveError'));
     } finally {
       setGoalToArchive(null);
     }
@@ -520,7 +518,7 @@ export default function ClinicianPatientPage() {
                       }}
                       className="text-[13px] font-semibold text-ink-muted hover:text-ink-soft"
                     >
-                      Archive goal
+                      {t('archiveGoal')}
                     </button>
                   </div>
                 </li>
@@ -800,6 +798,7 @@ function ArchiveGoalConfirmDialog({
   archiveDisabled: boolean;
 }) {
   const containerRef = useModalA11y(onCancel);
+  const t = useTranslations('clinician.patient');
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
       <div
@@ -813,15 +812,13 @@ function ArchiveGoalConfirmDialog({
           id="archive-goal-title"
           className="font-display text-[20px] text-ink"
         >
-          Archive this goal?
+          {t('archiveConfirmTitle')}
         </h2>
         <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
           &ldquo;{goalText}&rdquo;
         </p>
         <p className="mt-3 text-[14px] leading-relaxed text-ink-muted">
-          The patient will no longer be asked about this goal in their
-          weekly check-in. Its check-in history is kept and stays in the
-          record.
+          {t('archiveConfirmBody')}
         </p>
         <div className="mt-5 flex flex-col gap-2">
           <button
@@ -830,14 +827,14 @@ function ArchiveGoalConfirmDialog({
             disabled={archiveDisabled}
             className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-60"
           >
-            Archive goal
+            {t('archiveGoal')}
           </button>
           <button
             type="button"
             onClick={onCancel}
             className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
-            Keep goal active
+            {t('archiveConfirmKeep')}
           </button>
         </div>
       </div>

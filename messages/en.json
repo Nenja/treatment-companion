@@ -224,7 +224,13 @@
       "suggestionsEmpty": "No suggestions awaiting review.",
       "activeGoalsTitle": "Active goals",
       "activeGoalsEmpty": "No active goals yet.",
-      "review": "Review"
+      "review": "Review",
+      "archiveGoal": "Archive goal",
+      "archiveConfirmTitle": "Archive this goal?",
+      "archiveConfirmBody": "The patient will no longer be asked about this goal in their weekly check-in. Its check-in history is kept and stays in the record.",
+      "archiveConfirmKeep": "Keep goal active",
+      "archiveToast": "Goal archived",
+      "archiveError": "Could not archive the goal. Please try again. If it keeps happening, contact your clinic."
     },
     "review": {
       "title": "Review suggestion",
@@ -272,5 +278,32 @@
     "reset": "Reset fake data",
     "auditEmpty": "No events recorded yet.",
     "virtualDate": "Virtual date: {date}"
+  },
+  "intro": {
+    "dismiss": "Got it",
+    "patientTitle": "Welcome to your treatment companion",
+    "patientBody": "This is where you check in on your treatment goals — usually once a week. Each check-in takes a couple of minutes, and your clinic sees your answers so they can adjust your care. When something is due, you'll see it right here on this screen.",
+    "physiotherapistTitle": "Welcome",
+    "physiotherapistBody": "Unlock a patient with the visit code they show you. You can then record how their treatment goals are progressing, suggest new goals, and flag muscles for the physician to consider at the next injection visit.",
+    "clinicianTitle": "Welcome",
+    "clinicianBody": "Unlock a patient with their visit code to review goals, record a treatment, and see how the patient and their physiotherapist have rated progress. Patient and physiotherapist suggestions appear on the patient's page for you to act on."
+  },
+  "appearance": {
+    "heading": "Appearance",
+    "textSize": "Text size",
+    "nightMode": "Night mode",
+    "nightModeHint": "Darker colours, easier in low light",
+    "paletteGreen": "Green",
+    "palettePlum": "Plum",
+    "paletteSlate": "Slate",
+    "paletteClay": "Clay",
+    "paletteHighContrast": "High contrast"
+  },
+  "admin": {
+    "roleTherapist": "Therapist",
+    "roleTherapistHint": "Physiotherapist, occupational therapist, nurse, and others",
+    "professionLabel": "Profession",
+    "professionHelper": "Shown on screen and in the medical-record export.",
+    "professionOtherPlaceholder": "Describe the profession"
   }
 }
