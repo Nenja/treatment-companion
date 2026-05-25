@@ -50,6 +50,8 @@ export async function POST(req: NextRequest) {
     displayName?: string;
     tempPassword?: string;
     isAdmin?: boolean;
+    profession?: string | null;
+    professionOther?: string | null;
   };
   try {
     body = await req.json();
@@ -62,6 +64,40 @@ export async function POST(req: NextRequest) {
   const displayName = body.displayName?.trim();
   const tempPassword = body.tempPassword;
   const newIsAdmin = body.isAdmin === true;
+
+  // Profession applies only to the non-physician professional role.
+  // It is a display label, never a permission. Validated against the
+  // same fixed set as the database check constraint (migration 0040).
+  const PROFESSION_CODES = [
+    'physiotherapist',
+    'occupational_therapist',
+    'nurse',
+    'speech_therapist',
+    'other'
+  ];
+  let profession: string | null = null;
+  let professionOther: string | null = null;
+  if (role === 'physiotherapist') {
+    profession = body.profession ?? null;
+    if (profession !== null && !PROFESSION_CODES.includes(profession)) {
+      return NextResponse.json(
+        { error: 'Invalid profession' },
+        { status: 400 }
+      );
+    }
+    if (profession === 'other') {
+      professionOther = (body.professionOther ?? '').trim() || null;
+      if (!professionOther) {
+        return NextResponse.json(
+          {
+            error:
+              'professionOther is required when profession is "other"'
+          },
+          { status: 400 }
+        );
+      }
+    }
+  }
 
   if (
     role !== 'patient' &&
@@ -133,7 +169,9 @@ export async function POST(req: NextRequest) {
       display_name: displayName,
       must_change_password: true,
       has_seen_intro: false,
-      is_admin: newIsAdmin
+      is_admin: newIsAdmin,
+      profession,
+      profession_other: professionOther
     })
     .eq('id', newUserId);
 

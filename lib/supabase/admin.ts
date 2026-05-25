@@ -39,6 +39,10 @@ export interface CreateAccountInput {
   displayName: string;
   tempPassword: string;
   isAdmin: boolean;
+  /** Profession code for the therapist role; null otherwise. */
+  profession: string | null;
+  /** Free-text profession, used only when profession === 'other'. */
+  professionOther: string | null;
 }
 
 export interface CreateAccountResult {

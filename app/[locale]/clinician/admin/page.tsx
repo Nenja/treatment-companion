@@ -15,6 +15,10 @@ import { AccountMenu } from '@/components/layout/AccountMenu';
 import { useToast } from '@/components/feedback/Toast';
 import { SkeletonBlock } from '@/components/feedback/Skeleton';
 import { classifyError } from '@/lib/feedback';
+import {
+  professionOptions,
+  type ProfessionCode
+} from '@/lib/professionLabel';
 
 /**
  * Clinician-facing admin: create new patient/clinician accounts and
@@ -127,6 +131,12 @@ function CreateAccountSection() {
   const [displayName, setDisplayName] = useState('');
   const [tempPassword, setTempPassword] = useState('');
   const [makeAdmin, setMakeAdmin] = useState(false);
+  // Profession label for the non-physician professional role. Only
+  // meaningful when role === 'physiotherapist'.
+  const [profession, setProfession] = useState<ProfessionCode>(
+    'physiotherapist'
+  );
+  const [professionOther, setProfessionOther] = useState('');
   const [createdInfo, setCreatedInfo] = useState<{
     email: string;
     role: string;
@@ -145,6 +155,13 @@ function CreateAccountSection() {
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
     displayName.trim() &&
     tempPassword.length >= 8 &&
+    // When the therapist role has profession "other", a free-text
+    // description is required so the export reads meaningfully.
+    !(
+      role === 'physiotherapist' &&
+      profession === 'other' &&
+      !professionOther.trim()
+    ) &&
     !create.isPending;
 
   const submit = async () => {
@@ -155,7 +172,14 @@ function CreateAccountSection() {
         email: email.trim(),
         displayName: displayName.trim(),
         tempPassword,
-        isAdmin: makeAdmin
+        isAdmin: makeAdmin,
+        // Profession only applies to the non-physician professional
+        // role; sent as null otherwise so the server stores nothing.
+        profession: role === 'physiotherapist' ? profession : null,
+        professionOther:
+          role === 'physiotherapist' && profession === 'other'
+            ? professionOther.trim()
+            : null
       });
       setCreatedInfo({
         email: res.email,
@@ -167,6 +191,8 @@ function CreateAccountSection() {
       setEmail('');
       setDisplayName('');
       setMakeAdmin(false);
+      setProfession('physiotherapist');
+      setProfessionOther('');
       setTempPassword(generateTempPassword());
     } catch (err) {
       // Error already surfaces in create.error and is shown inline,
@@ -245,10 +271,47 @@ function CreateAccountSection() {
                 : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
             }`}
           >
-            Physiotherapist
+            Therapist
+            <span className="block text-[12px] font-normal text-ink-muted">
+              Physiotherapist, occupational therapist, nurse, and others
+            </span>
           </button>
         </div>
       </Field>
+
+      {/* Profession label — applies only to the therapist role. It is a
+          display label (shown on screen and in the EHR export), not a
+          permission. */}
+      {role === 'physiotherapist' && (
+        <Field
+          label="Profession"
+          helper="Shown on screen and in the medical-record export."
+        >
+          <select
+            value={profession}
+            onChange={(e) =>
+              setProfession(e.target.value as ProfessionCode)
+            }
+            className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-3 text-[14px] font-semibold text-ink focus:border-sage focus:outline-none"
+          >
+            {professionOptions('en').map((opt) => (
+              <option key={opt.code} value={opt.code}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          {profession === 'other' && (
+            <input
+              type="text"
+              value={professionOther}
+              onChange={(e) => setProfessionOther(e.target.value)}
+              placeholder="Describe the profession"
+              maxLength={60}
+              className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2.5 text-[14px] text-ink focus:border-sage focus:outline-none"
+            />
+          )}
+        </Field>
+      )}
 
       <Field label="Email" helper="Will be the sign-in identifier.">
         <input

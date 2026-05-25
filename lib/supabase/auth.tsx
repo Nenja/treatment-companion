@@ -41,6 +41,12 @@ export interface AppProfile {
   /** Chosen colour scheme id, or null if not yet chosen (the app then
    *  follows the OS light/dark preference). */
   colorScheme: string | null;
+  /** Profession code for non-physician professional accounts — a
+   *  display label only, not a permission. Null for patients,
+   *  physicians, and accounts where it was never set. */
+  profession: string | null;
+  /** Free-text profession, used only when profession === 'other'. */
+  professionOther: string | null;
 }
 
 interface AuthState {
@@ -92,7 +98,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data, error } = await supabase
         .from('profile')
         .select(
-          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin, color_scheme'
+          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin, color_scheme, profession, profession_other'
         )
         .eq('id', userId)
         .maybeSingle();
@@ -107,7 +113,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         mustChangePassword: Boolean(data.must_change_password),
         hasSeenIntro: Boolean(data.has_seen_intro),
         isAdmin: Boolean(data.is_admin),
-        colorScheme: (data.color_scheme as string | null) ?? null
+        colorScheme: (data.color_scheme as string | null) ?? null,
+        profession: (data.profession as string | null) ?? null,
+        professionOther: (data.profession_other as string | null) ?? null
       };
     },
     []
