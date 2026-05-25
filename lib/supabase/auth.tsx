@@ -39,8 +39,11 @@ export interface AppProfile {
    *  clinician, physiotherapist, or patient. */
   isAdmin: boolean;
   /** Chosen colour scheme id, or null if not yet chosen (the app then
-   *  follows the OS light/dark preference). */
+   *  follows the OS light/dark preference). Since migration 0042 this
+   *  holds a theme id; legacy values are mapped at read time. */
   colorScheme: string | null;
+  /** High-contrast accessibility toggle. Applied on top of the theme. */
+  highContrast: boolean;
   /** Profession code for non-physician professional accounts — a
    *  display label only, not a permission. Null for patients,
    *  physicians, and accounts where it was never set. */
@@ -98,7 +101,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data, error } = await supabase
         .from('profile')
         .select(
-          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin, color_scheme, profession, profession_other'
+          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin, color_scheme, high_contrast, profession, profession_other'
         )
         .eq('id', userId)
         .maybeSingle();
@@ -114,6 +117,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         hasSeenIntro: Boolean(data.has_seen_intro),
         isAdmin: Boolean(data.is_admin),
         colorScheme: (data.color_scheme as string | null) ?? null,
+        highContrast: Boolean(data.high_contrast),
         profession: (data.profession as string | null) ?? null,
         professionOther: (data.profession_other as string | null) ?? null
       };
