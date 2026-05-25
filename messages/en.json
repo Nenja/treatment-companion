@@ -305,5 +305,17 @@
     "professionLabel": "Profession",
     "professionHelper": "Shown on screen and in the medical-record export.",
     "professionOtherPlaceholder": "Describe the profession"
+  },
+  "physio": {
+    "musclesTreatedTitle": "Muscles treated",
+    "musclesTreatedFrom": "From the most recent treatment on {date}.",
+    "musclesShow": "Show treated muscles",
+    "musclesHide": "Hide treated muscles",
+    "musclesCount": "{count} treated",
+    "musclesNone": "No muscles were recorded for that treatment.",
+    "sideLeft": "Left",
+    "sideRight": "Right",
+    "sideLeftRight": "Left & Right",
+    "sideBoth": "Both sides"
   }
 }

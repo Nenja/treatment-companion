@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import {
   useCurrentClinicianSession,
@@ -17,7 +17,7 @@ import {
   SkeletonParagraph,
   SkeletonScreen
 } from '@/components/feedback/Skeleton';
-import { injectionSideLabel } from '@/lib/types';
+import { groupTreatedMuscles } from '@/lib/types';
 
 /**
  * Physiotherapist patient view.
@@ -172,44 +172,15 @@ export default function PhysioPatientPage() {
             </section>
 
             {/* Most recent treatment — which muscles were injected, so
-                the physiotherapist can plan exercise work around it.
-                Read-only; latest session only. */}
+                the therapist can plan exercise work around it.
+                Collapsed by default: secondary reference, not the main
+                focus of the page. Read-only; latest session only. */}
             {patientData.data.latestTreatment && (
-              <section className="mt-8">
-                <h2 className="font-display text-[18px] text-ink">
-                  Muscles treated
-                </h2>
-                <p className="mt-1 text-[13px] text-ink-muted">
-                  From the most recent treatment on{' '}
-                  {formatLongDate(
-                    patientData.data.latestTreatment.date,
-                    locale
-                  )}
-                  .
-                </p>
-                {patientData.data.latestTreatment.muscles.length === 0 ? (
-                  <p className="mt-3 text-[14px] text-ink-muted">
-                    No muscles were recorded for that treatment.
-                  </p>
-                ) : (
-                  <ul className="mt-3 flex flex-wrap gap-2">
-                    {patientData.data.latestTreatment.muscles.map(
-                      (m, i) => (
-                        <li
-                          key={`${m.muscle}-${m.side}-${i}`}
-                          className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[14px] text-ink"
-                        >
-                          {m.muscle}
-                          <span className="text-ink-muted">
-                            {' · '}
-                            {injectionSideLabel(m.side)}
-                          </span>
-                        </li>
-                      )
-                    )}
-                  </ul>
-                )}
-              </section>
+              <TreatedMusclesSection
+                date={patientData.data.latestTreatment.date}
+                muscles={patientData.data.latestTreatment.muscles}
+                locale={locale}
+              />
             )}
 
             {/* Progress reporting + goal & muscle suggestions, in tabs
@@ -232,5 +203,114 @@ export default function PhysioPatientPage() {
         )}
       </main>
     </div>
+  );
+}
+
+/**
+ * The "muscles treated" section on the therapist's patient page.
+ *
+ * Two deliberate design choices, both prompted by the original list
+ * reading as messy and over-prominent:
+ *
+ *  1. COLLAPSED BY DEFAULT. The injected-muscle list is secondary
+ *     reference — useful when the therapist is planning exercise work,
+ *     but not the focus of the page. It sits behind a header button
+ *     showing a count; the therapist opens it when they want it.
+ *
+ *  2. GROUPED. The stored data has one row per muscle-and-side, so a
+ *     muscle injected on both sides appeared twice. groupTreatedMuscles
+ *     collapses to one entry per muscle with the sides combined and the
+ *     list sorted, so it reads as a clean list.
+ */
+function TreatedMusclesSection({
+  date,
+  muscles,
+  locale
+}: {
+  date: string;
+  muscles: { muscle: string; side: 'left' | 'right' | 'bilateral' }[];
+  locale: string;
+}) {
+  const t = useTranslations('physio');
+  const [open, setOpen] = useState(false);
+
+  const grouped = groupTreatedMuscles(muscles);
+  const isEmpty = grouped.length === 0;
+
+  // Map a grouped muscle's side key to its localised label.
+  const sideLabel = (key: 'left' | 'right' | 'leftRight' | 'both') => {
+    switch (key) {
+      case 'left':
+        return t('sideLeft');
+      case 'right':
+        return t('sideRight');
+      case 'leftRight':
+        return t('sideLeftRight');
+      case 'both':
+        return t('sideBoth');
+    }
+  };
+
+  return (
+    <section className="mt-8">
+      {/* Header button — toggles the list. Shows a count so the
+          therapist knows there is something there without opening it. */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-3 text-left hover:bg-stone-soft"
+      >
+        <span className="flex flex-col">
+          <span className="font-display text-[17px] leading-tight text-ink">
+            {t('musclesTreatedTitle')}
+          </span>
+          <span className="mt-0.5 text-[13px] text-ink-muted">
+            {isEmpty
+              ? t('musclesTreatedFrom', {
+                  date: formatLongDate(date, locale)
+                })
+              : t('musclesCount', { count: grouped.length })}
+          </span>
+        </span>
+        {/* Chevron — rotates when open. Matches the app's existing
+            collapsible cards (CatchUpCard). */}
+        <span
+          aria-hidden
+          className={`text-[14px] text-ink-muted transition-transform ${
+            open ? 'rotate-180' : ''
+          }`}
+        >
+          ▾
+        </span>
+      </button>
+
+      {open && (
+        <div className="mt-2">
+          <p className="text-[13px] text-ink-muted">
+            {t('musclesTreatedFrom', { date: formatLongDate(date, locale) })}
+          </p>
+          {isEmpty ? (
+            <p className="mt-2 text-[14px] text-ink-muted">
+              {t('musclesNone')}
+            </p>
+          ) : (
+            <ul className="mt-2 divide-y divide-stone/70 rounded-[var(--radius-button)] border border-stone bg-cream-soft">
+              {grouped.map((g) => (
+                <li
+                  key={g.muscle}
+                  className="flex items-baseline justify-between gap-3 px-4 py-2.5"
+                >
+                  <span className="text-[14px] text-ink">{g.muscle}</span>
+                  <span className="shrink-0 text-[13px] text-ink-muted">
+                    {sideLabel(g.sideKey)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
   );
 }

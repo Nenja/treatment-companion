@@ -169,6 +169,67 @@ export function injectionSideLabel(side: InjectionSide): string {
   }
 }
 
+/**
+ * A treated muscle, grouped: one entry per distinct muscle name, with
+ * the sides it was treated on collapsed into a single side key.
+ *
+ * `sideKey` is one of:
+ *   'left'      — treated on the left only
+ *   'right'     — treated on the right only
+ *   'leftRight' — treated on both left and right (two separate rows)
+ *   'both'      — a single 'bilateral' row
+ * The UI maps the key to a localised label; this keeps the grouping
+ * logic free of display strings.
+ */
+export interface GroupedMuscle {
+  muscle: string;
+  sideKey: 'left' | 'right' | 'leftRight' | 'both';
+}
+
+/**
+ * Group raw treated-muscle rows for display.
+ *
+ * The stored data has one row per injected muscle-and-side, so a muscle
+ * injected on both sides appears as two rows. For a readable list we
+ * collapse to one entry per muscle, combine the sides, sort
+ * alphabetically, and de-duplicate. This is what makes the
+ * therapist's "muscles treated" list legible instead of a scatter of
+ * repeated names.
+ */
+export function groupTreatedMuscles(
+  rows: { muscle: string; side: InjectionSide }[]
+): GroupedMuscle[] {
+  // Collect the set of sides seen for each muscle name.
+  const sidesByMuscle = new Map<string, Set<InjectionSide>>();
+  for (const row of rows) {
+    const set = sidesByMuscle.get(row.muscle) ?? new Set<InjectionSide>();
+    set.add(row.side);
+    sidesByMuscle.set(row.muscle, set);
+  }
+
+  const grouped: GroupedMuscle[] = [];
+  for (const [muscle, sides] of sidesByMuscle) {
+    const hasLeft = sides.has('left');
+    const hasRight = sides.has('right');
+    const hasBilateral = sides.has('bilateral');
+    let sideKey: GroupedMuscle['sideKey'];
+    if (hasBilateral || (hasLeft && hasRight)) {
+      // A 'bilateral' row, or separate left + right rows, both mean the
+      // muscle was treated on both sides.
+      sideKey = hasBilateral && !hasLeft && !hasRight ? 'both' : 'leftRight';
+    } else if (hasLeft) {
+      sideKey = 'left';
+    } else {
+      sideKey = 'right';
+    }
+    grouped.push({ muscle, sideKey });
+  }
+
+  // Alphabetical, so the list reads consistently every time.
+  grouped.sort((a, b) => a.muscle.localeCompare(b.muscle));
+  return grouped;
+}
+
 export const GUIDANCE_METHODS = [
   'emg',
   'ultrasound',
