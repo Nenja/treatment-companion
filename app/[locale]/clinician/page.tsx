@@ -46,13 +46,18 @@ export default function ClinicianUnlockPage() {
     }
   }, [authLoading, user, profile, router, locale]);
 
-  // Detect the timed-out case: we landed here without a session but the
-  // location's query string says "timeout=1" (set by patient-page on
-  // session expiry). Just a UX hint, not a security boundary.
+  // Detect the timed-out case: we landed here without a session and the
+  // query string says "timeout=1" (set by a clinician page when a
+  // session expired). A deliberate end instead carries "ended=1" — when
+  // that is present we must NOT show the timeout message, even if a
+  // stray timeout redirect also raced here. The deliberate marker wins.
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('timeout') === '1') setShowTimedOut(true);
+      const deliberateEnd = params.get('ended') === '1';
+      if (params.get('timeout') === '1' && !deliberateEnd) {
+        setShowTimedOut(true);
+      }
     }
   }, []);
 

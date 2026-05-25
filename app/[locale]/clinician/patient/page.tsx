@@ -262,8 +262,8 @@ export default function ClinicianPatientPage() {
   }
 
   const onEndSession = async () => {
-    // Mark the deliberate end FIRST, so the timeout guard stands down
-    // before endSession makes sessionQuery.data go null.
+    // Mark the deliberate end FIRST, so the patient-page timeout guard
+    // stands down before endSession makes sessionQuery.data go null.
     endingSessionRef.current = true;
     try {
       await endSession.mutateAsync();
@@ -274,7 +274,14 @@ export default function ClinicianPatientPage() {
       toast.error(tSession('endSessionError'));
       return;
     }
-    router.replace(locale === 'en' ? '/clinician' : `/${locale}/clinician`);
+    // Navigate with an explicit "ended=1" marker. The unlock page uses
+    // this to know the session was ended ON PURPOSE, and so must NOT
+    // show the "timed out after inactivity" message — even if a stray
+    // timeout-guard redirect also races here, the unlock page checks
+    // for this marker and it wins.
+    router.replace(
+      (locale === 'en' ? '/clinician' : `/${locale}/clinician`) + '?ended=1'
+    );
   };
 
   // Archive the goal currently held in goalToArchive, then close the
