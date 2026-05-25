@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/supabase/auth';
 import { useSetTextScale } from '@/lib/supabase/textScale';
 import { useSetColorScheme } from '@/lib/supabase/colorScheme';
 import { SCHEMES, type Scheme } from '@/lib/palettes';
+import { professionLabel } from '@/lib/professionLabel';
 
 /**
  * Account menu button. Designed to be placed inline in a page header
@@ -58,11 +59,19 @@ export function AccountMenu() {
       .join('')
       .toUpperCase() || '·';
 
+  // For the non-physician professional role, show the specific
+  // profession (Physiotherapist, Occupational therapist, …) rather than
+  // the generic role name. Falls back to "Professional" if no
+  // profession is set.
   const baseRoleLabel =
     profile.role === 'clinician'
       ? 'Physician'
       : profile.role === 'physiotherapist'
-      ? 'Physiotherapist'
+      ? professionLabel(
+          profile.profession,
+          profile.professionOther,
+          locale as 'en' | 'da'
+        ) ?? 'Professional'
       : profile.role === 'patient'
       ? 'Patient'
       : profile.role;
