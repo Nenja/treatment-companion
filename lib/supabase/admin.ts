@@ -9,6 +9,11 @@ export interface AdminAccount {
   role: string;
   isAdmin: boolean;
   createdAt: string;
+  /** Set to a timestamp when the account is deactivated; null if active. */
+  deactivatedAt: string | null;
+  /** Profession code — therapist accounts only; null otherwise. */
+  profession: string | null;
+  professionOther: string | null;
 }
 
 /**
@@ -98,6 +103,93 @@ export function useSetAdmin() {
         const body = await res.json().catch(() => ({}));
         throw new Error(
           body.error ?? `Update admin status failed (${res.status})`
+        );
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['adminAccounts'] });
+    }
+  });
+}
+
+/**
+ * Edits an account's display name and (therapist accounts only)
+ * profession. Role is intentionally not editable — see the
+ * update-account route.
+ */
+export function useUpdateAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      profileId: string;
+      displayName: string;
+      profession?: string | null;
+      professionOther?: string | null;
+    }): Promise<void> => {
+      const res = await fetch('/api/admin/update-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input)
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(
+          body.error ?? `Update account failed (${res.status})`
+        );
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['adminAccounts'] });
+    }
+  });
+}
+
+/**
+ * Deactivates or reactivates an account. Reversible — keeps all data;
+ * a deactivated account simply cannot sign in.
+ */
+export function useSetAccountStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      profileId: string;
+      deactivate: boolean;
+    }): Promise<void> => {
+      const res = await fetch('/api/admin/set-account-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input)
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(
+          body.error ?? `Update account status failed (${res.status})`
+        );
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['adminAccounts'] });
+    }
+  });
+}
+
+/**
+ * Permanently deletes an account and all of its data. Destructive and
+ * irreversible — the UI gates this behind a typed confirmation.
+ */
+export function useDeleteAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { profileId: string }): Promise<void> => {
+      const res = await fetch('/api/admin/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId: input.profileId, confirm: true })
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(
+          body.error ?? `Delete account failed (${res.status})`
         );
       }
     },
