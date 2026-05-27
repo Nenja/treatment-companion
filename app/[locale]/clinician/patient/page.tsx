@@ -38,6 +38,7 @@ export default function ClinicianPatientPage() {
   const locale = useLocale();
   const t = useTranslations('clinician.patient');
   const tSession = useTranslations('clinician.session');
+  const tHistory = useTranslations('clinician.history');
   const tDomain = useTranslations('domain');
   const tImportance = useTranslations('importance');
 
@@ -347,6 +348,45 @@ export default function ClinicianPatientPage() {
             date: formatLongDate(cycle.startDate, locale)
           })}
         </p>
+
+        {/* Start a new treatment cycle — the primary action of a
+            physician's visit: every injection appointment begins by
+            opening a new cycle. So it sits front and centre, directly
+            under the cycle context, not buried. The NewCycleDialog
+            still confirms before doing anything, which is the
+            safeguard against an accidental tap. */}
+        <button
+          type="button"
+          onClick={() => {
+            touch();
+            setShowNewCycle(true);
+          }}
+          className="mt-5 flex w-full flex-col items-center justify-center rounded-[var(--radius-card)] bg-sage-deep px-5 py-4 hover:bg-ink-soft"
+        >
+          <span className="text-[16px] font-semibold text-on-accent">
+            {t('startNewCycle')}
+          </span>
+          <span className="mt-0.5 text-[13px] text-on-accent/80">
+            {t('startNewCycleHint')}
+          </span>
+        </button>
+
+        {/* Link to the cross-cycle history — a "look back" view, so a
+            quiet secondary link rather than a prominent button. */}
+        <button
+          type="button"
+          onClick={() => {
+            touch();
+            router.push(
+              locale === 'en'
+                ? '/clinician/history'
+                : `/${locale}/clinician/history`
+            );
+          }}
+          className="mt-3 text-[14px] font-semibold text-sage-deep hover:text-ink"
+        >
+          {tHistory('linkLabel')}
+        </button>
 
         {/* Needs-attention summary. The clinician patient page shows a
             lot; this lifts the one genuinely actionable thing —
@@ -740,23 +780,6 @@ export default function ClinicianPatientPage() {
             </button>
           </div>
         )}
-
-        {/* Start a new treatment cycle — a rare, significant action, so
-            it sits apart at the very bottom (not under the treatment
-            card where a mis-tap is easy) and is visually quiet. The
-            NewCycleDialog confirms before doing anything. */}
-        <div className="mt-12 border-t border-stone/70 pt-5">
-          <button
-            type="button"
-            onClick={() => {
-              touch();
-              setShowNewCycle(true);
-            }}
-            className="text-[14px] font-semibold text-ink-muted hover:text-ink-soft"
-          >
-            Start a new treatment cycle
-          </button>
-        </div>
       </main>
 
       {showExport && (
