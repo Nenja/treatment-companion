@@ -34,7 +34,9 @@ export async function GET() {
   const admin = createSupabaseServiceClient();
   const { data, error } = await admin
     .from('profile')
-    .select('id, email, display_name, role, is_admin, created_at')
+    .select(
+      'id, email, display_name, role, is_admin, created_at, deactivated_at, profession, profession_other'
+    )
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -51,7 +53,10 @@ export async function GET() {
       displayName: (p.display_name as string | null) ?? '',
       role: p.role as string,
       isAdmin: Boolean(p.is_admin),
-      createdAt: p.created_at as string
+      createdAt: p.created_at as string,
+      deactivatedAt: (p.deactivated_at as string | null) ?? null,
+      profession: (p.profession as string | null) ?? null,
+      professionOther: (p.profession_other as string | null) ?? null
     }))
   });
 }

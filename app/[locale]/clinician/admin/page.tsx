@@ -8,6 +8,9 @@ import {
   useAdminAccounts,
   useCreateAccount,
   useSetAdmin,
+  useUpdateAccount,
+  useSetAccountStatus,
+  useDeleteAccount,
   generateTempPassword,
   type AdminAccount
 } from '@/lib/supabase/admin';
@@ -17,6 +20,7 @@ import { SkeletonBlock } from '@/components/feedback/Skeleton';
 import { classifyError } from '@/lib/feedback';
 import {
   professionOptions,
+  professionLabel,
   type ProfessionCode
 } from '@/lib/professionLabel';
 
@@ -400,75 +404,358 @@ function CreateAccountSection() {
 }
 
 function AccountsList({ accounts }: { accounts: AdminAccount[] }) {
-  const setAdmin = useSetAdmin();
-  const { user } = useAuth();
-  const toast = useToast();
-
   if (accounts.length === 0) {
     return (
       <p className="mt-3 text-[14px] text-ink-muted">No accounts yet.</p>
     );
   }
+  return (
+    <ul className="mt-3 divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
+      {accounts.map((a) => (
+        <AccountRow key={a.id} account={a} />
+      ))}
+    </ul>
+  );
+}
 
-  const toggleAdmin = (a: AdminAccount) => {
-    setAdmin.mutate(
-      { profileId: a.id, isAdmin: !a.isAdmin },
+/**
+ * One account in the admin list. Collapsed, it shows name, email,
+ * role, and status badges. Expanded, it reveals a detail + management
+ * panel: full profile info, an edit form (name, profession), the
+ * admin toggle, deactivate/reactivate, and permanent delete.
+ *
+ * Destructive and sensitive actions each confirm before acting, and
+ * the server enforces the same guard rails (no self-deactivation,
+ * last-admin protection, typed-confirm for delete).
+ */
+function AccountRow({ account: a }: { account: AdminAccount }) {
+  const { user } = useAuth();
+  const toast = useToast();
+  const locale = useLocale();
+  const setAdmin = useSetAdmin();
+  const updateAccount = useUpdateAccount();
+  const setStatus = useSetAccountStatus();
+  const deleteAccount = useDeleteAccount();
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(a.displayName);
+  const [profession, setProfession] = useState<ProfessionCode>(
+    (a.profession as ProfessionCode) ?? 'physiotherapist'
+  );
+  const [professionOther, setProfessionOther] = useState(
+    a.professionOther ?? ''
+  );
+  // Permanent-delete gate: the admin must type the email to confirm.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteTyped, setDeleteTyped] = useState('');
+
+  const isSelf = user?.id === a.id;
+  const isDeactivated = a.deactivatedAt !== null;
+  const isTherapist = a.role === 'physiotherapist';
+
+  const onSaveEdit = () => {
+    if (name.trim().length === 0) {
+      toast.error('Name cannot be empty.');
+      return;
+    }
+    updateAccount.mutate(
       {
+        profileId: a.id,
+        displayName: name.trim(),
+        ...(isTherapist
+          ? {
+              profession,
+              professionOther:
+                profession === 'other' ? professionOther.trim() : null
+            }
+          : {})
+      },
+      {
+        onSuccess: () => {
+          toast.success('Account updated.');
+          setEditing(false);
+        },
         onError: (err) =>
-          toast.error(
-            (err as Error).message ?? 'Could not update admin status.'
-          )
+          toast.error((err as Error).message ?? 'Could not update.')
       }
     );
   };
 
+  const onToggleAdmin = () => {
+    setAdmin.mutate(
+      { profileId: a.id, isAdmin: !a.isAdmin },
+      {
+        onError: (err) =>
+          toast.error((err as Error).message ?? 'Could not update.')
+      }
+    );
+  };
+
+  const onToggleStatus = () => {
+    setStatus.mutate(
+      { profileId: a.id, deactivate: !isDeactivated },
+      {
+        onSuccess: () =>
+          toast.success(
+            isDeactivated ? 'Account reactivated.' : 'Account deactivated.'
+          ),
+        onError: (err) =>
+          toast.error((err as Error).message ?? 'Could not update.')
+      }
+    );
+  };
+
+  const onConfirmDelete = () => {
+    deleteAccount.mutate(
+      { profileId: a.id },
+      {
+        onSuccess: () => toast.success('Account permanently deleted.'),
+        onError: (err) =>
+          toast.error((err as Error).message ?? 'Could not delete.')
+      }
+    );
+  };
+
+  const detailRow = (label: string, value: string) => (
+    <div className="flex justify-between gap-3 py-1">
+      <span className="text-[13px] text-ink-muted">{label}</span>
+      <span className="text-[13px] text-ink text-right">{value}</span>
+    </div>
+  );
+
   return (
-    <ul className="mt-3 divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
-      {accounts.map((a) => {
-        const isSelf = user?.id === a.id;
-        return (
-          <li key={a.id} className="px-4 py-3">
-            <div className="flex items-baseline justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-display text-[15px] text-ink">
-                  {a.displayName || '(no name)'}
-                </p>
-                <p className="truncate text-[14px] text-ink-soft">
-                  {a.email}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-1.5">
-                {a.isAdmin && (
-                  <span className="rounded-full border border-sage/50 bg-sage-soft px-2 py-0.5 text-[12px] uppercase tracking-wider text-sage-deep">
-                    Admin
-                  </span>
+    <li className={`px-4 py-3 ${isDeactivated ? 'opacity-70' : ''}`}>
+      {/* Collapsed header — tap to expand. */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-baseline justify-between gap-3 text-left"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-display text-[15px] text-ink">
+            {a.displayName || '(no name)'}
+          </span>
+          <span className="block truncate text-[14px] text-ink-soft">
+            {a.email}
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-1.5">
+          {isDeactivated && (
+            <span className="rounded-full border border-amber-deep/40 bg-amber-soft px-2 py-0.5 text-[12px] uppercase tracking-wider text-amber-deep">
+              Inactive
+            </span>
+          )}
+          {a.isAdmin && (
+            <span className="rounded-full border border-sage/50 bg-sage-soft px-2 py-0.5 text-[12px] uppercase tracking-wider text-sage-deep">
+              Admin
+            </span>
+          )}
+          <span className="rounded-full border border-stone bg-cream px-2 py-0.5 text-[13px] uppercase tracking-wider text-ink-muted">
+            {a.role}
+          </span>
+          <span
+            aria-hidden
+            className={`text-[14px] text-ink-muted transition-transform ${
+              open ? 'rotate-180' : ''
+            }`}
+          >
+            ▾
+          </span>
+        </span>
+      </button>
+
+      {open && (
+        <div className="mt-3 border-t border-stone/70 pt-3">
+          {/* --- Profile detail --- */}
+          {!editing && (
+            <div className="rounded-[var(--radius-button)] bg-cream px-3 py-2">
+              {detailRow('Name', a.displayName || '(no name)')}
+              {detailRow('Email', a.email)}
+              {detailRow('Role', a.role)}
+              {isTherapist &&
+                detailRow(
+                  'Profession',
+                  professionLabel(
+                    a.profession,
+                    a.professionOther,
+                    locale === 'da' ? 'da' : 'en'
+                  ) ?? '—'
                 )}
-                <span className="rounded-full border border-stone bg-cream px-2 py-0.5 text-[14px] uppercase tracking-wider text-ink-muted">
-                  {a.role}
-                </span>
+              {detailRow(
+                'Created',
+                new Date(a.createdAt).toLocaleDateString()
+              )}
+              {detailRow(
+                'Status',
+                isDeactivated
+                  ? `Deactivated ${new Date(
+                      a.deactivatedAt as string
+                    ).toLocaleDateString()}`
+                  : 'Active'
+              )}
+            </div>
+          )}
+
+          {/* --- Edit form --- */}
+          {editing && (
+            <div className="rounded-[var(--radius-button)] bg-cream px-3 py-3">
+              <label className="block text-[13px] font-semibold text-ink-soft">
+                Name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={80}
+                className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
+              />
+              {isTherapist && (
+                <div className="mt-3">
+                  <label className="block text-[13px] font-semibold text-ink-soft">
+                    Profession
+                  </label>
+                  <select
+                    value={profession}
+                    onChange={(e) =>
+                      setProfession(e.target.value as ProfessionCode)
+                    }
+                    className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[14px] font-semibold text-ink focus:border-sage focus:outline-none"
+                  >
+                    {professionOptions(locale === 'da' ? 'da' : 'en').map(
+                      (opt) => (
+                        <option key={opt.code} value={opt.code}>
+                          {opt.label}
+                        </option>
+                      )
+                    )}
+                  </select>
+                  {profession === 'other' && (
+                    <input
+                      type="text"
+                      value={professionOther}
+                      onChange={(e) => setProfessionOther(e.target.value)}
+                      placeholder="Describe the profession"
+                      maxLength={60}
+                      className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
+                    />
+                  )}
+                </div>
+              )}
+              <p className="mt-2 text-[12px] text-ink-muted">
+                Role cannot be changed here. To change a role, deactivate
+                this account and create a new one.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={onSaveEdit}
+                  disabled={updateAccount.isPending}
+                  className="rounded-[var(--radius-button)] bg-sage-deep px-3 py-1.5 text-[13px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
+                >
+                  {updateAccount.isPending ? 'Saving…' : 'Save'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(false);
+                    setName(a.displayName);
+                  }}
+                  className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
-            <div className="mt-1 flex items-center justify-between gap-3">
-              <p className="text-[14px] text-ink-muted">
-                Created {new Date(a.createdAt).toLocaleDateString()}
-              </p>
-              {/* Admin toggle. A user cannot revoke their own admin
-                  access — the server enforces this too. */}
+          )}
+
+          {/* --- Actions --- */}
+          {!editing && !confirmingDelete && (
+            <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
-                disabled={
-                  setAdmin.isPending || (isSelf && a.isAdmin)
-                }
-                onClick={() => toggleAdmin(a)}
-                className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => setEditing(true)}
+                className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={onToggleAdmin}
+                disabled={setAdmin.isPending || (isSelf && a.isAdmin)}
+                className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {a.isAdmin ? 'Remove admin' : 'Make admin'}
               </button>
+              <button
+                type="button"
+                onClick={onToggleStatus}
+                disabled={setStatus.isPending || (isSelf && !isDeactivated)}
+                className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isDeactivated ? 'Reactivate' : 'Deactivate'}
+              </button>
+              {!isSelf && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmingDelete(true);
+                    setDeleteTyped('');
+                  }}
+                  className="rounded-[var(--radius-button)] border border-amber-deep/40 bg-amber-soft px-3 py-1.5 text-[13px] font-semibold text-amber-deep hover:bg-amber-soft/70"
+                >
+                  Delete…
+                </button>
+              )}
             </div>
-          </li>
-        );
-      })}
-    </ul>
+          )}
+
+          {/* --- Permanent-delete confirmation --- */}
+          {confirmingDelete && (
+            <div className="mt-3 rounded-[var(--radius-button)] border border-amber-deep/40 bg-amber-soft/60 px-3 py-3">
+              <p className="text-[13px] font-semibold text-ink">
+                Permanently delete this account?
+              </p>
+              <p className="mt-1 text-[12px] leading-relaxed text-ink-soft">
+                This cannot be undone. It deletes the account and all of
+                its data — for a patient, that includes every treatment
+                cycle and check-in. Consider deactivating instead.
+                To confirm, type the email below.
+              </p>
+              <input
+                type="text"
+                value={deleteTyped}
+                onChange={(e) => setDeleteTyped(e.target.value)}
+                placeholder={a.email}
+                className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[13px] text-ink focus:border-sage focus:outline-none"
+              />
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={onConfirmDelete}
+                  disabled={
+                    deleteTyped.trim() !== a.email || deleteAccount.isPending
+                  }
+                  className="rounded-[var(--radius-button)] bg-amber-deep px-3 py-1.5 text-[13px] font-semibold text-on-accent hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {deleteAccount.isPending
+                    ? 'Deleting…'
+                    : 'Permanently delete'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(false)}
+                  className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </li>
   );
 }
 

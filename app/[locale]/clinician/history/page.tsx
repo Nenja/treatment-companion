@@ -6,10 +6,16 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useCurrentClinicianSession } from '@/lib/supabase/clinicianSession';
 import { usePatientTrend } from '@/lib/supabase/patientTrend';
+import { usePatientCycleAnalysis } from '@/lib/supabase/patientCycleAnalysis';
 import {
   DosePerCycleChart,
   OutcomePerCycleChart
 } from '@/components/clinician/CycleTrendCharts';
+import {
+  BenefitDurationTable,
+  MuscleDoseChart,
+  RetreatmentTimingTable
+} from '@/components/clinician/CycleAnalysisViews';
 import { SkeletonScreen, SkeletonBlock } from '@/components/feedback/Skeleton';
 
 /**
@@ -41,6 +47,7 @@ export default function ClinicianHistoryPage() {
   );
   const patientId = sessionQuery.data?.patientId ?? null;
   const trend = usePatientTrend(patientId);
+  const analysis = usePatientCycleAnalysis(patientId);
 
   // Auth + role gate.
   useEffect(() => {
@@ -143,6 +150,77 @@ export default function ClinicianHistoryPage() {
                 {t('outcomeNote')}
               </p>
             </section>
+
+            {/* --- Deeper analysis: only meaningful with 2+ cycles --- */}
+            {(analysis.data?.cycles.length ?? 0) >= 2 && (
+              <>
+                {/* Benefit duration */}
+                <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+                  <h2 className="text-[13px] font-semibold text-ink-soft">
+                    {t('benefitTitle')}
+                  </h2>
+                  <div className="mt-3">
+                    <BenefitDurationTable
+                      cycles={analysis.data!.cycles}
+                      labels={{
+                        cycle: t('cycleShort'),
+                        peak: t('colPeak'),
+                        duration: t('colDuration'),
+                        weeks: t('colWeeks'),
+                        held: t('benefitHeld'),
+                        noData: t('noData')
+                      }}
+                    />
+                  </div>
+                  <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
+                    {t('benefitNote')}
+                  </p>
+                </section>
+
+                {/* Per-muscle dose */}
+                <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+                  <h2 className="text-[13px] font-semibold text-ink-soft">
+                    {t('muscleTitle')}
+                  </h2>
+                  <div className="mt-3">
+                    <MuscleDoseChart
+                      trends={analysis.data!.muscleTrends}
+                      cycleLabel={t('cycleShort')}
+                      emptyLabel={t('muscleEmpty')}
+                    />
+                  </div>
+                  <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
+                    {t('muscleNote')}
+                  </p>
+                </section>
+
+                {/* Re-treatment timing */}
+                <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+                  <h2 className="text-[13px] font-semibold text-ink-soft">
+                    {t('retreatTitle')}
+                  </h2>
+                  <div className="mt-3">
+                    <RetreatmentTimingTable
+                      cycles={analysis.data!.cycles}
+                      labels={{
+                        cycle: t('cycleShort'),
+                        interval: t('colInterval'),
+                        fadeVsRetreat: t('colTiming'),
+                        weeks: t('colWeeks'),
+                        held: t('benefitHeld'),
+                        noNext: t('retreatNoNext'),
+                        faded: t('retreatFaded'),
+                        onTime: t('retreatOnTime'),
+                        late: t('retreatLate')
+                      }}
+                    />
+                  </div>
+                  <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
+                    {t('retreatNote')}
+                  </p>
+                </section>
+              </>
+            )}
           </div>
         )}
       </main>
