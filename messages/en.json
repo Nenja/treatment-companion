@@ -217,6 +217,18 @@
       "timeoutBody": "Your session ended after a period of inactivity. Ask the patient for a new visit code to continue.",
       "endSessionError": "Could not end the session. Please try again."
     },
+    "history": {
+      "linkLabel": "View history across cycles",
+      "title": "History across cycles",
+      "subtitle": "How treatment and outcomes have changed over this patient's cycles.",
+      "back": "Back to patient",
+      "doseChartTitle": "Total dose per cycle (units)",
+      "outcomeChartTitle": "Goal outcome per cycle (GAS −2 to +2)",
+      "cycleShort": "Cycle",
+      "empty": "This patient has only one cycle so far. Trends across cycles will appear here once there is more than one.",
+      "noData": "No cycle data to show yet.",
+      "outcomeNote": "Outcome is the goal rating from the last completed check-in of each cycle, averaged when a cycle had more than one goal."
+    },
     "patient": {
       "viewingLabel": "Viewing",
       "cycleContext": "Week {week} since treatment · Cycle {cycle}",
@@ -242,7 +254,14 @@
       "physioGoalsEmpty": "No goal suggestions from the therapist this cycle.",
       "physioMusclesEmpty": "No muscles flagged by the therapist this cycle.",
       "rationaleLabel": "Rationale",
-      "relatedGoalLabel": "Related goal"
+      "relatedGoalLabel": "Related goal",
+      "startNewCycle": "Start a new treatment cycle",
+      "startNewCycleHint": "Begin here at each injection visit.",
+      "newCycleDialogTitle": "Start a new treatment cycle",
+      "newCycleDialogBody": "This closes the current cycle and creates a new one with the treatment date you choose. The current cycle's data is preserved.",
+      "newCycleDateLabel": "Date of treatment",
+      "newCycleConfirm": "Start new cycle",
+      "newCycleCancel": "Cancel"
     },
     "review": {
       "title": "Review suggestion",

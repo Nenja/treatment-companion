@@ -31,6 +31,7 @@ export function NewCycleDialog({ patientId, onClose }: NewCycleDialogProps) {
   const [date, setDate] = useState(todayIso());
   const toast = useToast();
   const tFeedback = useTranslations('feedback');
+  const t = useTranslations('clinician.patient');
 
   const onConfirm = async () => {
     if (!date) {
@@ -74,16 +75,14 @@ export function NewCycleDialog({ patientId, onClose }: NewCycleDialogProps) {
         className="w-full max-w-[400px] rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl"
       >
         <h2 id="new-cycle-title" className="font-display text-[20px] leading-tight text-ink">
-          Start a new treatment cycle
+          {t('newCycleDialogTitle')}
         </h2>
         <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
-          This closes the current cycle and creates a new one with the
-          treatment date you choose. The current cycle&apos;s data is
-          preserved.
+          {t('newCycleDialogBody')}
         </p>
 
         <label className="mt-5 block text-[14px] font-semibold text-ink">
-          Date of treatment
+          {t('newCycleDateLabel')}
         </label>
         <input
           type="date"
@@ -99,7 +98,7 @@ export function NewCycleDialog({ patientId, onClose }: NewCycleDialogProps) {
             disabled={startNewCycle.isPending}
             className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone"
           >
-            {startNewCycle.isPending ? '…' : 'Start new cycle'}
+            {startNewCycle.isPending ? '…' : t('newCycleConfirm')}
           </button>
           <button
             type="button"
@@ -107,7 +106,7 @@ export function NewCycleDialog({ patientId, onClose }: NewCycleDialogProps) {
             disabled={startNewCycle.isPending}
             className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
-            Cancel
+            {t('newCycleCancel')}
           </button>
         </div>
       </div>

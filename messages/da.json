@@ -221,6 +221,18 @@
       "timeoutBody": "Din session blev afsluttet på grund af inaktivitet. Bed patienten om en ny besøgskode for at fortsætte.",
       "endSessionError": "Sessionen kunne ikke afsluttes. Prøv venligst igen."
     },
+    "history": {
+      "linkLabel": "Se historik på tværs af cyklusser",
+      "title": "Historik på tværs af cyklusser",
+      "subtitle": "Hvordan behandling og resultater har ændret sig over patientens cyklusser.",
+      "back": "Tilbage til patient",
+      "doseChartTitle": "Samlet dosis pr. cyklus (enheder)",
+      "outcomeChartTitle": "Målresultat pr. cyklus (GAS −2 til +2)",
+      "cycleShort": "Cyklus",
+      "empty": "Denne patient har indtil videre kun én cyklus. Tendenser på tværs af cyklusser vises her, når der er mere end én.",
+      "noData": "Ingen cyklusdata at vise endnu.",
+      "outcomeNote": "Resultatet er målvurderingen fra den seneste gennemførte opfølgning i hver cyklus, gennemsnitsberegnet når en cyklus havde mere end ét mål."
+    },
     "patient": {
       "viewingLabel": "Ser på",
       "cycleContext": "Uge {week} siden behandling · Forløb {cycle}",
@@ -246,7 +258,14 @@
       "physioGoalsEmpty": "Ingen målforslag fra terapeuten i denne cyklus.",
       "physioMusclesEmpty": "Ingen muskler markeret af terapeuten i denne cyklus.",
       "rationaleLabel": "Begrundelse",
-      "relatedGoalLabel": "Relateret mål"
+      "relatedGoalLabel": "Relateret mål",
+      "startNewCycle": "Start en ny behandlingscyklus",
+      "startNewCycleHint": "Begynd her ved hvert injektionsbesøg.",
+      "newCycleDialogTitle": "Start en ny behandlingscyklus",
+      "newCycleDialogBody": "Dette afslutter den nuværende cyklus og opretter en ny med den behandlingsdato, du vælger. Den nuværende cyklus' data bevares.",
+      "newCycleDateLabel": "Behandlingsdato",
+      "newCycleConfirm": "Start ny cyklus",
+      "newCycleCancel": "Annullér"
     },
     "review": {
       "title": "Gennemgå forslag",
