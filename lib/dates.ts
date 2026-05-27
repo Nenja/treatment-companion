@@ -30,3 +30,16 @@ export function formatLongDate(iso: string, locale: string): string {
     year: 'numeric'
   }).format(d);
 }
+
+/**
+ * Compact month + year, e.g. "Jan 2025". Used for axis labels on the
+ * longitudinal charts, where a full date would be too wide and the
+ * day-of-month does not matter for a cross-cycle view.
+ */
+export function formatMonthYear(iso: string, locale: string): string {
+  const d = new Date(iso + 'T00:00:00Z');
+  return new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    year: 'numeric'
+  }).format(d);
+}

@@ -136,7 +136,7 @@ export default function ClinicianHistoryPage() {
               <DosePerCycleChart
                 cycles={cycles}
                 unitsLabel={t('doseChartTitle')}
-                cycleLabel={t('cycleShort')}
+                locale={locale}
               />
             </section>
 
@@ -144,7 +144,7 @@ export default function ClinicianHistoryPage() {
               <OutcomePerCycleChart
                 cycles={cycles}
                 outcomeLabel={t('outcomeChartTitle')}
-                cycleLabel={t('cycleShort')}
+                locale={locale}
               />
               <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
                 {t('outcomeNote')}
@@ -187,6 +187,7 @@ export default function ClinicianHistoryPage() {
                       trends={analysis.data!.muscleTrends}
                       cycleLabel={t('cycleShort')}
                       emptyLabel={t('muscleEmpty')}
+                      allHiddenLabel={t('muscleAllHidden')}
                     />
                   </div>
                   <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
