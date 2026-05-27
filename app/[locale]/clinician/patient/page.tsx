@@ -371,54 +371,6 @@ export default function ClinicianPatientPage() {
           </span>
         </button>
 
-        {/* Link to the cross-cycle history — a "look back" view, so a
-            quiet secondary link rather than a prominent button. */}
-        <button
-          type="button"
-          onClick={() => {
-            touch();
-            router.push(
-              locale === 'en'
-                ? '/clinician/history'
-                : `/${locale}/clinician/history`
-            );
-          }}
-          className="mt-3 text-[14px] font-semibold text-sage-deep hover:text-ink"
-        >
-          {tHistory('linkLabel')}
-        </button>
-
-        {/* Needs-attention summary. The clinician patient page shows a
-            lot; this lifts the one genuinely actionable thing —
-            patient goal suggestions awaiting review — to the top so a
-            physician sees it immediately instead of scrolling to find
-            it. Physiotherapist input is "consider", not "act", so it
-            is deliberately not counted here. Hidden when nothing is
-            pending. */}
-        {suggestions.length > 0 && (
-          <a
-            href="#patient-suggestions"
-            className="mt-5 flex items-center gap-3 rounded-[var(--radius-card)] border border-sage/50 bg-sage-soft px-4 py-3 hover:bg-sage-soft/70"
-          >
-            <span
-              aria-hidden
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sage-deep text-[16px] font-bold text-on-accent"
-            >
-              {suggestions.length}
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[15px] font-semibold text-ink">
-                {suggestions.length === 1
-                  ? '1 goal suggestion to review'
-                  : `${suggestions.length} goal suggestions to review`}
-              </span>
-              <span className="block text-[13px] text-ink-soft">
-                From this patient — tap to jump to them.
-              </span>
-            </span>
-          </a>
-        )}
-
         {/* Treatment record card */}
         <section className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
           {treatment ? (
@@ -545,6 +497,27 @@ export default function ClinicianPatientPage() {
             </>
           )}
         </section>
+
+        {/* Link to the cross-cycle history — placed directly under the
+            current-treatment card, since "today's treatment + how it's
+            gone across past cycles" is the natural pair at an
+            injection visit. Quiet secondary link rather than a
+            prominent button — the new-cycle button at the top is the
+            primary action; this is a look-back. */}
+        <button
+          type="button"
+          onClick={() => {
+            touch();
+            router.push(
+              locale === 'en'
+                ? '/clinician/history'
+                : `/${locale}/clinician/history`
+            );
+          }}
+          className="mt-3 text-[14px] font-semibold text-sage-deep hover:text-ink"
+        >
+          {tHistory('linkLabel')} →
+        </button>
 
         {/* Active goals with progress visualisation */}
         <section className="mt-10">
