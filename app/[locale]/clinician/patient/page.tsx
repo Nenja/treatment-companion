@@ -567,17 +567,16 @@ export default function ClinicianPatientPage() {
           )}
         </section>
 
-        {/* Patient goal suggestions — collapsible. Starts open when
-            there is anything awaiting review, so pending work is never
-            hidden; the header count means it is noticed even closed. */}
-        <div id="patient-suggestions">
-          <CollapsibleSection
-            title={t('patientSuggestionsHeading')}
-            count={suggestions.length}
-            defaultOpen={suggestions.length > 0}
-          >
-            {suggestions.length === 0 ? (
-              <p className="text-[14px] text-ink-muted">
+        {/* Patient goal suggestions — collapsed by default; the count
+            badge signals pending work. The top banner links here via
+            the #patient-suggestions hash, which auto-opens it. */}
+        <CollapsibleSection
+          title={t('patientSuggestionsHeading')}
+          count={suggestions.length}
+          anchorId="patient-suggestions"
+        >
+          {suggestions.length === 0 ? (
+            <p className="text-[14px] text-ink-muted">
                 {t('suggestionsEmpty')}
               </p>
             ) : (
@@ -614,7 +613,6 @@ export default function ClinicianPatientPage() {
               </ul>
             )}
           </CollapsibleSection>
-        </div>
 
         {/* Therapist input — goal suggestions and flagged muscles,
             grouped so a physician reads them as one "consider this"
@@ -626,10 +624,6 @@ export default function ClinicianPatientPage() {
           subtitle={t('physioInputSubtitle')}
           count={
             physioGoalSuggestions.length + physioMuscleSuggestions.length
-          }
-          defaultOpen={
-            physioGoalSuggestions.some((s) => s.status === 'needsReview') ||
-            physioMuscleSuggestions.some((s) => s.status === 'needsReview')
           }
         >
           {physioGoalSuggestions.length === 0 &&

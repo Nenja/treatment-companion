@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 /**
  * A collapsible section with a counted header.
@@ -11,10 +11,15 @@ import { useState, type ReactNode } from 'react';
  * whether anything needs attention without the sections taking over the
  * page.
  *
- * `defaultOpen` should be set true when the section has something
- * pending — anything the physician must act on stays visible without a
- * click; only handled / empty sections start collapsed. The count in
- * the header means a collapsed section is never silently ignored.
+ * Sections are collapsed by default. The count badge does the
+ * attention-drawing job — it shows how many ACTIVE (unhandled) items
+ * the section holds, so a collapsed section is never silently ignored.
+ *
+ * `anchorId` ties the section to a URL hash: if the page is loaded or
+ * navigated to with that hash (e.g. the "you have suggestions" banner
+ * links to #patient-suggestions), the section opens automatically and
+ * scrolls into view — so a jump-link never lands on a collapsed,
+ * hidden section.
  *
  * Matches the chevron + header pattern of the app's other collapsibles
  * (CatchUpCard, the treated-muscles section).
@@ -23,21 +28,37 @@ export function CollapsibleSection({
   title,
   subtitle,
   count,
-  defaultOpen = false,
+  anchorId,
   children
 }: {
   title: string;
   /** Optional one-line description under the title. */
   subtitle?: string;
-  /** Shown as a small badge in the header. Pass the number of items
-   *  the section contains (or items awaiting attention). */
+  /** Number of active/unhandled items — shown as a header badge. */
   count: number;
-  defaultOpen?: boolean;
+  /** Optional id; also used as the URL-hash anchor that auto-opens
+   *  this section when navigated to. */
+  anchorId?: string;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(false);
+
+  // Open automatically when the URL hash points at this section, so a
+  // jump-link (e.g. the suggestions banner) lands on an OPEN section.
+  useEffect(() => {
+    if (!anchorId || typeof window === 'undefined') return;
+    const matchesHash = () =>
+      window.location.hash.replace(/^#/, '') === anchorId;
+    if (matchesHash()) setOpen(true);
+    const onHashChange = () => {
+      if (matchesHash()) setOpen(true);
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, [anchorId]);
+
   return (
-    <section className="mt-10">
+    <section className="mt-10" id={anchorId}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
