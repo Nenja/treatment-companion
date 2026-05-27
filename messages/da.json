@@ -242,6 +242,7 @@
       "muscleTitle": "Dosis pr. muskel på tværs af cyklusser",
       "muscleNote": "Muskler behandlet i to eller flere cyklusser. Muskler fra én cyklus vises ikke.",
       "muscleEmpty": "Ingen muskel er endnu behandlet i mere end én cyklus.",
+      "muscleAllHidden": "Tryk på en muskel nedenfor for at vise dens linje.",
       "retreatTitle": "Timing af genbehandling",
       "retreatNote": "Tiden mellem behandlinger, og om den næste behandling kom efter at virkningen allerede var aftaget.",
       "colInterval": "Interval",

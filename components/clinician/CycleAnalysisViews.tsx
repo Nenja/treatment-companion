@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type {
   CycleAnalysis,
   MuscleDoseTrend
@@ -98,27 +99,52 @@ const SERIES_COLORS = [
 export function MuscleDoseChart({
   trends,
   cycleLabel,
-  emptyLabel
+  emptyLabel,
+  allHiddenLabel
 }: {
   trends: MuscleDoseTrend[];
   cycleLabel: string;
   emptyLabel: string;
+  /** Shown when the physician has toggled every muscle off. */
+  allHiddenLabel: string;
 }) {
+  // Muscles the physician has toggled OFF. Empty = all shown.
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+
+  const toggle = (muscle: string) => {
+    setHidden((prev) => {
+      const next = new Set(prev);
+      if (next.has(muscle)) next.delete(muscle);
+      else next.add(muscle);
+      return next;
+    });
+  };
+
   if (trends.length === 0) {
-    return (
-      <p className="text-[13px] text-ink-muted">{emptyLabel}</p>
-    );
+    return <p className="text-[13px] text-ink-muted">{emptyLabel}</p>;
   }
 
-  // X axis: cycle numbers spanning all trends. Y axis: dose 0..max.
+  // Colour is fixed by each muscle's ORIGINAL index, so a muscle keeps
+  // its colour no matter which others are toggled.
+  const colorFor = (muscle: string): string => {
+    const idx = trends.findIndex((t) => t.muscle === muscle);
+    return SERIES_COLORS[idx % SERIES_COLORS.length];
+  };
+
+  const visibleTrends = trends.filter((t) => !hidden.has(t.muscle));
+
+  // X axis spans all cycles across ALL trends (so the axis doesn't
+  // jump around as muscles are toggled). Y axis scales to the VISIBLE
+  // muscles, so hiding a high-dose line usefully rescales the rest.
   const allCycleNums = Array.from(
     new Set(trends.flatMap((t) => t.points.map((p) => p.cycleNumber)))
   ).sort((a, b) => a - b);
   const minCycle = allCycleNums[0];
   const maxCycle = allCycleNums[allCycleNums.length - 1];
-  const maxDose = Math.max(
-    ...trends.flatMap((t) => t.points.map((p) => p.doseUnits))
+  const visibleDoses = visibleTrends.flatMap((t) =>
+    t.points.map((p) => p.doseUnits)
   );
+  const maxDose = visibleDoses.length > 0 ? Math.max(...visibleDoses) : 50;
   const axisTop = Math.ceil(maxDose / 50) * 50 || 50;
 
   const xFor = (cycleNum: number): number => {
@@ -180,9 +206,9 @@ export function MuscleDoseChart({
           </text>
         ))}
 
-        {/* One line per muscle */}
-        {trends.map((t, i) => {
-          const color = SERIES_COLORS[i % SERIES_COLORS.length];
+        {/* One line per VISIBLE muscle */}
+        {visibleTrends.map((t) => {
+          const color = colorFor(t.muscle);
           return (
             <g key={t.muscle}>
               <polyline
@@ -205,22 +231,60 @@ export function MuscleDoseChart({
             </g>
           );
         })}
+
+        {/* All muscles toggled off — gentle hint inside the plot. */}
+        {visibleTrends.length === 0 && (
+          <text
+            x={PAD_L + PLOT_W / 2}
+            y={PAD_T + PLOT_H / 2}
+            textAnchor="middle"
+            fontSize="10"
+            fill="var(--color-ink-muted)"
+          >
+            {allHiddenLabel}
+          </text>
+        )}
       </svg>
 
-      {/* Legend — muscle name + colour swatch */}
-      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-        {trends.map((t, i) => (
-          <li key={t.muscle} className="flex items-center gap-1.5">
-            <span
-              aria-hidden
-              className="inline-block h-2.5 w-2.5 rounded-sm"
-              style={{
-                background: SERIES_COLORS[i % SERIES_COLORS.length]
-              }}
-            />
-            <span className="text-[12px] text-ink-soft">{t.muscle}</span>
-          </li>
-        ))}
+      {/* Legend — each muscle is a toggle button. Tapping shows/hides
+          its line. A hidden muscle dims and strikes through. */}
+      <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5">
+        {trends.map((t) => {
+          const isHidden = hidden.has(t.muscle);
+          return (
+            <li key={t.muscle}>
+              <button
+                type="button"
+                onClick={() => toggle(t.muscle)}
+                aria-pressed={!isHidden}
+                className={`flex min-h-8 items-center gap-1.5 rounded-[var(--radius-button)] border px-2 py-1 ${
+                  isHidden
+                    ? 'border-stone bg-cream'
+                    : 'border-sage/40 bg-sage-soft'
+                }`}
+              >
+                <span
+                  aria-hidden
+                  className="inline-block h-2.5 w-2.5 rounded-sm"
+                  style={{
+                    background: isHidden
+                      ? 'var(--color-stone)'
+                      : colorFor(t.muscle)
+                  }}
+                />
+                <span
+                  className={`text-[12px] ${
+                    isHidden
+                      ? 'text-ink-muted line-through'
+                      : 'font-semibold text-ink-soft'
+                  }`}
+                >
+                  {t.muscle}
+                </span>
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

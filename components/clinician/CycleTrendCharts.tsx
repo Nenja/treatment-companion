@@ -1,6 +1,7 @@
 'use client';
 
 import type { CycleTrendPoint } from '@/lib/supabase/patientTrend';
+import { formatMonthYear } from '@/lib/dates';
 
 /**
  * Two small charts for the longitudinal trend page:
@@ -13,6 +14,9 @@ import type { CycleTrendPoint } from '@/lib/supabase/patientTrend';
  * colours come from CSS variables, so the charts follow the active
  * palette and day/night mode.
  *
+ * Cycles are labelled with their treatment month (e.g. "Jan 2025"),
+ * not "Cycle 1/2/3" — a date is more meaningful across cycles.
+ *
  * Cycles with no recorded treatment (totalUnits null) or no completed
  * check-ins (finalGas null) are drawn as gaps — the bar/point is
  * simply omitted for that cycle, and a muted "—" label sits on the
@@ -20,27 +24,36 @@ import type { CycleTrendPoint } from '@/lib/supabase/patientTrend';
  */
 
 const W = 320;
-const H = 150;
+const H = 158;
 const PAD_L = 34;
 const PAD_R = 12;
 const PAD_T = 14;
-const PAD_B = 26;
+const PAD_B = 30;
 const PLOT_W = W - PAD_L - PAD_R;
 const PLOT_H = H - PAD_T - PAD_B;
 
-function cycleX(index: number, count: number): number {
+/**
+ * X position for a cycle at `index` of `count`. Positions sit inside
+ * an INSET band — half of `slotWidth` is kept clear at each end — so a
+ * bar or marker centred on the first or last position still has its
+ * full width inside the plot, never overlapping the Y axis or running
+ * off the right edge.
+ */
+function cycleX(index: number, count: number, slotWidth: number): number {
+  const inset = slotWidth / 2;
+  const usable = PLOT_W - slotWidth; // band between the two insets
   if (count === 1) return PAD_L + PLOT_W / 2;
-  return PAD_L + (index / (count - 1)) * PLOT_W;
+  return PAD_L + inset + (index / (count - 1)) * usable;
 }
 
 export function DosePerCycleChart({
   cycles,
   unitsLabel,
-  cycleLabel
+  locale
 }: {
   cycles: CycleTrendPoint[];
   unitsLabel: string;
-  cycleLabel: string;
+  locale: string;
 }) {
   const doses = cycles
     .map((c) => c.totalUnits)
@@ -49,10 +62,10 @@ export function DosePerCycleChart({
   // Round the axis top up to a tidy number.
   const axisTop = Math.ceil(maxDose / 100) * 100 || 100;
 
-  const barWidth = Math.min(
-    34,
-    (PLOT_W / Math.max(cycles.length, 1)) * 0.55
-  );
+  // Each cycle gets an equal slot; the bar fills part of it. The slot
+  // width is also what cycleX insets by, so bars never overflow.
+  const slotWidth = PLOT_W / Math.max(cycles.length, 1);
+  const barWidth = Math.min(34, slotWidth * 0.55);
 
   return (
     <figure className="m-0">
@@ -95,19 +108,30 @@ export function DosePerCycleChart({
         </text>
 
         {cycles.map((c, i) => {
-          const cx = cycleX(i, cycles.length);
+          const cx = cycleX(i, cycles.length, slotWidth);
+          const dateLabel = formatMonthYear(c.startDate, locale);
           if (c.totalUnits === null) {
             return (
-              <text
-                key={c.cycleId}
-                x={cx}
-                y={PAD_T + PLOT_H + 16}
-                textAnchor="middle"
-                fontSize="9"
-                fill="var(--color-ink-muted)"
-              >
-                —
-              </text>
+              <g key={c.cycleId}>
+                <text
+                  x={cx}
+                  y={PAD_T + PLOT_H / 2}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fill="var(--color-ink-muted)"
+                >
+                  —
+                </text>
+                <text
+                  x={cx}
+                  y={PAD_T + PLOT_H + 16}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fill="var(--color-ink-muted)"
+                >
+                  {dateLabel}
+                </text>
+              </g>
             );
           }
           const barH = (c.totalUnits / axisTop) * PLOT_H;
@@ -133,7 +157,7 @@ export function DosePerCycleChart({
               >
                 {c.totalUnits}
               </text>
-              {/* Cycle label on the axis */}
+              {/* Date label on the axis */}
               <text
                 x={cx}
                 y={PAD_T + PLOT_H + 16}
@@ -141,7 +165,7 @@ export function DosePerCycleChart({
                 fontSize="9"
                 fill="var(--color-ink-muted)"
               >
-                {cycleLabel} {c.cycleNumber}
+                {dateLabel}
               </text>
             </g>
           );
@@ -154,17 +178,21 @@ export function DosePerCycleChart({
 export function OutcomePerCycleChart({
   cycles,
   outcomeLabel,
-  cycleLabel
+  locale
 }: {
   cycles: CycleTrendPoint[];
   outcomeLabel: string;
-  cycleLabel: string;
+  locale: string;
 }) {
   // GAS axis runs -2 (bottom) to +2 (top).
   const gasToY = (gas: number): number => {
     const t = (gas + 2) / 4; // 0..1
     return PAD_T + PLOT_H - t * PLOT_H;
   };
+
+  // Inset the markers by one slot so the first/last marker (and its
+  // date label) sit clear of the Y axis and the right edge.
+  const slotWidth = PLOT_W / Math.max(cycles.length, 1);
 
   // Points that actually have an outcome, in cycle order.
   const points = cycles
@@ -216,7 +244,9 @@ export function OutcomePerCycleChart({
             points={points
               .map(
                 ({ c, i }) =>
-                  `${cycleX(i, cycles.length)},${gasToY(c.finalGas as number)}`
+                  `${cycleX(i, cycles.length, slotWidth)},${gasToY(
+                    c.finalGas as number
+                  )}`
               )
               .join(' ')}
             fill="none"
@@ -225,9 +255,9 @@ export function OutcomePerCycleChart({
           />
         )}
 
-        {/* Cycle markers + axis labels */}
+        {/* Cycle markers + date axis labels */}
         {cycles.map((c, i) => {
-          const cx = cycleX(i, cycles.length);
+          const cx = cycleX(i, cycles.length, slotWidth);
           return (
             <g key={c.cycleId}>
               {c.finalGas !== null ? (
@@ -257,7 +287,7 @@ export function OutcomePerCycleChart({
                 fontSize="9"
                 fill="var(--color-ink-muted)"
               >
-                {cycleLabel} {c.cycleNumber}
+                {formatMonthYear(c.startDate, locale)}
               </text>
             </g>
           );

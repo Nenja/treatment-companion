@@ -238,6 +238,7 @@
       "muscleTitle": "Dose per muscle across cycles",
       "muscleNote": "Muscles treated in two or more cycles. Single-cycle muscles are not shown.",
       "muscleEmpty": "No muscle has been treated in more than one cycle yet.",
+      "muscleAllHidden": "Tap a muscle below to show its line.",
       "retreatTitle": "Re-treatment timing",
       "retreatNote": "The gap between treatments, and whether the next treatment came after benefit had already faded.",
       "colInterval": "Interval",
