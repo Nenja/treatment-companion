@@ -369,6 +369,48 @@
     "professionHelper": "Vises på skærmen og i journaludtrækket.",
     "professionOtherPlaceholder": "Beskriv professionen"
   },
+  "patientInfo": {
+    "subtitle": "Klinisk baggrund",
+    "openInfo": "Åbn klinisk baggrund for {name}",
+    "back": "Tilbage",
+    "edit": "Redigér",
+    "save": "Gem",
+    "cancel": "Annullér",
+    "saved": "Patientoplysningerne er opdateret.",
+    "saveError": "Kunne ikke gemme. Prøv venligst igen.",
+    "notRecorded": "Endnu ikke registreret.",
+    "selectPlaceholder": "Vælg…",
+    "dob": "Fødselsdato",
+    "ageYears": "{age} år",
+    "etiology": "Ætiologi",
+    "etiologyDetailPlaceholder": "Valgfrit: detaljer eller præcisering",
+    "affectedSide": "Berørt side",
+    "onsetYear": "Debutår",
+    "yearsSince": "{years} år siden debut",
+    "ambulation": "Gangfunktion",
+    "notes": "Baggrundsnoter",
+    "notesPlaceholder": "Andet klinisk relevant — komorbiditeter, tidligere behandlinger, kognition mv."
+  },
+  "etiology": {
+    "stroke": "Apopleksi",
+    "tbi": "Traumatisk hjerneskade",
+    "cerebralPalsy": "Cerebral parese",
+    "multipleSclerosis": "Multipel sklerose",
+    "spinalCordInjury": "Rygmarvsskade",
+    "hereditarySpasticParaplegia": "Hereditær spastisk paraplegi",
+    "other": "Andet"
+  },
+  "ambulation": {
+    "independent": "Selvstændig",
+    "withAid": "Med hjælpemiddel",
+    "wheelchair": "Kørestol",
+    "nonAmbulant": "Ikke-gående"
+  },
+  "side": {
+    "left": "Venstre",
+    "right": "Højre",
+    "bilateral": "Bilateral"
+  },
   "physioPlan": {
     "title": "Træningsplan & hjælpemidler",
     "exerciseLabel": "Træningsplan",

@@ -1,0 +1,165 @@
+'use client';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createSupabaseBrowserClient } from './browser';
+
+/**
+ * Clinical background information about a patient — entered by the
+ * clinician or therapist, read by both. NOT visible to the patient.
+ * All fields are optional; the UI must render gracefully when they
+ * are null.
+ */
+export type Etiology =
+  | 'stroke'
+  | 'tbi'
+  | 'cerebralPalsy'
+  | 'multipleSclerosis'
+  | 'spinalCordInjury'
+  | 'hereditarySpasticParaplegia'
+  | 'other';
+
+export type AmbulationStatus =
+  | 'independent'
+  | 'withAid'
+  | 'wheelchair'
+  | 'nonAmbulant';
+
+export type AffectedSide = 'left' | 'right' | 'bilateral';
+
+export interface PatientInfo {
+  patientId: string;
+  displayName: string;
+  dateOfBirth: string | null;
+  etiology: Etiology | null;
+  etiologyDetail: string | null;
+  affectedSide: AffectedSide | null;
+  onsetYear: number | null;
+  ambulation: AmbulationStatus | null;
+  backgroundNotes: string | null;
+}
+
+/**
+ * Read the patient's clinical background. Both clinician and
+ * therapist roles can read; access is gated by RLS (an active session
+ * for that patient). Enabled only when patientId is known.
+ */
+export function usePatientInfo(patientId: string | null) {
+  return useQuery({
+    enabled: !!patientId,
+    queryKey: ['patientInfo', patientId],
+    queryFn: async (): Promise<PatientInfo | null> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase
+        .from('patient')
+        .select(
+          'id, date_of_birth, etiology, etiology_detail, affected_side, onset_year, ambulation, background_notes, profile:profile_id (display_name)'
+        )
+        .eq('id', patientId!)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      const profile = Array.isArray(data.profile)
+        ? data.profile[0]
+        : (data.profile as { display_name?: string } | null);
+      return {
+        patientId: data.id as string,
+        displayName: (profile?.display_name as string) ?? 'Patient',
+        dateOfBirth: (data.date_of_birth as string | null) ?? null,
+        etiology: (data.etiology as Etiology | null) ?? null,
+        etiologyDetail: (data.etiology_detail as string | null) ?? null,
+        affectedSide: (data.affected_side as AffectedSide | null) ?? null,
+        onsetYear: (data.onset_year as number | null) ?? null,
+        ambulation: (data.ambulation as AmbulationStatus | null) ?? null,
+        backgroundNotes: (data.background_notes as string | null) ?? null
+      };
+    }
+  });
+}
+
+export interface SetPatientInfoInput {
+  patientId: string;
+  dateOfBirth: string | null;
+  etiology: Etiology | null;
+  etiologyDetail: string | null;
+  affectedSide: AffectedSide | null;
+  onsetYear: number | null;
+  ambulation: AmbulationStatus | null;
+  backgroundNotes: string | null;
+}
+
+/**
+ * Write the patient's clinical background. Server enforces that the
+ * caller is a clinician OR therapist with an active session.
+ */
+export function useSetPatientInfo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: SetPatientInfoInput): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_patient_info', {
+        p_patient_id: input.patientId,
+        p_date_of_birth: input.dateOfBirth,
+        p_etiology: input.etiology,
+        p_etiology_detail: input.etiologyDetail,
+        p_affected_side: input.affectedSide,
+        p_onset_year: input.onsetYear,
+        p_ambulation: input.ambulation,
+        p_background_notes: input.backgroundNotes
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['patientInfo', vars.patientId] });
+      // Also invalidate the broader patient queries that show summary
+      // info, so any header lines (age, etiology) refresh.
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+      qc.invalidateQueries({ queryKey: ['physioPatient'] });
+    }
+  });
+}
+
+/** Compute current age (in whole years) from an ISO date of birth. */
+export function ageFromDob(iso: string | null): number | null {
+  if (!iso) return null;
+  const dob = new Date(iso);
+  if (Number.isNaN(dob.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - dob.getFullYear();
+  const m = now.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
+  return age;
+}
+
+/** Compute years since onset from an onset year. */
+export function yearsSince(onsetYear: number | null): number | null {
+  if (!onsetYear) return null;
+  return new Date().getFullYear() - onsetYear;
+}
+
+/**
+ * Build a quiet at-a-glance summary line from the clinical background,
+ * skipping any fields that are not filled in. Returns null if there's
+ * nothing to show, so the caller can omit the line entirely rather
+ * than render "Not recorded · Not recorded · Not recorded".
+ *
+ * Translation labels are passed in (etiology, side, ambulation) so this
+ * helper stays locale-free.
+ */
+export function formatPatientSummary(
+  info: PatientInfo | null,
+  labels: {
+    ageYears: (years: number) => string;
+    etiology: (key: Etiology) => string;
+    side: (key: AffectedSide) => string;
+    ambulation: (key: AmbulationStatus) => string;
+  }
+): string | null {
+  if (!info) return null;
+  const parts: string[] = [];
+  const age = ageFromDob(info.dateOfBirth);
+  if (age !== null) parts.push(labels.ageYears(age));
+  if (info.etiology) parts.push(labels.etiology(info.etiology));
+  if (info.affectedSide) parts.push(labels.side(info.affectedSide));
+  if (info.ambulation) parts.push(labels.ambulation(info.ambulation));
+  return parts.length > 0 ? parts.join(' · ') : null;
+}

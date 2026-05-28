@@ -365,6 +365,48 @@
     "professionHelper": "Shown on screen and in the medical-record export.",
     "professionOtherPlaceholder": "Describe the profession"
   },
+  "patientInfo": {
+    "subtitle": "Clinical background",
+    "openInfo": "Open clinical background for {name}",
+    "back": "Back",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved": "Patient info updated.",
+    "saveError": "Could not save. Please try again.",
+    "notRecorded": "Not recorded yet.",
+    "selectPlaceholder": "Select…",
+    "dob": "Date of birth",
+    "ageYears": "{age} years",
+    "etiology": "Etiology",
+    "etiologyDetailPlaceholder": "Optional: details or qualifier",
+    "affectedSide": "Affected side",
+    "onsetYear": "Year of onset",
+    "yearsSince": "{years} years since onset",
+    "ambulation": "Ambulation",
+    "notes": "Background notes",
+    "notesPlaceholder": "Anything else clinically relevant — comorbidities, prior treatments, cognition, etc."
+  },
+  "etiology": {
+    "stroke": "Stroke",
+    "tbi": "Traumatic brain injury",
+    "cerebralPalsy": "Cerebral palsy",
+    "multipleSclerosis": "Multiple sclerosis",
+    "spinalCordInjury": "Spinal cord injury",
+    "hereditarySpasticParaplegia": "Hereditary spastic paraplegia",
+    "other": "Other"
+  },
+  "ambulation": {
+    "independent": "Independent",
+    "withAid": "With aid",
+    "wheelchair": "Wheelchair",
+    "nonAmbulant": "Non-ambulant"
+  },
+  "side": {
+    "left": "Left",
+    "right": "Right",
+    "bilateral": "Bilateral"
+  },
   "physioPlan": {
     "title": "Exercise plan & devices",
     "exerciseLabel": "Exercise plan",
