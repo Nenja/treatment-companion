@@ -20,7 +20,10 @@ import { nrsToGas, injectionSideLabel, type GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
-import { CollapsibleSection } from '@/components/clinician/CollapsibleSection';
+import {
+  PatientActionRow,
+  type PatientActionId
+} from '@/components/clinician/PatientActionRow';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import {
   SkeletonBlock,
@@ -38,7 +41,6 @@ export default function ClinicianPatientPage() {
   const locale = useLocale();
   const t = useTranslations('clinician.patient');
   const tSession = useTranslations('clinician.session');
-  const tHistory = useTranslations('clinician.history');
   const tDomain = useTranslations('domain');
   const tImportance = useTranslations('importance');
 
@@ -63,6 +65,11 @@ export default function ClinicianPatientPage() {
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showNewCycle, setShowNewCycle] = useState(false);
+  // Which inline action panel is open under the action row, if any.
+  // History and export are not panels — they navigate / open a modal.
+  const [openPanel, setOpenPanel] = useState<'suggestions' | 'physio' | null>(
+    null
+  );
   // True once the physician has deliberately ended the session. While
   // this is set, the "no session → timeout" guard stands down: ending
   // the session naturally makes sessionQuery.data go null, and without
@@ -349,6 +356,194 @@ export default function ClinicianPatientPage() {
           })}
         </p>
 
+        {/* Action row — always-visible entry points with live counts.
+            Suggestions and therapist input open inline panels below;
+            history navigates; export opens the modal. */}
+        <PatientActionRow
+          suggestionCount={suggestions.length}
+          physioCount={
+            physioGoalSuggestions.length + physioMuscleSuggestions.length
+          }
+          openPanel={openPanel}
+          labels={{
+            suggestions: t('actionSuggestions'),
+            physio: t('actionPhysio'),
+            history: t('actionHistory'),
+            export: t('actionExport')
+          }}
+          onSelect={(id: PatientActionId) => {
+            touch();
+            if (id === 'history') {
+              router.push(
+                locale === 'en'
+                  ? '/clinician/history'
+                  : `/${locale}/clinician/history`
+              );
+            } else if (id === 'export') {
+              setShowExport(true);
+            } else {
+              // Toggle the inline panel (suggestions | physio).
+              setOpenPanel((cur) => (cur === id ? null : id));
+            }
+          }}
+        />
+
+        {/* Patient suggestions panel — opens from the action row. */}
+        {openPanel === 'suggestions' && (
+          <section className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+            <h2 className="font-display text-[18px] leading-tight text-ink">
+              {t('patientSuggestionsHeading')}
+            </h2>
+            <div className="mt-3">
+          {suggestions.length === 0 ? (
+            <p className="text-[14px] text-ink-muted">
+                {t('suggestionsEmpty')}
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {suggestions.map((s) => (
+                  <li
+                    key={s.id}
+                    className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
+                  >
+                    <div className="flex items-baseline justify-between gap-3">
+                      <div className="eyebrow text-ink-muted">
+                        {tDomain(s.domain)} · {tImportance(s.importance)}
+                      </div>
+                    </div>
+                    <p className="mt-1.5 text-[15px] leading-relaxed text-ink">
+                      &ldquo;{s.patientWording}&rdquo;
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        touch();
+                        router.push(
+                          locale === 'en'
+                            ? `/clinician/suggestion?id=${s.id}`
+                            : `/${locale}/clinician/suggestion?id=${s.id}`
+                        );
+                      }}
+                      className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
+                    >
+                      {t('review')}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            </div>
+          </section>
+        )}
+
+        {/* Therapist input panel — opens from the action row. */}
+        {openPanel === 'physio' && (
+          <section className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+            <h2 className="font-display text-[18px] leading-tight text-ink">
+              {t('physioInputHeading')}
+            </h2>
+            <p className="mt-1 text-[13px] text-ink-muted">
+              {t('physioInputSubtitle')}
+            </p>
+            <div className="mt-3">
+          {physioGoalSuggestions.length === 0 &&
+          physioMuscleSuggestions.length === 0 ? (
+            <p className="text-[14px] text-ink-muted">
+              {t('physioInputNone')}
+            </p>
+          ) : (
+            <>
+              {/* Goal suggestions from the therapist. */}
+              <div>
+                <h3 className="text-[15px] font-semibold text-ink-soft">
+                  {t('physioSuggestedGoals')}
+                </h3>
+                {physioGoalSuggestions.length === 0 ? (
+                  <p className="mt-2 text-[14px] text-ink-muted">
+                    {t('physioGoalsEmpty')}
+                  </p>
+                ) : (
+                  <ul className="mt-3 space-y-3">
+                    {physioGoalSuggestions.map((s) => (
+                      <li
+                        key={s.id}
+                        className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
+                      >
+                        <p className="font-display text-[16px] leading-snug text-ink">
+                          {s.suggestedGoal}
+                        </p>
+                        <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                          <span className="text-ink-muted">
+                            {t('rationaleLabel')}:{' '}
+                          </span>
+                          {s.rationale}
+                        </p>
+                        <PhysioGoalSuggestionActions
+                          suggestionId={s.id}
+                          status={s.status}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Muscles flagged by the therapist. */}
+              <div className="mt-6">
+                <h3 className="text-[15px] font-semibold text-ink-soft">
+                  {t('physioFlaggedMuscles')}
+                </h3>
+                {physioMuscleSuggestions.length === 0 ? (
+                  <p className="mt-2 text-[14px] text-ink-muted">
+                    {t('physioMusclesEmpty')}
+                  </p>
+                ) : (
+                  <ul className="mt-3 space-y-3">
+                    {physioMuscleSuggestions.map((s) => {
+                      const linkedGoal = activeGoals.find(
+                        (g) => g.id === s.relatedGoalId
+                      );
+                      const sideLabel = injectionSideLabel(s.side);
+                      return (
+                        <li
+                          key={s.id}
+                          className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
+                        >
+                          <p className="font-display text-[16px] leading-snug text-ink">
+                            {s.muscle}{' '}
+                            <span className="text-ink-muted">
+                              · {sideLabel}
+                            </span>
+                          </p>
+                          <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                            <span className="text-ink-muted">
+                              {t('rationaleLabel')}:{' '}
+                            </span>
+                            {s.rationale}
+                          </p>
+                          {linkedGoal && (
+                            <p className="mt-2 text-[13px] text-ink-muted">
+                              {t('relatedGoalLabel')}:{' '}
+                              {linkedGoal.patientFacingText}
+                            </p>
+                          )}
+                          <PhysioMuscleSuggestionActions
+                            suggestionId={s.id}
+                            status={s.status}
+                          />
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            </>
+          )}
+            </div>
+          </section>
+        )}
+
+
         {/* Start a new treatment cycle — the primary action of a
             physician's visit: every injection appointment begins by
             opening a new cycle. So it sits front and centre, directly
@@ -556,200 +751,9 @@ export default function ClinicianPatientPage() {
           )}
         </section>
 
-        {/* Link to the cross-cycle history — placed directly under the
-            current-treatment card, since "today's treatment + how it's
-            gone across past cycles" is the natural pair at an
-            injection visit. Quiet secondary link rather than a
-            prominent button — the new-cycle button at the top is the
-            primary action; this is a look-back. */}
-        <button
-          type="button"
-          onClick={() => {
-            touch();
-            router.push(
-              locale === 'en'
-                ? '/clinician/history'
-                : `/${locale}/clinician/history`
-            );
-          }}
-          className="mt-3 text-[14px] font-semibold text-sage-deep hover:text-ink"
-        >
-          {tHistory('linkLabel')} →
-        </button>
-
-        {/* Patient goal suggestions — collapsed by default; the count
-            badge signals pending work. The top banner links here via
-            the #patient-suggestions hash, which auto-opens it. */}
-        <CollapsibleSection
-          title={t('patientSuggestionsHeading')}
-          count={suggestions.length}
-          anchorId="patient-suggestions"
-        >
-          {suggestions.length === 0 ? (
-            <p className="text-[14px] text-ink-muted">
-                {t('suggestionsEmpty')}
-              </p>
-            ) : (
-              <ul className="space-y-3">
-                {suggestions.map((s) => (
-                  <li
-                    key={s.id}
-                    className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
-                  >
-                    <div className="flex items-baseline justify-between gap-3">
-                      <div className="eyebrow text-ink-muted">
-                        {tDomain(s.domain)} · {tImportance(s.importance)}
-                      </div>
-                    </div>
-                    <p className="mt-1.5 text-[15px] leading-relaxed text-ink">
-                      &ldquo;{s.patientWording}&rdquo;
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        touch();
-                        router.push(
-                          locale === 'en'
-                            ? `/clinician/suggestion?id=${s.id}`
-                            : `/${locale}/clinician/suggestion?id=${s.id}`
-                        );
-                      }}
-                      className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
-                    >
-                      {t('review')}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CollapsibleSection>
-
-        {/* Therapist input — goal suggestions and flagged muscles,
-            grouped so a physician reads them as one "consider this"
-            zone, distinct from the patient suggestions above which are
-            "act on this". Collapsible; starts open when anything is
-            still awaiting the physician (status 'needsReview'). */}
-        <CollapsibleSection
-          title={t('physioInputHeading')}
-          subtitle={t('physioInputSubtitle')}
-          count={
-            physioGoalSuggestions.length + physioMuscleSuggestions.length
-          }
-        >
-          {physioGoalSuggestions.length === 0 &&
-          physioMuscleSuggestions.length === 0 ? (
-            <p className="text-[14px] text-ink-muted">
-              {t('physioInputNone')}
-            </p>
-          ) : (
-            <>
-              {/* Goal suggestions from the therapist. */}
-              <div>
-                <h3 className="text-[15px] font-semibold text-ink-soft">
-                  {t('physioSuggestedGoals')}
-                </h3>
-                {physioGoalSuggestions.length === 0 ? (
-                  <p className="mt-2 text-[14px] text-ink-muted">
-                    {t('physioGoalsEmpty')}
-                  </p>
-                ) : (
-                  <ul className="mt-3 space-y-3">
-                    {physioGoalSuggestions.map((s) => (
-                      <li
-                        key={s.id}
-                        className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
-                      >
-                        <p className="font-display text-[16px] leading-snug text-ink">
-                          {s.suggestedGoal}
-                        </p>
-                        <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
-                          <span className="text-ink-muted">
-                            {t('rationaleLabel')}:{' '}
-                          </span>
-                          {s.rationale}
-                        </p>
-                        <PhysioGoalSuggestionActions
-                          suggestionId={s.id}
-                          status={s.status}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              {/* Muscles flagged by the therapist. */}
-              <div className="mt-6">
-                <h3 className="text-[15px] font-semibold text-ink-soft">
-                  {t('physioFlaggedMuscles')}
-                </h3>
-                {physioMuscleSuggestions.length === 0 ? (
-                  <p className="mt-2 text-[14px] text-ink-muted">
-                    {t('physioMusclesEmpty')}
-                  </p>
-                ) : (
-                  <ul className="mt-3 space-y-3">
-                    {physioMuscleSuggestions.map((s) => {
-                      const linkedGoal = activeGoals.find(
-                        (g) => g.id === s.relatedGoalId
-                      );
-                      const sideLabel = injectionSideLabel(s.side);
-                      return (
-                        <li
-                          key={s.id}
-                          className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
-                        >
-                          <p className="font-display text-[16px] leading-snug text-ink">
-                            {s.muscle}{' '}
-                            <span className="text-ink-muted">
-                              · {sideLabel}
-                            </span>
-                          </p>
-                          <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
-                            <span className="text-ink-muted">
-                              {t('rationaleLabel')}:{' '}
-                            </span>
-                            {s.rationale}
-                          </p>
-                          {linkedGoal && (
-                            <p className="mt-2 text-[13px] text-ink-muted">
-                              {t('relatedGoalLabel')}:{' '}
-                              {linkedGoal.patientFacingText}
-                            </p>
-                          )}
-                          <PhysioMuscleSuggestionActions
-                            suggestionId={s.id}
-                            status={s.status}
-                          />
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            </>
-          )}
-        </CollapsibleSection>
-
         {/* Patient comments are now reachable from the chart — tap any
             dot showing a speech-bubble icon to see the comment in the
             caption below the chart. */}
-
-        {/* EHR export */}
-        {(treatment || activeGoals.length > 0 || checkins.length > 0) && (
-          <div className="mt-10">
-            <button
-              type="button"
-              onClick={() => {
-                touch();
-                setShowExport(true);
-              }}
-              className="flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
-            >
-              Export for EHR
-            </button>
-          </div>
-        )}
       </main>
 
       {showExport && (
