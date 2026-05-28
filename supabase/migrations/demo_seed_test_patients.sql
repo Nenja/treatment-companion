@@ -959,3 +959,164 @@ begin
 
   raise notice 'test6 seeded: 3 completed cycles + 1 active (longitudinal).';
 end $$;
+
+
+-- ===========================================================================
+-- ENRICHMENT — make all six test patients feel rich.
+--
+-- The blocks above give each patient their core scenario. This adds
+-- the "related" data so no panel is empty when a tester opens a
+-- patient: patient goal suggestions (the Suggestions panel), therapist
+-- input (the Therapist panel), and a few check-in comments.
+--
+-- Idempotent: it first clears any enrichment-added suggestions for
+-- each patient, then re-adds, so re-running the whole script is safe.
+-- It targets each patient's ACTIVE cycle. Patients that already had
+-- this data (test3) are simply topped up to the same shape.
+-- ===========================================================================
+do $$
+declare
+  v_rec record;
+  v_patient_id uuid;
+  v_cycle_id uuid;
+  v_clinician_id uuid;
+  v_therapist_id uuid;
+  v_goal_id uuid;
+begin
+  -- Resolve a therapist (fallback to clinician) for physio suggestions.
+  select id into v_clinician_id from clinician limit 1;
+  select c.id into v_therapist_id
+    from clinician c join profile p on p.id = c.profile_id
+    where p.role = 'physiotherapist' limit 1;
+  if v_therapist_id is null then
+    v_therapist_id := v_clinician_id;
+  end if;
+
+  for v_rec in
+    select * from (values
+      ('test1@example.com',
+       'I would like to grip a toothbrush more firmly',
+       'handUse', 'medium', '8w',
+       'Improve forearm support for self-care tasks',
+       'Brachioradialis', 'left',
+       'Forearm tightness limits grip; worth considering next round.'),
+      ('test2@example.com',
+       'I want to be able to turn a key in a lock',
+       'handUse', 'medium', '12w',
+       'Reduce elbow flexor tone to ease dressing',
+       'Brachialis', 'right',
+       'Persistent elbow flexion noted in sessions.'),
+      ('test4@example.com',
+       'I would like to stand at the sink without holding on',
+       'walking', 'high', '8w',
+       'Improve ankle stability for standing balance',
+       'Peroneus longus', 'left',
+       'Ankle gives way laterally during single-leg stance.'),
+      ('test5@example.com',
+       'I want to open my fingers to hold a glass',
+       'handUse', 'high', '12w',
+       'Address finger flexor tightness',
+       'Flexor digitorum profundus', 'left',
+       'Strong finger flexion; consider adding at next injection.'),
+      ('test6@example.com',
+       'I would like to walk a little further each week',
+       'walking', 'medium', 'notSure',
+       'Support calf flexibility between cycles',
+       'Tibialis posterior', 'right',
+       'Recurring inversion pattern across cycles.')
+    ) as t(email, patient_goal, domain, importance, timeframe,
+           physio_goal, muscle, side, physio_rationale)
+  loop
+    select pt.id into v_patient_id
+      from patient pt join profile pr on pr.id = pt.profile_id
+     where pr.email = v_rec.email;
+    if v_patient_id is null then
+      raise warning 'enrich: no patient for % — skipped.', v_rec.email;
+      continue;
+    end if;
+
+    -- Active cycle for this patient.
+    select id into v_cycle_id from treatment_cycle
+     where patient_id = v_patient_id and status = 'active'
+     order by cycle_number desc limit 1;
+    if v_cycle_id is null then
+      raise warning 'enrich: no active cycle for % — skipped.', v_rec.email;
+      continue;
+    end if;
+
+    -- An existing approved goal on that cycle, to link the muscle to.
+    select id into v_goal_id from approved_goal
+     where treatment_cycle_id = v_cycle_id limit 1;
+
+    -- Clear prior enrichment so re-running doesn't pile up duplicates.
+    -- (Only removes needsReview patient suggestions and physio rows on
+    --  the active cycle — leaves the core scenario data intact.)
+    delete from physio_muscle_suggestion
+      where patient_id = v_patient_id and treatment_cycle_id = v_cycle_id;
+    delete from physio_goal_suggestion
+      where patient_id = v_patient_id and treatment_cycle_id = v_cycle_id;
+
+    -- Patient goal suggestion (Suggestions panel). Skip if this patient
+    -- already has a needsReview suggestion on the cycle (e.g. test3).
+    if not exists (
+      select 1 from goal_suggestion
+       where patient_id = v_patient_id
+         and treatment_cycle_id = v_cycle_id
+         and status = 'needsReview'
+    ) then
+      insert into goal_suggestion (
+        patient_id, treatment_cycle_id, domain, patient_wording,
+        importance, hoped_timeframe, difficulty_context, status
+      ) values (
+        v_patient_id, v_cycle_id, v_rec.domain::goal_domain,
+        v_rec.patient_goal, v_rec.importance::importance,
+        v_rec.timeframe::hoped_timeframe,
+        'Added for demo richness.', 'needsReview'
+      );
+    end if;
+
+    -- Therapist goal suggestion (Therapist panel).
+    insert into physio_goal_suggestion (
+      patient_id, treatment_cycle_id, physiotherapist_id,
+      suggested_goal, rationale, status
+    ) values (
+      v_patient_id, v_cycle_id, v_therapist_id,
+      v_rec.physio_goal,
+      'Observed in therapy sessions between visits.', 'needsReview'
+    );
+
+    -- Therapist muscle flag, linked to an existing goal if there is one.
+    insert into physio_muscle_suggestion (
+      patient_id, treatment_cycle_id, physiotherapist_id,
+      muscle, side, rationale, related_goal_id, status
+    ) values (
+      v_patient_id, v_cycle_id, v_therapist_id,
+      v_rec.muscle, v_rec.side::injection_side,
+      v_rec.physio_rationale, v_goal_id, 'needsReview'
+    );
+
+    -- A couple of check-in comments, on the earliest completed weeks
+    -- that don't already have one, so the chart's comment feature has
+    -- something to show.
+    update weekly_checkin
+       set comment = 'Felt a bit more movement this week.'
+     where id = (
+       select wc.id from weekly_checkin wc
+        where wc.patient_id = v_patient_id
+          and wc.treatment_cycle_id = v_cycle_id
+          and wc.comment is null
+        order by wc.week_number asc limit 1
+     );
+    update weekly_checkin
+       set comment = 'Harder day — more tightness than usual.'
+     where id = (
+       select wc.id from weekly_checkin wc
+        where wc.patient_id = v_patient_id
+          and wc.treatment_cycle_id = v_cycle_id
+          and wc.comment is null
+        order by wc.week_number desc limit 1
+     );
+
+    raise notice 'enriched %.', v_rec.email;
+  end loop;
+end $$;
