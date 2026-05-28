@@ -34,6 +34,20 @@ export interface PhysioPatientData {
     date: string;
     muscles: { muscle: string; side: 'left' | 'right' | 'bilateral' }[];
   } | null;
+  /**
+   * Past assessments by this therapist (and others) for the patient's
+   * active cycle, oldest first. Empty array when none yet. Used by the
+   * "history" panel on the therapist page.
+   */
+  assessments: {
+    id: string;
+    assessmentDate: string;
+    note: string | null;
+    ratings: {
+      approvedGoalId: string;
+      nrsValue: number;
+    }[];
+  }[];
 }
 
 /**
@@ -148,6 +162,32 @@ export function usePhysioPatientData(
         }
       }
 
+      // Past assessments for this cycle, oldest first. Empty when no
+      // cycle or no assessments yet.
+      let assessments: PhysioPatientData['assessments'] = [];
+      if (cycleRow) {
+        const { data: asRows, error: asErr } = await supabase
+          .from('physio_assessment')
+          .select(
+            'id, assessment_date, note, ratings:physio_goal_rating (approved_goal_id, nrs_value)'
+          )
+          .eq('treatment_cycle_id', cycleRow.id as string)
+          .order('assessment_date', { ascending: true });
+        if (asErr) throw asErr;
+        assessments = (asRows ?? []).map((a) => ({
+          id: a.id as string,
+          assessmentDate: a.assessment_date as string,
+          note: (a.note as string | null) ?? null,
+          ratings: ((a.ratings as Array<{
+            approved_goal_id: string;
+            nrs_value: number;
+          }> | null) ?? []).map((r) => ({
+            approvedGoalId: r.approved_goal_id,
+            nrsValue: r.nrs_value
+          }))
+        }));
+      }
+
       return {
         patient: {
           id: patientId,
@@ -165,7 +205,8 @@ export function usePhysioPatientData(
             }
           : null,
         goals,
-        latestTreatment
+        latestTreatment,
+        assessments
       };
     }
   });
