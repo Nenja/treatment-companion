@@ -37,6 +37,7 @@ export interface PhysioPatientData {
   checkins: {
     id: string;
     weekNumber: number;
+    submittedAt: string;
     comment: string | null;
     submitterLabel?: 'self' | 'caregiver';
     ratings: {
@@ -159,7 +160,7 @@ export function usePhysioPatientData(
         const { data: checkinRows, error: ckErr } = await supabase
           .from('weekly_checkin')
           .select(
-            'id, week_number, comment, submitter_label, ratings:weekly_goal_rating (approved_goal_id, rating_value, nrs_value)'
+            'id, week_number, submitted_at, comment, submitter_label, ratings:weekly_goal_rating (approved_goal_id, rating_value, nrs_value)'
           )
           .eq('treatment_cycle_id', cycleRow.id as string)
           .order('week_number', { ascending: true });
@@ -167,6 +168,7 @@ export function usePhysioPatientData(
         checkins = (checkinRows ?? []).map((c) => ({
           id: c.id as string,
           weekNumber: c.week_number as number,
+          submittedAt: c.submitted_at as string,
           comment: (c.comment as string | null) ?? null,
           submitterLabel:
             (c.submitter_label as 'self' | 'caregiver' | undefined) ??

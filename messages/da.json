@@ -412,7 +412,8 @@
     "bilateral": "Bilateral"
   },
   "physioPlan": {
-    "title": "Træningsplan & hjælpemidler",
+    "title": "Plan-resumé",
+    "audienceHelper": "Synlig for lægen ved næste besøg.",
     "exerciseLabel": "Træningsplan",
     "devicesLabel": "Hjælpemidler",
     "empty": "Endnu ikke registreret.",
@@ -426,7 +427,10 @@
   },
   "physio": {
     "musclesTreatedTitle": "Behandlede muskler",
-    "cycleLabel": "Cyklus {number}",
+    "cycleLabel": "Cyklus {number} · Uge {week} siden injektion",
+    "recentCommentsHeading": "Siden dit sidste besøg",
+    "recentCommentsAttribution": "{name}, uge {week}",
+    "lateCycleHint": "Nærmer sig det typiske vindue for ny behandling. Det næste lægebesøg planlægges normalt nu.",
     "noActiveCycle": "Ingen aktiv behandlingscyklus endnu.",
     "goalsHeading": "Behandlingsmål",
     "noGoals": "Ingen aktive mål for denne patient endnu.",

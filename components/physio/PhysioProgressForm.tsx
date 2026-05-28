@@ -199,11 +199,11 @@ export function PhysioProgressForm({
             htmlFor="physio-note"
             className="block text-[14px] font-semibold text-ink"
           >
-            Clinical note <span className="text-ink-muted">(optional)</span>
+            Note for next visit <span className="text-ink-muted">(optional)</span>
           </label>
           <p className="mt-0.5 text-[14px] text-ink-muted">
-            One note for the visit overall — observations, exercise
-            adjustments, anything the physician should see.
+            A short message the physician sees at the next visit. Your
+            own clinical notes belong in your usual record system.
           </p>
           <textarea
             id="physio-note"
@@ -212,7 +212,7 @@ export function PhysioProgressForm({
             rows={4}
             maxLength={2000}
             className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
-            placeholder="e.g. Improved wrist extension during gait training; increased resistance band load."
+            placeholder="e.g. Patient reports tightening in calf mid-cycle; consider re-evaluating dose."
           />
         </div>
 

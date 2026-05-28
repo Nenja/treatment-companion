@@ -54,7 +54,12 @@ export function PhysioPlanSection({
   return (
     <section className="mt-8 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="font-display text-[18px] text-ink">{t('title')}</h2>
+        <div className="min-w-0">
+          <h2 className="font-display text-[18px] text-ink">{t('title')}</h2>
+          <p className="mt-0.5 text-[12px] text-ink-muted">
+            {t('audienceHelper')}
+          </p>
+        </div>
         {!editing && (
           <button
             type="button"

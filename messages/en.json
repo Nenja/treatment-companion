@@ -408,7 +408,8 @@
     "bilateral": "Bilateral"
   },
   "physioPlan": {
-    "title": "Exercise plan & devices",
+    "title": "Plan summary",
+    "audienceHelper": "Visible to the physician at the next visit.",
     "exerciseLabel": "Exercise plan",
     "devicesLabel": "Assistive devices",
     "empty": "Not recorded yet.",
@@ -421,7 +422,10 @@
     "devicesPlaceholder": "List any orthoses, splints, walking aids, or other devices in use."
   },
   "physio": {
-    "cycleLabel": "Cycle {number}",
+    "cycleLabel": "Cycle {number} · Week {week} since injection",
+    "recentCommentsHeading": "Since your last visit",
+    "recentCommentsAttribution": "{name}, week {week}",
+    "lateCycleHint": "Approaching the typical re-treatment window. The next physician visit is usually scheduled now.",
     "noActiveCycle": "No active treatment cycle yet.",
     "goalsHeading": "Treatment goals",
     "noGoals": "No active goals for this patient yet.",
