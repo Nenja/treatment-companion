@@ -16,7 +16,7 @@ import {
 } from '@/lib/supabase/patientInfo';
 import { useToast } from '@/components/feedback/Toast';
 import { AppShell } from '@/components/layout/AppShell';
-import { SkeletonScreen } from '@/components/feedback/SkeletonScreen';
+import { SkeletonScreen } from '@/components/feedback/Skeleton';
 
 const ETIOLOGY_VALUES: Etiology[] = [
   'stroke',
@@ -131,7 +131,7 @@ export default function PatientInfoPage() {
   if (authLoading || !user || !profile) {
     return (
       <AppShell>
-        <SkeletonScreen />
+        <SkeletonScreen label="Loading patient info" />
       </AppShell>
     );
   }
@@ -143,7 +143,7 @@ export default function PatientInfoPage() {
     router.replace(locale === 'en' ? unlockPath : `/${locale}${unlockPath}`);
     return (
       <AppShell>
-        <SkeletonScreen />
+        <SkeletonScreen label="Loading patient info" />
       </AppShell>
     );
   }
@@ -151,7 +151,7 @@ export default function PatientInfoPage() {
   if (!info.data) {
     return (
       <AppShell>
-        <SkeletonScreen />
+        <SkeletonScreen label="Loading patient info" />
       </AppShell>
     );
   }
