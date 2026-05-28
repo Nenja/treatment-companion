@@ -90,6 +90,19 @@ export default function PhysioProgressPage() {
 
   const { patient, goals, cycle } = patientData.data;
 
+  // Post-injection week, computed the same way as on the patient
+  // page. Used in the cycleLabel translation.
+  const weekNumber = cycle
+    ? Math.max(
+        1,
+        Math.floor(
+          (Date.now() - new Date(cycle.startDate).getTime()) /
+            (24 * 60 * 60 * 1000) /
+            7
+        ) + 1
+      )
+    : 1;
+
   return (
     <div className="min-h-dvh bg-cream">
       <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
@@ -107,7 +120,10 @@ export default function PhysioProgressPage() {
         </h1>
         {cycle && (
           <p className="mt-1 text-[14px] text-ink-soft">
-            {t('cycleLabel', { number: cycle.cycleNumber })}
+            {t('cycleLabel', {
+              number: cycle.cycleNumber,
+              week: weekNumber
+            })}
           </p>
         )}
 

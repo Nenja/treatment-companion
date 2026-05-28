@@ -207,6 +207,26 @@ export default function PhysioPatientPage() {
     physioRatingsByGoal.set(goal.id, points);
   }
 
+  // Recent patient comments — last 14 days, only those with a
+  // non-empty comment. Surfaced on the front page under "Since your
+  // last visit" so the therapist sees the patient's own words before
+  // doing anything. Sorted newest first.
+  const fourteenDaysAgoMs = Date.now() - 14 * 24 * 60 * 60 * 1000;
+  const recentCommentedCheckins = checkins
+    .filter(
+      (c) =>
+        !!c.comment &&
+        c.comment.trim().length > 0 &&
+        new Date(c.submittedAt).getTime() >= fourteenDaysAgoMs
+    )
+    .sort((a, b) => b.weekNumber - a.weekNumber);
+
+  // Late-cycle hint: quiet advisory that re-treatment is typically
+  // around now. Doesn't replace the physician's judgment; just helps
+  // the therapist know to discuss with the patient. Threshold of 12
+  // weeks is a soft default; therapists know their own patients best.
+  const showLateCycleHint = !!cycle && weekNumber >= 12;
+
   // Patient name + summary live in the header. When data has not yet
   // loaded, render placeholders so the header keeps a stable size.
   const patientNameForHeader =
@@ -328,11 +348,13 @@ export default function PhysioPatientPage() {
             {/* Cycle context — name + summary now live in the header,
                 so the body starts directly here (matching the clinician
                 page, which also begins with cycle context under its
-                header). */}
+                header). The label now includes the post-injection
+                week, a bare fact the therapist can interpret. */}
             {patientData.data.cycle ? (
               <p className="text-[14px] text-ink-soft">
                 {t('cycleLabel', {
-                  number: patientData.data.cycle.cycleNumber
+                  number: patientData.data.cycle.cycleNumber,
+                  week: weekNumber
                 })}
               </p>
             ) : (
@@ -340,6 +362,50 @@ export default function PhysioPatientPage() {
                 {t('noActiveCycle')}
               </p>
             )}
+
+            {/* Late-cycle hint — quiet amber advisory, only when the
+                cycle has reached the typical re-treatment window. Does
+                not pre-empt the physician's call; just nudges the
+                therapist that a conversation about the next visit may
+                be in order. */}
+            {showLateCycleHint && (
+              <div className="mt-3 rounded-[var(--radius-button)] border border-amber-deep/40 bg-amber-soft/40 px-3 py-2">
+                <p className="text-[13px] leading-snug text-ink-soft">
+                  ↻ {t('lateCycleHint')}
+                </p>
+              </div>
+            )}
+
+            {/* Patient's voice — comments from the last 14 days of
+                check-ins. Quoted with light styling so the therapist
+                reads them in the patient's own words. Hidden when
+                there are no recent comments (no empty heading). */}
+            {recentCommentedCheckins.length > 0 &&
+              patientNameForHeader && (
+                <section className="mt-5">
+                  <h2 className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
+                    {t('recentCommentsHeading')}
+                  </h2>
+                  <ul className="mt-2 space-y-2">
+                    {recentCommentedCheckins.map((c) => (
+                      <li
+                        key={c.id}
+                        className="rounded-r-[var(--radius-button)] border-l-2 border-sage/50 bg-cream-soft px-3 py-2"
+                      >
+                        <div className="text-[11px] text-ink-muted">
+                          {t('recentCommentsAttribution', {
+                            name: patientNameForHeader,
+                            week: c.weekNumber
+                          })}
+                        </div>
+                        <p className="mt-0.5 whitespace-pre-wrap text-[13px] italic leading-snug text-ink">
+                          “{c.comment}”
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
             {patientData.data.cycle ? (
               <>
