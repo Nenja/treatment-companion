@@ -699,7 +699,7 @@ export function usePreviousTreatment(
       const { data: sessions, error: sErr } = await supabase
         .from('treatment_session')
         .select(
-          'id, date, drug_product, total_units, dilution, guidance, notes, injections:muscle_injection (id, muscle, side, dose_units, note, position)'
+          'id, date, recorded_at, drug_product, total_units, dilution, guidance, notes, injections:muscle_injection (id, muscle, side, dose_units, note, position)'
         )
         .in('treatment_cycle_id', prevCycleIds)
         .order('date', { ascending: false })
@@ -711,6 +711,7 @@ export function usePreviousTreatment(
       return {
         id: sessions.id as string,
         date: sessions.date as string,
+        recordedAt: sessions.recorded_at as string,
         drugProduct: sessions.drug_product as string,
         totalUnits: Number(sessions.total_units),
         dilution: (sessions.dilution as string | null) ?? null,
