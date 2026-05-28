@@ -345,17 +345,31 @@ export default function ClinicianPatientPage() {
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[480px] items-center justify-between gap-3 px-5 py-4">
-          <div className="min-w-0">
+        <div className="mx-auto max-w-[480px] px-5 py-3">
+          {/* Top row — controls only. The 'Viewing' eyebrow sits as
+              the left peer of the buttons so the row reads as a band
+              of small things, no orphan. */}
+          <div className="flex items-center justify-between gap-3">
             <div className="eyebrow">{t('viewingLabel')}</div>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmEnd(true)}
+                className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
+              >
+                {tSession('endSession')}
+              </button>
+              <AccountMenu />
+            </div>
+          </div>
+          {/* Second row — the patient. Own line so the name has space
+              to breathe and the summary can sit underneath without
+              fighting the controls for vertical room. */}
+          <div className="mt-2 min-w-0">
             <div className="flex items-center gap-1">
               <div className="truncate font-display text-[20px] leading-tight text-ink">
                 {patient.displayName}
               </div>
-              {/* Patient-info opener. The visible (i) is small so it
-                  doesn't compete with the name, but the tap target
-                  itself is 36px — finger-friendly even though the
-                  glyph is 18px. */}
               <button
                 type="button"
                 onClick={() =>
@@ -390,16 +404,6 @@ export default function ClinicianPatientPage() {
                 {patientSummary}
               </div>
             )}
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setConfirmEnd(true)}
-              className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
-            >
-              {tSession('endSession')}
-            </button>
-            <AccountMenu />
           </div>
         </div>
       </header>

@@ -112,16 +112,18 @@ export default function PhysioPatientPage() {
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
-          <button
-            type="button"
-            onClick={onEndSession}
-            className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
-          >
-            End session
-          </button>
+        <div className="mx-auto flex max-w-[480px] items-center justify-between gap-3 px-5 py-3">
           <span className="eyebrow">Physiotherapist</span>
-          <AccountMenu />
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={onEndSession}
+              className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
+            >
+              End session
+            </button>
+            <AccountMenu />
+          </div>
         </div>
       </header>
 
