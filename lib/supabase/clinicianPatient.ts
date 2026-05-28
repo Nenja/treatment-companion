@@ -38,6 +38,9 @@ export interface ClinicianPatientCheckin {
 export interface ClinicianTreatmentRecord {
   id: string;
   date: string;
+  /** When the record was entered (treatment_session.recorded_at).
+   *  Used to allow same-day typo edits only. */
+  recordedAt: string;
   drugProduct: string;
   totalUnits: number;
   dilution: string | null;
@@ -87,6 +90,10 @@ export interface ClinicianPatientData {
     displayName: string;
     /** Whether treated muscles are shared with the physiotherapist. */
     shareMusclesWithPhysio: boolean;
+    /** Therapist's exercise plan & devices (read-only for the
+     *  physician — context at the injection visit). */
+    physioExercisePlan: string | null;
+    physioAssistiveDevices: string | null;
   };
   cycle: {
     id: string;
@@ -127,7 +134,7 @@ export function useClinicianPatientData(
       const { data: pRow, error: pErr } = await supabase
         .from('patient')
         .select(
-          'id, share_muscles_with_physio, profile:profile_id (display_name)'
+          'id, share_muscles_with_physio, physio_exercise_plan, physio_assistive_devices, profile:profile_id (display_name)'
         )
         .eq('id', patientId!)
         .maybeSingle();
@@ -142,7 +149,11 @@ export function useClinicianPatientData(
             : (pRow.profile as { display_name?: string } | null)?.display_name) ??
           'Patient',
         shareMusclesWithPhysio:
-          (pRow.share_muscles_with_physio as boolean) ?? true
+          (pRow.share_muscles_with_physio as boolean) ?? true,
+        physioExercisePlan:
+          (pRow.physio_exercise_plan as string | null) ?? null,
+        physioAssistiveDevices:
+          (pRow.physio_assistive_devices as string | null) ?? null
       };
 
       // 2. Active cycle
@@ -198,7 +209,7 @@ export function useClinicianPatientData(
           supabase
             .from('treatment_session')
             .select(
-              'id, date, drug_product, total_units, dilution, guidance, notes, injections:muscle_injection (id, muscle, side, dose_units, note, position)'
+              'id, date, recorded_at, drug_product, total_units, dilution, guidance, notes, injections:muscle_injection (id, muscle, side, dose_units, note, position)'
             )
             .eq('treatment_cycle_id', cycle.id)
             .order('date', { ascending: false })
@@ -300,6 +311,7 @@ export function useClinicianPatientData(
         ? {
             id: treatmentRes.data.id as string,
             date: treatmentRes.data.date as string,
+            recordedAt: treatmentRes.data.recorded_at as string,
             drugProduct: treatmentRes.data.drug_product as string,
             totalUnits: Number(treatmentRes.data.total_units),
             dilution: (treatmentRes.data.dilution as string | null) ?? null,
@@ -586,6 +598,64 @@ export function useSaveTreatmentSession() {
           note: i.note ?? null
         }))
       });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
+/**
+ * Atomic "start a new cycle AND record its treatment" — used for the
+ * new-cycle flow. The cycle is created only when the treatment is
+ * recorded, so cancelling the treatment form beforehand creates
+ * nothing (fixes the premature-empty-cycle bug). Takes the patient +
+ * treatment date instead of a cycle id, because the cycle does not
+ * exist yet.
+ */
+export interface StartCycleWithTreatmentInput {
+  patientId: string;
+  date: string;
+  drugProduct: string;
+  totalUnits: number;
+  dilution?: string;
+  guidance: string;
+  notes?: string;
+  injections: {
+    muscle: string;
+    side: 'left' | 'right' | 'bilateral';
+    doseUnits: number;
+    note?: string;
+  }[];
+}
+
+export function useStartCycleWithTreatment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (
+      input: StartCycleWithTreatmentInput
+    ): Promise<string> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc(
+        'start_cycle_with_treatment',
+        {
+          p_patient_id: input.patientId,
+          p_treatment_date: input.date,
+          p_drug_product: input.drugProduct,
+          p_total_units: input.totalUnits,
+          p_dilution: input.dilution ?? null,
+          p_guidance: input.guidance,
+          p_notes: input.notes ?? null,
+          p_injections: input.injections.map((i) => ({
+            muscle: i.muscle,
+            side: i.side,
+            dose_units: i.doseUnits,
+            note: i.note ?? null
+          }))
+        }
+      );
       if (error) throw error;
       return data as string;
     },

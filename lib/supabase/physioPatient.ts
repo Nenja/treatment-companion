@@ -1,12 +1,14 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from './browser';
 
 export interface PhysioPatientData {
   patient: {
     id: string;
     displayName: string;
+    exercisePlan: string | null;
+    assistiveDevices: string | null;
   };
   cycle: {
     id: string;
@@ -59,7 +61,9 @@ export function usePhysioPatientData(
       // exactly one such patient.
       const { data: patientRow, error: pErr } = await supabase
         .from('patient')
-        .select('id, profile_id, share_muscles_with_physio')
+        .select(
+          'id, profile_id, share_muscles_with_physio, physio_exercise_plan, physio_assistive_devices'
+        )
         .limit(1)
         .maybeSingle();
       if (pErr) throw pErr;
@@ -147,7 +151,11 @@ export function usePhysioPatientData(
       return {
         patient: {
           id: patientId,
-          displayName: (profileRow?.display_name as string) ?? 'Patient'
+          displayName: (profileRow?.display_name as string) ?? 'Patient',
+          exercisePlan:
+            (patientRow.physio_exercise_plan as string | null) ?? null,
+          assistiveDevices:
+            (patientRow.physio_assistive_devices as string | null) ?? null
         },
         cycle: cycleRow
           ? {
@@ -159,6 +167,33 @@ export function usePhysioPatientData(
         goals,
         latestTreatment
       };
+    }
+  });
+}
+
+/**
+ * Therapist updates the per-patient exercise plan and assistive
+ * devices (free text). Calls set_physio_plan, which enforces that the
+ * caller is a therapist with an active session for the patient.
+ */
+export function useSetPhysioPlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      patientId: string;
+      exercisePlan: string;
+      assistiveDevices: string;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_physio_plan', {
+        p_patient_id: input.patientId,
+        p_exercise_plan: input.exercisePlan,
+        p_assistive_devices: input.assistiveDevices
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['physioPatient'] });
     }
   });
 }

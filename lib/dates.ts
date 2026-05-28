@@ -43,3 +43,19 @@ export function formatMonthYear(iso: string, locale: string): string {
     year: 'numeric'
   }).format(d);
 }
+
+/**
+ * True if the given ISO timestamp falls on today's calendar date (in
+ * the viewer's local timezone). Used to allow same-day typo edits to a
+ * treatment record: a treatment can be corrected the day it was
+ * entered, but becomes read-only afterwards.
+ */
+export function isToday(iso: string): boolean {
+  const d = new Date(iso);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}

@@ -364,7 +364,25 @@
     "professionHelper": "Shown on screen and in the medical-record export.",
     "professionOtherPlaceholder": "Describe the profession"
   },
+  "physioPlan": {
+    "title": "Exercise plan & devices",
+    "exerciseLabel": "Exercise plan",
+    "devicesLabel": "Assistive devices",
+    "empty": "Not recorded yet.",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved": "Plan updated.",
+    "saveError": "Could not save. Please try again.",
+    "exercisePlaceholder": "Describe the exercise programme you have with this patient.",
+    "devicesPlaceholder": "List any orthoses, splints, walking aids, or other devices in use."
+  },
   "physio": {
+    "cycleLabel": "Cycle {number}",
+    "noActiveCycle": "No active treatment cycle yet.",
+    "goalsHeading": "Treatment goals",
+    "noGoals": "No active goals for this patient yet.",
+    "noCycleHint": "Progress reporting and suggestions become available once the patient has an active treatment cycle.",
     "musclesTreatedTitle": "Muscles treated",
     "musclesTreatedFrom": "From the most recent treatment on {date}.",
     "musclesShow": "Show treated muscles",

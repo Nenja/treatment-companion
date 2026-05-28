@@ -368,8 +368,26 @@
     "professionHelper": "Vises på skærmen og i journaludtrækket.",
     "professionOtherPlaceholder": "Beskriv professionen"
   },
+  "physioPlan": {
+    "title": "Træningsplan & hjælpemidler",
+    "exerciseLabel": "Træningsplan",
+    "devicesLabel": "Hjælpemidler",
+    "empty": "Endnu ikke registreret.",
+    "edit": "Redigér",
+    "save": "Gem",
+    "cancel": "Annullér",
+    "saved": "Planen er opdateret.",
+    "saveError": "Kunne ikke gemme. Prøv venligst igen.",
+    "exercisePlaceholder": "Beskriv det træningsprogram, du har med denne patient.",
+    "devicesPlaceholder": "Angiv eventuelle ortoser, skinner, gangredskaber eller andre hjælpemidler i brug."
+  },
   "physio": {
     "musclesTreatedTitle": "Behandlede muskler",
+    "cycleLabel": "Cyklus {number}",
+    "noActiveCycle": "Ingen aktiv behandlingscyklus endnu.",
+    "goalsHeading": "Behandlingsmål",
+    "noGoals": "Ingen aktive mål for denne patient endnu.",
+    "noCycleHint": "Statusrapportering og forslag bliver tilgængelige, når patienten har en aktiv behandlingscyklus.",
     "musclesTreatedFrom": "Fra den seneste behandling den {date}.",
     "musclesShow": "Vis behandlede muskler",
     "musclesHide": "Skjul behandlede muskler",

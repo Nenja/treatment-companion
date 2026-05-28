@@ -3,64 +3,46 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useStartNewCycle } from '@/lib/supabase/clinicianPatient';
 import { todayIso } from '@/lib/dates';
 import { useModalA11y } from '@/lib/useModalA11y';
 import { useToast } from '@/components/feedback/Toast';
-import { classifyError } from '@/lib/feedback';
 
 interface NewCycleDialogProps {
-  patientId: string;
   onClose: () => void;
 }
 
 /**
  * Modal dialog asking the clinician to pick the date of the new
- * treatment injection. Calling the RPC:
- *   - closes the patient's currently-active cycle (status → completed)
- *   - creates a new active cycle whose start_date is the picked date
- *   - seeds 16 weekly prompts on the new cycle
- * Then navigates to /clinician/treatment, where the form is empty —
- * the clinician records the new treatment from scratch, or uses
- * "Copy from previous" inside the form.
+ * treatment injection.
+ *
+ * It does NOT create the cycle. It collects the date and navigates to
+ * the treatment form with ?newCycle=1&date=…; the cycle is created
+ * atomically WITH the treatment when the clinician records it (via
+ * start_cycle_with_treatment). This means backing out of the treatment
+ * form creates nothing — fixing the old bug where an empty cycle was
+ * committed at confirm-time and a cancel couldn't undo it.
  */
-export function NewCycleDialog({ patientId, onClose }: NewCycleDialogProps) {
+export function NewCycleDialog({ onClose }: NewCycleDialogProps) {
   const router = useRouter();
   const locale = useLocale();
-  const startNewCycle = useStartNewCycle();
   const [date, setDate] = useState(todayIso());
   const toast = useToast();
   const tFeedback = useTranslations('feedback');
   const t = useTranslations('clinician.patient');
 
-  const onConfirm = async () => {
+  const onConfirm = () => {
     if (!date) {
       toast.error(tFeedback('errorInvalidInput'));
       return;
     }
-    try {
-      await startNewCycle.mutateAsync({
-        patientId,
-        treatmentDate: date
-      });
-      toast.success(tFeedback('successCycleStarted'));
-      onClose();
-      // Navigate to treatment record form for the new cycle.
-      router.push(
-        locale === 'en' ? '/clinician/treatment' : `/${locale}/clinician/treatment`
-      );
-    } catch (err) {
-      const key = classifyError(err);
-      toast.error(tFeedback(key));
-      if (key === 'errorClinicianUnlockExpired') {
-        onClose();
-        setTimeout(() => {
-          router.push(
-            locale === 'en' ? '/clinician' : `/${locale}/clinician`
-          );
-        }, 1500);
-      }
-    }
+    // Do NOT create the cycle here. The cycle is created atomically
+    // together with the treatment, when the clinician records it on the
+    // treatment page — so backing out of that form creates nothing.
+    // We just carry the chosen date forward as a query param.
+    onClose();
+    const base =
+      locale === 'en' ? '/clinician/treatment' : `/${locale}/clinician/treatment`;
+    router.push(`${base}?newCycle=1&date=${encodeURIComponent(date)}`);
   };
 
   const containerRef = useModalA11y(onClose);
@@ -95,15 +77,13 @@ export function NewCycleDialog({ patientId, onClose }: NewCycleDialogProps) {
           <button
             type="button"
             onClick={onConfirm}
-            disabled={startNewCycle.isPending}
-            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone"
+            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft"
           >
-            {startNewCycle.isPending ? '…' : t('newCycleConfirm')}
+            {t('newCycleConfirm')}
           </button>
           <button
             type="button"
             onClick={onClose}
-            disabled={startNewCycle.isPending}
             className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
             {t('newCycleCancel')}
