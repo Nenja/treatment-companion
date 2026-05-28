@@ -14,6 +14,8 @@ import {
   formatPatientSummary
 } from '@/lib/supabase/patientInfo';
 import { formatLongDate } from '@/lib/dates';
+import { nrsToGas } from '@/lib/types';
+import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import {
   PhysioActionRow,
   type PhysioActionId
@@ -120,6 +122,91 @@ export default function PhysioPatientPage() {
     !sessionQuery.data
   ) {
     return <div className="min-h-dvh bg-cream" />;
+  }
+
+  // Per-goal patient ratings and therapist assessment points for the
+  // progress charts. Both are keyed by goal id, both empty when there
+  // is no cycle / no data yet. Same logic as the clinician page; kept
+  // separate here rather than extracted because the two pages may
+  // diverge later (e.g. therapists may want different overlays).
+  const cycle = patientData.data?.cycle ?? null;
+  const goals = patientData.data?.goals ?? [];
+  const checkins = patientData.data?.checkins ?? [];
+  const assessments = patientData.data?.assessments ?? [];
+
+  const cycleStartMs = cycle ? new Date(cycle.startDate).getTime() : 0;
+  const daysSinceStart = cycle
+    ? Math.floor((Date.now() - cycleStartMs) / (24 * 60 * 60 * 1000))
+    : 0;
+  const weekNumber = cycle ? Math.max(1, Math.floor(daysSinceStart / 7) + 1) : 1;
+
+  const ratingsByGoal = new Map<
+    string,
+    {
+      weekNumber: number;
+      value: -2 | -1 | 0 | 1 | 2 | null;
+      nrs: number | null;
+      reported: boolean;
+      comment?: string;
+      submitterLabel?: 'self' | 'caregiver';
+    }[]
+  >();
+  for (const goal of goals) {
+    const perWeek = checkins
+      .flatMap((c) => {
+        const r = c.ratings.find((x) => x.approvedGoalId === goal.id);
+        if (!r) return [];
+        return [
+          {
+            weekNumber: c.weekNumber,
+            value: r.ratingValue,
+            nrs: r.nrsValue,
+            reported: true,
+            comment: c.comment ?? undefined,
+            submitterLabel: c.submitterLabel
+          }
+        ];
+      })
+      .sort((a, b) => a.weekNumber - b.weekNumber);
+    ratingsByGoal.set(goal.id, perWeek);
+  }
+
+  const physioRatingsByGoal = new Map<
+    string,
+    {
+      weekNumber: number;
+      nrs: number;
+      value: -2 | -1 | 0 | 1 | 2;
+      note: string | null;
+    }[]
+  >();
+  for (const goal of goals) {
+    const points = assessments
+      .flatMap((a) => {
+        const r = a.ratings.find((x) => x.approvedGoalId === goal.id);
+        if (!r) return [];
+        const days =
+          (new Date(a.assessmentDate).getTime() - cycleStartMs) /
+          (24 * 60 * 60 * 1000);
+        const snappedWeek = Math.max(1, Math.round(days / 7));
+        return [
+          {
+            weekNumber: snappedWeek,
+            nrs: r.nrsValue,
+            value: nrsToGas(r.nrsValue, {
+              question: goal.nrsQuestion,
+              direction: goal.nrsDirection,
+              cutLowLow: goal.cutLowLow,
+              cutLow: goal.cutLow,
+              cutZero: goal.cutZero,
+              cutHigh: goal.cutHigh
+            }),
+            note: a.note
+          }
+        ];
+      })
+      .sort((a, b) => a.weekNumber - b.weekNumber);
+    physioRatingsByGoal.set(goal.id, points);
   }
 
   return (
@@ -250,13 +337,13 @@ export default function PhysioPatientPage() {
               ) : (
                 <ul className="mt-3 space-y-3">
                   {patientData.data.goals.map((g) => (
-                    <li
-                      key={g.id}
-                      className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5"
-                    >
-                      <p className="font-display text-[17px] leading-snug text-ink">
-                        {g.patientFacingText}
-                      </p>
+                    <li key={g.id}>
+                      <GoalProgressView
+                        goalText={g.patientFacingText}
+                        currentWeek={weekNumber}
+                        ratings={ratingsByGoal.get(g.id) ?? []}
+                        physioRatings={physioRatingsByGoal.get(g.id) ?? []}
+                      />
                     </li>
                   ))}
                 </ul>
