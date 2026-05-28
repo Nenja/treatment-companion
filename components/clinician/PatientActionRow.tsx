@@ -99,8 +99,10 @@ export function PatientActionRow({
   onSelect: (id: PatientActionId) => void;
   /** Full labels — used for the accessible name (with count). */
   labels: Record<PatientActionId, string>;
-  /** Short one-word labels shown visibly under each icon. */
-  shortLabels: Record<PatientActionId, string>;
+  /** Short one-word labels shown visibly under each icon. Optional —
+   *  falls back to the full labels if not provided, so the row can
+   *  never fail to compile on a brief page/component mismatch. */
+  shortLabels?: Record<PatientActionId, string>;
 }) {
   const items: { id: PatientActionId; count?: number }[] = [
     { id: 'suggestions', count: suggestionCount },
@@ -132,7 +134,7 @@ export function PatientActionRow({
           >
             {iconFor(id)}
             <span className="text-[11px] leading-tight">
-              {shortLabels[id]}
+              {(shortLabels ?? labels)[id]}
             </span>
             {typeof count === 'number' && <Badge count={count} />}
           </button>
