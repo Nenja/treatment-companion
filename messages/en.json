@@ -427,6 +427,7 @@
     "noGoals": "No active goals for this patient yet.",
     "noCycleHint": "Progress reporting and suggestions become available once the patient has an active treatment cycle.",
     "reportProgress": "Report progress",
+    "back": "Back to patient",
     "noGoalsToReport": "Add a goal first — progress is rated against approved goals.",
     "actionMuscles": "Treated muscles",
     "actionSuggestGoal": "Suggest a new goal",

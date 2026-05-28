@@ -432,6 +432,7 @@
     "noGoals": "Ingen aktive mål for denne patient endnu.",
     "noCycleHint": "Statusrapportering og forslag bliver tilgængelige, når patienten har en aktiv behandlingscyklus.",
     "reportProgress": "Registrér status",
+    "back": "Tilbage til patienten",
     "noGoalsToReport": "Tilføj først et mål — status vurderes ud fra godkendte mål.",
     "actionMuscles": "Behandlede muskler",
     "actionSuggestGoal": "Foreslå et nyt mål",

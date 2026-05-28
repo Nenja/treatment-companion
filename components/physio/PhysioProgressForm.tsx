@@ -16,6 +16,13 @@ import type { PhysioPatientData } from '@/lib/supabase/physioPatient';
 interface PhysioProgressFormProps {
   patientId: string;
   goals: PhysioPatientData['goals'];
+  /**
+   * Called after a successful submission, after the form has reset for
+   * the next entry. When the form is on its own page, the caller uses
+   * this to navigate back; when the form is inline, it can be omitted
+   * and the form simply stays put for further entries.
+   */
+  onSaved?: () => void;
 }
 
 /**
@@ -32,7 +39,8 @@ interface PhysioProgressFormProps {
  */
 export function PhysioProgressForm({
   patientId,
-  goals
+  goals,
+  onSaved
 }: PhysioProgressFormProps) {
   const toast = useToast();
   const locale = useLocale();
@@ -87,6 +95,8 @@ export function PhysioProgressForm({
       setOpenGoals({});
       setNote('');
       setDate(todayIso());
+      // Notify the caller (e.g. so a wrapping page can navigate back).
+      onSaved?.();
     } catch (err) {
       toast.error(
         classifyError(err) === 'errorGeneric'
