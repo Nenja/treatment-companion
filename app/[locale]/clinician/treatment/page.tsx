@@ -14,7 +14,7 @@ import {
   useStartCycleWithTreatment,
   usePreviousTreatment
 } from '@/lib/supabase/clinicianPatient';
-import { todayIso } from '@/lib/dates';
+import { todayIso, isToday } from '@/lib/dates';
 import { useSessionExpiryWarning } from '@/lib/useSessionExpiryWarning';
 import {
   GUIDANCE_METHODS,
