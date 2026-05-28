@@ -131,6 +131,40 @@ export default function PatientHomePage() {
       {/* One-time orientation — shown only on a new patient's first visit. */}
       <IntroPanel role="patient" />
 
+      {/* Show visit code — quiet utility button at the top. Navigates
+          to /visit-code, where the code is revealed only when the
+          patient explicitly asks for it. The code itself is not pinned
+          to the home page: it's a credential the patient shares with
+          their clinician during a visit, so it stays revealed-on-
+          request rather than persistent. */}
+      <div className="mb-3 flex justify-end">
+        <button
+          type="button"
+          onClick={() =>
+            router.push(
+              locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
+            )
+          }
+          className="inline-flex items-center gap-2 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <rect x="3" y="6" width="18" height="12" rx="2" />
+            <path d="M7 10v4M11 10v4M15 10v4M19 10v4" />
+          </svg>
+          {t('showVisitCode')}
+        </button>
+      </div>
+
       {/* Cycle context eyebrow — plain language, just "weeks since
           treatment" so the patient doesn't have to think in cycles. */}
       <div className="eyebrow mb-2">
