@@ -20,7 +20,6 @@ import {
   PhysioActionRow,
   type PhysioActionId
 } from '@/components/physio/PhysioActionRow';
-import { PhysioProgressForm } from '@/components/physio/PhysioProgressForm';
 import { PhysioGoalSuggestionForm } from '@/components/physio/PhysioGoalSuggestionForm';
 import { PhysioMuscleSuggestionForm } from '@/components/physio/PhysioMuscleSuggestionForm';
 import { PhysioPlanSection } from '@/components/physio/PhysioPlanSection';
@@ -67,12 +66,11 @@ export default function PhysioPatientPage() {
   const patientInfo = usePatientInfo(sessionQuery.data?.patientId ?? null);
   const endSession = useEndClinicianSession();
 
-  // Inline panel open under the action row, or the progress form.
-  // 'progress' is the primary button; the other ids come from the row.
-  // Only one panel open at a time.
-  const [openPanel, setOpenPanel] = useState<
-    'progress' | PhysioActionId | null
-  >(null);
+  // Which inline panel is open under the action row, if any. Only one
+  // at a time. Progress reporting is NOT in this set — it's a primary
+  // action that navigates to its own page (/physio/progress), like
+  // the clinician's start-new-cycle button goes to /clinician/treatment.
+  const [openPanel, setOpenPanel] = useState<PhysioActionId | null>(null);
 
   const unlockPath = locale === 'en' ? '/physio' : `/${locale}/physio`;
 
@@ -209,21 +207,84 @@ export default function PhysioPatientPage() {
     physioRatingsByGoal.set(goal.id, points);
   }
 
+  // Patient name + summary live in the header. When data has not yet
+  // loaded, render placeholders so the header keeps a stable size.
+  const patientNameForHeader =
+    patientData.data?.patient.displayName ?? null;
+  const patientSummary = formatPatientSummary(patientInfo.data ?? null, {
+    ageYears: (age) => tInfo('ageYears', { age }),
+    etiology: (k) => tEt(k),
+    side: (k) => tSide(k),
+    ambulation: (k) => tAmb(k)
+  });
+
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[480px] items-center justify-between gap-3 px-5 py-3">
-          <span className="eyebrow">Physiotherapist</span>
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={onEndSession}
-              className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
-            >
-              End session
-            </button>
-            <AccountMenu />
+        <div className="mx-auto max-w-[480px] px-5 py-3">
+          {/* Top row — controls only. Eyebrow on the left as the peer
+              of the buttons; End session pill + AccountMenu on the
+              right. Mirrors the clinician header exactly. */}
+          <div className="flex items-center justify-between gap-3">
+            <span className="eyebrow">Physiotherapist</span>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={onEndSession}
+                className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
+              >
+                End session
+              </button>
+              <AccountMenu />
+            </div>
           </div>
+          {/* Second row — the patient. Name + (i) icon for clinical
+              background; summary line below. Only renders once the
+              patient data has loaded. */}
+          {patientNameForHeader && (
+            <div className="mt-2 min-w-0">
+              <div className="flex items-center gap-1">
+                <div className="truncate font-display text-[20px] leading-tight text-ink">
+                  {patientNameForHeader}
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      locale === 'en'
+                        ? '/patient-info'
+                        : `/${locale}/patient-info`
+                    )
+                  }
+                  aria-label={tInfo('openInfo', {
+                    name: patientNameForHeader
+                  })}
+                  className="-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:text-sage-deep"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="11" x2="12" y2="16" />
+                    <circle cx="12" cy="8" r="0.6" fill="currentColor" />
+                  </svg>
+                </button>
+              </div>
+              {patientSummary && (
+                <div className="mt-0.5 truncate text-[12px] text-ink-muted">
+                  {patientSummary}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
@@ -264,121 +325,29 @@ export default function PhysioPatientPage() {
           </SkeletonScreen>
         ) : (
           <>
-            <div className="flex items-center gap-1">
-              <div className="font-display text-[26px] leading-tight text-ink">
-                {patientData.data.patient.displayName}
-              </div>
-              {/* Patient-info opener (matches clinician page). Visible
-                  glyph is 18px but the tap target is 36px. */}
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    locale === 'en'
-                      ? '/patient-info'
-                      : `/${locale}/patient-info`
-                  )
-                }
-                aria-label={tInfo('openInfo', {
-                  name: patientData.data.patient.displayName
-                })}
-                className="-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:text-sage-deep"
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="11" x2="12" y2="16" />
-                  <circle cx="12" cy="8" r="0.6" fill="currentColor" />
-                </svg>
-              </button>
-            </div>
-            {(() => {
-              const summary = formatPatientSummary(patientInfo.data ?? null, {
-                ageYears: (age) => tInfo('ageYears', { age }),
-                etiology: (k) => tEt(k),
-                side: (k) => tSide(k),
-                ambulation: (k) => tAmb(k)
-              });
-              return summary ? (
-                <div className="mt-0.5 text-[13px] text-ink-muted">
-                  {summary}
-                </div>
-              ) : null;
-            })()}
+            {/* Cycle context — name + summary now live in the header,
+                so the body starts directly here (matching the clinician
+                page, which also begins with cycle context under its
+                header). */}
             {patientData.data.cycle ? (
-              <p className="mt-1 text-[14px] text-ink-soft">
+              <p className="text-[14px] text-ink-soft">
                 {t('cycleLabel', {
                   number: patientData.data.cycle.cycleNumber
                 })}
               </p>
             ) : (
-              <p className="mt-1 text-[14px] text-ink-muted">
+              <p className="text-[14px] text-ink-muted">
                 {t('noActiveCycle')}
               </p>
             )}
 
-            <section className="mt-8">
-              <h2 className="font-display text-[18px] text-ink">
-                {t('goalsHeading')}
-              </h2>
-              {patientData.data.goals.length === 0 ? (
-                <p className="mt-3 text-[14px] text-ink-muted">
-                  {t('noGoals')}
-                </p>
-              ) : (
-                <ul className="mt-3 space-y-3">
-                  {patientData.data.goals.map((g) => (
-                    <li key={g.id}>
-                      <GoalProgressView
-                        goalText={g.patientFacingText}
-                        currentWeek={weekNumber}
-                        ratings={ratingsByGoal.get(g.id) ?? []}
-                        physioRatings={physioRatingsByGoal.get(g.id) ?? []}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            {/* PRIMARY ACTION — recording an assessment is the routine
-                thing a therapist does at every session, so it leads the
-                page like the patient's check-in CTA. Disabled when the
-                patient has no goals yet (nothing to rate against) and
-                explained inline. */}
             {patientData.data.cycle ? (
               <>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setOpenPanel((p) => (p === 'progress' ? null : 'progress'))
-                  }
-                  disabled={patientData.data.goals.length === 0}
-                  className="mt-8 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
-                >
-                  {t('reportProgress')}
-                </button>
-                {patientData.data.goals.length === 0 && (
-                  <p className="mt-2 text-[13px] text-ink-muted">
-                    {t('noGoalsToReport')}
-                  </p>
-                )}
-
-                {/* Action row — secondary entry points, always visible.
-                    Tapping opens an inline panel below. */}
+                {/* Action row — always-visible secondary entry points,
+                    placed high so they're not buried below goals.
+                    Mirrors the clinician's PatientActionRow position. */}
                 <PhysioActionRow
-                  openPanel={
-                    openPanel === 'progress' ? null : openPanel
-                  }
+                  openPanel={openPanel}
                   onSelect={(id) =>
                     setOpenPanel((cur) => (cur === id ? null : id))
                   }
@@ -396,16 +365,11 @@ export default function PhysioPatientPage() {
                   }}
                 />
 
-                {/* Inline panel — only one open at a time. */}
-                {openPanel === 'progress' &&
-                  patientData.data.goals.length > 0 && (
-                    <div className="mt-3">
-                      <PhysioProgressForm
-                        patientId={patientData.data.patient.id}
-                        goals={patientData.data.goals}
-                      />
-                    </div>
-                  )}
+                {/* Inline panel — only one open at a time. Progress
+                    reporting is NOT in this set — that primary action
+                    has its own page (/physio/progress) so the form has
+                    room to breathe and the therapist's attention
+                    narrows to one task. */}
                 {openPanel === 'muscles' && (
                   <div className="mt-3">
                     {patientData.data.latestTreatment ? (
@@ -443,6 +407,32 @@ export default function PhysioPatientPage() {
                     locale={locale}
                   />
                 )}
+
+                {/* PRIMARY ACTION — Report progress. Navigates to its
+                    own page (/physio/progress), mirroring the clinician's
+                    "Start new treatment cycle" → /clinician/treatment.
+                    The form is substantial (per-goal ratings + note),
+                    so a dedicated page beats inline expansion. Disabled
+                    with a hint when the patient has no goals to rate. */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      locale === 'en'
+                        ? '/physio/progress'
+                        : `/${locale}/physio/progress`
+                    )
+                  }
+                  disabled={patientData.data.goals.length === 0}
+                  className="mt-5 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
+                >
+                  {t('reportProgress')}
+                </button>
+                {patientData.data.goals.length === 0 && (
+                  <p className="mt-2 text-[13px] text-ink-muted">
+                    {t('noGoalsToReport')}
+                  </p>
+                )}
               </>
             ) : (
               <div className="mt-10 rounded-[var(--radius-card)] border border-dashed border-stone bg-cream-soft/60 p-5">
@@ -452,10 +442,38 @@ export default function PhysioPatientPage() {
               </div>
             )}
 
+            {/* Active goals with progress charts. Comes AFTER the
+                action row + report-progress button, matching the
+                clinician layout (action row up top, primary button,
+                then goals below). */}
+            <section className="mt-10">
+              <h2 className="font-display text-[18px] text-ink">
+                {t('goalsHeading')}
+              </h2>
+              {patientData.data.goals.length === 0 ? (
+                <p className="mt-3 text-[14px] text-ink-muted">
+                  {t('noGoals')}
+                </p>
+              ) : (
+                <ul className="mt-3 space-y-3">
+                  {patientData.data.goals.map((g) => (
+                    <li key={g.id}>
+                      <GoalProgressView
+                        goalText={g.patientFacingText}
+                        currentWeek={weekNumber}
+                        ratings={ratingsByGoal.get(g.id) ?? []}
+                        physioRatings={physioRatingsByGoal.get(g.id) ?? []}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
             {/* Therapist's exercise plan & assistive devices —
                 per-patient, persists across cycles, editable any time.
-                Stays at the bottom: it's reference / setup, not the
-                routine action. */}
+                Stays at the bottom: reference / setup, not the routine
+                action. */}
             <PhysioPlanSection
               patientId={patientData.data.patient.id}
               exercisePlan={patientData.data.patient.exercisePlan}
@@ -494,8 +512,6 @@ function TreatedMusclesSection({
   locale: string;
 }) {
   const t = useTranslations('physio');
-  const [open, setOpen] = useState(false);
-
   const grouped = groupTreatedMuscles(muscles);
   const isEmpty = grouped.length === 0;
 
@@ -513,65 +529,34 @@ function TreatedMusclesSection({
     }
   };
 
+  // No internal foldout: this section is shown only when the
+  // therapist taps the "Muscles" icon in the action row. The row
+  // already controls visibility — an extra chevron here would be a
+  // redundant fold-inside-a-fold. Render straight content instead.
   return (
-    <section className="mt-8">
-      {/* Header button — toggles the list. Shows a count so the
-          therapist knows there is something there without opening it. */}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-3 text-left hover:bg-stone-soft"
-      >
-        <span className="flex flex-col">
-          <span className="font-display text-[17px] leading-tight text-ink">
-            {t('musclesTreatedTitle')}
-          </span>
-          <span className="mt-0.5 text-[13px] text-ink-muted">
-            {isEmpty
-              ? t('musclesTreatedFrom', {
-                  date: formatLongDate(date, locale)
-                })
-              : t('musclesCount', { count: grouped.length })}
-          </span>
-        </span>
-        {/* Chevron — rotates when open. Matches the app's existing
-            collapsible cards (CatchUpCard). */}
-        <span
-          aria-hidden
-          className={`text-[14px] text-ink-muted transition-transform ${
-            open ? 'rotate-180' : ''
-          }`}
-        >
-          ▾
-        </span>
-      </button>
-
-      {open && (
-        <div className="mt-2">
-          <p className="text-[13px] text-ink-muted">
-            {t('musclesTreatedFrom', { date: formatLongDate(date, locale) })}
-          </p>
-          {isEmpty ? (
-            <p className="mt-2 text-[14px] text-ink-muted">
-              {t('musclesNone')}
-            </p>
-          ) : (
-            <ul className="mt-2 divide-y divide-stone/70 rounded-[var(--radius-button)] border border-stone bg-cream-soft">
-              {grouped.map((g) => (
-                <li
-                  key={g.muscle}
-                  className="flex items-baseline justify-between gap-3 px-4 py-2.5"
-                >
-                  <span className="text-[14px] text-ink">{g.muscle}</span>
-                  <span className="shrink-0 text-[13px] text-ink-muted">
-                    {sideLabel(g.sideKey)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+    <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+      <h3 className="font-display text-[16px] leading-tight text-ink">
+        {t('musclesTreatedTitle')}
+      </h3>
+      <p className="mt-0.5 text-[13px] text-ink-muted">
+        {t('musclesTreatedFrom', { date: formatLongDate(date, locale) })}
+      </p>
+      {isEmpty ? (
+        <p className="mt-2 text-[14px] text-ink-muted">{t('musclesNone')}</p>
+      ) : (
+        <ul className="mt-3 divide-y divide-stone/70 rounded-[var(--radius-button)] border border-stone bg-cream">
+          {grouped.map((g) => (
+            <li
+              key={g.muscle}
+              className="flex items-baseline justify-between gap-3 px-4 py-2.5"
+            >
+              <span className="text-[14px] text-ink">{g.muscle}</span>
+              <span className="shrink-0 text-[13px] text-ink-muted">
+                {sideLabel(g.sideKey)}
+              </span>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );
