@@ -16,10 +16,9 @@ import {
 import {
   useClinicianPatientData,
   useSetSuggestionStatus,
-  useSetMuscleSharing,
   useArchiveGoal
 } from '@/lib/supabase/clinicianPatient';
-import { formatLongDate, isToday } from '@/lib/dates';
+import { formatLongDate } from '@/lib/dates';
 import { nrsToGas, injectionSideLabel, type GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { ExportModal } from '@/components/clinician/ExportModal';
@@ -31,7 +30,6 @@ import {
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import {
   SkeletonBlock,
-  SkeletonParagraph,
   SkeletonScreen
 } from '@/components/feedback/Skeleton';
 import { useModalA11y } from '@/lib/useModalA11y';
@@ -71,7 +69,6 @@ export default function ClinicianPatientPage() {
   const endSession = useEndClinicianSession();
   const touchSession = useTouchClinicianSession();
   const setStatus = useSetSuggestionStatus();
-  const setMuscleSharing = useSetMuscleSharing();
   const archiveGoal = useArchiveGoal();
   const toast = useToast();
 
@@ -161,12 +158,6 @@ export default function ClinicianPatientPage() {
             {/* Patient name heading */}
             <SkeletonBlock width="w-3/4" height="h-8" />
             <SkeletonBlock width="w-1/2" height="h-4" className="mt-2" />
-
-            {/* Treatment record card */}
-            <div className="mt-8 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5">
-              <SkeletonBlock width="w-1/3" height="h-5" />
-              <SkeletonParagraph lines={3} className="mt-3" />
-            </div>
 
             {/* Active goals title + cards */}
             <div className="mt-10">
@@ -692,113 +683,6 @@ export default function ClinicianPatientPage() {
                 </li>
               ))}
             </ul>
-          )}
-        </section>
-
-        {/* Treatment record card */}
-        <section className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-          {treatment ? (
-            <>
-              <div className="flex items-baseline justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="eyebrow">Last treatment</div>
-                  {/* Terse one-line summary — the full per-muscle
-                      breakdown lives on the record page, shown as
-                      reference when recording the next treatment. */}
-                  <p className="mt-0.5 text-[14px] text-ink-soft">
-                    {treatment.drugProduct} · {treatment.totalUnits} units ·{' '}
-                    {formatLongDate(treatment.date, locale)}
-                  </p>
-                </div>
-                {isToday(treatment.recordedAt) && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      touch();
-                      router.push(
-                        locale === 'en'
-                          ? '/clinician/treatment'
-                          : `/${locale}/clinician/treatment`
-                      );
-                    }}
-                    className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[14px] font-semibold text-sage-deep hover:bg-stone-soft"
-                  >
-                    Edit
-                  </button>
-                )}
-              </div>
-
-              {/* Muscle-sharing toggle — kept on the front page so the
-                  therapist-visibility choice can be changed at any
-                  time, not only when recording a treatment. */}
-              <div className="mt-4 flex items-start justify-between gap-3 border-t border-stone/70 pt-3">
-                <div className="min-w-0">
-                  <p className="text-[14px] font-semibold text-ink">
-                    Share treated muscles with physiotherapist
-                  </p>
-                  <p className="mt-0.5 text-[13px] text-ink-muted">
-                    {patient.shareMusclesWithPhysio
-                      ? 'The physiotherapist can see which muscles were injected.'
-                      : 'The physiotherapist cannot see the injected muscles.'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={patient.shareMusclesWithPhysio}
-                  disabled={setMuscleSharing.isPending}
-                  onClick={() => {
-                    touch();
-                    setMuscleSharing.mutate(
-                      {
-                        patientId: patient.id,
-                        share: !patient.shareMusclesWithPhysio
-                      },
-                      {
-                        onError: () =>
-                          toast.error(
-                            'Could not change the setting. Please try again.'
-                          )
-                      }
-                    );
-                  }}
-                  className={`relative mt-0.5 h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-                    patient.shareMusclesWithPhysio
-                      ? 'bg-sage-deep'
-                      : 'bg-stone'
-                  }`}
-                >
-                  <span
-                    className={`absolute top-1 h-5 w-5 rounded-full bg-cream-soft transition-all ${
-                      patient.shareMusclesWithPhysio
-                        ? 'left-6'
-                        : 'left-1'
-                    }`}
-                  />
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="eyebrow">Treatment</div>
-              <p className="mt-1 text-[14px] text-ink-soft">
-                No treatment recorded for this cycle yet.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  touch();
-                  router.push(
-                    locale === 'en'
-                      ? '/clinician/treatment'
-                      : `/${locale}/clinician/treatment`
-                  );
-                }}
-                className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
-              >
-                Record treatment
-              </button>
-            </>
           )}
         </section>
 
