@@ -21,6 +21,29 @@ export interface PhysioPatientData {
     /** NRS question + direction, needed to render the rating picker. */
     nrsQuestion: string;
     nrsDirection: 'higherIsBetter' | 'lowerIsBetter';
+    /** Cut points for converting NRS → GAS (-2..+2). Needed to render
+     *  the per-goal progress chart. */
+    cutLowLow: number;
+    cutLow: number;
+    cutZero: number;
+    cutHigh: number;
+  }[];
+  /**
+   * Patient self-reported weekly check-ins for the active cycle, used
+   * to draw the per-goal progress chart. RLS lets the therapist read
+   * these because they have an active clinician_session for this
+   * patient (the same path the clinician uses).
+   */
+  checkins: {
+    id: string;
+    weekNumber: number;
+    comment: string | null;
+    submitterLabel?: 'self' | 'caregiver';
+    ratings: {
+      approvedGoalId: string;
+      ratingValue: -2 | -1 | 0 | 1 | 2 | null;
+      nrsValue: number | null;
+    }[];
   }[];
   /**
    * The patient's most recent treatment session — date plus the
@@ -107,11 +130,12 @@ export function usePhysioPatientData(
       if (cErr) throw cErr;
 
       let goals: PhysioPatientData['goals'] = [];
+      let checkins: PhysioPatientData['checkins'] = [];
       if (cycleRow) {
         const { data: goalRows, error: gErr } = await supabase
           .from('approved_goal')
           .select(
-            'id, patient_facing_text, nrs_question, nrs_direction'
+            'id, patient_facing_text, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high'
           )
           .eq('treatment_cycle_id', cycleRow.id as string)
           .eq('status', 'active')
@@ -123,7 +147,39 @@ export function usePhysioPatientData(
           nrsQuestion: (g.nrs_question as string) ?? '',
           nrsDirection:
             (g.nrs_direction as 'higherIsBetter' | 'lowerIsBetter') ??
-            'higherIsBetter'
+            'higherIsBetter',
+          cutLowLow: g.nrs_cut_low_low as number,
+          cutLow: g.nrs_cut_low as number,
+          cutZero: g.nrs_cut_zero as number,
+          cutHigh: g.nrs_cut_high as number
+        }));
+
+        // Patient self-reports for this cycle. RLS permits the read
+        // because the therapist has an active clinician_session.
+        const { data: checkinRows, error: ckErr } = await supabase
+          .from('weekly_checkin')
+          .select(
+            'id, week_number, comment, submitter_label, ratings:weekly_goal_rating (approved_goal_id, rating_value, nrs_value)'
+          )
+          .eq('treatment_cycle_id', cycleRow.id as string)
+          .order('week_number', { ascending: true });
+        if (ckErr) throw ckErr;
+        checkins = (checkinRows ?? []).map((c) => ({
+          id: c.id as string,
+          weekNumber: c.week_number as number,
+          comment: (c.comment as string | null) ?? null,
+          submitterLabel:
+            (c.submitter_label as 'self' | 'caregiver' | undefined) ??
+            undefined,
+          ratings: ((c.ratings as Array<{
+            approved_goal_id: string;
+            rating_value: number | null;
+            nrs_value: number | null;
+          }> | null) ?? []).map((r) => ({
+            approvedGoalId: r.approved_goal_id,
+            ratingValue: r.rating_value as -2 | -1 | 0 | 1 | 2 | null,
+            nrsValue: r.nrs_value
+          }))
         }));
       }
 
@@ -206,7 +262,8 @@ export function usePhysioPatientData(
           : null,
         goals,
         latestTreatment,
-        assessments
+        assessments,
+        checkins
       };
     }
   });
