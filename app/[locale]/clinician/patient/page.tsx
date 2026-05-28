@@ -361,15 +361,73 @@ export default function ClinicianPatientPage() {
             touch();
             setShowNewCycle(true);
           }}
-          className="mt-5 flex w-full flex-col items-center justify-center rounded-[var(--radius-card)] bg-sage-deep px-5 py-4 hover:bg-ink-soft"
+          className="mt-5 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 hover:bg-ink-soft"
         >
-          <span className="text-[16px] font-semibold text-on-accent">
+          <span className="text-[15px] font-semibold text-on-accent">
             {t('startNewCycle')}
           </span>
-          <span className="mt-0.5 text-[13px] text-on-accent/80">
-            {t('startNewCycleHint')}
-          </span>
         </button>
+
+        {/* Active goals with progress visualisation */}
+        <section className="mt-10">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display text-[20px] leading-tight text-ink">
+              {t('activeGoalsTitle')}
+            </h2>
+            {/* Record a goal the patient voiced in clinic. The goal
+                still originates from the patient; the physician is the
+                scribe — see create_goal_for_patient. */}
+            <button
+              type="button"
+              onClick={() =>
+                router.push(
+                  locale === 'en'
+                    ? `/clinician/new-goal?patient=${patient.id}`
+                    : `/${locale}/clinician/new-goal?patient=${patient.id}`
+                )
+              }
+              className="shrink-0 rounded-[var(--radius-button)] border border-sage/50 bg-cream-soft px-3 py-2 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
+            >
+              + Record a goal
+            </button>
+          </div>
+          {activeGoals.length === 0 ? (
+            <p className="mt-3 text-[14px] text-ink-muted">
+              {t('activeGoalsEmpty')}
+            </p>
+          ) : (
+            <ul className="mt-3 space-y-3">
+              {activeGoals.map((g) => (
+                <li key={g.id}>
+                  <GoalProgressView
+                    goalText={g.patientFacingText}
+                    currentWeek={weekNumber}
+                    ratings={ratingsByGoal.get(g.id) ?? []}
+                    physioRatings={physioRatingsByGoal.get(g.id) ?? []}
+                  />
+                  {/* Archive action — retires a goal that is no longer
+                      relevant. History is kept; the goal leaves the
+                      patient's future check-ins. */}
+                  <div className="mt-1.5 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        touch();
+                        setGoalToArchive({
+                          id: g.id,
+                          text: g.patientFacingText
+                        });
+                      }}
+                      className="text-[13px] font-semibold text-ink-muted hover:text-ink-soft"
+                    >
+                      {t('archiveGoal')}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         {/* Treatment record card */}
         <section className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
@@ -518,67 +576,6 @@ export default function ClinicianPatientPage() {
         >
           {tHistory('linkLabel')} →
         </button>
-
-        {/* Active goals with progress visualisation */}
-        <section className="mt-10">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="font-display text-[20px] leading-tight text-ink">
-              {t('activeGoalsTitle')}
-            </h2>
-            {/* Record a goal the patient voiced in clinic. The goal
-                still originates from the patient; the physician is the
-                scribe — see create_goal_for_patient. */}
-            <button
-              type="button"
-              onClick={() =>
-                router.push(
-                  locale === 'en'
-                    ? `/clinician/new-goal?patient=${patient.id}`
-                    : `/${locale}/clinician/new-goal?patient=${patient.id}`
-                )
-              }
-              className="shrink-0 rounded-[var(--radius-button)] border border-sage/50 bg-cream-soft px-3 py-2 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
-            >
-              + Record a goal
-            </button>
-          </div>
-          {activeGoals.length === 0 ? (
-            <p className="mt-3 text-[14px] text-ink-muted">
-              {t('activeGoalsEmpty')}
-            </p>
-          ) : (
-            <ul className="mt-3 space-y-3">
-              {activeGoals.map((g) => (
-                <li key={g.id}>
-                  <GoalProgressView
-                    goalText={g.patientFacingText}
-                    currentWeek={weekNumber}
-                    ratings={ratingsByGoal.get(g.id) ?? []}
-                    physioRatings={physioRatingsByGoal.get(g.id) ?? []}
-                  />
-                  {/* Archive action — retires a goal that is no longer
-                      relevant. History is kept; the goal leaves the
-                      patient's future check-ins. */}
-                  <div className="mt-1.5 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        touch();
-                        setGoalToArchive({
-                          id: g.id,
-                          text: g.patientFacingText
-                        });
-                      }}
-                      className="text-[13px] font-semibold text-ink-muted hover:text-ink-soft"
-                    >
-                      {t('archiveGoal')}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
 
         {/* Patient goal suggestions — collapsed by default; the count
             badge signals pending work. The top banner links here via
