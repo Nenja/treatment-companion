@@ -345,34 +345,57 @@ export default function ClinicianPatientPage() {
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
+        <div className="mx-auto flex max-w-[480px] items-center justify-between gap-3 px-5 py-4">
           <div className="min-w-0">
             <div className="eyebrow">{t('viewingLabel')}</div>
-            <button
-              type="button"
-              onClick={() =>
-                router.push(
-                  locale === 'en'
-                    ? '/patient-info'
-                    : `/${locale}/patient-info`
-                )
-              }
-              className="block truncate text-left font-display text-[20px] leading-tight text-ink hover:text-sage-deep"
-              aria-label={tInfo('openInfo', { name: patient.displayName })}
-            >
-              {patient.displayName}
-            </button>
+            <div className="flex items-center gap-1">
+              <div className="truncate font-display text-[20px] leading-tight text-ink">
+                {patient.displayName}
+              </div>
+              {/* Patient-info opener. The visible (i) is small so it
+                  doesn't compete with the name, but the tap target
+                  itself is 36px — finger-friendly even though the
+                  glyph is 18px. */}
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    locale === 'en'
+                      ? '/patient-info'
+                      : `/${locale}/patient-info`
+                  )
+                }
+                aria-label={tInfo('openInfo', { name: patient.displayName })}
+                className="-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:text-sage-deep"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="11" x2="12" y2="16" />
+                  <circle cx="12" cy="8" r="0.6" fill="currentColor" />
+                </svg>
+              </button>
+            </div>
             {patientSummary && (
               <div className="mt-0.5 truncate text-[12px] text-ink-muted">
                 {patientSummary}
               </div>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
               onClick={() => setConfirmEnd(true)}
-              className="text-[14px] font-semibold text-ink-soft hover:text-ink"
+              className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
             >
               {tSession('endSession')}
             </button>

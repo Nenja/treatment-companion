@@ -116,7 +116,7 @@ export default function PhysioPatientPage() {
           <button
             type="button"
             onClick={onEndSession}
-            className="text-[14px] font-semibold text-ink-soft hover:text-ink"
+            className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
           >
             End session
           </button>
@@ -162,22 +162,43 @@ export default function PhysioPatientPage() {
           </SkeletonScreen>
         ) : (
           <>
-            <button
-              type="button"
-              onClick={() =>
-                router.push(
-                  locale === 'en'
-                    ? '/patient-info'
-                    : `/${locale}/patient-info`
-                )
-              }
-              className="block text-left font-display text-[26px] leading-tight text-ink hover:text-sage-deep"
-              aria-label={tInfo('openInfo', {
-                name: patientData.data.patient.displayName
-              })}
-            >
-              {patientData.data.patient.displayName}
-            </button>
+            <div className="flex items-center gap-1">
+              <div className="font-display text-[26px] leading-tight text-ink">
+                {patientData.data.patient.displayName}
+              </div>
+              {/* Patient-info opener (matches clinician page). Visible
+                  glyph is 18px but the tap target is 36px. */}
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    locale === 'en'
+                      ? '/patient-info'
+                      : `/${locale}/patient-info`
+                  )
+                }
+                aria-label={tInfo('openInfo', {
+                  name: patientData.data.patient.displayName
+                })}
+                className="-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:text-sage-deep"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="11" x2="12" y2="16" />
+                  <circle cx="12" cy="8" r="0.6" fill="currentColor" />
+                </svg>
+              </button>
+            </div>
             {(() => {
               const summary = formatPatientSummary(patientInfo.data ?? null, {
                 ageYears: (age) => tInfo('ageYears', { age }),
