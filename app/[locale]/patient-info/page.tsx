@@ -16,7 +16,10 @@ import {
 } from '@/lib/supabase/patientInfo';
 import { useToast } from '@/components/feedback/Toast';
 import { AppShell } from '@/components/layout/AppShell';
-import { SkeletonScreen } from '@/components/feedback/Skeleton';
+import {
+  SkeletonBlock,
+  SkeletonScreen
+} from '@/components/feedback/Skeleton';
 
 const ETIOLOGY_VALUES: Etiology[] = [
   'stroke',
@@ -131,7 +134,7 @@ export default function PatientInfoPage() {
   if (authLoading || !user || !profile) {
     return (
       <AppShell>
-        <SkeletonScreen label="Loading patient info" />
+        <LoadingState />
       </AppShell>
     );
   }
@@ -143,7 +146,7 @@ export default function PatientInfoPage() {
     router.replace(locale === 'en' ? unlockPath : `/${locale}${unlockPath}`);
     return (
       <AppShell>
-        <SkeletonScreen label="Loading patient info" />
+        <LoadingState />
       </AppShell>
     );
   }
@@ -151,7 +154,7 @@ export default function PatientInfoPage() {
   if (!info.data) {
     return (
       <AppShell>
-        <SkeletonScreen label="Loading patient info" />
+        <LoadingState />
       </AppShell>
     );
   }
@@ -372,5 +375,24 @@ function Field({
       </label>
       <div className="mt-1">{children}</div>
     </div>
+  );
+}
+
+function LoadingState() {
+  // Skeleton that mirrors the rough shape of the loaded page: a
+  // heading, a small subtitle line, then a card with six rows.
+  return (
+    <SkeletonScreen label="Loading patient info">
+      <SkeletonBlock width="w-1/2" height="h-7" />
+      <SkeletonBlock width="w-1/3" height="h-4" className="mt-2" />
+      <div className="mt-6 space-y-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <div key={i}>
+            <SkeletonBlock width="w-1/4" height="h-3" />
+            <SkeletonBlock width="w-3/4" height="h-4" className="mt-1.5" />
+          </div>
+        ))}
+      </div>
+    </SkeletonScreen>
   );
 }
