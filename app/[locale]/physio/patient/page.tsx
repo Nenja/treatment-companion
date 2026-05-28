@@ -9,6 +9,10 @@ import {
   useEndClinicianSession
 } from '@/lib/supabase/clinicianSession';
 import { usePhysioPatientData } from '@/lib/supabase/physioPatient';
+import {
+  usePatientInfo,
+  formatPatientSummary
+} from '@/lib/supabase/patientInfo';
 import { formatLongDate } from '@/lib/dates';
 import { PhysioTabs } from '@/components/physio/PhysioTabs';
 import { PhysioPlanSection } from '@/components/physio/PhysioPlanSection';
@@ -36,6 +40,10 @@ export default function PhysioPatientPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('physio');
+  const tInfo = useTranslations('patientInfo');
+  const tEt = useTranslations('etiology');
+  const tSide = useTranslations('side');
+  const tAmb = useTranslations('ambulation');
   const { user, profile, loading: authLoading } = useAuth();
   const sessionQuery = useCurrentClinicianSession(
     profile?.id ?? null,
@@ -45,6 +53,10 @@ export default function PhysioPatientPage() {
     profile?.id ?? null,
     profile?.role
   );
+  // Patient clinical background — at top level, before any early
+  // returns, so hook order stays stable. Hook is enabled only when the
+  // patient id resolves from the session.
+  const patientInfo = usePatientInfo(sessionQuery.data?.patientId ?? null);
   const endSession = useEndClinicianSession();
 
   const unlockPath = locale === 'en' ? '/physio' : `/${locale}/physio`;
@@ -150,9 +162,35 @@ export default function PhysioPatientPage() {
           </SkeletonScreen>
         ) : (
           <>
-            <h1 className="font-display text-[26px] leading-tight text-ink">
+            <button
+              type="button"
+              onClick={() =>
+                router.push(
+                  locale === 'en'
+                    ? '/patient-info'
+                    : `/${locale}/patient-info`
+                )
+              }
+              className="block text-left font-display text-[26px] leading-tight text-ink hover:text-sage-deep"
+              aria-label={tInfo('openInfo', {
+                name: patientData.data.patient.displayName
+              })}
+            >
               {patientData.data.patient.displayName}
-            </h1>
+            </button>
+            {(() => {
+              const summary = formatPatientSummary(patientInfo.data ?? null, {
+                ageYears: (age) => tInfo('ageYears', { age }),
+                etiology: (k) => tEt(k),
+                side: (k) => tSide(k),
+                ambulation: (k) => tAmb(k)
+              });
+              return summary ? (
+                <div className="mt-0.5 text-[13px] text-ink-muted">
+                  {summary}
+                </div>
+              ) : null;
+            })()}
             {patientData.data.cycle ? (
               <p className="mt-1 text-[14px] text-ink-soft">
                 {t('cycleLabel', {

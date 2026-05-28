@@ -10,6 +10,10 @@ import {
   useTouchClinicianSession
 } from '@/lib/supabase/clinicianSession';
 import {
+  usePatientInfo,
+  formatPatientSummary
+} from '@/lib/supabase/patientInfo';
+import {
   useClinicianPatientData,
   useSetSuggestionStatus,
   useSetMuscleSharing,
@@ -42,6 +46,10 @@ export default function ClinicianPatientPage() {
   const t = useTranslations('clinician.patient');
   const tSession = useTranslations('clinician.session');
   const tPlan = useTranslations('physioPlan');
+  const tInfo = useTranslations('patientInfo');
+  const tEt = useTranslations('etiology');
+  const tSide = useTranslations('side');
+  const tAmb = useTranslations('ambulation');
   const tDomain = useTranslations('domain');
   const tImportance = useTranslations('importance');
 
@@ -55,6 +63,10 @@ export default function ClinicianPatientPage() {
     profile?.role,
     sessionQuery.data?.patientId ?? null
   );
+  // Patient clinical background — called at top level (not after the
+  // loading-branch early return) to keep hook ordering stable across
+  // renders. Hook itself is `enabled` only when patientId is known.
+  const patientInfo = usePatientInfo(sessionQuery.data?.patientId ?? null);
 
   const endSession = useEndClinicianSession();
   const touchSession = useTouchClinicianSession();
@@ -193,6 +205,15 @@ export default function ClinicianPatientPage() {
     physioMuscleSuggestions
   } = patientData.data;
 
+  // Quiet at-a-glance summary line in the header. Just a derived string
+  // — not a hook, safe after the early return.
+  const patientSummary = formatPatientSummary(patientInfo.data ?? null, {
+    ageYears: (age) => tInfo('ageYears', { age }),
+    etiology: (k) => tEt(k),
+    side: (k) => tSide(k),
+    ambulation: (k) => tAmb(k)
+  });
+
   // Compute current week from cycle.start_date and today.
   const startMs = new Date(cycle.startDate).getTime();
   const todayMs = Date.now();
@@ -325,11 +346,27 @@ export default function ClinicianPatientPage() {
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
         <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
-          <div>
+          <div className="min-w-0">
             <div className="eyebrow">{t('viewingLabel')}</div>
-            <div className="font-display text-[20px] leading-tight text-ink">
+            <button
+              type="button"
+              onClick={() =>
+                router.push(
+                  locale === 'en'
+                    ? '/patient-info'
+                    : `/${locale}/patient-info`
+                )
+              }
+              className="block truncate text-left font-display text-[20px] leading-tight text-ink hover:text-sage-deep"
+              aria-label={tInfo('openInfo', { name: patient.displayName })}
+            >
               {patient.displayName}
-            </div>
+            </button>
+            {patientSummary && (
+              <div className="mt-0.5 truncate text-[12px] text-ink-muted">
+                {patientSummary}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <button
