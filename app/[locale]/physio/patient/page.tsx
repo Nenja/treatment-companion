@@ -11,6 +11,7 @@ import {
 import { usePhysioPatientData } from '@/lib/supabase/physioPatient';
 import { formatLongDate } from '@/lib/dates';
 import { PhysioTabs } from '@/components/physio/PhysioTabs';
+import { PhysioPlanSection } from '@/components/physio/PhysioPlanSection';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import {
   SkeletonBlock,
@@ -34,6 +35,7 @@ import { groupTreatedMuscles } from '@/lib/types';
 export default function PhysioPatientPage() {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('physio');
   const { user, profile, loading: authLoading } = useAuth();
   const sessionQuery = useCurrentClinicianSession(
     profile?.id ?? null,
@@ -153,21 +155,23 @@ export default function PhysioPatientPage() {
             </h1>
             {patientData.data.cycle ? (
               <p className="mt-1 text-[14px] text-ink-soft">
-                Cycle {patientData.data.cycle.cycleNumber}
+                {t('cycleLabel', {
+                  number: patientData.data.cycle.cycleNumber
+                })}
               </p>
             ) : (
               <p className="mt-1 text-[14px] text-ink-muted">
-                No active treatment cycle yet.
+                {t('noActiveCycle')}
               </p>
             )}
 
             <section className="mt-8">
               <h2 className="font-display text-[18px] text-ink">
-                Treatment goals
+                {t('goalsHeading')}
               </h2>
               {patientData.data.goals.length === 0 ? (
                 <p className="mt-3 text-[14px] text-ink-muted">
-                  No active goals for this patient yet.
+                  {t('noGoals')}
                 </p>
               ) : (
                 <ul className="mt-3 space-y-3">
@@ -197,6 +201,15 @@ export default function PhysioPatientPage() {
               />
             )}
 
+            {/* Therapist's exercise plan & assistive devices —
+                per-patient, persists across cycles, editable any time.
+                Shown regardless of whether a cycle is active. */}
+            <PhysioPlanSection
+              patientId={patientData.data.patient.id}
+              exercisePlan={patientData.data.patient.exercisePlan}
+              assistiveDevices={patientData.data.patient.assistiveDevices}
+            />
+
             {/* Progress reporting + goal & muscle suggestions, in tabs
                 so each task is one tap away rather than a long scroll
                 (slices 2-4; tabs added later). */}
@@ -208,8 +221,7 @@ export default function PhysioPatientPage() {
             ) : (
               <div className="mt-10 rounded-[var(--radius-card)] border border-dashed border-stone bg-cream-soft/60 p-5">
                 <p className="text-[14px] leading-relaxed text-ink-soft">
-                  Progress reporting and suggestions become available
-                  once the patient has an active treatment cycle.
+                  {t('noCycleHint')}
                 </p>
               </div>
             )}

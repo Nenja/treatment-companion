@@ -15,7 +15,7 @@ import {
   useSetMuscleSharing,
   useArchiveGoal
 } from '@/lib/supabase/clinicianPatient';
-import { formatLongDate } from '@/lib/dates';
+import { formatLongDate, isToday } from '@/lib/dates';
 import { nrsToGas, injectionSideLabel, type GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { ExportModal } from '@/components/clinician/ExportModal';
@@ -41,6 +41,7 @@ export default function ClinicianPatientPage() {
   const locale = useLocale();
   const t = useTranslations('clinician.patient');
   const tSession = useTranslations('clinician.session');
+  const tPlan = useTranslations('physioPlan');
   const tDomain = useTranslations('domain');
   const tImportance = useTranslations('importance');
 
@@ -635,57 +636,37 @@ export default function ClinicianPatientPage() {
           {treatment ? (
             <>
               <div className="flex items-baseline justify-between gap-2">
-                <div>
-                  <div className="eyebrow">Treatment</div>
-                  <p className="mt-0.5 font-display text-[16px] text-ink">
+                <div className="min-w-0">
+                  <div className="eyebrow">Last treatment</div>
+                  {/* Terse one-line summary — the full per-muscle
+                      breakdown lives on the record page, shown as
+                      reference when recording the next treatment. */}
+                  <p className="mt-0.5 text-[14px] text-ink-soft">
                     {treatment.drugProduct} · {treatment.totalUnits} units ·{' '}
                     {formatLongDate(treatment.date, locale)}
                   </p>
-                  <p className="mt-0.5 text-[14px] text-ink-soft">
-                    {labelForGuidance(treatment.guidance)}
-                    {treatment.dilution && ` · Dilution: ${treatment.dilution}`}
-                  </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    touch();
-                    router.push(
-                      locale === 'en'
-                        ? '/clinician/treatment'
-                        : `/${locale}/clinician/treatment`
-                    );
-                  }}
-                  className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[14px] font-semibold text-sage-deep hover:bg-stone-soft"
-                >
-                  Edit
-                </button>
+                {isToday(treatment.recordedAt) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      touch();
+                      router.push(
+                        locale === 'en'
+                          ? '/clinician/treatment'
+                          : `/${locale}/clinician/treatment`
+                      );
+                    }}
+                    className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[14px] font-semibold text-sage-deep hover:bg-stone-soft"
+                  >
+                    Edit
+                  </button>
+                )}
               </div>
-              <ul className="mt-3 space-y-1.5 text-[14px] text-ink-soft">
-                {treatment.injections.map((inj) => (
-                  <li key={inj.id}>
-                    <span>
-                      {inj.muscle} · {injectionSideLabel(inj.side)} ·{' '}
-                      {inj.doseUnits} units
-                    </span>
-                    {inj.note && (
-                      <span className="ml-1 italic text-ink-muted">
-                        — {inj.note}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-              {treatment.notes && (
-                <p className="mt-3 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
-                  <span className="text-ink-muted">Notes: </span>
-                  {treatment.notes}
-                </p>
-              )}
 
-              {/* Muscle-sharing toggle — controls whether the
-                  physiotherapist sees the injected muscles for this
-                  patient. */}
+              {/* Muscle-sharing toggle — kept on the front page so the
+                  therapist-visibility choice can be changed at any
+                  time, not only when recording a treatment. */}
               <div className="mt-4 flex items-start justify-between gap-3 border-t border-stone/70 pt-3">
                 <div className="min-w-0">
                   <p className="text-[14px] font-semibold text-ink">
@@ -757,6 +738,33 @@ export default function ClinicianPatientPage() {
           )}
         </section>
 
+        {/* Therapist's exercise plan & devices — read-only context for
+            the physician. Shown only when the therapist has recorded
+            something. */}
+        {(patient.physioExercisePlan || patient.physioAssistiveDevices) && (
+          <section className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+            <h2 className="font-display text-[18px] text-ink">
+              {tPlan('title')}
+            </h2>
+            {patient.physioExercisePlan && (
+              <div className="mt-3">
+                <div className="eyebrow">{tPlan('exerciseLabel')}</div>
+                <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
+                  {patient.physioExercisePlan}
+                </p>
+              </div>
+            )}
+            {patient.physioAssistiveDevices && (
+              <div className="mt-3">
+                <div className="eyebrow">{tPlan('devicesLabel')}</div>
+                <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
+                  {patient.physioAssistiveDevices}
+                </p>
+              </div>
+            )}
+          </section>
+        )}
+
         {/* Patient comments are now reachable from the chart — tap any
             dot showing a speech-bubble icon to see the comment in the
             caption below the chart. */}
@@ -807,7 +815,6 @@ export default function ClinicianPatientPage() {
 
       {showNewCycle && (
         <NewCycleDialog
-          patientId={patient.id}
           onClose={() => setShowNewCycle(false)}
         />
       )}
@@ -945,27 +952,6 @@ function EndSessionConfirmDialog({
       </div>
     </div>
   );
-}
-
-function labelForGuidance(g: string): string {
-  switch (g) {
-    case 'emg':
-      return 'EMG';
-    case 'ultrasound':
-      return 'Ultrasound';
-    case 'usEmg':
-      return 'Ultrasound + EMG';
-    case 'electricalStimulation':
-      return 'Electrical stimulation';
-    case 'anatomicalLandmarks':
-      return 'Anatomical landmarks';
-    case 'none':
-      return 'No guidance';
-    case 'other':
-      return 'Other';
-    default:
-      return g;
-  }
 }
 
 /**

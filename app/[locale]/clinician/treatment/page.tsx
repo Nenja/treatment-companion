@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import {
@@ -11,6 +11,7 @@ import {
 import {
   useClinicianPatientData,
   useSaveTreatmentSession,
+  useStartCycleWithTreatment,
   usePreviousTreatment
 } from '@/lib/supabase/clinicianPatient';
 import { todayIso } from '@/lib/dates';
@@ -39,6 +40,17 @@ function emptyInjection(): InjectionDraft {
 }
 
 export default function TreatmentRecordPage() {
+  // useSearchParams (read in the worker) requires a Suspense boundary
+  // for the build to prerender this route — same pattern as the
+  // new-goal / suggestion / checkin pages.
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-cream" />}>
+      <TreatmentRecordInner />
+    </Suspense>
+  );
+}
+
+function TreatmentRecordInner() {
   const router = useRouter();
   const locale = useLocale();
   const { user, profile, loading: authLoading } = useAuth();
@@ -52,9 +64,19 @@ export default function TreatmentRecordPage() {
     sessionQuery.data?.patientId ?? null
   );
   const save = useSaveTreatmentSession();
+  const startCycleWithTreatment = useStartCycleWithTreatment();
   const touchSession = useTouchClinicianSession();
   const toast = useToast();
   const tFeedback = useTranslations('feedback');
+
+  // New-cycle mode: reached from the "start new cycle" dialog, which
+  // passes ?newCycle=1&date=YYYY-MM-DD. In this mode NO cycle exists
+  // yet — it is created together with the treatment on save, so
+  // cancelling here creates nothing. Otherwise we are editing the
+  // current cycle's treatment.
+  const searchParams = useSearchParams();
+  const isNewCycle = searchParams.get('newCycle') === '1';
+  const newCycleDate = searchParams.get('date');
 
   // Keep the unlock session alive while the clinician fills the form.
   // Filling a long treatment form IS activity and should count — but
@@ -125,6 +147,17 @@ export default function TreatmentRecordPage() {
   useEffect(() => {
     if (hydrated) return;
     if (!dataQuery.data) return;
+
+    if (isNewCycle) {
+      // New cycle: start from a blank form (no prefill from the cycle
+      // being closed), dated to the date chosen in the dialog. The
+      // clinician can still "Copy from previous" inside the form.
+      if (newCycleDate) setDate(newCycleDate);
+      setHydrated(true);
+      return;
+    }
+
+    // Editing the current cycle's treatment: prefill from it.
     const existing = dataQuery.data.treatment;
     if (existing) {
       setDate(existing.date);
@@ -143,7 +176,7 @@ export default function TreatmentRecordPage() {
       );
     }
     setHydrated(true);
-  }, [dataQuery.data, hydrated]);
+  }, [dataQuery.data, hydrated, isNewCycle, newCycleDate]);
 
   if (
     authLoading ||
@@ -159,22 +192,30 @@ export default function TreatmentRecordPage() {
 
   const { patient, cycle, treatment: existing } = dataQuery.data;
 
+  // The treatment shown as "reference" and used by "copy from previous".
+  // In new-cycle mode the most recent treatment is the CURRENT cycle's
+  // (the one about to be closed) — usePreviousTreatment would return the
+  // cycle before that, off by one. In edit mode it is the genuine
+  // previous cycle.
+  const referenceTreatment = isNewCycle
+    ? existing
+    : previousTreatment.data ?? null;
+
   const back = () =>
     router.push(
       locale === 'en' ? '/clinician/patient' : `/${locale}/clinician/patient`
     );
 
   /**
-   * Fill all form fields from the previous cycle's treatment session,
-   * EXCEPT the date — that defaults to today (the new treatment is
-   * happening now, not at the date of the previous session). Per-muscle
-   * notes are copied verbatim along with everything else, per the
-   * user's preference: "Today's date + everything else verbatim".
+   * Fill all form fields from the reference treatment, EXCEPT the date
+   * — that defaults to today (the new treatment is happening now, not
+   * at the date of the previous session). Per-muscle notes are copied
+   * verbatim along with everything else.
    */
   const doCopyFromPrevious = () => {
-    const prev = previousTreatment.data;
+    const prev = referenceTreatment;
     if (!prev) return;
-    setDate(todayIso());
+    setDate(isNewCycle && newCycleDate ? newCycleDate : todayIso());
     setDrugProduct(prev.drugProduct);
     setTotalUnits(String(prev.totalUnits));
     setDilution(prev.dilution ?? '');
@@ -225,7 +266,16 @@ export default function TreatmentRecordPage() {
     ? String(dosesSum)
     : String(Number(dosesSum.toFixed(2)));
 
+  // A treatment record can be corrected only on the day it was
+  // entered. In edit mode, if the existing treatment was recorded on an
+  // earlier day, the form is locked — the only way to change treatment
+  // after that is to start a new cycle. (New-cycle mode is never
+  // locked: it is creating a fresh record now.)
+  const editLocked =
+    !isNewCycle && !!existing && !isToday(existing.recordedAt);
+
   const canSubmit =
+    !editLocked &&
     date.trim() &&
     drugProduct.trim() &&
     totalUnits.trim() &&
@@ -249,23 +299,41 @@ export default function TreatmentRecordPage() {
   }
 
   const submit = async () => {
-    if (!canSubmit || save.isPending) return;
+    if (!canSubmit || save.isPending || startCycleWithTreatment.isPending) {
+      return;
+    }
+    const injectionsPayload = validInjections.map((i) => ({
+      muscle: i.muscle,
+      side: i.side,
+      doseUnits: parseFloat(i.doseUnits),
+      note: i.note.trim() || undefined
+    }));
     try {
-      await save.mutateAsync({
-        treatmentCycleId: cycle.id,
-        date,
-        drugProduct,
-        totalUnits: totalUnitsNum,
-        dilution: dilution.trim() || undefined,
-        guidance,
-        notes: notes.trim() || undefined,
-        injections: validInjections.map((i) => ({
-          muscle: i.muscle,
-          side: i.side,
-          doseUnits: parseFloat(i.doseUnits),
-          note: i.note.trim() || undefined
-        }))
-      });
+      if (isNewCycle) {
+        // Create the new cycle AND record the treatment atomically.
+        // The cycle did not exist until this moment.
+        await startCycleWithTreatment.mutateAsync({
+          patientId: patient.id,
+          date,
+          drugProduct,
+          totalUnits: totalUnitsNum,
+          dilution: dilution.trim() || undefined,
+          guidance,
+          notes: notes.trim() || undefined,
+          injections: injectionsPayload
+        });
+      } else {
+        await save.mutateAsync({
+          treatmentCycleId: cycle.id,
+          date,
+          drugProduct,
+          totalUnits: totalUnitsNum,
+          dilution: dilution.trim() || undefined,
+          guidance,
+          notes: notes.trim() || undefined,
+          injections: injectionsPayload
+        });
+      }
       touchSession.mutate();
       toast.success(tFeedback('successTreatment'));
       back();
@@ -307,10 +375,16 @@ export default function TreatmentRecordPage() {
         onInput={touchActivity}
       >
         <h1 className="font-display text-[24px] leading-tight text-ink">
-          {existing ? 'Edit treatment record' : 'Record treatment'}
+          {isNewCycle
+            ? 'Record treatment'
+            : existing
+              ? 'Edit treatment record'
+              : 'Record treatment'}
         </h1>
         <p className="mt-1 text-[14px] text-ink-soft">
-          For {patient.displayName} · Cycle {cycle.cycleNumber}
+          {isNewCycle
+            ? `For ${patient.displayName} · New cycle`
+            : `For ${patient.displayName} · Cycle ${cycle.cycleNumber}`}
         </p>
 
         {/* Session-expiry warning. The unlock lasts one hour from the
@@ -352,30 +426,48 @@ export default function TreatmentRecordPage() {
           </div>
         )}
 
-        {/* Copy from previous treatment — only when a previous one exists */}
-        {previousTreatment.data && (
-          <button
-            type="button"
-            onClick={() => {
-              // If the form already has content (anything beyond defaults)
-              // we ask for confirmation before overwriting. Otherwise copy
-              // immediately.
-              const hasContent =
-                drugProduct.trim() ||
-                totalUnits.trim() ||
-                dilution.trim() ||
-                notes.trim() ||
-                injections.some((i) => i.muscle.trim() || i.doseUnits.trim());
-              if (hasContent) {
-                setShowCopyConfirm(true);
-              } else {
-                doCopyFromPrevious();
-              }
-            }}
-            className="mt-4 flex h-10 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
-          >
-            Copy from previous treatment
-          </button>
+        {/* Previous treatment — shown as reference, since the new
+            plan is usually an adjustment of the last one. The copy
+            action lives inside this block. Only when one exists. */}
+        {referenceTreatment && (
+          <div className="mt-4 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+            <div className="eyebrow">Previous treatment — for reference</div>
+            <p className="mt-1 text-[14px] text-ink-soft">
+              {referenceTreatment.drugProduct} ·{' '}
+              {referenceTreatment.totalUnits} units
+              {referenceTreatment.dilution &&
+                ` · ${referenceTreatment.dilution}`}
+            </p>
+            <ul className="mt-2 space-y-1 text-[14px] text-ink-soft">
+              {referenceTreatment.injections.map((inj) => (
+                <li key={inj.id}>
+                  {inj.muscle} · {injectionSideLabel(inj.side)} ·{' '}
+                  {inj.doseUnits} units
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => {
+                const hasContent =
+                  drugProduct.trim() ||
+                  totalUnits.trim() ||
+                  dilution.trim() ||
+                  notes.trim() ||
+                  injections.some(
+                    (i) => i.muscle.trim() || i.doseUnits.trim()
+                  );
+                if (hasContent) {
+                  setShowCopyConfirm(true);
+                } else {
+                  doCopyFromPrevious();
+                }
+              }}
+              className="mt-3 flex h-10 w-full items-center justify-center rounded-[var(--radius-button)] border border-sage/50 bg-sage-soft px-4 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft/70"
+            >
+              Copy these into the new plan
+            </button>
+          </div>
         )}
 
         {/* Row 1: Date + Drug product (date is narrow, product is wider) */}
@@ -569,9 +661,25 @@ export default function TreatmentRecordPage() {
           />
         </Field>
 
+        {/* Locked: an old treatment record can't be edited (only
+            same-day typo fixes are allowed). Explain why and point to
+            the right action. */}
+        {editLocked && (
+          <div className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+            <p className="text-[14px] leading-relaxed text-ink-soft">
+              <span className="font-semibold text-ink">
+                This treatment can no longer be edited.
+              </span>{' '}
+              A treatment record can only be corrected on the day it was
+              entered. To change treatment now, go back and start a new
+              treatment cycle.
+            </p>
+          </div>
+        )}
+
         {/* What's still needed — shown only when Save is disabled, so
             a greyed-out Save button is never unexplained. */}
-        {!canSubmit && missing.length > 0 && (
+        {!canSubmit && !editLocked && missing.length > 0 && (
           <p className="mt-6 text-[14px] leading-relaxed text-ink-soft">
             <span className="font-semibold text-ink">
               Before saving, please add:{' '}
@@ -586,16 +694,24 @@ export default function TreatmentRecordPage() {
             onClick={back}
             className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
-            Cancel
+            {editLocked ? 'Back' : 'Cancel'}
           </button>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={!canSubmit || save.isPending}
-            className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
-          >
-            {save.isPending ? '…' : 'Save'}
-          </button>
+          {!editLocked && (
+            <button
+              type="button"
+              onClick={submit}
+              disabled={
+                !canSubmit ||
+                save.isPending ||
+                startCycleWithTreatment.isPending
+              }
+              className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
+            >
+              {save.isPending || startCycleWithTreatment.isPending
+                ? '…'
+                : 'Save'}
+            </button>
+          )}
         </div>
       </main>
 
