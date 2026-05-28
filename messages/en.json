@@ -27,6 +27,7 @@
     "home": {
       "greeting": "Hello, {name}",
       "cycleContext": "Week {week} since your last treatment",
+      "showVisitCode": "Show visit code",
       "catchUpTitle": "{count, plural, =1 {1 earlier check-in to catch up} other {# earlier check-ins to catch up}}",
       "catchUpWeek": "Week {week}",
       "nextVisit": "Next visit: {date}",
