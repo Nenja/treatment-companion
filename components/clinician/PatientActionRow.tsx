@@ -89,14 +89,18 @@ export function PatientActionRow({
   physioCount,
   openPanel,
   onSelect,
-  labels
+  labels,
+  shortLabels
 }: {
   suggestionCount: number;
   physioCount: number;
   /** Which inline panel is currently open, if any. */
   openPanel: 'suggestions' | 'physio' | null;
   onSelect: (id: PatientActionId) => void;
+  /** Full labels — used for the accessible name (with count). */
   labels: Record<PatientActionId, string>;
+  /** Short one-word labels shown visibly under each icon. */
+  shortLabels: Record<PatientActionId, string>;
 }) {
   const items: { id: PatientActionId; count?: number }[] = [
     { id: 'suggestions', count: suggestionCount },
@@ -120,13 +124,16 @@ export function PatientActionRow({
                 : labels[id]
             }
             aria-pressed={isActive}
-            className={`relative flex h-[50px] flex-1 items-center justify-center rounded-[var(--radius-button)] border transition-colors ${
+            className={`relative flex flex-1 flex-col items-center justify-center gap-1 rounded-[var(--radius-button)] border px-1 py-2 transition-colors ${
               isActive
                 ? 'border-sage-deep bg-sage-deep text-on-accent'
                 : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
             }`}
           >
             {iconFor(id)}
+            <span className="text-[11px] leading-tight">
+              {shortLabels[id]}
+            </span>
             {typeof count === 'number' && <Badge count={count} />}
           </button>
         );
