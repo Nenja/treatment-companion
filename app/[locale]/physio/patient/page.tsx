@@ -14,7 +14,13 @@ import {
   formatPatientSummary
 } from '@/lib/supabase/patientInfo';
 import { formatLongDate } from '@/lib/dates';
-import { PhysioTabs } from '@/components/physio/PhysioTabs';
+import {
+  PhysioActionRow,
+  type PhysioActionId
+} from '@/components/physio/PhysioActionRow';
+import { PhysioProgressForm } from '@/components/physio/PhysioProgressForm';
+import { PhysioGoalSuggestionForm } from '@/components/physio/PhysioGoalSuggestionForm';
+import { PhysioMuscleSuggestionForm } from '@/components/physio/PhysioMuscleSuggestionForm';
 import { PhysioPlanSection } from '@/components/physio/PhysioPlanSection';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import {
@@ -58,6 +64,13 @@ export default function PhysioPatientPage() {
   // patient id resolves from the session.
   const patientInfo = usePatientInfo(sessionQuery.data?.patientId ?? null);
   const endSession = useEndClinicianSession();
+
+  // Inline panel open under the action row, or the progress form.
+  // 'progress' is the primary button; the other ids come from the row.
+  // Only one panel open at a time.
+  const [openPanel, setOpenPanel] = useState<
+    'progress' | PhysioActionId | null
+  >(null);
 
   const unlockPath = locale === 'en' ? '/physio' : `/${locale}/physio`;
 
@@ -250,35 +263,100 @@ export default function PhysioPatientPage() {
               )}
             </section>
 
-            {/* Most recent treatment — which muscles were injected, so
-                the therapist can plan exercise work around it.
-                Collapsed by default: secondary reference, not the main
-                focus of the page. Read-only; latest session only. */}
-            {patientData.data.latestTreatment && (
-              <TreatedMusclesSection
-                date={patientData.data.latestTreatment.date}
-                muscles={patientData.data.latestTreatment.muscles}
-                locale={locale}
-              />
-            )}
-
-            {/* Therapist's exercise plan & assistive devices —
-                per-patient, persists across cycles, editable any time.
-                Shown regardless of whether a cycle is active. */}
-            <PhysioPlanSection
-              patientId={patientData.data.patient.id}
-              exercisePlan={patientData.data.patient.exercisePlan}
-              assistiveDevices={patientData.data.patient.assistiveDevices}
-            />
-
-            {/* Progress reporting + goal & muscle suggestions, in tabs
-                so each task is one tap away rather than a long scroll
-                (slices 2-4; tabs added later). */}
+            {/* PRIMARY ACTION — recording an assessment is the routine
+                thing a therapist does at every session, so it leads the
+                page like the patient's check-in CTA. Disabled when the
+                patient has no goals yet (nothing to rate against) and
+                explained inline. */}
             {patientData.data.cycle ? (
-              <PhysioTabs
-                patientId={patientData.data.patient.id}
-                goals={patientData.data.goals}
-              />
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpenPanel((p) => (p === 'progress' ? null : 'progress'))
+                  }
+                  disabled={patientData.data.goals.length === 0}
+                  className="mt-8 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
+                >
+                  {t('reportProgress')}
+                </button>
+                {patientData.data.goals.length === 0 && (
+                  <p className="mt-2 text-[13px] text-ink-muted">
+                    {t('noGoalsToReport')}
+                  </p>
+                )}
+
+                {/* Action row — secondary entry points, always visible.
+                    Tapping opens an inline panel below. */}
+                <PhysioActionRow
+                  openPanel={
+                    openPanel === 'progress' ? null : openPanel
+                  }
+                  onSelect={(id) =>
+                    setOpenPanel((cur) => (cur === id ? null : id))
+                  }
+                  labels={{
+                    muscles: t('actionMuscles'),
+                    suggestGoal: t('actionSuggestGoal'),
+                    suggestMuscle: t('actionSuggestMuscle'),
+                    history: t('actionHistory')
+                  }}
+                  shortLabels={{
+                    muscles: t('actionShortMuscles'),
+                    suggestGoal: t('actionShortSuggestGoal'),
+                    suggestMuscle: t('actionShortSuggestMuscle'),
+                    history: t('actionShortHistory')
+                  }}
+                />
+
+                {/* Inline panel — only one open at a time. */}
+                {openPanel === 'progress' &&
+                  patientData.data.goals.length > 0 && (
+                    <div className="mt-3">
+                      <PhysioProgressForm
+                        patientId={patientData.data.patient.id}
+                        goals={patientData.data.goals}
+                      />
+                    </div>
+                  )}
+                {openPanel === 'muscles' && (
+                  <div className="mt-3">
+                    {patientData.data.latestTreatment ? (
+                      <TreatedMusclesSection
+                        date={patientData.data.latestTreatment.date}
+                        muscles={patientData.data.latestTreatment.muscles}
+                        locale={locale}
+                      />
+                    ) : (
+                      <p className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4 text-[14px] text-ink-muted">
+                        {t('musclesNone')}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {openPanel === 'suggestGoal' && (
+                  <div className="mt-3">
+                    <PhysioGoalSuggestionForm
+                      patientId={patientData.data.patient.id}
+                    />
+                  </div>
+                )}
+                {openPanel === 'suggestMuscle' && (
+                  <div className="mt-3">
+                    <PhysioMuscleSuggestionForm
+                      patientId={patientData.data.patient.id}
+                      goals={patientData.data.goals}
+                    />
+                  </div>
+                )}
+                {openPanel === 'history' && (
+                  <AssessmentHistoryPanel
+                    assessments={patientData.data.assessments}
+                    goals={patientData.data.goals}
+                    locale={locale}
+                  />
+                )}
+              </>
             ) : (
               <div className="mt-10 rounded-[var(--radius-card)] border border-dashed border-stone bg-cream-soft/60 p-5">
                 <p className="text-[14px] leading-relaxed text-ink-soft">
@@ -286,6 +364,16 @@ export default function PhysioPatientPage() {
                 </p>
               </div>
             )}
+
+            {/* Therapist's exercise plan & assistive devices —
+                per-patient, persists across cycles, editable any time.
+                Stays at the bottom: it's reference / setup, not the
+                routine action. */}
+            <PhysioPlanSection
+              patientId={patientData.data.patient.id}
+              exercisePlan={patientData.data.patient.exercisePlan}
+              assistiveDevices={patientData.data.patient.assistiveDevices}
+            />
           </>
         )}
       </main>
@@ -397,6 +485,88 @@ function TreatedMusclesSection({
             </ul>
           )}
         </div>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Past therapist assessments for the active cycle, oldest first.
+ * Each entry shows its date, optional note, and any goal ratings the
+ * therapist gave at that visit. When goal text is available, ratings
+ * are labelled with the goal name so the physician (and the therapist
+ * themselves) can read at a glance how each goal was rated over time.
+ */
+function AssessmentHistoryPanel({
+  assessments,
+  goals,
+  locale
+}: {
+  assessments: {
+    id: string;
+    assessmentDate: string;
+    note: string | null;
+    ratings: { approvedGoalId: string; nrsValue: number }[];
+  }[];
+  goals: { id: string; patientFacingText: string }[];
+  locale: string;
+}) {
+  const t = useTranslations('physio');
+  const goalById = new Map(goals.map((g) => [g.id, g.patientFacingText]));
+
+  return (
+    <section className="mt-3">
+      <h3 className="font-display text-[16px] text-ink">
+        {t('historyHeading')}
+      </h3>
+      {assessments.length === 0 ? (
+        <p className="mt-2 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4 text-[14px] text-ink-muted">
+          {t('historyEmpty')}
+        </p>
+      ) : (
+        <ol className="mt-2 space-y-2">
+          {assessments
+            .slice()
+            .reverse()
+            .map((a) => (
+              <li
+                key={a.id}
+                className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
+              >
+                <div className="eyebrow">
+                  {t('historyEntryHeader', {
+                    date: formatLongDate(a.assessmentDate, locale)
+                  })}
+                </div>
+                {a.ratings.length > 0 && (
+                  <div className="mt-2">
+                    <div className="text-[12px] font-semibold text-ink-soft">
+                      {t('historyRatingsLabel')}
+                    </div>
+                    <ul className="mt-1 space-y-0.5 text-[13px] text-ink-soft">
+                      {a.ratings.map((r) => (
+                        <li key={r.approvedGoalId}>
+                          {goalById.get(r.approvedGoalId) ?? r.approvedGoalId}
+                          {' — '}
+                          <span className="font-semibold">{r.nrsValue}/10</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {a.note && (
+                  <div className="mt-2">
+                    <div className="text-[12px] font-semibold text-ink-soft">
+                      {t('historyNoteLabel')}
+                    </div>
+                    <p className="mt-0.5 whitespace-pre-wrap text-[13px] text-ink-soft">
+                      {a.note}
+                    </p>
+                  </div>
+                )}
+              </li>
+            ))}
+        </ol>
       )}
     </section>
   );
