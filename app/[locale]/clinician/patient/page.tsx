@@ -371,6 +371,12 @@ export default function ClinicianPatientPage() {
             history: t('actionHistory'),
             export: t('actionExport')
           }}
+          shortLabels={{
+            suggestions: t('actionShortSuggestions'),
+            physio: t('actionShortPhysio'),
+            history: t('actionShortHistory'),
+            export: t('actionShortExport')
+          }}
           onSelect={(id: PatientActionId) => {
             touch();
             if (id === 'history') {
