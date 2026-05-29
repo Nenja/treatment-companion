@@ -222,6 +222,7 @@
       "linkLabel": "View history across cycles",
       "title": "History across cycles",
       "subtitle": "How treatment and outcomes have changed over this patient's cycles.",
+      "totalCycles": "{count, plural, =1 {1 treatment cycle so far} other {# treatment cycles so far}}",
       "back": "Back to patient",
       "doseChartTitle": "Total dose per cycle (units)",
       "outcomeChartTitle": "Goal outcome per cycle (GAS −2 to +2)",
@@ -251,7 +252,7 @@
     },
     "patient": {
       "viewingLabel": "Viewing",
-      "cycleContext": "Week {week} since treatment · Cycle {cycle}",
+      "cycleContext": "Week {week} since treatment",
       "treatmentDate": "Treatment date: {date}",
       "suggestionsEmpty": "No suggestions awaiting review.",
       "activeGoalsTitle": "Active goals",
@@ -422,7 +423,7 @@
     "devicesPlaceholder": "List any orthoses, splints, walking aids, or other devices in use."
   },
   "physio": {
-    "cycleLabel": "Cycle {number} · Week {week} since injection",
+    "cycleLabel": "Week {week} since injection",
     "recentCommentsHeading": "Since your last visit",
     "recentCommentsAttribution": "{name}, week {week}",
     "lateCycleHint": "Approaching the typical re-treatment window. The next physician visit is usually scheduled now.",

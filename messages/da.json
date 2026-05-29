@@ -226,6 +226,7 @@
       "linkLabel": "Se historik på tværs af cyklusser",
       "title": "Historik på tværs af cyklusser",
       "subtitle": "Hvordan behandling og resultater har ændret sig over patientens cyklusser.",
+      "totalCycles": "{count, plural, =1 {1 behandlingscyklus indtil videre} other {# behandlingscyklusser indtil videre}}",
       "back": "Tilbage til patient",
       "doseChartTitle": "Samlet dosis pr. cyklus (enheder)",
       "outcomeChartTitle": "Målresultat pr. cyklus (GAS −2 til +2)",
@@ -255,7 +256,7 @@
     },
     "patient": {
       "viewingLabel": "Ser på",
-      "cycleContext": "Uge {week} siden behandling · Forløb {cycle}",
+      "cycleContext": "Uge {week} siden behandling",
       "treatmentDate": "Behandlingsdato: {date}",
       "suggestionsEmpty": "Ingen forslag afventer gennemgang.",
       "activeGoalsTitle": "Aktive mål",
@@ -427,7 +428,7 @@
   },
   "physio": {
     "musclesTreatedTitle": "Behandlede muskler",
-    "cycleLabel": "Cyklus {number} · Uge {week} siden injektion",
+    "cycleLabel": "Uge {week} siden injektion",
     "recentCommentsHeading": "Siden dit sidste besøg",
     "recentCommentsAttribution": "{name}, uge {week}",
     "lateCycleHint": "Nærmer sig det typiske vindue for ny behandling. Det næste lægebesøg planlægges normalt nu.",
