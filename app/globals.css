@@ -39,6 +39,26 @@
 
   --radius-card: 1.25rem;
   --radius-button: 0.875rem;
+
+  /* Page width tokens.
+   *
+   *   --max-w-page-narrow: mobile/phone-first surfaces (patient flows,
+   *     check-in, suggest-goal, profile, visit-code). All audiences
+   *     here are expected to be on a phone or narrow window.
+   *
+   *   --max-w-page-wide: desktop-first surfaces (clinician work,
+   *     therapist work on a wide screen). Clinicians copy treatment
+   *     info into their EHR, which means they're already at a
+   *     computer; the wider layout serves that workflow with
+   *     persistent reference panes alongside the form.
+   *
+   * Pages opt in to wide by combining the wide max-width with a
+   * responsive breakpoint (`lg:`) so narrow windows still get the
+   * mobile shape. See AppShell's `wide` prop and individual page
+   * `<main>` elements for the pattern.
+   */
+  --max-w-page-narrow: 480px;
+  --max-w-page-wide: 1080px;
 }
 
 /* Base layer */

@@ -133,7 +133,7 @@ export default function PatientInfoPage() {
 
   if (authLoading || !user || !profile) {
     return (
-      <AppShell>
+      <AppShell wide>
         <LoadingState />
       </AppShell>
     );
@@ -145,7 +145,7 @@ export default function PatientInfoPage() {
       profile.role === 'physiotherapist' ? '/physio' : '/clinician';
     router.replace(locale === 'en' ? unlockPath : `/${locale}${unlockPath}`);
     return (
-      <AppShell>
+      <AppShell wide>
         <LoadingState />
       </AppShell>
     );
@@ -153,7 +153,7 @@ export default function PatientInfoPage() {
 
   if (!info.data) {
     return (
-      <AppShell>
+      <AppShell wide>
         <LoadingState />
       </AppShell>
     );
@@ -163,19 +163,24 @@ export default function PatientInfoPage() {
   const ySince = yearsSince(info.data.onsetYear);
 
   return (
-    <AppShell>
-      <button
-        type="button"
-        onClick={back}
-        className="mb-3 inline-flex items-center gap-1 text-[14px] font-semibold text-sage-deep hover:text-ink"
-      >
-        ← {t('back')}
-      </button>
+    <AppShell wide>
+      {/* Inner content stays at a readable form width even when the
+          page expands on desktop. The wide AppShell gives breathing
+          room around the form; the form itself stays compact. Layout
+          improvements (e.g. two-column form) belong to a later slice. */}
+      <div className="lg:mx-auto lg:max-w-[720px]">
+        <button
+          type="button"
+          onClick={back}
+          className="mb-3 inline-flex items-center gap-1 text-[14px] font-semibold text-sage-deep hover:text-ink"
+        >
+          ← {t('back')}
+        </button>
 
-      <h1 className="font-display text-[26px] leading-tight text-ink">
-        {info.data.displayName}
-      </h1>
-      <p className="mt-1 text-[14px] text-ink-muted">{t('subtitle')}</p>
+        <h1 className="font-display text-[26px] leading-tight text-ink">
+          {info.data.displayName}
+        </h1>
+        <p className="mt-1 text-[14px] text-ink-muted">{t('subtitle')}</p>
 
       {!editing ? (
         <>
@@ -340,6 +345,7 @@ export default function PatientInfoPage() {
           </div>
         </section>
       )}
+      </div>
     </AppShell>
   );
 }
