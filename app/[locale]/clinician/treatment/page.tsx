@@ -395,7 +395,7 @@ function TreatmentRecordInner() {
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
+        <div className="mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4 lg:max-w-[var(--max-w-page-wide)]">
           <button
             type="button"
             onClick={back}
@@ -409,7 +409,7 @@ function TreatmentRecordInner() {
       </header>
 
       <main
-        className="mx-auto max-w-[480px] px-5 pb-24 pt-6"
+        className="mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-24 pt-6 lg:max-w-[var(--max-w-page-wide)]"
         onInput={touchActivity}
       >
         <h1 className="font-display text-[24px] leading-tight text-ink">
@@ -464,12 +464,22 @@ function TreatmentRecordInner() {
           </div>
         )}
 
+        {/* Two-pane layout on desktop (≥1024px). Reference cards live
+            in a persistent left aside; the form sits on the right.
+            On smaller screens, this collapses to the existing
+            single-column flow — references on top, form below. The
+            DOM order (references first, form second) is intentional
+            so that mobile gets the same vertical order it has today. */}
+        <div className="lg:mt-6 lg:grid lg:grid-cols-[340px_1fr] lg:gap-6 lg:items-start">
+          <aside className="lg:sticky lg:top-6">
         {/* Reference cards — both compact and tappable. Medication
             expands inline (it's edited here, so the editing UI stays
             on-page). Last treatment opens a modal with full details
             and the Copy action. On mobile they stack; on sm+ they
-            sit side-by-side to save vertical space. */}
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start">
+            sit side-by-side to save vertical space. On lg+ (desktop
+            two-pane), they stack again because the left aside is
+            narrow. */}
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start lg:flex-col lg:items-stretch">
           {/* Medication card */}
           <div className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft">
             {!medExpanded ? (
@@ -674,7 +684,10 @@ function TreatmentRecordInner() {
             </button>
           )}
         </div>
+          </aside>
 
+          {/* Right pane: the actual treatment form. */}
+          <div>
         {/* Row 1: Date + Total units + Dilution. All three are short
             numeric / short-string values, so they fit comfortably on
             one line even on mobile. The per-muscle dose-sum readout
@@ -761,27 +774,100 @@ function TreatmentRecordInner() {
         <ul className="mt-3 divide-y divide-stone/60">
           {injections.map((inj, i) => (
             <li key={i} className="py-3 first:pt-0">
-              {/* Top line: muscle name (flex-1) + remove × on the right.
-                  Name field is full-width because muscle names can be
-                  long (e.g. "Flexor carpi radialis"). */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={inj.muscle}
-                  onChange={(e) =>
-                    updateInjection(i, { muscle: e.target.value })
-                  }
-                  className={inputClasses}
-                  placeholder="Muscle name (e.g. Gastrocnemius)"
-                  maxLength={80}
-                  aria-label={`Muscle ${i + 1} name`}
-                />
+              {/* Row layout switches at lg breakpoint:
+                  - Mobile: two lines per row. Top = name + ×. Bottom
+                    = Side select + Units input side-by-side.
+                  - Desktop (≥lg): all on one line. Name takes the
+                    remaining flex room; Side and Units have fixed
+                    widths; × sits at the end.
+                  The × button is rendered conditionally in two
+                  places: once inline with the name (mobile-only via
+                  lg:hidden), once at the end of the row (lg-only via
+                  hidden lg:flex). Same button visually, two homes. */}
+              <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
+                {/* Name input + (on mobile) × button next to it */}
+                <div className="flex items-center gap-2 lg:flex-1">
+                  <input
+                    type="text"
+                    value={inj.muscle}
+                    onChange={(e) =>
+                      updateInjection(i, { muscle: e.target.value })
+                    }
+                    className={`${inputClasses} flex-1`}
+                    placeholder="Muscle name (e.g. Gastrocnemius)"
+                    maxLength={80}
+                    aria-label={`Muscle ${i + 1} name`}
+                  />
+                  {injections.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeInjection(i)}
+                      aria-label={`Remove muscle ${i + 1}`}
+                      className="-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink lg:hidden"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        aria-hidden
+                      >
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                        <line x1="6" y1="18" x2="18" y2="6" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {/* Side + Units: side-by-side. On mobile they each
+                    take half the row (flex-1). On lg they have
+                    fixed widths and sit inline with the name. */}
+                <div className="flex gap-2 lg:gap-3 lg:shrink-0">
+                  <label className="flex flex-1 items-center gap-2 lg:flex-none">
+                    <span className="text-[12px] text-ink-muted">Side</span>
+                    <select
+                      value={inj.side}
+                      onChange={(e) =>
+                        updateInjection(i, {
+                          side: e.target.value as InjectionSide
+                        })
+                      }
+                      className={`${inputClasses} flex-1 lg:w-32 lg:flex-none`}
+                    >
+                      {INJECTION_SIDES.map((s) => (
+                        <option key={s} value={s}>
+                          {injectionSideLabel(s)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-1 items-center gap-2 lg:flex-none">
+                    <span className="text-[12px] text-ink-muted">Units</span>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step="any"
+                      value={inj.doseUnits}
+                      onChange={(e) =>
+                        updateInjection(i, { doseUnits: e.target.value })
+                      }
+                      className={`${inputClasses} flex-1 lg:w-20 lg:flex-none`}
+                    />
+                  </label>
+                </div>
+
+                {/* × button at the END of the row, but only on lg.
+                    On mobile, the × lives next to the name (above). */}
                 {injections.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeInjection(i)}
                     aria-label={`Remove muscle ${i + 1}`}
-                    className="-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink"
+                    className="-m-1.5 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink lg:flex"
                   >
                     <svg
                       width="16"
@@ -798,44 +884,6 @@ function TreatmentRecordInner() {
                     </svg>
                   </button>
                 )}
-              </div>
-
-              {/* Middle line: Side + Units, side-by-side with inline
-                  labels so the eye doesn't have to drop a line for
-                  every field. */}
-              <div className="mt-2 flex gap-2">
-                <label className="flex flex-1 items-center gap-2">
-                  <span className="text-[12px] text-ink-muted">Side</span>
-                  <select
-                    value={inj.side}
-                    onChange={(e) =>
-                      updateInjection(i, {
-                        side: e.target.value as InjectionSide
-                      })
-                    }
-                    className={`${inputClasses} flex-1`}
-                  >
-                    {INJECTION_SIDES.map((s) => (
-                      <option key={s} value={s}>
-                        {injectionSideLabel(s)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-1 items-center gap-2">
-                  <span className="text-[12px] text-ink-muted">Units</span>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    step="any"
-                    value={inj.doseUnits}
-                    onChange={(e) =>
-                      updateInjection(i, { doseUnits: e.target.value })
-                    }
-                    className={`${inputClasses} flex-1`}
-                  />
-                </label>
               </div>
 
               {/* Per-muscle note: hidden behind a tap-to-reveal link.
@@ -963,6 +1011,8 @@ function TreatmentRecordInner() {
                 : 'Save'}
             </button>
           )}
+        </div>
+          </div>
         </div>
       </main>
 
