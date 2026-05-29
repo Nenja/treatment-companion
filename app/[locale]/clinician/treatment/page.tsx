@@ -34,10 +34,15 @@ interface InjectionDraft {
   side: InjectionSide;
   doseUnits: string;
   note: string;
+  /** UI-only: whether the per-muscle note input is revealed. Notes are
+   *  hidden behind a small "+ add note" link by default, since most
+   *  muscles don't need one. Set true automatically when an existing
+   *  note is loaded; otherwise toggled when the clinician taps + add note. */
+  noteOpen: boolean;
 }
 
 function emptyInjection(): InjectionDraft {
-  return { muscle: '', side: 'left', doseUnits: '', note: '' };
+  return { muscle: '', side: 'left', doseUnits: '', note: '', noteOpen: false };
 }
 
 export default function TreatmentRecordPage() {
@@ -181,7 +186,8 @@ function TreatmentRecordInner() {
           muscle: i.muscle,
           side: i.side,
           doseUnits: String(i.doseUnits),
-          note: i.note ?? ''
+          note: i.note ?? '',
+          noteOpen: !!(i.note && i.note.trim())
         }))
       );
     }
@@ -250,7 +256,8 @@ function TreatmentRecordInner() {
             muscle: i.muscle,
             side: i.side,
             doseUnits: String(i.doseUnits),
-            note: i.note ?? ''
+            note: i.note ?? '',
+            noteOpen: !!(i.note && i.note.trim())
           }))
         : [emptyInjection()]
     );
@@ -694,29 +701,15 @@ function TreatmentRecordInner() {
           Muscles injected
         </h2>
         <p className="mt-1 text-[14px] text-ink-muted">
-          Add one row per muscle.
+          One row per muscle.
         </p>
-        <ul className="mt-3 space-y-3">
+        <ul className="mt-3 divide-y divide-stone/60">
           {injections.map((inj, i) => (
-            <li
-              key={i}
-              className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="eyebrow text-ink-muted">Muscle {i + 1}</div>
-                {injections.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeInjection(i)}
-                    className="text-[14px] font-semibold text-ink-soft hover:text-ink"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-
-              {/* Muscle name — full width */}
-              <Field label="Muscle name" inline>
+            <li key={i} className="py-3 first:pt-0">
+              {/* Top line: muscle name (flex-1) + remove × on the right.
+                  Name field is full-width because muscle names can be
+                  long (e.g. "Flexor carpi radialis"). */}
+              <div className="flex items-center gap-2">
                 <input
                   type="text"
                   value={inj.muscle}
@@ -724,14 +717,40 @@ function TreatmentRecordInner() {
                     updateInjection(i, { muscle: e.target.value })
                   }
                   className={inputClasses}
-                  placeholder="e.g. Gastrocnemius"
+                  placeholder="Muscle name (e.g. Gastrocnemius)"
                   maxLength={80}
+                  aria-label={`Muscle ${i + 1} name`}
                 />
-              </Field>
+                {injections.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeInjection(i)}
+                    aria-label={`Remove muscle ${i + 1}`}
+                    className="-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      aria-hidden
+                    >
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                      <line x1="6" y1="18" x2="18" y2="6" />
+                    </svg>
+                  </button>
+                )}
+              </div>
 
-              {/* Side + dose — two columns */}
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <Field label="Side" inline>
+              {/* Middle line: Side + Units, side-by-side with inline
+                  labels so the eye doesn't have to drop a line for
+                  every field. */}
+              <div className="mt-2 flex gap-2">
+                <label className="flex flex-1 items-center gap-2">
+                  <span className="text-[12px] text-ink-muted">Side</span>
                   <select
                     value={inj.side}
                     onChange={(e) =>
@@ -739,7 +758,7 @@ function TreatmentRecordInner() {
                         side: e.target.value as InjectionSide
                       })
                     }
-                    className={inputClasses}
+                    className={`${inputClasses} flex-1`}
                   >
                     {INJECTION_SIDES.map((s) => (
                       <option key={s} value={s}>
@@ -747,8 +766,9 @@ function TreatmentRecordInner() {
                       </option>
                     ))}
                   </select>
-                </Field>
-                <Field label="Dose (units)" inline>
+                </label>
+                <label className="flex flex-1 items-center gap-2">
+                  <span className="text-[12px] text-ink-muted">Units</span>
                   <input
                     type="number"
                     inputMode="decimal"
@@ -758,34 +778,46 @@ function TreatmentRecordInner() {
                     onChange={(e) =>
                       updateInjection(i, { doseUnits: e.target.value })
                     }
-                    className={inputClasses}
+                    className={`${inputClasses} flex-1`}
                   />
-                </Field>
+                </label>
               </div>
 
-              {/* Per-muscle note */}
-              <Field
-                label="Note"
-                helper="Optional. E.g. 'high EMG activity'."
-                inline
-              >
-                <input
-                  type="text"
-                  value={inj.note}
-                  onChange={(e) =>
-                    updateInjection(i, { note: e.target.value })
-                  }
-                  className={inputClasses}
-                  maxLength={200}
-                />
-              </Field>
+              {/* Per-muscle note: hidden behind a tap-to-reveal link.
+                  Most muscles don't need a note, so keeping the field
+                  out until requested keeps the form compact. The
+                  "noteOpen" flag is set true when the row is hydrated
+                  from data that already has a note. */}
+              {inj.noteOpen ? (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-[12px] text-ink-muted">Note</span>
+                  <input
+                    type="text"
+                    value={inj.note}
+                    onChange={(e) =>
+                      updateInjection(i, { note: e.target.value })
+                    }
+                    className={`${inputClasses} flex-1`}
+                    placeholder="e.g. high EMG activity"
+                    maxLength={200}
+                  />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => updateInjection(i, { noteOpen: true })}
+                  className="mt-1 text-[12px] font-semibold text-sage-deep hover:text-ink"
+                >
+                  + add note
+                </button>
+              )}
             </li>
           ))}
         </ul>
         <button
           type="button"
           onClick={addInjection}
-          className="mt-3 flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+          className="mt-3 flex h-10 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
         >
           + Add another muscle
         </button>

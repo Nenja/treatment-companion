@@ -357,21 +357,24 @@ export default function ClinicianPatientPage() {
               to breathe and the summary can sit underneath without
               fighting the controls for vertical room. */}
           <div className="mt-2 min-w-0">
-            <div className="flex items-center gap-1">
-              <div className="truncate font-display text-[20px] leading-tight text-ink">
+            <button
+              type="button"
+              onClick={() =>
+                router.push(
+                  locale === 'en'
+                    ? '/patient-info'
+                    : `/${locale}/patient-info`
+                )
+              }
+              aria-label={tInfo('openInfo', { name: patient.displayName })}
+              className="group flex w-full items-center gap-1 text-left"
+            >
+              <span className="truncate font-display text-[20px] leading-tight text-ink group-hover:text-sage-deep">
                 {patient.displayName}
-              </div>
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    locale === 'en'
-                      ? '/patient-info'
-                      : `/${locale}/patient-info`
-                  )
-                }
-                aria-label={tInfo('openInfo', { name: patient.displayName })}
-                className="-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:text-sage-deep"
+              </span>
+              <span
+                className="-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted group-hover:text-sage-deep"
+                aria-hidden
               >
                 <svg
                   width="18"
@@ -382,14 +385,13 @@ export default function ClinicianPatientPage() {
                   strokeWidth="1.8"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  aria-hidden
                 >
                   <circle cx="12" cy="12" r="10" />
                   <line x1="12" y1="11" x2="12" y2="16" />
                   <circle cx="12" cy="8" r="0.6" fill="currentColor" />
                 </svg>
-              </button>
-            </div>
+              </span>
+            </button>
             {patientSummary && (
               <div className="mt-0.5 truncate text-[12px] text-ink-muted">
                 {patientSummary}
