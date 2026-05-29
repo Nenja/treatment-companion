@@ -3,12 +3,29 @@
 import { useTranslations } from 'next-intl';
 import { AccountMenu } from './AccountMenu';
 
-export function TopBar() {
+interface TopBarProps {
+  /** When true, the inner row expands to the wide page width on
+   *  `lg:` and above. Otherwise stays at the narrow (mobile) width.
+   *  Defaults to false (narrow). */
+  wide?: boolean;
+}
+
+export function TopBar({ wide = false }: TopBarProps) {
   const t = useTranslations('app');
+
+  // Inner row uses the same width as the page body it sits above, so
+  // the AccountMenu lands in the visual corner rather than offset.
+  // When wide, the row stays narrow on small screens and expands at
+  // the `lg:` breakpoint.
+  const innerWidthClass = wide
+    ? 'max-w-[var(--max-w-page-narrow)] lg:max-w-[var(--max-w-page-wide)]'
+    : 'max-w-[var(--max-w-page-narrow)]';
 
   return (
     <header className="border-b border-stone/70 bg-cream-soft/50 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-3">
+      <div
+        className={`mx-auto flex items-center justify-between px-5 py-3 ${innerWidthClass}`}
+      >
         <div className="flex items-center gap-2.5">
           {/* Mark: a soft sage chevron — a quiet visual identity, no logotype */}
           <svg
