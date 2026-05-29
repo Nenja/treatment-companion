@@ -13,7 +13,8 @@ import {
   useSaveTreatmentSession,
   useStartCycleWithTreatment,
   usePreviousTreatment,
-  useSetPatientMedication
+  useSetPatientMedication,
+  type ClinicianTreatmentRecord
 } from '@/lib/supabase/clinicianPatient';
 import { todayIso, isToday } from '@/lib/dates';
 import { useSessionExpiryWarning } from '@/lib/useSessionExpiryWarning';
@@ -123,6 +124,13 @@ function TreatmentRecordInner() {
   const [editingMed, setEditingMed] = useState(false);
   const [medCurrent, setMedCurrent] = useState('');
   const [medPrevious, setMedPrevious] = useState('');
+  // Compact-by-default: medication card is collapsed until the
+  // clinician taps the summary line.
+  const [medExpanded, setMedExpanded] = useState(false);
+  // Last-treatment details modal — shown when the compact summary
+  // line is tapped.
+  const [showLastTreatmentModal, setShowLastTreatmentModal] =
+    useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -456,182 +464,224 @@ function TreatmentRecordInner() {
           </div>
         )}
 
-        {/* Anti-spastic medication — current treatment context, used
-            when deciding this injection's drug, dose, and target
-            muscles. Edit inline (clinician-only, server-enforced).
-            Sits before the previous-treatment card so the clinician
-            reads "what's on board" before reviewing last dose. */}
-        <div className="mt-4 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-          <div className="flex items-baseline justify-between gap-2">
-            <div className="eyebrow">Anti-spastic medication</div>
-            {!editingMed && (
+        {/* Reference cards — both compact and tappable. Medication
+            expands inline (it's edited here, so the editing UI stays
+            on-page). Last treatment opens a modal with full details
+            and the Copy action. On mobile they stack; on sm+ they
+            sit side-by-side to save vertical space. */}
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start">
+          {/* Medication card */}
+          <div className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft">
+            {!medExpanded ? (
               <button
                 type="button"
-                onClick={() => setEditingMed(true)}
-                className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-stone-soft"
+                onClick={() => setMedExpanded(true)}
+                className="flex w-full items-center justify-between gap-2 p-3 text-left hover:bg-stone-soft/40"
               >
-                Edit
+                <div className="min-w-0">
+                  <div className="eyebrow">Anti-spastic medication</div>
+                  <div className="mt-0.5 truncate text-[13px] text-ink-soft">
+                    {dataQuery.data.patient.currentAntispasticMedication ?? (
+                      <span className="text-ink-muted">
+                        Not recorded — tap to add
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <span aria-hidden className="text-[14px] text-ink-muted">
+                  ▾
+                </span>
               </button>
+            ) : (
+              <div className="p-4">
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="eyebrow">Anti-spastic medication</div>
+                  <div className="flex items-center gap-2">
+                    {!editingMed && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingMed(true)}
+                        className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-stone-soft"
+                      >
+                        Edit
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (editingMed) return;
+                        setMedExpanded(false);
+                      }}
+                      disabled={editingMed}
+                      aria-label="Collapse"
+                      className="-m-1.5 flex h-8 w-8 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink disabled:opacity-30"
+                    >
+                      <span aria-hidden className="text-[14px]">
+                        ▴
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {!editingMed ? (
+                  <div className="mt-2 space-y-2">
+                    <div>
+                      <div className="text-[12px] font-semibold text-ink-soft">
+                        Current
+                      </div>
+                      <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
+                        {dataQuery.data.patient
+                          .currentAntispasticMedication ?? (
+                          <span className="text-ink-muted">
+                            Not recorded yet.
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <div className="text-[12px] font-semibold text-ink-soft">
+                        Previous
+                      </div>
+                      <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
+                        {dataQuery.data.patient
+                          .previousAntispasticMedication ?? (
+                          <span className="text-ink-muted">
+                            Not recorded yet.
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2 space-y-3">
+                    <div>
+                      <label
+                        htmlFor="med-current"
+                        className="block text-[13px] font-semibold text-ink"
+                      >
+                        Current anti-spastic medication
+                      </label>
+                      <textarea
+                        id="med-current"
+                        value={medCurrent}
+                        onChange={(e) => setMedCurrent(e.target.value)}
+                        rows={3}
+                        maxLength={4000}
+                        placeholder="Drug, dose, frequency, start date (free text)"
+                        className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="med-previous"
+                        className="block text-[13px] font-semibold text-ink"
+                      >
+                        Previous anti-spastic medication
+                      </label>
+                      <textarea
+                        id="med-previous"
+                        value={medPrevious}
+                        onChange={(e) => setMedPrevious(e.target.value)}
+                        rows={3}
+                        maxLength={4000}
+                        placeholder="What was tried before, with reason for stopping if relevant"
+                        className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMedication.mutate(
+                            {
+                              patientId: dataQuery.data!.patient.id,
+                              currentAntispasticMedication:
+                                medCurrent.trim() || null,
+                              previousAntispasticMedication:
+                                medPrevious.trim() || null
+                            },
+                            {
+                              onSuccess: () => {
+                                toast.success('Medication updated.');
+                                setEditingMed(false);
+                              },
+                              onError: () =>
+                                toast.error(
+                                  'Could not save. Please try again.'
+                                )
+                            }
+                          );
+                        }}
+                        disabled={setMedication.isPending}
+                        className="rounded-[var(--radius-button)] bg-sage-deep px-4 py-2 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
+                      >
+                        {setMedication.isPending ? '…' : 'Save'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMedCurrent(
+                            dataQuery.data?.patient
+                              .currentAntispasticMedication ?? ''
+                          );
+                          setMedPrevious(
+                            dataQuery.data?.patient
+                              .previousAntispasticMedication ?? ''
+                          );
+                          setEditingMed(false);
+                        }}
+                        disabled={setMedication.isPending}
+                        className="rounded-[var(--radius-button)] border border-stone bg-cream px-4 py-2 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
-          {!editingMed ? (
-            <div className="mt-2 space-y-2">
-              <div>
-                <div className="text-[12px] font-semibold text-ink-soft">
-                  Current
+          {/* Last-treatment summary — tappable to open the full
+              dialog. Only when one exists; otherwise the column is
+              just empty space (which on mobile is invisible, and on
+              sm+ is empty but balanced). */}
+          {referenceTreatment && (
+            <button
+              type="button"
+              onClick={() => setShowLastTreatmentModal(true)}
+              className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3 text-left hover:bg-stone-soft/40"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="eyebrow">Last treatment</div>
+                  <div className="mt-0.5 truncate text-[13px] text-ink-soft">
+                    {referenceTreatment.drugProduct} ·{' '}
+                    {referenceTreatment.totalUnits} units
+                  </div>
+                  <div className="mt-0.5 truncate text-[12px] text-ink-muted">
+                    {referenceTreatment.injections.length}{' '}
+                    {referenceTreatment.injections.length === 1
+                      ? 'muscle'
+                      : 'muscles'}{' '}
+                    · tap for details
+                  </div>
                 </div>
-                <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
-                  {dataQuery.data.patient.currentAntispasticMedication ?? (
-                    <span className="text-ink-muted">Not recorded yet.</span>
-                  )}
-                </p>
+                <span aria-hidden className="text-[14px] text-ink-muted">
+                  ›
+                </span>
               </div>
-              <div>
-                <div className="text-[12px] font-semibold text-ink-soft">
-                  Previous
-                </div>
-                <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
-                  {dataQuery.data.patient.previousAntispasticMedication ?? (
-                    <span className="text-ink-muted">Not recorded yet.</span>
-                  )}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-2 space-y-3">
-              <div>
-                <label
-                  htmlFor="med-current"
-                  className="block text-[13px] font-semibold text-ink"
-                >
-                  Current anti-spastic medication
-                </label>
-                <textarea
-                  id="med-current"
-                  value={medCurrent}
-                  onChange={(e) => setMedCurrent(e.target.value)}
-                  rows={3}
-                  maxLength={4000}
-                  placeholder="Drug, dose, frequency, start date (free text)"
-                  className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="med-previous"
-                  className="block text-[13px] font-semibold text-ink"
-                >
-                  Previous anti-spastic medication
-                </label>
-                <textarea
-                  id="med-previous"
-                  value={medPrevious}
-                  onChange={(e) => setMedPrevious(e.target.value)}
-                  rows={3}
-                  maxLength={4000}
-                  placeholder="What was tried before, with reason for stopping if relevant"
-                  className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMedication.mutate(
-                      {
-                        patientId: dataQuery.data!.patient.id,
-                        currentAntispasticMedication:
-                          medCurrent.trim() || null,
-                        previousAntispasticMedication:
-                          medPrevious.trim() || null
-                      },
-                      {
-                        onSuccess: () => {
-                          toast.success('Medication updated.');
-                          setEditingMed(false);
-                        },
-                        onError: () =>
-                          toast.error(
-                            'Could not save. Please try again.'
-                          )
-                      }
-                    );
-                  }}
-                  disabled={setMedication.isPending}
-                  className="rounded-[var(--radius-button)] bg-sage-deep px-4 py-2 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
-                >
-                  {setMedication.isPending ? '…' : 'Save'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    // Revert local state to server values + exit edit.
-                    setMedCurrent(
-                      dataQuery.data?.patient.currentAntispasticMedication ?? ''
-                    );
-                    setMedPrevious(
-                      dataQuery.data?.patient.previousAntispasticMedication ??
-                        ''
-                    );
-                    setEditingMed(false);
-                  }}
-                  disabled={setMedication.isPending}
-                  className="rounded-[var(--radius-button)] border border-stone bg-cream px-4 py-2 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
+            </button>
           )}
         </div>
 
-        {/* Previous treatment — shown as reference, since the new
-            plan is usually an adjustment of the last one. The copy
-            action lives inside this block. Only when one exists. */}
-        {referenceTreatment && (
-          <div className="mt-4 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-            <div className="eyebrow">Previous treatment — for reference</div>
-            <p className="mt-1 text-[14px] text-ink-soft">
-              {referenceTreatment.drugProduct} ·{' '}
-              {referenceTreatment.totalUnits} units
-              {referenceTreatment.dilution &&
-                ` · ${referenceTreatment.dilution}`}
-            </p>
-            <ul className="mt-2 space-y-1 text-[14px] text-ink-soft">
-              {referenceTreatment.injections.map((inj) => (
-                <li key={inj.id}>
-                  {inj.muscle} · {injectionSideLabel(inj.side)} ·{' '}
-                  {inj.doseUnits} units
-                </li>
-              ))}
-            </ul>
-            <button
-              type="button"
-              onClick={() => {
-                const hasContent =
-                  drugProduct.trim() ||
-                  totalUnits.trim() ||
-                  dilution.trim() ||
-                  notes.trim() ||
-                  injections.some(
-                    (i) => i.muscle.trim() || i.doseUnits.trim()
-                  );
-                if (hasContent) {
-                  setShowCopyConfirm(true);
-                } else {
-                  doCopyFromPrevious();
-                }
-              }}
-              className="mt-3 flex h-10 w-full items-center justify-center rounded-[var(--radius-button)] border border-sage/50 bg-sage-soft px-4 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft/70"
-            >
-              Copy these into the new plan
-            </button>
-          </div>
-        )}
-
-        {/* Row 1: Date + Drug product (date is narrow, product is wider) */}
-        <div className="mt-6 grid gap-3 sm:grid-cols-[140px_1fr]">
+        {/* Row 1: Date + Total units + Dilution. All three are short
+            numeric / short-string values, so they fit comfortably on
+            one line even on mobile. The per-muscle dose-sum readout
+            sits directly under Total units so the physician can
+            compare what they typed against the running tally without
+            scrolling. */}
+        <div className="mt-6 grid grid-cols-3 gap-3">
           <Field label="Date" inline>
             <input
               type="date"
@@ -640,20 +690,6 @@ function TreatmentRecordInner() {
               className={inputClasses}
             />
           </Field>
-          <Field label="Drug product" inline>
-            <input
-              type="text"
-              value={drugProduct}
-              onChange={(e) => setDrugProduct(e.target.value)}
-              className={inputClasses}
-              maxLength={60}
-              placeholder="e.g. Botox"
-            />
-          </Field>
-        </div>
-
-        {/* Row 2: Total units + Dilution (both compact) */}
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Field label="Total units" inline>
             <input
               type="number"
@@ -664,6 +700,14 @@ function TreatmentRecordInner() {
               onChange={(e) => setTotalUnits(e.target.value)}
               className={inputClasses}
             />
+            {dosesSum > 0 && (
+              <p className="mt-1 text-[12px] text-ink-muted">
+                Per-muscle sum:{' '}
+                <span className="font-semibold tabular-nums text-ink-soft">
+                  {dosesSumLabel}
+                </span>
+              </p>
+            )}
           </Field>
           <Field label="Dilution" inline>
             <input
@@ -672,29 +716,40 @@ function TreatmentRecordInner() {
               onChange={(e) => setDilution(e.target.value)}
               className={inputClasses}
               maxLength={40}
-              placeholder="e.g. 250 IU/ml"
+              placeholder="250 IU/ml"
             />
           </Field>
         </div>
 
-        {/* Row 3: Guidance technique — full width because dropdown labels
-            can be long ("Electrical stimulation"). */}
-        <Field
-          label="Guidance technique"
-          helper="Used for all muscles in this session."
-        >
-          <select
-            value={guidance}
-            onChange={(e) => setGuidance(e.target.value as GuidanceMethod)}
-            className={inputClasses}
-          >
-            {GUIDANCE_METHODS.map((g) => (
-              <option key={g} value={g}>
-                {labelForGuidance(g)}
-              </option>
-            ))}
-          </select>
-        </Field>
+        {/* Row 2: Drug product + Guidance. Both are wider-text fields
+            (product names like "Botox", guidance options like
+            "Electrical stimulation"), so they get more room together
+            than they would crowded next to the short fields above. */}
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <Field label="Drug product" inline>
+            <input
+              type="text"
+              value={drugProduct}
+              onChange={(e) => setDrugProduct(e.target.value)}
+              className={inputClasses}
+              maxLength={60}
+              placeholder="e.g. Botox"
+            />
+          </Field>
+          <Field label="Guidance" inline>
+            <select
+              value={guidance}
+              onChange={(e) => setGuidance(e.target.value as GuidanceMethod)}
+              className={inputClasses}
+            >
+              {GUIDANCE_METHODS.map((g) => (
+                <option key={g} value={g}>
+                  {labelForGuidance(g)}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
 
         {/* Muscles section */}
         <h2 className="mt-8 font-display text-[18px] text-ink">
@@ -787,7 +842,9 @@ function TreatmentRecordInner() {
                   Most muscles don't need a note, so keeping the field
                   out until requested keeps the form compact. The
                   "noteOpen" flag is set true when the row is hydrated
-                  from data that already has a note. */}
+                  from data that already has a note, and toggled by
+                  the + add / × remove buttons. Removing clears the
+                  text so it doesn't resurrect on next render. */}
               {inj.noteOpen ? (
                 <div className="mt-2 flex items-center gap-2">
                   <span className="text-[12px] text-ink-muted">Note</span>
@@ -801,6 +858,28 @@ function TreatmentRecordInner() {
                     placeholder="e.g. high EMG activity"
                     maxLength={200}
                   />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateInjection(i, { note: '', noteOpen: false })
+                    }
+                    aria-label={`Remove note from muscle ${i + 1}`}
+                    className="-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      aria-hidden
+                    >
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                      <line x1="6" y1="18" x2="18" y2="6" />
+                    </svg>
+                  </button>
                 </div>
               ) : (
                 <button
@@ -821,19 +900,6 @@ function TreatmentRecordInner() {
         >
           + Add another muscle
         </button>
-
-        {/* Running total of the per-muscle doses entered above. A plain
-            figure for the clinician's own reference — not compared to
-            "Total units", not flagged. Shown once at least one dose is
-            present. */}
-        {dosesSum > 0 && (
-          <p className="mt-3 text-[14px] text-ink-soft">
-            Per-muscle doses entered:{' '}
-            <span className="font-semibold tabular-nums text-ink">
-              {dosesSumLabel} units
-            </span>
-          </p>
-        )}
 
         {/* Session notes */}
         <Field label="Session notes" helper="Optional">
@@ -906,6 +972,32 @@ function TreatmentRecordInner() {
           onCancel={() => setShowCopyConfirm(false)}
         />
       )}
+
+      {showLastTreatmentModal && referenceTreatment && (
+        <LastTreatmentDialog
+          treatment={referenceTreatment}
+          onClose={() => setShowLastTreatmentModal(false)}
+          onCopyRequested={() => {
+            const hasContent =
+              drugProduct.trim() ||
+              totalUnits.trim() ||
+              dilution.trim() ||
+              notes.trim() ||
+              injections.some(
+                (i) => i.muscle.trim() || i.doseUnits.trim()
+              );
+            // Close the details modal first so the confirm dialog
+            // doesn't stack on top. The copy itself either fires
+            // immediately or via the existing confirm modal.
+            setShowLastTreatmentModal(false);
+            if (hasContent) {
+              setShowCopyConfirm(true);
+            } else {
+              doCopyFromPrevious();
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -952,6 +1044,75 @@ function CopyConfirmDialog({
             className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
             Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Read-only details view of the previous treatment, opened by tapping
+ * the compact "Last treatment" summary card on the form. Shows drug,
+ * units, dilution, the per-muscle breakdown, and a button to copy the
+ * whole thing into the form being filled in. The actual copy
+ * (with-or-without-confirm) is handled by the parent — this dialog
+ * just signals via onCopyRequested.
+ */
+function LastTreatmentDialog({
+  treatment,
+  onClose,
+  onCopyRequested
+}: {
+  treatment: ClinicianTreatmentRecord;
+  onClose: () => void;
+  onCopyRequested: () => void;
+}) {
+  const containerRef = useModalA11y(onClose);
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="last-treatment-title"
+        className="w-full max-w-[460px] rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl"
+      >
+        <h2
+          id="last-treatment-title"
+          className="font-display text-[20px] leading-tight text-ink"
+        >
+          Last treatment
+        </h2>
+        <p className="mt-1 text-[14px] text-ink-soft">
+          {treatment.drugProduct} · {treatment.totalUnits} units
+          {treatment.dilution && ` · ${treatment.dilution}`}
+        </p>
+        <ul className="mt-3 max-h-[280px] space-y-1 overflow-y-auto text-[14px] text-ink-soft">
+          {treatment.injections.map((inj) => (
+            <li key={inj.id}>
+              {inj.muscle} · {injectionSideLabel(inj.side)} ·{' '}
+              {inj.doseUnits} units
+              {inj.note && (
+                <span className="text-ink-muted"> — {inj.note}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+        <div className="mt-5 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={onCopyRequested}
+            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft"
+          >
+            Copy into the new plan
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
+          >
+            Close
           </button>
         </div>
       </div>
