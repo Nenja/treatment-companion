@@ -121,7 +121,6 @@ export default function PhysioProgressPage() {
         {cycle && (
           <p className="mt-1 text-[14px] text-ink-soft">
             {t('cycleLabel', {
-              number: cycle.cycleNumber,
               week: weekNumber
             })}
           </p>

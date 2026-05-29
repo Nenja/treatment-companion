@@ -402,7 +402,6 @@ export default function ClinicianPatientPage() {
       <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
         <div className="eyebrow">
           {t('cycleContext', {
-            cycle: cycle.cycleNumber,
             week: weekNumber
           })}
         </div>

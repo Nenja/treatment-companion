@@ -353,7 +353,6 @@ export default function PhysioPatientPage() {
             {patientData.data.cycle ? (
               <p className="text-[14px] text-ink-soft">
                 {t('cycleLabel', {
-                  number: patientData.data.cycle.cycleNumber,
                   week: weekNumber
                 })}
               </p>

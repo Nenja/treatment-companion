@@ -112,6 +112,15 @@ export default function ClinicianHistoryPage() {
           {t('subtitle')}
         </p>
 
+        {/* Total cycles count — the one place where cycle number is
+            meaningful (longitudinal context). Other pages have dropped
+            the cycle number; it lives here. */}
+        {!trend.isLoading && cycles.length > 0 && (
+          <p className="mt-3 text-[13px] text-ink-muted">
+            {t('totalCycles', { count: cycles.length })}
+          </p>
+        )}
+
         {trend.isLoading && (
           <SkeletonBlock height="h-40" className="mt-6" />
         )}

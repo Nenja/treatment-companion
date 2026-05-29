@@ -94,6 +94,11 @@ export interface ClinicianPatientData {
      *  physician — context at the injection visit). */
     physioExercisePlan: string | null;
     physioAssistiveDevices: string | null;
+    /** Anti-spastic medication currently on board and previously
+     *  tried. Free-text, edited on the treatment record page (where
+     *  the physician needs it at the moment of dose decision). */
+    currentAntispasticMedication: string | null;
+    previousAntispasticMedication: string | null;
   };
   cycle: {
     id: string;
@@ -134,7 +139,7 @@ export function useClinicianPatientData(
       const { data: pRow, error: pErr } = await supabase
         .from('patient')
         .select(
-          'id, share_muscles_with_physio, physio_exercise_plan, physio_assistive_devices, profile:profile_id (display_name)'
+          'id, share_muscles_with_physio, physio_exercise_plan, physio_assistive_devices, current_antispastic_medication, previous_antispastic_medication, profile:profile_id (display_name)'
         )
         .eq('id', patientId!)
         .maybeSingle();
@@ -153,7 +158,11 @@ export function useClinicianPatientData(
         physioExercisePlan:
           (pRow.physio_exercise_plan as string | null) ?? null,
         physioAssistiveDevices:
-          (pRow.physio_assistive_devices as string | null) ?? null
+          (pRow.physio_assistive_devices as string | null) ?? null,
+        currentAntispasticMedication:
+          (pRow.current_antispastic_medication as string | null) ?? null,
+        previousAntispasticMedication:
+          (pRow.previous_antispastic_medication as string | null) ?? null
       };
 
       // 2. Active cycle
@@ -769,6 +778,37 @@ export function useStartNewCycle() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
       qc.invalidateQueries({ queryKey: ['previousTreatment'] });
+    }
+  });
+}
+
+/**
+ * Clinician-only write for the patient's anti-spastic medication
+ * (current + previous, both free-text). Server enforces clinician
+ * role + active session. Invalidates the clinicianPatient query so
+ * the treatment page picks up new values immediately.
+ */
+export function useSetPatientMedication() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      patientId: string;
+      currentAntispasticMedication: string | null;
+      previousAntispasticMedication: string | null;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_patient_medication', {
+        p_patient_id: input.patientId,
+        p_current_antispastic_medication: input.currentAntispasticMedication,
+        p_previous_antispastic_medication: input.previousAntispasticMedication
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+      // Belt-and-braces: also refresh the previousTreatment query that
+      // the treatment page can use as reference data.
+      qc.invalidateQueries({ queryKey: ['previousTreatment', vars.patientId] });
     }
   });
 }

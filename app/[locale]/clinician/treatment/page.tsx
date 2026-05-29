@@ -12,7 +12,8 @@ import {
   useClinicianPatientData,
   useSaveTreatmentSession,
   useStartCycleWithTreatment,
-  usePreviousTreatment
+  usePreviousTreatment,
+  useSetPatientMedication
 } from '@/lib/supabase/clinicianPatient';
 import { todayIso, isToday } from '@/lib/dates';
 import { useSessionExpiryWarning } from '@/lib/useSessionExpiryWarning';
@@ -109,6 +110,15 @@ function TreatmentRecordInner() {
 
   const [showCopyConfirm, setShowCopyConfirm] = useState(false);
 
+  // Medication edit state. The view is read-only until the clinician
+  // taps Edit; tapping Save calls set_patient_medication and exits
+  // edit mode. Local-only state — server is the source of truth on
+  // (re)load.
+  const setMedication = useSetPatientMedication();
+  const [editingMed, setEditingMed] = useState(false);
+  const [medCurrent, setMedCurrent] = useState('');
+  const [medPrevious, setMedPrevious] = useState('');
+
   useEffect(() => {
     if (authLoading) return;
     if (!user || !profile) {
@@ -177,6 +187,19 @@ function TreatmentRecordInner() {
     }
     setHydrated(true);
   }, [dataQuery.data, hydrated, isNewCycle, newCycleDate]);
+
+  // Hydrate medication state separately from the form. Always reflect
+  // the latest server values when NOT editing — so a clinician
+  // returning to the page after a save sees their saved text. When
+  // editing, we don't overwrite their in-progress changes.
+  useEffect(() => {
+    if (editingMed) return;
+    if (!dataQuery.data) return;
+    setMedCurrent(dataQuery.data.patient.currentAntispasticMedication ?? '');
+    setMedPrevious(
+      dataQuery.data.patient.previousAntispasticMedication ?? ''
+    );
+  }, [dataQuery.data, editingMed]);
 
   if (
     authLoading ||
@@ -384,7 +407,7 @@ function TreatmentRecordInner() {
         <p className="mt-1 text-[14px] text-ink-soft">
           {isNewCycle
             ? `For ${patient.displayName} · New cycle`
-            : `For ${patient.displayName} · Cycle ${cycle.cycleNumber}`}
+            : `For ${patient.displayName}`}
         </p>
 
         {/* Session-expiry warning. The unlock lasts one hour from the
@@ -425,6 +448,136 @@ function TreatmentRecordInner() {
             </button>
           </div>
         )}
+
+        {/* Anti-spastic medication — current treatment context, used
+            when deciding this injection's drug, dose, and target
+            muscles. Edit inline (clinician-only, server-enforced).
+            Sits before the previous-treatment card so the clinician
+            reads "what's on board" before reviewing last dose. */}
+        <div className="mt-4 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+          <div className="flex items-baseline justify-between gap-2">
+            <div className="eyebrow">Anti-spastic medication</div>
+            {!editingMed && (
+              <button
+                type="button"
+                onClick={() => setEditingMed(true)}
+                className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-stone-soft"
+              >
+                Edit
+              </button>
+            )}
+          </div>
+
+          {!editingMed ? (
+            <div className="mt-2 space-y-2">
+              <div>
+                <div className="text-[12px] font-semibold text-ink-soft">
+                  Current
+                </div>
+                <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
+                  {dataQuery.data.patient.currentAntispasticMedication ?? (
+                    <span className="text-ink-muted">Not recorded yet.</span>
+                  )}
+                </p>
+              </div>
+              <div>
+                <div className="text-[12px] font-semibold text-ink-soft">
+                  Previous
+                </div>
+                <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
+                  {dataQuery.data.patient.previousAntispasticMedication ?? (
+                    <span className="text-ink-muted">Not recorded yet.</span>
+                  )}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-2 space-y-3">
+              <div>
+                <label
+                  htmlFor="med-current"
+                  className="block text-[13px] font-semibold text-ink"
+                >
+                  Current anti-spastic medication
+                </label>
+                <textarea
+                  id="med-current"
+                  value={medCurrent}
+                  onChange={(e) => setMedCurrent(e.target.value)}
+                  rows={3}
+                  maxLength={4000}
+                  placeholder="Drug, dose, frequency, start date (free text)"
+                  className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="med-previous"
+                  className="block text-[13px] font-semibold text-ink"
+                >
+                  Previous anti-spastic medication
+                </label>
+                <textarea
+                  id="med-previous"
+                  value={medPrevious}
+                  onChange={(e) => setMedPrevious(e.target.value)}
+                  rows={3}
+                  maxLength={4000}
+                  placeholder="What was tried before, with reason for stopping if relevant"
+                  className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMedication.mutate(
+                      {
+                        patientId: dataQuery.data!.patient.id,
+                        currentAntispasticMedication:
+                          medCurrent.trim() || null,
+                        previousAntispasticMedication:
+                          medPrevious.trim() || null
+                      },
+                      {
+                        onSuccess: () => {
+                          toast.success('Medication updated.');
+                          setEditingMed(false);
+                        },
+                        onError: () =>
+                          toast.error(
+                            'Could not save. Please try again.'
+                          )
+                      }
+                    );
+                  }}
+                  disabled={setMedication.isPending}
+                  className="rounded-[var(--radius-button)] bg-sage-deep px-4 py-2 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
+                >
+                  {setMedication.isPending ? '…' : 'Save'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Revert local state to server values + exit edit.
+                    setMedCurrent(
+                      dataQuery.data?.patient.currentAntispasticMedication ?? ''
+                    );
+                    setMedPrevious(
+                      dataQuery.data?.patient.previousAntispasticMedication ??
+                        ''
+                    );
+                    setEditingMed(false);
+                  }}
+                  disabled={setMedication.isPending}
+                  className="rounded-[var(--radius-button)] border border-stone bg-cream px-4 py-2 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Previous treatment — shown as reference, since the new
             plan is usually an adjustment of the last one. The copy
