@@ -176,6 +176,16 @@ export default function LoginPage() {
           </Link>
         </p>
 
+        <p className="mt-4 text-center text-[14px] text-ink-soft">
+          New here?{' '}
+          <Link
+            href={`${prefix}/signup`}
+            className="font-semibold text-sage-deep hover:text-ink"
+          >
+            Create an account
+          </Link>
+        </p>
+
         <p className="mt-4 text-center text-[13px]">
           <Link
             href={`${prefix}/privacy`}
