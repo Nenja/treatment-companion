@@ -11,6 +11,7 @@ import {
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { OnboardingWizard } from '@/components/feedback/OnboardingWizard';
 import { clearSessionEndingFlag } from '@/lib/sessionEndSignal';
+import { isTutorialReplayRequested } from '@/lib/tutorialReplay';
 
 /**
  * Clinician landing screen.
@@ -71,6 +72,9 @@ export default function ClinicianUnlockPage() {
   // mid-load — consistent with the patient page's guard, so the two
   // pages cannot ping-pong.
   useEffect(() => {
+    // If the user asked to redo the tutorial, stay on this landing
+    // screen so the wizard can show, even if a session is active.
+    if (isTutorialReplayRequested()) return;
     if (sessionQuery.status === 'success' && sessionQuery.data) {
       router.replace(
         locale === 'en'

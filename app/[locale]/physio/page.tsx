@@ -11,6 +11,7 @@ import {
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { OnboardingWizard } from '@/components/feedback/OnboardingWizard';
 import { clearSessionEndingFlag } from '@/lib/sessionEndSignal';
+import { isTutorialReplayRequested } from '@/lib/tutorialReplay';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
 
@@ -65,6 +66,7 @@ export default function PhysioUnlockPage() {
 
   // If a valid session exists, jump straight to the patient view.
   useEffect(() => {
+    if (isTutorialReplayRequested()) return;
     if (sessionQuery.status === 'success' && sessionQuery.data) {
       router.replace(patientPath);
     }
