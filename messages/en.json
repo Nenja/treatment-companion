@@ -303,7 +303,10 @@
       "retireGoal": "Retire goal",
       "earlierGoalsTitle": "Earlier goals",
       "earlierGoalsBody": "Goals retired this cycle, and how each one ended.",
-      "outcomeUnknown": "Retired"
+      "outcomeUnknown": "Retired",
+      "reactivateGoal": "Reactivate",
+      "reactivateToast": "Goal reactivated",
+      "reactivateError": "Could not reactivate the goal. Please try again."
     },
     "review": {
       "title": "Review suggestion",

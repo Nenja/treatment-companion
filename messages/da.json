@@ -307,7 +307,10 @@
       "retireGoal": "Afslut mål",
       "earlierGoalsTitle": "Tidligere mål",
       "earlierGoalsBody": "Mål, der er afsluttet i dette forløb, og hvordan hvert af dem endte.",
-      "outcomeUnknown": "Afsluttet"
+      "outcomeUnknown": "Afsluttet",
+      "reactivateGoal": "Genaktivér",
+      "reactivateToast": "Mål genaktiveret",
+      "reactivateError": "Kunne ikke genaktivere målet. Prøv venligst igen."
     },
     "review": {
       "title": "Gennemgå forslag",

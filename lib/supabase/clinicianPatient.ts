@@ -537,6 +537,28 @@ export function useRetireGoal() {
   });
 }
 
+/**
+ * Reactivate a previously retired goal — reverses an accidental or
+ * premature retirement. Sets the goal back to active and clears its
+ * outcome, so it returns to the patient's check-ins. Physician-only
+ * (enforced by the reactivate_goal RPC).
+ */
+export function useReactivateGoal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { goalId: string }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('reactivate_goal', {
+        p_goal_id: input.goalId
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
 export interface CreateGoalForPatientInput {
   patientId: string;
   patientFacingText: string;
