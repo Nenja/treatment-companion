@@ -4,23 +4,22 @@ import type { CycleTrendPoint } from '@/lib/supabase/patientTrend';
 import { formatMonthYear } from '@/lib/dates';
 
 /**
- * Two small charts for the longitudinal trend page:
- *   - Dose per cycle: a bar per cycle, height = total units.
- *   - Outcome per cycle: a point per cycle on a -2..+2 GAS axis,
- *     connected, so the trajectory across cycles is visible.
+ * Dose-per-cycle chart for the history page: a bar per cycle, height =
+ * total units. Hand-built SVG, matching the app's existing
+ * GoalProgressView approach (the main app does not bundle a charting
+ * library). All colours come from CSS variables, so it follows the
+ * active palette and day/night mode.
  *
- * Hand-built SVG, matching the app's existing GoalProgressView
- * approach (the main app does not bundle a charting library). All
- * colours come from CSS variables, so the charts follow the active
- * palette and day/night mode.
+ * Cycles are labelled with their treatment month (e.g. "Jan 2025").
+ * Cycles with no recorded treatment (totalUnits null) are drawn as a
+ * gap — the bar is omitted and a muted "—" sits on the axis.
  *
- * Cycles are labelled with their treatment month (e.g. "Jan 2025"),
- * not "Cycle 1/2/3" — a date is more meaningful across cycles.
- *
- * Cycles with no recorded treatment (totalUnits null) or no completed
- * check-ins (finalGas null) are drawn as gaps — the bar/point is
- * simply omitted for that cycle, and a muted "—" label sits on the
- * axis so the cycle is still accounted for.
+ * The former "outcome per cycle" connected line was removed: averaging
+ * GAS across a cycle's goals and joining the result across cycles is
+ * misleading, because goals are living and differ each cycle (a harder
+ * replacement goal scoring lower reads as regression when it is
+ * progress). Per-cycle goal outcomes are shown instead by
+ * CycleGoalsBreakdown (see below).
  */
 
 const W = 320;
@@ -175,124 +174,101 @@ export function DosePerCycleChart({
   );
 }
 
-export function OutcomePerCycleChart({
+/**
+ * Per-cycle goal outcomes — the honest replacement for the old
+ * connected "outcome per cycle" line. For each cycle it lists the
+ * goals and how each ended: achieved, partially achieved, or no longer
+ * suitable (for retired goals), or "ongoing" for goals still active.
+ * This shows the *climb* (achieved goals giving way to harder ones)
+ * and course-corrections, without implying a false GAS trajectory
+ * across goals that are not the same from cycle to cycle.
+ *
+ * Labels are passed in (localised by the caller).
+ */
+export function CycleGoalsBreakdown({
   cycles,
-  outcomeLabel,
-  locale
+  locale,
+  labels
 }: {
   cycles: CycleTrendPoint[];
-  outcomeLabel: string;
   locale: string;
+  labels: {
+    achieved: string;
+    partial: string;
+    noLongerSuitable: string;
+    ongoing: string;
+    retired: string;
+    noGoals: string;
+    gasTag: string;
+    nrsTag: string;
+  };
 }) {
-  // GAS axis runs -2 (bottom) to +2 (top).
-  const gasToY = (gas: number): number => {
-    const t = (gas + 2) / 4; // 0..1
-    return PAD_T + PLOT_H - t * PLOT_H;
+  const outcomeChip = (
+    outcome: 'achieved' | 'partial' | 'noLongerSuitable' | null,
+    status: string
+  ): { text: string; className: string } => {
+    if (status === 'active') {
+      return { text: labels.ongoing, className: 'bg-stone text-ink-soft' };
+    }
+    switch (outcome) {
+      case 'achieved':
+        return { text: labels.achieved, className: 'bg-sage-soft text-sage-deep' };
+      case 'partial':
+        return { text: labels.partial, className: 'bg-amber-soft text-amber-deep' };
+      case 'noLongerSuitable':
+        return {
+          text: labels.noLongerSuitable,
+          className: 'bg-stone text-ink-soft'
+        };
+      default:
+        // archived/combined without a recorded outcome (data from
+        // before outcomes were captured) — say "retired", not
+        // "ongoing", since the goal is no longer active.
+        return { text: labels.retired, className: 'bg-stone text-ink-soft' };
+    }
   };
 
-  // Inset the markers by one slot so the first/last marker (and its
-  // date label) sit clear of the Y axis and the right edge.
-  const slotWidth = PLOT_W / Math.max(cycles.length, 1);
-
-  // Points that actually have an outcome, in cycle order.
-  const points = cycles
-    .map((c, i) => ({ c, i }))
-    .filter(({ c }) => c.finalGas !== null);
-
   return (
-    <figure className="m-0">
-      <figcaption className="mb-1 text-[13px] font-semibold text-ink-soft">
-        {outcomeLabel}
-      </figcaption>
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        className="w-full"
-        role="img"
-        aria-label={outcomeLabel}
-      >
-        {/* Gridlines + labels at -2, 0, +2 */}
-        {[2, 1, 0, -1, -2].map((g) => {
-          const y = gasToY(g);
-          const isZero = g === 0;
-          return (
-            <g key={g}>
-              <line
-                x1={PAD_L}
-                y1={y}
-                x2={PAD_L + PLOT_W}
-                y2={y}
-                stroke="var(--color-stone)"
-                strokeWidth={isZero ? 1.5 : 0.75}
-                strokeDasharray={isZero ? undefined : '2 3'}
-              />
-              <text
-                x={PAD_L - 5}
-                y={y + 3}
-                textAnchor="end"
-                fontSize="9"
-                fill="var(--color-ink-muted)"
-              >
-                {g > 0 ? `+${g}` : g}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Connecting line between consecutive available points */}
-        {points.length > 1 && (
-          <polyline
-            points={points
-              .map(
-                ({ c, i }) =>
-                  `${cycleX(i, cycles.length, slotWidth)},${gasToY(
-                    c.finalGas as number
-                  )}`
-              )
-              .join(' ')}
-            fill="none"
-            stroke="var(--color-sage-deep)"
-            strokeWidth="2"
-          />
-        )}
-
-        {/* Cycle markers + date axis labels */}
-        {cycles.map((c, i) => {
-          const cx = cycleX(i, cycles.length, slotWidth);
-          return (
-            <g key={c.cycleId}>
-              {c.finalGas !== null ? (
-                <circle
-                  cx={cx}
-                  cy={gasToY(c.finalGas)}
-                  r="4"
-                  fill="var(--color-sage-deep)"
-                  stroke="var(--color-cream)"
-                  strokeWidth="1.5"
-                />
-              ) : (
-                <text
-                  x={cx}
-                  y={PAD_T + PLOT_H / 2}
-                  textAnchor="middle"
-                  fontSize="9"
-                  fill="var(--color-ink-muted)"
-                >
-                  —
-                </text>
-              )}
-              <text
-                x={cx}
-                y={PAD_T + PLOT_H + 16}
-                textAnchor="middle"
-                fontSize="9"
-                fill="var(--color-ink-muted)"
-              >
-                {formatMonthYear(c.startDate, locale)}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-    </figure>
+    <div className="space-y-4">
+      {cycles.map((c) => (
+        <div key={c.cycleId}>
+          <div className="flex items-baseline justify-between gap-2">
+            <h3 className="text-[13px] font-semibold text-ink">
+              {formatMonthYear(c.startDate, locale)}
+            </h3>
+          </div>
+          {c.goals.length === 0 ? (
+            <p className="mt-1 text-[13px] text-ink-muted">{labels.noGoals}</p>
+          ) : (
+            <ul className="mt-2 space-y-1.5">
+              {c.goals.map((g) => {
+                const chip = outcomeChip(
+                  g.outcome,
+                  g.status
+                );
+                return (
+                  <li
+                    key={g.id}
+                    className="flex items-start justify-between gap-3 rounded-[var(--radius-button)] border border-stone/70 bg-cream px-3 py-2"
+                  >
+                    <span className="min-w-0 text-[13px] leading-snug text-ink">
+                      {g.patientFacingText}
+                      <span className="ml-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
+                        {g.kind === 'gas' ? labels.gasTag : labels.nrsTag}
+                      </span>
+                    </span>
+                    <span
+                      className={`shrink-0 rounded-[var(--radius-button)] px-2 py-0.5 text-[11px] font-semibold ${chip.className}`}
+                    >
+                      {chip.text}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }

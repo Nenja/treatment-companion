@@ -2,28 +2,44 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from './browser';
+import type { GoalOutcome } from './clinicianPatient';
 
 /**
  * Longitudinal (cross-cycle) data for one patient.
  *
  * The regular clinician patient hook (useClinicianPatientData) loads
  * only the ACTIVE cycle. This hook instead gathers a compact summary
- * of EVERY cycle the patient has had, so the trend view can show how
- * treatment and outcomes have changed over time.
+ * of EVERY cycle the patient has had, so the history view can show how
+ * treatment and goals have changed over time.
  *
  * Per cycle it returns:
  *   - cycleNumber, startDate, status
  *   - totalUnits — the treatment session's total dose (null if no
  *     treatment was recorded for that cycle)
- *   - finalGas — the goal outcome for the cycle: the GAS rating
- *     (-2..+2) from the LAST completed check-in of the cycle. When a
- *     cycle had more than one goal, this averages their final GAS so
- *     the cycle has a single comparable outcome number. Null if the
- *     cycle has no completed check-ins yet.
+ *   - goals — the goals belonging to that cycle, each with its text,
+ *     kind, lifecycle status, and (if retired) its outcome.
  *
- * Physician-facing only — used by the longitudinal page, which is
- * reached from the clinician patient page.
+ * Note on outcomes vs. a GAS trajectory: goals are *living* — reviewed
+ * and changed at each visit, often replaced by harder goals as the
+ * patient improves. So a connected cross-cycle "average GAS" line is
+ * misleading (it compares different goals at each point, and a harder
+ * goal scoring lower looks like regression when it is progress). This
+ * hook therefore does NOT compute an averaged per-cycle GAS. Instead it
+ * surfaces each cycle's goals and how they ended, which is the
+ * interpretable cross-cycle signal. Dose is objective and is kept.
+ *
+ * Physician-facing only — used by the history page.
  */
+
+export interface CycleGoalSummary {
+  id: string;
+  patientFacingText: string;
+  kind: 'nrs' | 'gas';
+  /** 'active' | 'archived' | 'combined' */
+  status: string;
+  /** Set when the goal was retired; null while active. */
+  outcome: GoalOutcome | null;
+}
 
 export interface CycleTrendPoint {
   cycleId: string;
@@ -31,7 +47,7 @@ export interface CycleTrendPoint {
   startDate: string;
   status: string;
   totalUnits: number | null;
-  finalGas: number | null;
+  goals: CycleGoalSummary[];
 }
 
 export interface PatientTrend {
@@ -75,62 +91,42 @@ export function usePatientTrend(patientId: string | null) {
         );
       }
 
-      // 3. Goal ratings — to derive each cycle's final outcome. Pull
-      //    every rating joined to its check-in's cycle and week, so we
-      //    can pick the latest week per cycle.
-      const { data: ratingRows, error: rErr } = await supabase
-        .from('weekly_goal_rating')
+      // 3. Goals for every cycle, with kind, status, and outcome. This
+      //    replaces the old averaged-GAS "final outcome" number with
+      //    the per-goal outcomes the history view now shows.
+      const { data: goalRows, error: gErr } = await supabase
+        .from('approved_goal')
         .select(
-          'rating_value, weekly_checkin:weekly_checkin_id (treatment_cycle_id, week_number)'
-        );
-      if (rErr) throw rErr;
+          'id, treatment_cycle_id, patient_facing_text, goal_kind, status, goal_outcome, approved_at'
+        )
+        .eq('patient_id', patientId)
+        .order('approved_at', { ascending: true });
+      if (gErr) throw gErr;
 
-      // For each cycle, find the highest week_number that has ratings,
-      // then average the rating_value of that week's ratings.
-      // latestWeek: cycleId -> week number. byCycleWeek: "cycleId:week"
-      // -> list of rating values.
-      const latestWeek = new Map<string, number>();
-      const byCycleWeek = new Map<string, number[]>();
-      for (const r of ratingRows ?? []) {
-        const ci = Array.isArray(r.weekly_checkin)
-          ? r.weekly_checkin[0]
-          : r.weekly_checkin;
-        if (!ci) continue;
-        const cycleId = ci.treatment_cycle_id as string;
-        if (!cycleIds.includes(cycleId)) continue; // other patients
-        const week = ci.week_number as number;
-        const value = r.rating_value as number | null;
-        if (value === null || value === undefined) continue;
-
-        const prevLatest = latestWeek.get(cycleId);
-        if (prevLatest === undefined || week > prevLatest) {
-          latestWeek.set(cycleId, week);
-        }
-        const key = `${cycleId}:${week}`;
-        const list = byCycleWeek.get(key) ?? [];
-        list.push(value);
-        byCycleWeek.set(key, list);
+      const goalsByCycle = new Map<string, CycleGoalSummary[]>();
+      for (const g of goalRows ?? []) {
+        const cycleId = g.treatment_cycle_id as string;
+        if (!cycleIds.includes(cycleId)) continue;
+        const list = goalsByCycle.get(cycleId) ?? [];
+        list.push({
+          id: g.id as string,
+          patientFacingText: g.patient_facing_text as string,
+          kind: (g.goal_kind as 'nrs' | 'gas') ?? 'nrs',
+          status: g.status as string,
+          outcome: (g.goal_outcome as GoalOutcome | null) ?? null
+        });
+        goalsByCycle.set(cycleId, list);
       }
 
       const cycles: CycleTrendPoint[] = cycleRows.map((c) => {
         const cycleId = c.id as string;
-        const week = latestWeek.get(cycleId);
-        let finalGas: number | null = null;
-        if (week !== undefined) {
-          const values = byCycleWeek.get(`${cycleId}:${week}`) ?? [];
-          if (values.length > 0) {
-            const sum = values.reduce((a, b) => a + b, 0);
-            // Average across the cycle's goals, rounded to one decimal.
-            finalGas = Math.round((sum / values.length) * 10) / 10;
-          }
-        }
         return {
           cycleId,
           cycleNumber: c.cycle_number as number,
           startDate: c.start_date as string,
           status: c.status as string,
           totalUnits: unitsByCycle.get(cycleId) ?? null,
-          finalGas
+          goals: goalsByCycle.get(cycleId) ?? []
         };
       });
 
