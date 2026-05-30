@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useUpdateOwnProfile } from '@/lib/supabase/profile';
+import { useOwnSex, useSetOwnSex, type Sex } from '@/lib/supabase/patientInfo';
 import { useToast } from '@/components/feedback/Toast';
 import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
 import {
@@ -38,6 +39,14 @@ export default function ProfilePage() {
   const { user, profile, loading } = useAuth();
   const updateProfile = useUpdateOwnProfile();
   const toast = useToast();
+
+  // Patient-only: self-reported sex. Only patient accounts have a
+  // patient row, so this section shows for patients alone.
+  const isPatient = profile?.role === 'patient';
+  const ownSex = useOwnSex(!!isPatient);
+  const setOwnSex = useSetOwnSex();
+  const tSex = useTranslations('sex');
+  const SEX_OPTS: Sex[] = ['female', 'male', 'other', 'preferNotToSay'];
 
   // Editable fields, seeded from the profile once it loads.
   const [name, setName] = useState('');
@@ -209,6 +218,38 @@ export default function ProfilePage() {
                 )}
               </>
             )}
+          </div>
+        )}
+
+        {/* Sex — patient accounts only. Saves on change via its own
+            patient-scoped action (independent of the name/profession
+            Save button). */}
+        {isPatient && (
+          <div className="mt-6">
+            <label htmlFor="profile-sex" className={fieldLabel}>
+              {t('sexLabel')}
+            </label>
+            <select
+              id="profile-sex"
+              value={ownSex.data ?? ''}
+              disabled={ownSex.isLoading || setOwnSex.isPending}
+              onChange={(e) => {
+                const v = (e.target.value || null) as Sex | null;
+                setOwnSex.mutate(v, {
+                  onSuccess: () => toast.success(t('sexSaved')),
+                  onError: () => toast.error(t('sexError'))
+                });
+              }}
+              className={inputClass}
+            >
+              <option value="">{t('sexUnset')}</option>
+              {SEX_OPTS.map((v) => (
+                <option key={v} value={v}>
+                  {tSex(v)}
+                </option>
+              ))}
+            </select>
+            <p className={fieldHelper}>{t('sexHelper')}</p>
           </div>
         )}
 

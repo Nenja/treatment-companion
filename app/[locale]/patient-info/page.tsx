@@ -12,7 +12,8 @@ import {
   yearsSince,
   type AffectedSide,
   type AmbulationStatus,
-  type Etiology
+  type Etiology,
+  type Sex
 } from '@/lib/supabase/patientInfo';
 import { useToast } from '@/components/feedback/Toast';
 import { AppShell } from '@/components/layout/AppShell';
@@ -39,6 +40,7 @@ const AMBULATION_VALUES: AmbulationStatus[] = [
 ];
 
 const SIDE_VALUES: AffectedSide[] = ['left', 'right', 'bilateral'];
+const SEX_VALUES: Sex[] = ['female', 'male', 'other', 'preferNotToSay'];
 
 /**
  * Patient clinical-background page. Accessible to clinicians AND
@@ -52,6 +54,7 @@ export default function PatientInfoPage() {
   const t = useTranslations('patientInfo');
   const tEt = useTranslations('etiology');
   const tAmb = useTranslations('ambulation');
+  const tSex = useTranslations('sex');
   const tSide = useTranslations('side');
   const toast = useToast();
 
@@ -93,6 +96,7 @@ export default function PatientInfoPage() {
   const [onsetYear, setOnsetYear] = useState('');
   const [ambulation, setAmbulation] = useState<AmbulationStatus | ''>('');
   const [notes, setNotes] = useState('');
+  const [sex, setSex] = useState<Sex | ''>('');
 
   // Hydrate the form from server data once the query resolves; do this
   // each time editing is entered so the form reflects current values.
@@ -105,6 +109,7 @@ export default function PatientInfoPage() {
     setOnsetYear(info.data.onsetYear ? String(info.data.onsetYear) : '');
     setAmbulation(info.data.ambulation ?? '');
     setNotes(info.data.backgroundNotes ?? '');
+    setSex(info.data.sex ?? '');
   }, [info.data, editing]);
 
   const onSave = () => {
@@ -119,7 +124,8 @@ export default function PatientInfoPage() {
         affectedSide: (affectedSide || null) as AffectedSide | null,
         onsetYear: Number.isFinite(onsetNum) ? onsetNum : null,
         ambulation: (ambulation || null) as AmbulationStatus | null,
-        backgroundNotes: notes.trim() || null
+        backgroundNotes: notes.trim() || null,
+        sex: (sex || null) as Sex | null
       },
       {
         onSuccess: () => {
@@ -192,6 +198,9 @@ export default function PatientInfoPage() {
                   }`
                 : t('notRecorded')}
             </Row>
+            <Row label={t('sex')}>
+              {info.data.sex ? tSex(info.data.sex) : t('notRecorded')}
+            </Row>
             <Row label={t('etiology')}>
               {info.data.etiology
                 ? tEt(info.data.etiology) +
@@ -247,6 +256,20 @@ export default function PatientInfoPage() {
               onChange={(e) => setDob(e.target.value)}
               className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
             />
+          </Field>
+          <Field label={t('sex')}>
+            <select
+              value={sex}
+              onChange={(e) => setSex(e.target.value as Sex | '')}
+              className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
+            >
+              <option value="">{t('selectPlaceholder')}</option>
+              {SEX_VALUES.map((v) => (
+                <option key={v} value={v}>
+                  {tSex(v)}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field label={t('etiology')}>
             <select

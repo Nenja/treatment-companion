@@ -393,42 +393,12 @@ export default function ClinicianPatientPage() {
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
         <div className={headerWidthClass}>
-          {/* Top row — controls only. No role/label text here (the
-              patient name below is the heading); on mobile End session
-              collapses to an icon to keep the row uncrowded. */}
-          <div className="flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setConfirmEnd(true)}
-              aria-label={tSession('endSession')}
-              title={tSession('endSession')}
-              className="flex h-11 w-11 items-center justify-center gap-1.5 rounded-full border border-stone bg-cream text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink sm:w-auto sm:rounded-[var(--radius-button)] sm:px-3"
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-                className="shrink-0"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-              <span className="hidden sm:inline">{tSession('endSession')}</span>
-            </button>
-            <PageHelpButton pageKey="clinicianPatient" />
-            <AccountMenu />
-          </div>
-          {/* Second row — the patient. Own line so the name has space
-              to breathe and the summary can sit underneath without
-              fighting the controls for vertical room. */}
-          <div className="mt-2 min-w-0">
+          {/* Single row: the patient (name + info link) on the left
+              takes the available width and truncates; the controls
+              (end session, help, account) sit on the right. End
+              session is an icon on mobile to keep the row compact. The
+              clinical summary sits on its own line beneath the name. */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() =>
@@ -439,18 +409,18 @@ export default function ClinicianPatientPage() {
                 )
               }
               aria-label={tInfo('openInfo', { name: patient.displayName })}
-              className="group flex w-full items-center gap-1 text-left"
+              className="group flex min-w-0 flex-1 items-center gap-1 text-left"
             >
               <span className="truncate font-display text-[20px] leading-tight text-ink group-hover:text-sage-deep">
                 {patient.displayName}
               </span>
               <span
-                className="-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted group-hover:text-sage-deep"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-muted group-hover:text-sage-deep"
                 aria-hidden
               >
                 <svg
-                  width="18"
-                  height="18"
+                  width="17"
+                  height="17"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -464,12 +434,43 @@ export default function ClinicianPatientPage() {
                 </svg>
               </span>
             </button>
-            {patientSummary && (
-              <div className="mt-0.5 truncate text-[12px] text-ink-muted">
-                {patientSummary}
-              </div>
-            )}
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmEnd(true)}
+                aria-label={tSession('endSession')}
+                title={tSession('endSession')}
+                className="flex h-11 w-11 items-center justify-center gap-1.5 rounded-full border border-stone bg-cream text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink sm:w-auto sm:rounded-[var(--radius-button)] sm:px-3"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                  className="shrink-0"
+                >
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span className="hidden sm:inline">
+                  {tSession('endSession')}
+                </span>
+              </button>
+              <PageHelpButton pageKey="clinicianPatient" />
+              <AccountMenu />
+            </div>
           </div>
+          {patientSummary && (
+            <div className="mt-1 truncate text-[12px] text-ink-muted">
+              {patientSummary}
+            </div>
+          )}
         </div>
       </header>
 
