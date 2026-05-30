@@ -31,7 +31,7 @@ export function PageHelpButton({ pageKey }: { pageKey: string }) {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t('buttonLabel')}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-stone bg-cream text-ink-soft hover:bg-stone-soft hover:text-ink"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-stone bg-cream text-ink-soft hover:bg-stone-soft hover:text-ink"
       >
         {/* Question-mark glyph. aria-hidden — the button has a label. */}
         <svg
