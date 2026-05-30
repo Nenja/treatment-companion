@@ -290,7 +290,17 @@
       "newCycleDialogBody": "This closes the current cycle and creates a new one with the treatment date you choose. The current cycle's data is preserved.",
       "newCycleDateLabel": "Date of treatment",
       "newCycleConfirm": "Start new cycle",
-      "newCycleCancel": "Cancel"
+      "newCycleCancel": "Cancel",
+      "retireConfirmTitle": "Retire this goal?",
+      "retireConfirmBody": "The patient will no longer be asked about this goal in their weekly check-in. Its check-in history is kept and stays in the record.",
+      "retireOutcomePrompt": "How did this goal end?",
+      "retireAchieved": "Achieved",
+      "retireAchievedHint": "The goal was met — often replaced by a more ambitious one.",
+      "retirePartial": "Partially achieved",
+      "retirePartialHint": "Meaningful progress, but moving on to something else.",
+      "retireNoLongerSuitable": "No longer suitable",
+      "retireNoLongerSuitableHint": "Reframed, dropped, or overtaken by a change in the patient's situation.",
+      "retireGoal": "Retire goal"
     },
     "review": {
       "title": "Review suggestion",

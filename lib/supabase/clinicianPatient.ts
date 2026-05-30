@@ -472,6 +472,38 @@ export function useArchiveGoal() {
   });
 }
 
+/** How a retired goal ended. Mirrors the `goal_outcome` DB enum. */
+export type GoalOutcome = 'achieved' | 'partial' | 'noLongerSuitable';
+
+/**
+ * Retire a goal with an outcome (achieved / partial / no longer
+ * suitable). The outcome-aware replacement for useArchiveGoal: it sets
+ * the goal's status to 'archived' (so it leaves the patient's active
+ * check-ins, exactly as archiving did) AND records *why* it was
+ * retired. Check-in history is preserved.
+ *
+ * Physician-only (enforced by the retire_goal RPC).
+ */
+export function useRetireGoal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      goalId: string;
+      outcome: GoalOutcome;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('retire_goal', {
+        p_goal_id: input.goalId,
+        p_outcome: input.outcome
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
 export interface CreateGoalForPatientInput {
   patientId: string;
   patientFacingText: string;

@@ -294,7 +294,17 @@
       "newCycleDialogBody": "Dette afslutter den nuværende cyklus og opretter en ny med den behandlingsdato, du vælger. Den nuværende cyklus' data bevares.",
       "newCycleDateLabel": "Behandlingsdato",
       "newCycleConfirm": "Start ny cyklus",
-      "newCycleCancel": "Annullér"
+      "newCycleCancel": "Annullér",
+      "retireConfirmTitle": "Afslut dette mål?",
+      "retireConfirmBody": "Patienten vil ikke længere blive spurgt om dette mål i det ugentlige tjek-ind. Tjek-ind-historikken bevares og forbliver i journalen.",
+      "retireOutcomePrompt": "Hvordan endte dette mål?",
+      "retireAchieved": "Opnået",
+      "retireAchievedHint": "Målet blev nået — ofte erstattet af et mere ambitiøst.",
+      "retirePartial": "Delvist opnået",
+      "retirePartialHint": "Meningsfuld fremgang, men går videre til noget andet.",
+      "retireNoLongerSuitable": "Ikke længere relevant",
+      "retireNoLongerSuitableHint": "Omformuleret, droppet eller overhalet af en ændring i patientens situation.",
+      "retireGoal": "Afslut mål"
     },
     "review": {
       "title": "Gennemgå forslag",
