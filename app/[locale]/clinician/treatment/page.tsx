@@ -507,12 +507,14 @@ function TreatmentRecordInner() {
           <button
             type="button"
             onClick={back}
-            className="text-[14px] font-semibold text-ink-soft hover:text-ink"
+            className="shrink-0 text-[14px] font-semibold text-ink-soft hover:text-ink"
           >
             ← Back
           </button>
-          <span className="eyebrow">Treatment record</span>
-          <div className="flex items-center gap-2">
+          <span className="eyebrow min-w-0 truncate px-2 text-center">
+            Treatment record
+          </span>
+          <div className="flex shrink-0 items-center gap-1.5">
             <EndSessionButton role="clinician" />
             <PageHelpButton pageKey="treatment" />
             <AccountMenu />

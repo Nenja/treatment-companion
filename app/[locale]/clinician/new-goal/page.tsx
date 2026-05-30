@@ -176,8 +176,8 @@ function NewGoalInner() {
           >
             Cancel
           </button>
-          <span className="eyebrow">Record a goal</span>
-          <div className="flex items-center gap-2">
+          <span className="eyebrow min-w-0 truncate px-2 text-center">Record a goal</span>
+          <div className="flex shrink-0 items-center gap-1.5">
             <EndSessionButton role="clinician" />
             <PageHelpButton pageKey="newGoal" />
             <AccountMenu />

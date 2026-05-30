@@ -272,8 +272,8 @@ function Inner() {
           >
             ← {t('back')}
           </button>
-          <span className="eyebrow">{t('title')}</span>
-          <div className="flex items-center gap-2">
+          <span className="eyebrow min-w-0 truncate px-2 text-center">{t('title')}</span>
+          <div className="flex shrink-0 items-center gap-1.5">
             <EndSessionButton role="clinician" />
             <PageHelpButton pageKey="suggestion" />
             <AccountMenu />

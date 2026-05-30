@@ -132,7 +132,7 @@ export default function ClinicianHistoryPage() {
           >
             {t('back')}
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5">
             <EndSessionButton role="clinician" />
             <PageHelpButton pageKey="history" />
             <AccountMenu />

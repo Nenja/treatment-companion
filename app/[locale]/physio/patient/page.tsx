@@ -262,22 +262,38 @@ export default function PhysioPatientPage() {
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
         <div className={headerWidthClass}>
-          {/* Top row — controls only. Eyebrow on the left as the peer
-              of the buttons; End session pill + AccountMenu on the
-              right. Mirrors the clinician header exactly. */}
-          <div className="flex items-center justify-between gap-3">
-            <span className="eyebrow">Physiotherapist</span>
-            <div className="flex shrink-0 items-center gap-2">
-              <button
-                type="button"
-                onClick={onEndSession}
-                className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
+          {/* Top row — controls only. No role label here (it's in the
+              account menu); the patient name below is the heading. On
+              mobile End session collapses to an icon to keep the row
+              uncrowded. */}
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onEndSession}
+              aria-label="End session"
+              title="End session"
+              className="flex h-11 w-11 items-center justify-center gap-1.5 rounded-full border border-stone bg-cream text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink sm:w-auto sm:rounded-[var(--radius-button)] sm:px-3"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+                className="shrink-0"
               >
-                End session
-              </button>
-              <PageHelpButton pageKey="physioPatient" />
-              <AccountMenu />
-            </div>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              <span className="hidden sm:inline">End session</span>
+            </button>
+            <PageHelpButton pageKey="physioPatient" />
+            <AccountMenu />
           </div>
           {/* Second row — the patient. Name + (i) icon for clinical
               background; summary line below. Only renders once the

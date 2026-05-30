@@ -378,22 +378,37 @@ export default function ClinicianPatientPage() {
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
         <div className={headerWidthClass}>
-          {/* Top row — controls only. The 'Viewing' eyebrow sits as
-              the left peer of the buttons so the row reads as a band
-              of small things, no orphan. */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="eyebrow">{t('viewingLabel')}</div>
-            <div className="flex shrink-0 items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmEnd(true)}
-                className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
+          {/* Top row — controls only. No role/label text here (the
+              patient name below is the heading); on mobile End session
+              collapses to an icon to keep the row uncrowded. */}
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirmEnd(true)}
+              aria-label={tSession('endSession')}
+              title={tSession('endSession')}
+              className="flex h-11 w-11 items-center justify-center gap-1.5 rounded-full border border-stone bg-cream text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink sm:w-auto sm:rounded-[var(--radius-button)] sm:px-3"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+                className="shrink-0"
               >
-                {tSession('endSession')}
-              </button>
-              <PageHelpButton pageKey="clinicianPatient" />
-              <AccountMenu />
-            </div>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              <span className="hidden sm:inline">{tSession('endSession')}</span>
+            </button>
+            <PageHelpButton pageKey="clinicianPatient" />
+            <AccountMenu />
           </div>
           {/* Second row — the patient. Own line so the name has space
               to breathe and the summary can sit underneath without
