@@ -221,6 +221,13 @@ function TreatmentRecordInner() {
   const [date, setDate] = useState(todayIso());
   const [drugProduct, setDrugProduct] = useState('');
   const [totalUnits, setTotalUnits] = useState('');
+  // Whether the clinician has taken manual control of Total units.
+  // While false, Total units auto-fills from the per-muscle sum (the
+  // common case — the total IS the sum). The moment they type in the
+  // field, or we hydrate a real saved value (editing / copy), it
+  // becomes manual and we stop auto-filling. A "use the sum" affordance
+  // lets them snap back to auto.
+  const [totalManual, setTotalManual] = useState(false);
   const [dilution, setDilution] = useState('');
   const [guidance, setGuidance] = useState<GuidanceMethod>('ultrasound');
   const [notes, setNotes] = useState('');
@@ -248,6 +255,9 @@ function TreatmentRecordInner() {
       setDate(existing.date);
       setDrugProduct(existing.drugProduct);
       setTotalUnits(String(existing.totalUnits));
+      // The saved total is authoritative — don't let auto-fill
+      // overwrite it with the current sum.
+      setTotalManual(true);
       setDilution(existing.dilution ?? '');
       setGuidance(existing.guidance as GuidanceMethod);
       setNotes(existing.notes ?? '');
@@ -316,7 +326,6 @@ function TreatmentRecordInner() {
     if (!prev) return;
     setDate(isNewCycle && newCycleDate ? newCycleDate : todayIso());
     setDrugProduct(prev.drugProduct);
-    setTotalUnits(String(prev.totalUnits));
     setDilution(prev.dilution ?? '');
     setGuidance(prev.guidance as GuidanceMethod);
     setNotes(prev.notes ?? '');
@@ -331,9 +340,33 @@ function TreatmentRecordInner() {
           }))
         : [emptyInjection()]
     );
+    // Return Total units to auto: the copied muscles re-derive the same
+    // total, and if the clinician then tweaks a dose the total tracks
+    // it (rather than silently keeping last time's figure). The sync
+    // effect fills it from the copied muscles' sum.
+    setTotalManual(false);
     setShowCopyConfirm(false);
   };
 
+  /**
+   * Entry point for the copy action from anywhere (the card button or
+   * the details dialog). Copies immediately if the form is empty;
+   * otherwise asks to confirm first, since copying overwrites whatever
+   * has been entered.
+   */
+  const requestCopyFromPrevious = () => {
+    const hasContent =
+      drugProduct.trim() ||
+      totalUnits.trim() ||
+      dilution.trim() ||
+      notes.trim() ||
+      injections.some((i) => i.muscle.trim() || i.doseUnits.trim());
+    if (hasContent) {
+      setShowCopyConfirm(true);
+    } else {
+      doCopyFromPrevious();
+    }
+  };
   const updateInjection = (idx: number, patch: Partial<InjectionDraft>) => {
     setInjections((prev) =>
       prev.map((inj, i) => (i === idx ? { ...inj, ...patch } : inj))
@@ -352,11 +385,12 @@ function TreatmentRecordInner() {
   );
   const totalUnitsNum = parseFloat(totalUnits);
 
-  // Sum of the per-muscle doses entered so far. Shown to the clinician
-  // as a plain figure — NOT compared to "Total units" and never
-  // flagged. The app states the arithmetic; the clinician does the
-  // reconciling. A comparison/warning would be the app passing
-  // judgement on a clinical entry, which it deliberately does not do.
+  // Sum of the per-muscle doses entered so far. Total units auto-fills
+  // from this (see the sync effect) as a convenience — the total IS the
+  // sum in the common case. The clinician can override the total
+  // manually, and the app never flags or judges a mismatch: it offers
+  // the arithmetic as a default and a one-tap reset, but the recorded
+  // total is always whatever the clinician decides.
   const dosesSum = injections.reduce((sum, i) => {
     const n = parseFloat(i.doseUnits);
     return Number.isNaN(n) ? sum : sum + n;
@@ -365,6 +399,18 @@ function TreatmentRecordInner() {
   const dosesSumLabel = Number.isInteger(dosesSum)
     ? String(dosesSum)
     : String(Number(dosesSum.toFixed(2)));
+
+  // Auto-fill Total units from the per-muscle sum while the clinician
+  // hasn't taken manual control. Keeping the totalUnits *state* in sync
+  // (rather than only displaying the sum) means all the existing
+  // validation and save logic that reads totalUnits / totalUnitsNum
+  // just works unchanged. When some doses are entered, mirror the sum;
+  // when none are, leave it blank so the field doesn't show a bare 0.
+  useEffect(() => {
+    if (totalManual) return;
+    const next = dosesSum > 0 ? dosesSumLabel : '';
+    setTotalUnits((cur) => (cur === next ? cur : next));
+  }, [totalManual, dosesSum, dosesSumLabel]);
 
   // A treatment record can be corrected only on the day it was
   // entered. In edit mode, if the existing treatment was recorded on an
@@ -718,36 +764,71 @@ function TreatmentRecordInner() {
             )}
           </div>
 
-          {/* Last-treatment summary — tappable to open the full
-              dialog. Only when one exists; otherwise the column is
-              just empty space (which on mobile is invisible, and on
-              sm+ is empty but balanced). */}
+          {/* Last-treatment card. The summary area is tappable to open
+              the full per-muscle details; below it, a prominent Copy
+              button fills the whole form from last time (the most
+              common starting point), so copying no longer requires
+              opening the dialog first. Only shown when a previous
+              treatment exists. */}
           {referenceTreatment && (
-            <button
-              type="button"
-              onClick={() => setShowLastTreatmentModal(true)}
-              className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3 text-left hover:bg-stone-soft/40"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="eyebrow">Last treatment</div>
-                  <div className="mt-0.5 truncate text-[13px] text-ink-soft">
-                    {referenceTreatment.drugProduct} ·{' '}
-                    {referenceTreatment.totalUnits} units
+            <div className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft">
+              <button
+                type="button"
+                onClick={() => setShowLastTreatmentModal(true)}
+                className="block w-full rounded-t-[var(--radius-card)] p-3 text-left hover:bg-stone-soft/40"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="eyebrow">Last treatment</div>
+                    <div className="mt-0.5 truncate text-[13px] text-ink-soft">
+                      {referenceTreatment.drugProduct} ·{' '}
+                      {referenceTreatment.totalUnits} units
+                    </div>
+                    <div className="mt-0.5 truncate text-[12px] text-ink-muted">
+                      {referenceTreatment.injections.length}{' '}
+                      {referenceTreatment.injections.length === 1
+                        ? 'muscle'
+                        : 'muscles'}{' '}
+                      · tap for details
+                    </div>
                   </div>
-                  <div className="mt-0.5 truncate text-[12px] text-ink-muted">
-                    {referenceTreatment.injections.length}{' '}
-                    {referenceTreatment.injections.length === 1
-                      ? 'muscle'
-                      : 'muscles'}{' '}
-                    · tap for details
-                  </div>
+                  <span aria-hidden className="text-[14px] text-ink-muted">
+                    ›
+                  </span>
                 </div>
-                <span aria-hidden className="text-[14px] text-ink-muted">
-                  ›
-                </span>
+              </button>
+              {/* Prominent copy action — fills the whole form from last
+                  time, then asks to confirm (it overwrites anything
+                  already entered). */}
+              <div className="border-t border-stone/70 p-3 pt-2.5">
+                <button
+                  type="button"
+                  onClick={requestCopyFromPrevious}
+                  className="flex h-10 w-full items-center justify-center gap-2 rounded-[var(--radius-button)] border border-sage/50 bg-cream px-3 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
+                >
+                  {/* duplicate/copy glyph */}
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <rect x="9" y="9" width="11" height="11" rx="2" />
+                    <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+                  </svg>
+                  Copy last treatment into the form
+                </button>
+                <p className="mt-1.5 text-[12px] leading-snug text-ink-muted">
+                  Fills every field from last time. You can then adjust
+                  doses and muscles before saving.
+                </p>
               </div>
-            </button>
+            </div>
           )}
         </div>
           </aside>
@@ -995,12 +1076,12 @@ function TreatmentRecordInner() {
           + Add another muscle
         </button>
 
-        {/* Total units — recorded after the per-muscle work is done,
-            so it sits below the muscle list rather than at the top of
-            the form. The per-muscle sum readout sits directly beneath
-            it so the physician can compare the figure they entered
-            against the running tally of the doses above. Constrained
-            width on desktop since it's a short numeric field. */}
+        {/* Total units — auto-filled from the per-muscle sum, with a
+            manual override. The total IS the sum in the common case, so
+            it fills itself as muscles are added; typing in it takes
+            manual control, and a "use the sum" link snaps back. Sits
+            below the muscle list (it's the conclusion of choosing
+            muscles). Constrained width on desktop — short numeric. */}
         <div className="mt-6 sm:max-w-[260px]">
           <Field label="Total units" inline>
             <input
@@ -1009,15 +1090,40 @@ function TreatmentRecordInner() {
               min={0}
               step="any"
               value={totalUnits}
-              onChange={(e) => setTotalUnits(e.target.value)}
+              onChange={(e) => {
+                // Typing here takes manual control.
+                setTotalManual(true);
+                setTotalUnits(e.target.value);
+              }}
               className={inputClasses}
             />
-            {dosesSum > 0 && (
+            {!totalManual && dosesSum > 0 && (
               <p className="mt-1 text-[12px] text-ink-muted">
-                Per-muscle sum:{' '}
-                <span className="font-semibold tabular-nums text-ink-soft">
-                  {dosesSumLabel}
+                Added up from the muscles above. Edit to override.
+              </p>
+            )}
+            {totalManual && dosesSum > 0 && (
+              <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[12px] text-ink-muted">
+                <span>
+                  Muscle sum:{' '}
+                  <span className="font-semibold tabular-nums text-ink-soft">
+                    {dosesSumLabel}
+                  </span>
                 </span>
+                {/* Only offer the reset when the manual value actually
+                    differs from the sum — otherwise it's a no-op. */}
+                {totalUnits.trim() !== dosesSumLabel && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTotalManual(false);
+                      setTotalUnits(dosesSumLabel);
+                    }}
+                    className="font-semibold text-sage-deep hover:text-ink"
+                  >
+                    use the sum
+                  </button>
+                )}
               </p>
             )}
           </Field>
@@ -1102,23 +1208,11 @@ function TreatmentRecordInner() {
           treatment={referenceTreatment}
           onClose={() => setShowLastTreatmentModal(false)}
           onCopyRequested={() => {
-            const hasContent =
-              drugProduct.trim() ||
-              totalUnits.trim() ||
-              dilution.trim() ||
-              notes.trim() ||
-              injections.some(
-                (i) => i.muscle.trim() || i.doseUnits.trim()
-              );
             // Close the details modal first so the confirm dialog
-            // doesn't stack on top. The copy itself either fires
-            // immediately or via the existing confirm modal.
+            // doesn't stack on top, then run the shared copy entry
+            // point (immediate if empty, else confirm).
             setShowLastTreatmentModal(false);
-            if (hasContent) {
-              setShowCopyConfirm(true);
-            } else {
-              doCopyFromPrevious();
-            }
+            requestCopyFromPrevious();
           }}
         />
       )}
