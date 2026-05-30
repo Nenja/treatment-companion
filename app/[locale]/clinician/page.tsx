@@ -9,7 +9,7 @@ import {
   useUnlockWithCode
 } from '@/lib/supabase/clinicianSession';
 import { AccountMenu } from '@/components/layout/AccountMenu';
-import { IntroPanel } from '@/components/feedback/IntroPanel';
+import { OnboardingWizard } from '@/components/feedback/OnboardingWizard';
 
 /**
  * Clinician landing screen.
@@ -108,7 +108,7 @@ export default function ClinicianUnlockPage() {
         </div>
       </header>
       <main className="mx-auto max-w-[480px] px-5 py-10">
-        <IntroPanel role="clinician" />
+        <OnboardingWizard role="clinician" />
         <h1 className="font-display text-[28px] leading-tight text-ink">
           {t('title')}
         </h1>

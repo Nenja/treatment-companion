@@ -9,7 +9,7 @@ import {
   useUnlockWithCode
 } from '@/lib/supabase/clinicianSession';
 import { AccountMenu } from '@/components/layout/AccountMenu';
-import { IntroPanel } from '@/components/feedback/IntroPanel';
+import { OnboardingWizard } from '@/components/feedback/OnboardingWizard';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
 
@@ -93,7 +93,7 @@ export default function PhysioUnlockPage() {
       </header>
 
       <main className="mx-auto max-w-[480px] px-5 pb-16 pt-10">
-        <IntroPanel role="physiotherapist" />
+        <OnboardingWizard role="physiotherapist" />
         <h1 className="font-display text-[26px] leading-tight text-ink">
           Unlock a patient
         </h1>
