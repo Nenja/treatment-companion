@@ -215,3 +215,45 @@ export function useSetOwnSex() {
     }
   });
 }
+
+/**
+ * Patient-facing: read the caller's own date of birth (ISO 'YYYY-MM-DD'
+ * or null). Used by the onboarding details step to pre-fill / skip when
+ * already set.
+ */
+export function useOwnDateOfBirth(enabled: boolean) {
+  return useQuery({
+    enabled,
+    queryKey: ['ownDob'],
+    queryFn: async (): Promise<string | null> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase
+        .from('patient')
+        .select('date_of_birth')
+        .maybeSingle();
+      if (error) throw error;
+      return ((data?.date_of_birth as string | null) ?? null) || null;
+    }
+  });
+}
+
+/**
+ * Patient-facing: set the caller's own date of birth via the
+ * patient-scoped set_own_date_of_birth RPC (caller's own row, only the
+ * date_of_birth field).
+ */
+export function useSetOwnDateOfBirth() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (iso: string | null): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_own_date_of_birth', {
+        p_date_of_birth: iso
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ownDob'] });
+    }
+  });
+}

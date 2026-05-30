@@ -8,6 +8,14 @@ import { useSetTextScale } from '@/lib/supabase/textScale';
 import { useSetNightMode } from '@/lib/supabase/colorScheme';
 import { useSetLayoutPreference } from '@/lib/supabase/layoutPreference';
 import {
+  useOwnSex,
+  useSetOwnSex,
+  useOwnDateOfBirth,
+  useSetOwnDateOfBirth,
+  type Sex
+} from '@/lib/supabase/patientInfo';
+import { BirthdatePicker } from '@/components/forms/BirthdatePicker';
+import {
   isTutorialReplayRequested,
   clearTutorialReplay
 } from '@/lib/tutorialReplay';
@@ -50,6 +58,7 @@ import {
  */
 type StepId =
   | 'intro'
+  | 'details'
   | 'how'
   | 'graph'
   | 'actions'
@@ -114,7 +123,7 @@ export function OnboardingWizard({
   // Per-role step lists.
   const steps: StepId[] =
     role === 'patient'
-      ? ['intro', 'checkin', 'comfort']
+      ? ['intro', 'details', 'checkin', 'comfort']
       : ['intro', 'how', 'graph', 'actions', 'record', 'comfort'];
 
   const total = steps.length;
@@ -146,6 +155,38 @@ export function OnboardingWizard({
       <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
         {t(`${role}Body`)}
       </p>
+    );
+  } else if (current === 'details') {
+    // Patient-only: collect sex + birthday. Renders its own nav (it
+    // needs to save before advancing), so the shared footer is hidden
+    // for this step.
+    title = t('detailsTitle');
+    body = (
+      <DetailsStep
+        onAdvance={goNext}
+        labels={{
+          intro: t('detailsBody'),
+          sexLabel: t('detailsSexLabel'),
+          sexUnset: t('detailsSexUnset'),
+          dobLabel: t('detailsDobLabel'),
+          day: t('detailsDobDay'),
+          month: t('detailsDobMonth'),
+          year: t('detailsDobYear'),
+          months: [
+            t('m1'), t('m2'), t('m3'), t('m4'), t('m5'), t('m6'),
+            t('m7'), t('m8'), t('m9'), t('m10'), t('m11'), t('m12')
+          ],
+          sexOptions: {
+            female: t('sexFemale'),
+            male: t('sexMale'),
+            other: t('sexOther'),
+            preferNotToSay: t('sexPreferNotToSay')
+          },
+          skip: t('detailsSkip'),
+          save: t('next'),
+          saving: t('detailsSaving')
+        }}
+      />
     );
   } else if (current === 'how') {
     title = t(`${role}HowTitle`);
@@ -298,7 +339,8 @@ export function OnboardingWizard({
       </h2>
       {body}
 
-      <div className="mt-5 flex items-center justify-between gap-3">
+      {current !== 'details' && (
+        <div className="mt-5 flex items-center justify-between gap-3">
         {/* Left side: Back (when past the first step) or Skip. */}
         {stepIndex > 0 ? (
           <button
@@ -326,8 +368,145 @@ export function OnboardingWizard({
         >
           {isLast ? t('finish') : t('next')}
         </button>
-      </div>
+        </div>
+      )}
     </section>
+  );
+}
+
+/* ---- Patient details step: self-reported sex + date of birth. Saves
+   via the patient-scoped own-field RPCs. Optional and skippable — the
+   app works fine with these empty — and replay-safe: it pre-fills from
+   whatever is already stored, so re-running the tutorial never wipes or
+   nags. Renders its own Skip / Next so it can save before advancing. ---- */
+
+function DetailsStep({
+  onAdvance,
+  labels
+}: {
+  onAdvance: () => void;
+  labels: {
+    intro: string;
+    sexLabel: string;
+    sexUnset: string;
+    dobLabel: string;
+    day: string;
+    month: string;
+    year: string;
+    months: string[];
+    sexOptions: Record<Sex, string>;
+    skip: string;
+    save: string;
+    saving: string;
+  };
+}) {
+  const ownSex = useOwnSex(true);
+  const ownDob = useOwnDateOfBirth(true);
+  const setSex = useSetOwnSex();
+  const setDob = useSetOwnDateOfBirth();
+
+  const [sex, setSexLocal] = useState<Sex | ''>('');
+  const [dob, setDobLocal] = useState('');
+  const [seeded, setSeeded] = useState(false);
+
+  // Seed once from stored values (replay-safe pre-fill).
+  useEffect(() => {
+    if (!seeded && !ownSex.isLoading && !ownDob.isLoading) {
+      setSexLocal((ownSex.data as Sex | null) ?? '');
+      setDobLocal(ownDob.data ?? '');
+      setSeeded(true);
+    }
+  }, [seeded, ownSex.isLoading, ownSex.data, ownDob.isLoading, ownDob.data]);
+
+  const sexValues: Sex[] = ['female', 'male', 'other', 'preferNotToSay'];
+  const saving = setSex.isPending || setDob.isPending;
+
+  const saveAndAdvance = async () => {
+    // Persist only what changed; both fields are optional. Failures are
+    // swallowed to a console error rather than blocking onboarding —
+    // the patient can always set these later in their profile.
+    try {
+      const nextSex = (sex || null) as Sex | null;
+      if (nextSex !== ((ownSex.data as Sex | null) ?? null)) {
+        await setSex.mutateAsync(nextSex);
+      }
+      const nextDob = dob || null;
+      if (nextDob !== (ownDob.data ?? null)) {
+        await setDob.mutateAsync(nextDob);
+      }
+    } catch (err) {
+      console.error('Could not save onboarding details', err);
+    } finally {
+      onAdvance();
+    }
+  };
+
+  const selectClass =
+    'block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[15px] text-ink focus:border-sage focus:outline-none';
+
+  return (
+    <div className="mt-2">
+      <p className="text-[15px] leading-relaxed text-ink-soft">
+        {labels.intro}
+      </p>
+
+      <div className="mt-4 space-y-4">
+        <div>
+          <label className="block text-[14px] font-semibold text-ink">
+            {labels.sexLabel}
+          </label>
+          <select
+            value={sex}
+            onChange={(e) => setSexLocal(e.target.value as Sex | '')}
+            className={`mt-1 ${selectClass}`}
+          >
+            <option value="">{labels.sexUnset}</option>
+            {sexValues.map((v) => (
+              <option key={v} value={v}>
+                {labels.sexOptions[v]}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[14px] font-semibold text-ink">
+            {labels.dobLabel}
+          </label>
+          <div className="mt-1">
+            <BirthdatePicker
+              value={dob}
+              onChange={setDobLocal}
+              monthLabels={labels.months}
+              labels={{
+                day: labels.day,
+                month: labels.month,
+                year: labels.year
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={onAdvance}
+          disabled={saving}
+          className="text-[14px] font-semibold text-ink-muted hover:text-ink-soft disabled:opacity-60"
+        >
+          {labels.skip}
+        </button>
+        <button
+          type="button"
+          onClick={saveAndAdvance}
+          disabled={saving}
+          className="flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-6 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-60"
+        >
+          {saving ? labels.saving : labels.save}
+        </button>
+      </div>
+    </div>
   );
 }
 
