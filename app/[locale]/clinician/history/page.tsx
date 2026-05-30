@@ -18,6 +18,9 @@ import {
 } from '@/components/clinician/CycleAnalysisViews';
 import { SkeletonScreen, SkeletonBlock } from '@/components/feedback/Skeleton';
 import { useWideLayout } from '@/lib/useWideLayout';
+import { AccountMenu } from '@/components/layout/AccountMenu';
+import { EndSessionButton } from '@/components/clinician/EndSessionButton';
+import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
 
 /**
  * Longitudinal trend page — physician only.
@@ -54,20 +57,25 @@ export default function ClinicianHistoryPage() {
   // When wide: header/main expand at lg; the two summary charts sit
   // side-by-side; the two analysis tables also pair up. When compact:
   // everything stays single-column on every screen. The history page
-  // uses the mid width (720px) like the other review pages — not the
-  // full wide spread.
+  // is the data-dense exception among review pages — two summary
+  // charts, a muscle chart, two analysis tables. To use the space
+  // well (less scrolling, dose vs outcome comparable at a glance) it
+  // uses the full wide width and pairs its charts and tables, like the
+  // treatment page is the wide exception for entry work.
   const headerWidthClass = wide
-    ? 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center px-5 py-4 lg:max-w-[var(--max-w-page-mid)]'
-    : 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center px-5 py-4';
+    ? 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4 lg:max-w-[var(--max-w-page-wide)]'
+    : 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4';
   const mainWidthClass = wide
-    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-8 lg:max-w-[var(--max-w-page-mid)]'
+    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-8 lg:max-w-[var(--max-w-page-wide)]'
     : 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-8';
-  // At the mid width (720px), charts get more room stacked full-width
-  // than squeezed two-up (~350px each), so the summary charts stack.
-  // The analysis tables are fine at ~350px, so they still pair.
-  const chartStackClass = 'space-y-8';
+  // At the wide width, the two summary charts pair side-by-side
+  // (~520px each — comfortable), and so do the two analysis tables.
+  // Single column when compact or narrow.
+  const chartPairClass = wide
+    ? 'grid gap-6 lg:grid-cols-2'
+    : 'space-y-8';
   const tablePairClass = wide
-    ? 'grid gap-8 lg:grid-cols-2 lg:gap-6'
+    ? 'grid gap-6 lg:grid-cols-2'
     : 'space-y-8';
 
   // Auth + role gate.
@@ -85,6 +93,7 @@ export default function ClinicianHistoryPage() {
   // No active session → back to the unlock screen. Settled result only.
   useEffect(() => {
     if (sessionQuery.status === 'success' && sessionQuery.data === null) {
+      if (isSessionEndingDeliberately()) return;
       router.replace(prefix ? `${prefix}/clinician` : '/clinician');
     }
   }, [sessionQuery.status, sessionQuery.data, router, prefix]);
@@ -122,6 +131,10 @@ export default function ClinicianHistoryPage() {
           >
             {t('back')}
           </button>
+          <div className="flex items-center gap-2">
+            <EndSessionButton role="clinician" />
+            <AccountMenu />
+          </div>
         </div>
       </header>
 
@@ -162,10 +175,10 @@ export default function ClinicianHistoryPage() {
 
         {!trend.isLoading && cycles.length >= 1 && (
           <div className="mt-7 space-y-8">
-            {/* Two summary charts — dose + outcome. At the mid page
-                width they stack full-width rather than squeezing two
-                narrow charts side-by-side. */}
-            <div className={chartStackClass}>
+            {/* Two summary charts — dose + outcome. Side-by-side at
+                the wide width so they're comparable at a glance;
+                stacked when compact or narrow. */}
+            <div className={chartPairClass}>
               <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
                 <DosePerCycleChart
                   cycles={cycles}
@@ -209,8 +222,7 @@ export default function ClinicianHistoryPage() {
                 </section>
 
                 {/* Two analysis tables — benefit duration + retreatment
-                    timing. Both tabular, so they pair side-by-side at
-                    the mid width (~350px each, fine for tables). */}
+                    timing. Paired side-by-side at the wide width. */}
                 <div className={tablePairClass}>
                   {/* Benefit duration */}
                   <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">

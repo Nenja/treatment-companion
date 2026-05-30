@@ -10,6 +10,7 @@ import {
 } from '@/lib/supabase/clinicianSession';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { OnboardingWizard } from '@/components/feedback/OnboardingWizard';
+import { clearSessionEndingFlag } from '@/lib/sessionEndSignal';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
 
@@ -55,6 +56,12 @@ export default function PhysioUnlockPage() {
       router.replace(locale === 'en' ? '/' : `/${locale}`);
     }
   }, [authLoading, user, profile, router, locale]);
+
+  // Clear the deliberate-end signal once we've arrived on the unlock
+  // screen — the end-session navigation that set it is complete.
+  useEffect(() => {
+    clearSessionEndingFlag();
+  }, []);
 
   // If a valid session exists, jump straight to the patient view.
   useEffect(() => {

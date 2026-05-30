@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/supabase/auth';
 import { useCreateGoalForPatient } from '@/lib/supabase/clinicianPatient';
 import { GasCutPoints } from '@/components/clinician/GasCutPoints';
 import { AccountMenu } from '@/components/layout/AccountMenu';
+import { EndSessionButton } from '@/components/clinician/EndSessionButton';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
 import type { NrsDirection } from '@/lib/types';
@@ -130,7 +131,7 @@ function NewGoalInner() {
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
+        <div className="mx-auto flex max-w-[var(--max-w-page-mid)] items-center justify-between px-5 py-4">
           <button
             type="button"
             onClick={() => router.push(patientPath)}
@@ -139,11 +140,14 @@ function NewGoalInner() {
             Cancel
           </button>
           <span className="eyebrow">Record a goal</span>
-          <AccountMenu />
+          <div className="flex items-center gap-2">
+            <EndSessionButton role="clinician" />
+            <AccountMenu />
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-[480px] px-5 py-8">
+      <main className="mx-auto max-w-[var(--max-w-page-mid)] px-5 py-8">
         <h1 className="font-display text-[24px] leading-tight text-ink">
           Record a goal for this patient
         </h1>

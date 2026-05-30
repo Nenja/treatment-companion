@@ -10,6 +10,7 @@ import {
 } from '@/lib/supabase/clinicianSession';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { OnboardingWizard } from '@/components/feedback/OnboardingWizard';
+import { clearSessionEndingFlag } from '@/lib/sessionEndSignal';
 
 /**
  * Clinician landing screen.
@@ -59,6 +60,10 @@ export default function ClinicianUnlockPage() {
         setShowTimedOut(true);
       }
     }
+    // The session-end navigation has completed (we're on the unlock
+    // screen now), so clear the deliberate-end signal that sub-page
+    // guards checked. Safe to call unconditionally.
+    clearSessionEndingFlag();
   }, []);
 
   // If a valid session exists, jump to the patient view. Only act on a

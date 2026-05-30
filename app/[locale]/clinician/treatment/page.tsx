@@ -29,6 +29,8 @@ import { AccountMenu } from '@/components/layout/AccountMenu';
 import { useToast } from '@/components/feedback/Toast';
 import { useModalA11y } from '@/lib/useModalA11y';
 import { useWideLayout } from '@/lib/useWideLayout';
+import { EndSessionButton } from '@/components/clinician/EndSessionButton';
+import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
 import { classifyError } from '@/lib/feedback';
 
 interface InjectionDraft {
@@ -203,6 +205,10 @@ function TreatmentRecordInner() {
   // background refetch — see the detailed note on the patient page.
   useEffect(() => {
     if (sessionQuery.status === 'success' && sessionQuery.data === null) {
+      // If the user is deliberately ending the session, the End
+      // session flow handles navigation (with ?ended=1). Stand down so
+      // we don't race it with a ?timeout=1 redirect.
+      if (isSessionEndingDeliberately()) return;
       router.replace(
         (locale === 'en' ? '/clinician' : `/${locale}/clinician`) +
           '?timeout=1'
@@ -459,7 +465,10 @@ function TreatmentRecordInner() {
             ← Back
           </button>
           <span className="eyebrow">Treatment record</span>
-          <AccountMenu />
+          <div className="flex items-center gap-2">
+            <EndSessionButton role="clinician" />
+            <AccountMenu />
+          </div>
         </div>
       </header>
 

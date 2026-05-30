@@ -17,6 +17,8 @@ import {
 import { formatLongDate } from '@/lib/dates';
 import type { NrsDirection } from '@/lib/types';
 import { AccountMenu } from '@/components/layout/AccountMenu';
+import { EndSessionButton } from '@/components/clinician/EndSessionButton';
+import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
 import { GasCutPoints } from '@/components/clinician/GasCutPoints';
 import { useToast } from '@/components/feedback/Toast';
 import {
@@ -77,6 +79,7 @@ function Inner() {
   // background refetch — see the detailed note on the patient page.
   useEffect(() => {
     if (sessionQuery.status === 'success' && sessionQuery.data === null) {
+      if (isSessionEndingDeliberately()) return;
       router.replace(
         (locale === 'en' ? '/clinician' : `/${locale}/clinician`) +
           '?timeout=1'
@@ -269,7 +272,10 @@ function Inner() {
             ← {t('back')}
           </button>
           <span className="eyebrow">{t('title')}</span>
-          <AccountMenu />
+          <div className="flex items-center gap-2">
+            <EndSessionButton role="clinician" />
+            <AccountMenu />
+          </div>
         </div>
       </header>
 
