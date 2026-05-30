@@ -158,7 +158,8 @@
       "summaryEdit": "Ændr",
       "thanksTitle": "Tak",
       "thanksBody": "Din status er gemt. At holde dit behandlingsteam opdateret på denne måde hjælper dem virkelig med at støtte dig.",
-      "thanksBackHome": "Tilbage til forsiden"
+      "thanksBackHome": "Tilbage til forsiden",
+      "weekBanner": "Uge {week}-tjek"
     }
   },
   "goal": {
@@ -220,7 +221,8 @@
       "endSessionConfirmEnd": "Afslut",
       "timeoutTitle": "Sessionen er afsluttet",
       "timeoutBody": "Din session blev afsluttet på grund af inaktivitet. Bed patienten om en ny besøgskode for at fortsætte.",
-      "endSessionError": "Sessionen kunne ikke afsluttes. Prøv venligst igen."
+      "endSessionError": "Sessionen kunne ikke afsluttes. Prøv venligst igen.",
+      "done": "Færdig"
     },
     "history": {
       "linkLabel": "Se historik på tværs af cyklusser",
@@ -476,7 +478,13 @@
     "ambulation": "Gangfunktion",
     "notes": "Baggrundsnoter",
     "notesPlaceholder": "Andet klinisk relevant — komorbiditeter, tidligere behandlinger, kognition mv.",
-    "sex": "Køn"
+    "sex": "Køn",
+    "devices": "Hjælpemidler",
+    "devicesPlaceholder": "f.eks. Venstre AFO (ankel-fod-ortose), bæres dagligt; håndledsskinne om natten; bruger rollator udendørs",
+    "devicesHelper": "Ortoser, skinner, ganghjælpemidler, kørestol osv. Angiv side og hvornår de bruges, hvis relevant.",
+    "dobDay": "Dag",
+    "dobMonth": "Måned",
+    "dobYear": "År"
   },
   "etiology": {
     "stroke": "Apopleksi",
@@ -603,5 +611,19 @@
     "male": "Mand",
     "other": "Andet",
     "preferNotToSay": "Ønsker ikke at oplyse"
+  },
+  "months": {
+    "m1": "januar",
+    "m2": "februar",
+    "m3": "marts",
+    "m4": "april",
+    "m5": "maj",
+    "m6": "juni",
+    "m7": "juli",
+    "m8": "august",
+    "m9": "september",
+    "m10": "oktober",
+    "m11": "november",
+    "m12": "december"
   }
 }

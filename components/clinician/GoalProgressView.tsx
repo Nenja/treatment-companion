@@ -30,6 +30,10 @@ interface GoalProgressViewProps {
    *  Drawn as a second, amber line so the clinician can compare patient
    *  self-report against physiotherapist assessment. */
   physioRatings?: PhysioPoint[];
+  /** When provided, a small "expand" button appears that calls this —
+   *  the page opens the same chart larger in a modal. Omitted inside
+   *  the modal itself (no nested expand). */
+  onExpand?: () => void;
 }
 
 /**
@@ -58,7 +62,8 @@ export function GoalProgressView({
   goalText,
   currentWeek,
   ratings,
-  physioRatings = []
+  physioRatings = [],
+  onExpand
 }: GoalProgressViewProps) {
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
 
@@ -176,12 +181,43 @@ export function GoalProgressView({
 
   return (
     <article className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-      <p className="font-display text-[16px] leading-snug text-ink">
-        {goalText}
-      </p>
-      <p className="mt-0.5 text-[14px] text-ink-muted">
-        {reportedCount} of {currentWeek} weeks reported
-      </p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-display text-[16px] leading-snug text-ink">
+            {goalText}
+          </p>
+          <p className="mt-0.5 text-[14px] text-ink-muted">
+            {reportedCount} of {currentWeek} weeks reported
+          </p>
+        </div>
+        {onExpand && (
+          <button
+            type="button"
+            onClick={onExpand}
+            aria-label="Enlarge chart"
+            title="Enlarge chart"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink"
+          >
+            {/* expand / fullscreen-corners glyph */}
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M15 3h6v6" />
+              <path d="M9 21H3v-6" />
+              <path d="M21 3l-7 7" />
+              <path d="M3 21l7-7" />
+            </svg>
+          </button>
+        )}
+      </div>
 
       <svg
         viewBox={`0 0 ${width} ${height}`}

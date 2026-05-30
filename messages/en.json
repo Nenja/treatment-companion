@@ -154,7 +154,8 @@
       "summaryEdit": "Change",
       "thanksTitle": "Thank you",
       "thanksBody": "Your check-in is saved. Keeping your care team updated like this really helps them support you.",
-      "thanksBackHome": "Back to home"
+      "thanksBackHome": "Back to home",
+      "weekBanner": "Week {week} check-in"
     }
   },
   "goal": {
@@ -216,7 +217,8 @@
       "endSessionConfirmEnd": "End session",
       "timeoutTitle": "Session ended",
       "timeoutBody": "Your session ended after a period of inactivity. Ask the patient for a new visit code to continue.",
-      "endSessionError": "Could not end the session. Please try again."
+      "endSessionError": "Could not end the session. Please try again.",
+      "done": "Done"
     },
     "history": {
       "linkLabel": "View history across cycles",
@@ -472,7 +474,13 @@
     "ambulation": "Ambulation",
     "notes": "Background notes",
     "notesPlaceholder": "Anything else clinically relevant — comorbidities, prior treatments, cognition, etc.",
-    "sex": "Sex"
+    "sex": "Sex",
+    "devices": "Assistive devices",
+    "devicesPlaceholder": "e.g. Left AFO (ankle-foot orthosis), worn daily; wrist-hand splint at night; uses a rollator outdoors",
+    "devicesHelper": "Orthoses, splints, walking aids, wheelchair, etc. Note which side and when used if relevant.",
+    "dobDay": "Day",
+    "dobMonth": "Month",
+    "dobYear": "Year"
   },
   "etiology": {
     "stroke": "Stroke",
@@ -599,5 +607,19 @@
     "male": "Male",
     "other": "Other",
     "preferNotToSay": "Prefer not to say"
+  },
+  "months": {
+    "m1": "January",
+    "m2": "February",
+    "m3": "March",
+    "m4": "April",
+    "m5": "May",
+    "m6": "June",
+    "m7": "July",
+    "m8": "August",
+    "m9": "September",
+    "m10": "October",
+    "m11": "November",
+    "m12": "December"
   }
 }

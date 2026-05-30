@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useModalA11y } from '@/lib/useModalA11y';
+import { ModalPortal } from '@/components/feedback/ModalPortal';
 
 /**
  * Contextual page help.
@@ -79,28 +80,30 @@ function HelpDialog({
 }) {
   const containerRef = useModalA11y(onClose);
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
-      <div
-        ref={containerRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={dialogLabel}
-        className="max-h-[80vh] w-full max-w-[440px] overflow-y-auto rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl"
-      >
-        <h2 className="font-display text-[20px] leading-tight text-ink">
-          {title}
-        </h2>
-        <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
-          {body}
-        </p>
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-6 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft"
+    <ModalPortal>
+      <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
+        <div
+          ref={containerRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={dialogLabel}
+          className="max-h-[80vh] w-full max-w-[440px] overflow-y-auto rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl"
         >
-          {closeLabel}
-        </button>
+          <h2 className="font-display text-[20px] leading-tight text-ink">
+            {title}
+          </h2>
+          <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
+            {body}
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-6 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft"
+          >
+            {closeLabel}
+          </button>
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }

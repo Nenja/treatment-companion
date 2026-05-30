@@ -43,7 +43,19 @@ export function CheckinPromptCard({
             // Audit logging happens server-side when the check-in is
             // actually submitted (submit_weekly_checkin RPC). No need
             // to log the navigation event here.
-            router.push(locale === 'en' ? '/checkin' : `/${locale}/checkin`);
+            //
+            // Pass the current prompt id explicitly so the check-in
+            // opens THIS week. Without it, the check-in page falls back
+            // to the oldest pending prompt, which could be a missed
+            // earlier week — the patient would then fill a past week
+            // without realising. The catch-up card handles older weeks
+            // separately.
+            const base = locale === 'en' ? '/checkin' : `/${locale}/checkin`;
+            router.push(
+              pendingPromptId
+                ? `${base}?promptId=${pendingPromptId}`
+                : base
+            );
           }}
           className="mt-5 inline-flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft active:bg-ink"
         >

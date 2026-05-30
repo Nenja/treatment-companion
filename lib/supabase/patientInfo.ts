@@ -39,6 +39,7 @@ export interface PatientInfo {
   ambulation: AmbulationStatus | null;
   backgroundNotes: string | null;
   sex: Sex | null;
+  assistiveDevices: string | null;
 }
 
 /**
@@ -55,7 +56,7 @@ export function usePatientInfo(patientId: string | null) {
       const { data, error } = await supabase
         .from('patient')
         .select(
-          'id, date_of_birth, etiology, etiology_detail, affected_side, onset_year, ambulation, background_notes, sex, profile:profile_id (display_name)'
+          'id, date_of_birth, etiology, etiology_detail, affected_side, onset_year, ambulation, background_notes, sex, physio_assistive_devices, profile:profile_id (display_name)'
         )
         .eq('id', patientId!)
         .maybeSingle();
@@ -74,7 +75,9 @@ export function usePatientInfo(patientId: string | null) {
         onsetYear: (data.onset_year as number | null) ?? null,
         ambulation: (data.ambulation as AmbulationStatus | null) ?? null,
         backgroundNotes: (data.background_notes as string | null) ?? null,
-        sex: (data.sex as Sex | null) ?? null
+        sex: (data.sex as Sex | null) ?? null,
+        assistiveDevices:
+          (data.physio_assistive_devices as string | null) ?? null
       };
     }
   });
@@ -90,6 +93,7 @@ export interface SetPatientInfoInput {
   ambulation: AmbulationStatus | null;
   backgroundNotes: string | null;
   sex: Sex | null;
+  assistiveDevices: string | null;
 }
 
 /**
@@ -110,7 +114,8 @@ export function useSetPatientInfo() {
         p_onset_year: input.onsetYear,
         p_ambulation: input.ambulation,
         p_background_notes: input.backgroundNotes,
-        p_sex: input.sex
+        p_sex: input.sex,
+        p_assistive_devices: input.assistiveDevices
       });
       if (error) throw error;
     },
