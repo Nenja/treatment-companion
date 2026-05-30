@@ -1,38 +1,89 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useDismissIntro } from '@/lib/supabase/intro';
 import { useSetTextScale } from '@/lib/supabase/textScale';
 import { useSetNightMode } from '@/lib/supabase/colorScheme';
 import { useSetLayoutPreference } from '@/lib/supabase/layoutPreference';
+import {
+  isTutorialReplayRequested,
+  clearTutorialReplay
+} from '@/lib/tutorialReplay';
+import { GoalProgressView } from '@/components/clinician/GoalProgressView';
+import {
+  GraphBandsIllustration,
+  ActionRowIllustration,
+  RecordIllustration,
+  CheckinScaleIllustration
+} from '@/components/feedback/onboardingIllustrations';
 
 /**
- * One-time onboarding wizard.
+ * Onboarding wizard.
  *
- * Replaces the older single-panel IntroPanel. Shown inline at the top
- * of a role's main screen the first time the account is used, then
- * never again (profile.has_seen_intro, same flag as before — finishing
- * or skipping sets it).
+ * Shown at the top of a role's main screen the first time the account
+ * is used (profile.has_seen_intro), or any time the user asks to redo
+ * it from the account menu (a transient replay flag — see
+ * lib/tutorialReplay). Finishing or skipping persists has_seen_intro
+ * and clears the replay flag.
  *
- * Depth varies by role, deliberately:
- *   - Patient: lighter. Two steps — what the app is, then a calm
- *     "make it comfortable to read" step. Patients in this group may
- *     be fatigued or cognitively loaded (stroke/TBI/MS), so the flow
- *     is short and every step has an obvious Skip.
- *   - Clinician / therapist: fuller. Three steps — what the app is,
- *     how it works (visit codes / session / what they do here), and
- *     the comfort step. Professionals can absorb more and there is
- *     genuinely more to explain.
+ * Each role gets illustrated steps showing the features they'll use:
+ *   - Patient: what it is → how a weekly check-in works (illustrated
+ *     0–10 scale) → comfort. Patients don't read progress graphs (the
+ *     app is no-scorekeeping for them by design), so their feature
+ *     illustration is the check-in.
+ *   - Clinician: what it is → how it works → reading the graph
+ *     (bands + two lines, then a live tappable sample) → the action
+ *     row → recording a treatment → comfort.
+ *   - Therapist: what it is → how it works → reading the graph → the
+ *     action row → recording progress → comfort.
  *
- * It is pure orientation plus optional comfort settings — it collects
- * no consent and gates nothing. The comfort step reuses the same
- * preference hooks as the account menu, and points the person at that
- * menu for changing things later.
+ * The graph-reading step pairs a stylised bands diagram (what the
+ * colours and lines mean) with a live, tappable GoalProgressView on
+ * sample data (so "tap a dot" is literally true and always matches
+ * the real component).
  *
- * Copy is localised via the `intro` namespace.
+ * Illustrations use the app's own colour tokens and respond to night
+ * mode; all their text is passed in for localisation. Copy is in the
+ * `intro` namespace.
  */
+type StepId =
+  | 'intro'
+  | 'how'
+  | 'graph'
+  | 'actions'
+  | 'record'
+  | 'checkin'
+  | 'comfort';
+
+/* Sample data for the live mini-graph in the graph-reading step.
+   Chosen so every teaching point is visible at once: several reported
+   weeks (filled dots + line), one week with a comment (speech bubble),
+   one skipped week (line breaks, grey ring), and a couple of therapist
+   assessment points (second line). Values are GAS levels (−2..+2);
+   nrs is the raw 0–10 the patient reported. */
+const SAMPLE_RATINGS = [
+  { weekNumber: 1, value: 0 as const, nrs: 5, reported: true },
+  {
+    weekNumber: 2,
+    value: 1 as const,
+    nrs: 7,
+    reported: true,
+    comment: 'Holding the cup feels steadier this week.',
+    submitterLabel: 'self' as const
+  },
+  { weekNumber: 3, value: 1 as const, nrs: 7, reported: true },
+  { weekNumber: 4, value: null, nrs: null, reported: false },
+  { weekNumber: 5, value: 2 as const, nrs: 9, reported: true },
+  { weekNumber: 6, value: 1 as const, nrs: 8, reported: true }
+];
+
+const SAMPLE_PHYSIO = [
+  { weekNumber: 3, nrs: 6, value: 0 as const, note: null },
+  { weekNumber: 6, nrs: 8, value: 1 as const, note: 'Good carryover into daily tasks.' }
+];
+
 export function OnboardingWizard({
   role
 }: {
@@ -43,18 +94,28 @@ export function OnboardingWizard({
   const t = useTranslations('intro');
   const [hidden, setHidden] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
+  // Whether a redo was requested. Initialised eagerly from the flag so
+  // it's caught on first render, and also re-checked on mount. (Lazy
+  // initialiser runs once per mount, before paint.)
+  const [replay, setReplay] = useState(() => isTutorialReplayRequested());
+  useEffect(() => {
+    if (isTutorialReplayRequested()) setReplay(true);
+  }, []);
 
-  if (!profile || profile.hasSeenIntro || hidden) return null;
+  if (!profile || hidden) return null;
   // Only show for the role whose screen this is.
   if (profile.role !== role) return null;
+  // Show when the account hasn't seen it yet, OR a replay was asked
+  // for. (Replay wins over the persistent flag.)
+  if (profile.hasSeenIntro && !replay) return null;
 
   const isProfessional = role === 'clinician' || role === 'physiotherapist';
 
-  // Step ids in order. Patients: intro + comfort. Professionals:
-  // intro + how + comfort.
-  const steps: Array<'intro' | 'how' | 'comfort'> = isProfessional
-    ? ['intro', 'how', 'comfort']
-    : ['intro', 'comfort'];
+  // Per-role step lists.
+  const steps: StepId[] =
+    role === 'patient'
+      ? ['intro', 'checkin', 'comfort']
+      : ['intro', 'how', 'graph', 'actions', 'record', 'comfort'];
 
   const total = steps.length;
   const current = steps[stepIndex];
@@ -62,6 +123,7 @@ export function OnboardingWizard({
 
   const finish = () => {
     setHidden(true); // instant — don't wait on the network
+    clearTutorialReplay();
     dismiss.mutate();
   };
 
@@ -86,12 +148,104 @@ export function OnboardingWizard({
       </p>
     );
   } else if (current === 'how') {
-    // Only professionals reach this step.
     title = t(`${role}HowTitle`);
     body = (
       <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
         {t(`${role}HowBody`)}
       </p>
+    );
+  } else if (current === 'graph') {
+    title = t('graphTitle');
+    body = (
+      <div className="mt-2">
+        <p className="text-[15px] leading-relaxed text-ink-soft">
+          {t('graphBody')}
+        </p>
+        <div className="mt-4">
+          <GraphBandsIllustration
+            betterLabel={t('graphBetter')}
+            expectedLabel={t('graphExpected')}
+            belowLabel={t('graphBelow')}
+            patientLabel={t('graphPatientLine')}
+            therapistLabel={t('graphTherapistLine')}
+          />
+        </div>
+        {/* Live, tappable sample of the real chart so "tap a dot" is
+            literally true and always matches the actual component. */}
+        <p className="mt-4 text-[14px] font-semibold text-ink">
+          {t('graphTryTitle')}
+        </p>
+        <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">
+          {t('graphTryHint')}
+        </p>
+        <div className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3">
+          <GoalProgressView
+            goalText={t('graphSampleGoal')}
+            currentWeek={8}
+            ratings={SAMPLE_RATINGS}
+            physioRatings={SAMPLE_PHYSIO}
+          />
+        </div>
+      </div>
+    );
+  } else if (current === 'actions') {
+    title = t('actionsTitle');
+    body = (
+      <div className="mt-2">
+        <p className="text-[15px] leading-relaxed text-ink-soft">
+          {role === 'clinician' ? t('actionsBodyClinician') : t('actionsBodyTherapist')}
+        </p>
+        <div className="mt-4">
+          <ActionRowIllustration
+            labels={
+              role === 'clinician'
+                ? [
+                    t('actionSuggestions'),
+                    t('actionTherapist'),
+                    t('actionHistory'),
+                    t('actionExport')
+                  ]
+                : [t('actionProgress'), t('actionSuggest'), t('actionPlan')]
+            }
+          />
+        </div>
+      </div>
+    );
+  } else if (current === 'record') {
+    title = role === 'clinician' ? t('recordTitleClinician') : t('recordTitleTherapist');
+    body = (
+      <div className="mt-2">
+        <p className="text-[15px] leading-relaxed text-ink-soft">
+          {role === 'clinician' ? t('recordBodyClinician') : t('recordBodyTherapist')}
+        </p>
+        <div className="mt-4">
+          <RecordIllustration
+            fieldLabels={
+              role === 'clinician'
+                ? [t('recordF1'), t('recordF2'), t('recordF3')]
+                : [t('recordPF1'), t('recordPF2')]
+            }
+            buttonLabel={
+              role === 'clinician' ? t('recordSaveClinician') : t('recordSaveTherapist')
+            }
+          />
+        </div>
+      </div>
+    );
+  } else if (current === 'checkin') {
+    title = t('checkinTitle');
+    body = (
+      <div className="mt-2">
+        <p className="text-[15px] leading-relaxed text-ink-soft">
+          {t('checkinBody')}
+        </p>
+        <div className="mt-4">
+          <CheckinScaleIllustration
+            lowLabel={t('checkinLow')}
+            highLabel={t('checkinHigh')}
+          />
+        </div>
+      </div>
     );
   } else {
     title = t('comfortTitle');

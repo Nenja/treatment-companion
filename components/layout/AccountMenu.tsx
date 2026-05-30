@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/supabase/auth';
 import { useSetTextScale } from '@/lib/supabase/textScale';
 import { useSetNightMode } from '@/lib/supabase/colorScheme';
 import { useSetLayoutPreference } from '@/lib/supabase/layoutPreference';
+import { requestTutorialReplay } from '@/lib/tutorialReplay';
 import { professionLabel } from '@/lib/professionLabel';
 
 /**
@@ -226,6 +227,29 @@ export function AccountMenu() {
               Visit code for your clinic
             </button>
           )}
+
+          {/* Show the onboarding tutorial again. Sets a transient
+              replay flag and navigates to this role's landing screen,
+              where the wizard lives — without touching the persistent
+              has_seen_intro flag. */}
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              requestTutorialReplay();
+              const dest =
+                profile.role === 'clinician'
+                  ? '/clinician'
+                  : profile.role === 'physiotherapist'
+                    ? '/physio'
+                    : '/';
+              router.push(locale === 'en' ? dest : `/${locale}${dest === '/' ? '' : dest}`);
+            }}
+            role="menuitem"
+            className="block w-full border-t border-stone/70 px-4 py-3 text-left text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+          >
+            {tAppearance('showTutorialAgain')}
+          </button>
 
           <button
             type="button"
