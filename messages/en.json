@@ -300,7 +300,10 @@
       "retirePartialHint": "Meaningful progress, but moving on to something else.",
       "retireNoLongerSuitable": "No longer suitable",
       "retireNoLongerSuitableHint": "Reframed, dropped, or overtaken by a change in the patient's situation.",
-      "retireGoal": "Retire goal"
+      "retireGoal": "Retire goal",
+      "earlierGoalsTitle": "Earlier goals",
+      "earlierGoalsBody": "Goals retired this cycle, and how each one ended.",
+      "outcomeUnknown": "Retired"
     },
     "review": {
       "title": "Review suggestion",

@@ -4,13 +4,28 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from './browser';
 import type { NrsConfig, NrsDirection } from '../types';
 
+export interface GasAnchors {
+  minus2: string;
+  minus1: string;
+  zero: string;
+  plus1: string;
+  plus2: string;
+}
+
 export interface ClinicianPatientGoal {
   id: string;
   patientFacingText: string;
   smartText: string;
   /** Goal lifecycle status: 'active', 'archived', or 'combined'. */
   status: string;
-  nrs: NrsConfig;
+  /** Which measurement model this goal uses. */
+  kind: 'nrs' | 'gas';
+  /** How the goal ended, if retired. Null while active. */
+  outcome: GoalOutcome | null;
+  /** Present for NRS goals; undefined for GAS goals. */
+  nrs?: NrsConfig;
+  /** Present for GAS goals; undefined for NRS goals. */
+  gas?: GasAnchors;
 }
 
 export interface ClinicianPatientSuggestion {
@@ -204,7 +219,7 @@ export function useClinicianPatientData(
           supabase
             .from('approved_goal')
             .select(
-              'id, patient_facing_text, smart_text, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, status'
+              'id, patient_facing_text, smart_text, goal_kind, goal_outcome, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2, status'
             )
             .eq('treatment_cycle_id', cycle.id)
             .order('approved_at', { ascending: true }),
@@ -276,20 +291,38 @@ export function useClinicianPatientData(
       // page UI uses `activeGoals`; the export also includes
       // `archivedGoals`.
       const allGoals: ClinicianPatientGoal[] = (goalsRes.data ?? []).map(
-        (g) => ({
-          id: g.id as string,
-          patientFacingText: g.patient_facing_text as string,
-          smartText: g.smart_text as string,
-          status: g.status as string,
-          nrs: {
-            question: g.nrs_question as string,
-            direction: g.nrs_direction as NrsDirection,
-            cutLowLow: g.nrs_cut_low_low as number,
-            cutLow: g.nrs_cut_low as number,
-            cutZero: g.nrs_cut_zero as number,
-            cutHigh: g.nrs_cut_high as number
-          }
-        })
+        (g) => {
+          const kind = (g.goal_kind as 'nrs' | 'gas') ?? 'nrs';
+          return {
+            id: g.id as string,
+            patientFacingText: g.patient_facing_text as string,
+            smartText: g.smart_text as string,
+            status: g.status as string,
+            kind,
+            outcome: (g.goal_outcome as GoalOutcome | null) ?? null,
+            nrs:
+              kind === 'nrs'
+                ? {
+                    question: g.nrs_question as string,
+                    direction: g.nrs_direction as NrsDirection,
+                    cutLowLow: g.nrs_cut_low_low as number,
+                    cutLow: g.nrs_cut_low as number,
+                    cutZero: g.nrs_cut_zero as number,
+                    cutHigh: g.nrs_cut_high as number
+                  }
+                : undefined,
+            gas:
+              kind === 'gas'
+                ? {
+                    minus2: g.anchor_minus2 as string,
+                    minus1: g.anchor_minus1 as string,
+                    zero: g.anchor_zero as string,
+                    plus1: g.anchor_plus1 as string,
+                    plus2: g.anchor_plus2 as string
+                  }
+                : undefined
+          };
+        }
       );
       const activeGoals: ClinicianPatientGoal[] = allGoals.filter(
         (g) => g.status === 'active'
@@ -541,6 +574,53 @@ export function useCreateGoalForPatient() {
           p_nrs_cut_low: input.cutLow,
           p_nrs_cut_zero: input.cutZero,
           p_nrs_cut_high: input.cutHigh
+        }
+      );
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
+export interface CreateGasGoalForPatientInput {
+  patientId: string;
+  patientFacingText: string;
+  smartText: string;
+  anchorMinus2: string;
+  anchorMinus1: string;
+  anchorZero: string;
+  anchorPlus1: string;
+  anchorPlus2: string;
+}
+
+/**
+ * Physician records + approves a *GAS* goal on the patient's behalf in
+ * one step — five descriptive anchors (−2..+2) the patient will pick
+ * from directly, with no 0–10 layer. Parallel to useCreateGoalForPatient
+ * (which records an NRS goal). The goal still originates from the
+ * patient; the physician is the scribe.
+ */
+export function useCreateGasGoalForPatient() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (
+      input: CreateGasGoalForPatientInput
+    ): Promise<string> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc(
+        'create_gas_goal_for_patient',
+        {
+          p_patient_id: input.patientId,
+          p_patient_facing_text: input.patientFacingText,
+          p_smart_text: input.smartText,
+          p_anchor_minus2: input.anchorMinus2,
+          p_anchor_minus1: input.anchorMinus1,
+          p_anchor_zero: input.anchorZero,
+          p_anchor_plus1: input.anchorPlus1,
+          p_anchor_plus2: input.anchorPlus2
         }
       );
       if (error) throw error;

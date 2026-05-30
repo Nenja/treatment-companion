@@ -7,14 +7,29 @@ import type { NrsConfig, NrsDirection } from '../types';
 export interface CheckinGoal {
   id: string;
   patientFacingText: string;
-  nrs: NrsConfig;
+  /** Which measurement model this goal uses. */
+  kind: 'nrs' | 'gas';
+  /** Present for NRS goals. */
+  nrs?: NrsConfig;
+  /**
+   * Present for GAS goals: the descriptive anchor for each level, or
+   * null where the clinician left it blank (the patient then rates
+   * against the goal text itself, using the level's generic meaning).
+   */
+  gas?: {
+    minus2: string | null;
+    minus1: string | null;
+    zero: string | null;
+    plus1: string | null;
+    plus2: string | null;
+  };
   /**
    * The patient's most recent NRS rating for this goal from an earlier
    * week, if any. Shown during the check-in as a quiet "last time"
    * anchor — it makes this week's rating less abstract and more
    * consistent, and lightly reassures a patient who isn't sure whether
    * they checked in before. Null when this is the first rating of the
-   * goal, or the previous check-in skipped it.
+   * goal, or the previous check-in skipped it. (NRS goals only.)
    */
   previousRating: {
     nrsValue: number;
@@ -110,7 +125,7 @@ export function useCheckinData(
       // Load active goals with their NRS configs.
       const { data: goalRows, error: gErr } = await supabase
         .from('approved_goal')
-        .select('id, patient_facing_text, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high')
+        .select('id, patient_facing_text, goal_kind, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2')
         .eq('treatment_cycle_id', cycleId)
         .eq('status', 'active')
         .order('approved_at', { ascending: true });
@@ -157,19 +172,40 @@ export function useCheckinData(
         }
       }
 
-      const goals: CheckinGoal[] = goalRowsArr.map((g) => ({
-        id: g.id as string,
-        patientFacingText: g.patient_facing_text as string,
-        nrs: {
-          question: g.nrs_question as string,
-          direction: g.nrs_direction as NrsDirection,
-          cutLowLow: g.nrs_cut_low_low as number,
-          cutLow: g.nrs_cut_low as number,
-          cutZero: g.nrs_cut_zero as number,
-          cutHigh: g.nrs_cut_high as number
-        },
-        previousRating: previousByGoal.get(g.id as string) ?? null
-      }));
+      const goals: CheckinGoal[] = goalRowsArr.map((g) => {
+        const kind = (g.goal_kind as 'nrs' | 'gas') ?? 'nrs';
+        return {
+          id: g.id as string,
+          patientFacingText: g.patient_facing_text as string,
+          kind,
+          nrs:
+            kind === 'nrs'
+              ? {
+                  question: g.nrs_question as string,
+                  direction: g.nrs_direction as NrsDirection,
+                  cutLowLow: g.nrs_cut_low_low as number,
+                  cutLow: g.nrs_cut_low as number,
+                  cutZero: g.nrs_cut_zero as number,
+                  cutHigh: g.nrs_cut_high as number
+                }
+              : undefined,
+          gas:
+            kind === 'gas'
+              ? {
+                  minus2: (g.anchor_minus2 as string | null) ?? null,
+                  minus1: (g.anchor_minus1 as string | null) ?? null,
+                  zero: (g.anchor_zero as string | null) ?? null,
+                  plus1: (g.anchor_plus1 as string | null) ?? null,
+                  plus2: (g.anchor_plus2 as string | null) ?? null
+                }
+              : undefined,
+          // The "last time" anchor is NRS-only; leave null for GAS.
+          previousRating:
+            kind === 'nrs'
+              ? previousByGoal.get(g.id as string) ?? null
+              : null
+        };
+      });
 
       return {
         prompt: {
@@ -186,26 +222,31 @@ export interface SubmitCheckinInput {
   promptId: string;
   ratings: {
     approvedGoalId: string;
-    nrsValue: number;
+    /** Set for NRS goals (0–10). Null/omitted for GAS goals. */
+    nrsValue?: number | null;
+    /** Set for GAS goals (−2..2, the level picked). Null for NRS. */
+    gasValue?: number | null;
   }[];
   comment?: string;
   submitterLabel?: 'self' | 'caregiver';
 }
 
 /**
- * Submits a check-in via the submit_weekly_checkin RPC. Server-side
- * computes GAS from NRS for each rating.
+ * Submits a check-in via the submit_weekly_checkin_v3 RPC. The server
+ * derives GAS from NRS for NRS goals, and stores the picked level
+ * directly for GAS goals. A single check-in may mix both kinds.
  */
 export function useSubmitCheckin() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: SubmitCheckinInput): Promise<string> => {
       const supabase = createSupabaseBrowserClient();
-      const { data, error } = await supabase.rpc('submit_weekly_checkin', {
+      const { data, error } = await supabase.rpc('submit_weekly_checkin_v3', {
         p_prompt_id: input.promptId,
         p_ratings: input.ratings.map((r) => ({
           approved_goal_id: r.approvedGoalId,
-          nrs_value: r.nrsValue
+          nrs_value: r.nrsValue ?? null,
+          gas_value: r.gasValue ?? null
         })),
         p_comment: input.comment ?? null,
         p_submitter_label: input.submitterLabel ?? 'self'

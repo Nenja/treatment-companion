@@ -304,7 +304,10 @@
       "retirePartialHint": "Meningsfuld fremgang, men går videre til noget andet.",
       "retireNoLongerSuitable": "Ikke længere relevant",
       "retireNoLongerSuitableHint": "Omformuleret, droppet eller overhalet af en ændring i patientens situation.",
-      "retireGoal": "Afslut mål"
+      "retireGoal": "Afslut mål",
+      "earlierGoalsTitle": "Tidligere mål",
+      "earlierGoalsBody": "Mål, der er afsluttet i dette forløb, og hvordan hvert af dem endte.",
+      "outcomeUnknown": "Afsluttet"
     },
     "review": {
       "title": "Gennemgå forslag",
