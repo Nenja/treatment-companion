@@ -24,7 +24,6 @@ import {
 } from '@/components/physio/PhysioActionRow';
 import { PhysioGoalSuggestionForm } from '@/components/physio/PhysioGoalSuggestionForm';
 import { PhysioMuscleSuggestionForm } from '@/components/physio/PhysioMuscleSuggestionForm';
-import { PhysioPlanSection } from '@/components/physio/PhysioPlanSection';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import {
   SkeletonBlock,
@@ -575,15 +574,6 @@ export default function PhysioPatientPage() {
               )}
             </section>
 
-            {/* Therapist's exercise plan & assistive devices —
-                per-patient, persists across cycles, editable any time.
-                Stays at the bottom: reference / setup, not the routine
-                action. */}
-            <PhysioPlanSection
-              patientId={patientData.data.patient.id}
-              exercisePlan={patientData.data.patient.exercisePlan}
-              assistiveDevices={patientData.data.patient.assistiveDevices}
-            />
           </div>
         )}
       </main>

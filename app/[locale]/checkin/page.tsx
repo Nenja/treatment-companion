@@ -238,6 +238,16 @@ function CheckinPageInner() {
   let helper = '';
   let body = null;
 
+  // A persistent, plain indicator of WHICH week the patient is filling.
+  // The default check-in opens the current week, but a patient can also
+  // reach an earlier (catch-up) week from the home page — without this
+  // they could fill a past week without realising. Shown on every step.
+  const weekBanner = (
+    <div className="mb-4 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[13px] font-semibold text-ink-soft">
+      {t('weekBanner', { week: prompt.weekNumber })}
+    </div>
+  );
+
   if (!isLastStep) {
     const goal = activeGoals[step - 1];
     title = t('rateGoalTitle');
@@ -395,6 +405,7 @@ function CheckinPageInner() {
           disabled: !currentStepComplete || submitMutation.isPending
         }}
       >
+        {weekBanner}
         {body}
       </WizardLayout>
     </>

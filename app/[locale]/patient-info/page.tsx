@@ -17,6 +17,7 @@ import {
 } from '@/lib/supabase/patientInfo';
 import { useToast } from '@/components/feedback/Toast';
 import { AppShell } from '@/components/layout/AppShell';
+import { BirthdatePicker } from '@/components/forms/BirthdatePicker';
 import {
   SkeletonBlock,
   SkeletonScreen
@@ -56,6 +57,12 @@ export default function PatientInfoPage() {
   const tAmb = useTranslations('ambulation');
   const tSex = useTranslations('sex');
   const tSide = useTranslations('side');
+  const tMonths = useTranslations('months');
+  const MONTHS = [
+    tMonths('m1'), tMonths('m2'), tMonths('m3'), tMonths('m4'),
+    tMonths('m5'), tMonths('m6'), tMonths('m7'), tMonths('m8'),
+    tMonths('m9'), tMonths('m10'), tMonths('m11'), tMonths('m12')
+  ];
   const toast = useToast();
 
   const { user, profile, loading: authLoading } = useAuth();
@@ -97,6 +104,7 @@ export default function PatientInfoPage() {
   const [ambulation, setAmbulation] = useState<AmbulationStatus | ''>('');
   const [notes, setNotes] = useState('');
   const [sex, setSex] = useState<Sex | ''>('');
+  const [devices, setDevices] = useState('');
 
   // Hydrate the form from server data once the query resolves; do this
   // each time editing is entered so the form reflects current values.
@@ -110,6 +118,7 @@ export default function PatientInfoPage() {
     setAmbulation(info.data.ambulation ?? '');
     setNotes(info.data.backgroundNotes ?? '');
     setSex(info.data.sex ?? '');
+    setDevices(info.data.assistiveDevices ?? '');
   }, [info.data, editing]);
 
   const onSave = () => {
@@ -125,7 +134,8 @@ export default function PatientInfoPage() {
         onsetYear: Number.isFinite(onsetNum) ? onsetNum : null,
         ambulation: (ambulation || null) as AmbulationStatus | null,
         backgroundNotes: notes.trim() || null,
-        sex: (sex || null) as Sex | null
+        sex: (sex || null) as Sex | null,
+        assistiveDevices: devices.trim() || null
       },
       {
         onSuccess: () => {
@@ -228,6 +238,15 @@ export default function PatientInfoPage() {
                 ? tAmb(info.data.ambulation)
                 : t('notRecorded')}
             </Row>
+            <Row label={t('devices')}>
+              {info.data.assistiveDevices ? (
+                <span className="whitespace-pre-wrap">
+                  {info.data.assistiveDevices}
+                </span>
+              ) : (
+                t('notRecorded')
+              )}
+            </Row>
             <Row label={t('notes')}>
               {info.data.backgroundNotes ? (
                 <span className="whitespace-pre-wrap">
@@ -250,11 +269,15 @@ export default function PatientInfoPage() {
       ) : (
         <section className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
           <Field label={t('dob')}>
-            <input
-              type="date"
+            <BirthdatePicker
               value={dob}
-              onChange={(e) => setDob(e.target.value)}
-              className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
+              onChange={setDob}
+              monthLabels={MONTHS}
+              labels={{
+                day: t('dobDay'),
+                month: t('dobMonth'),
+                year: t('dobYear')
+              }}
             />
           </Field>
           <Field label={t('sex')}>
@@ -336,6 +359,19 @@ export default function PatientInfoPage() {
                 </option>
               ))}
             </select>
+          </Field>
+          <Field label={t('devices')}>
+            <textarea
+              value={devices}
+              onChange={(e) => setDevices(e.target.value)}
+              rows={3}
+              maxLength={4000}
+              placeholder={t('devicesPlaceholder')}
+              className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+            />
+            <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
+              {t('devicesHelper')}
+            </p>
           </Field>
           <Field label={t('notes')}>
             <textarea

@@ -23,6 +23,7 @@ import {
 import { formatLongDate } from '@/lib/dates';
 import { nrsToGas, injectionSideLabel, type GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
+import { GoalGraphModal } from '@/components/clinician/GoalGraphModal';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
 import {
@@ -47,7 +48,6 @@ export default function ClinicianPatientPage() {
   const locale = useLocale();
   const t = useTranslations('clinician.patient');
   const tSession = useTranslations('clinician.session');
-  const tPlan = useTranslations('physioPlan');
   const tInfo = useTranslations('patientInfo');
   const tEt = useTranslations('etiology');
   const tSide = useTranslations('side');
@@ -103,10 +103,8 @@ export default function ClinicianPatientPage() {
   const goalsListClass = wide
     ? 'mt-3 space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0'
     : 'mt-3 space-y-3';
-  const planSectionClass =
-    'mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4';
-
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [enlargedGoalId, setEnlargedGoalId] = useState<string | null>(null);
   const [showExport, setShowExport] = useState(false);
   const [showNewCycle, setShowNewCycle] = useState(false);
   // Which inline action panel is open under the action row, if any.
@@ -741,6 +739,7 @@ export default function ClinicianPatientPage() {
                     currentWeek={weekNumber}
                     ratings={ratingsByGoal.get(g.id) ?? []}
                     physioRatings={physioRatingsByGoal.get(g.id) ?? []}
+                    onExpand={() => setEnlargedGoalId(g.id)}
                   />
                   {/* Retire action — retires a goal (achieved /
                       partial / no longer suitable). History is kept;
@@ -842,29 +841,6 @@ export default function ClinicianPatientPage() {
             </ul>
           </section>
         )}
-        {(patient.physioExercisePlan || patient.physioAssistiveDevices) && (
-          <section className={planSectionClass}>
-            <h2 className="font-display text-[18px] text-ink">
-              {tPlan('title')}
-            </h2>
-            {patient.physioExercisePlan && (
-              <div className="mt-3">
-                <div className="eyebrow">{tPlan('exerciseLabel')}</div>
-                <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
-                  {patient.physioExercisePlan}
-                </p>
-              </div>
-            )}
-            {patient.physioAssistiveDevices && (
-              <div className="mt-3">
-                <div className="eyebrow">{tPlan('devicesLabel')}</div>
-                <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
-                  {patient.physioAssistiveDevices}
-                </p>
-              </div>
-            )}
-          </section>
-        )}
 
         {/* Patient comments are now reachable from the chart — tap any
             dot showing a speech-bubble icon to see the comment in the
@@ -939,6 +915,21 @@ export default function ClinicianPatientPage() {
           retireDisabled={retireGoal.isPending}
         />
       )}
+      {enlargedGoalId &&
+        (() => {
+          const g = activeGoals.find((x) => x.id === enlargedGoalId);
+          if (!g) return null;
+          return (
+            <GoalGraphModal
+              goalText={g.patientFacingText}
+              currentWeek={weekNumber}
+              ratings={ratingsByGoal.get(g.id) ?? []}
+              physioRatings={physioRatingsByGoal.get(g.id) ?? []}
+              closeLabel={tSession('done')}
+              onClose={() => setEnlargedGoalId(null)}
+            />
+          );
+        })()}
     </div>
   );
 }
