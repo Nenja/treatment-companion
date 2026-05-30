@@ -49,6 +49,10 @@ export interface AppProfile {
   profession: string | null;
   /** Free-text profession, used only when profession === 'other'. */
   professionOther: string | null;
+  /** Layout preference for large screens: 'wide' (two-pane) or
+   *  'compact' (single-column). No effect on phones / narrow windows,
+   *  which are always single-column. Defaults to 'wide'. */
+  layoutPreference: 'wide' | 'compact';
 }
 
 interface AuthState {
@@ -100,7 +104,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data, error } = await supabase
         .from('profile')
         .select(
-          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin, color_scheme, night_mode, profession, profession_other'
+          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin, color_scheme, night_mode, profession, profession_other, layout_preference'
         )
         .eq('id', userId)
         .maybeSingle();
@@ -118,7 +122,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         colorScheme: (data.color_scheme as string | null) ?? null,
         nightMode: Boolean(data.night_mode),
         profession: (data.profession as string | null) ?? null,
-        professionOther: (data.profession_other as string | null) ?? null
+        professionOther: (data.profession_other as string | null) ?? null,
+        layoutPreference:
+          (data.layout_preference as 'wide' | 'compact' | null) === 'compact'
+            ? 'compact'
+            : 'wide'
       };
     },
     []

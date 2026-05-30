@@ -28,6 +28,7 @@ import {
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { useToast } from '@/components/feedback/Toast';
 import { useModalA11y } from '@/lib/useModalA11y';
+import { useWideLayout } from '@/lib/useWideLayout';
 import { classifyError } from '@/lib/feedback';
 
 interface InjectionDraft {
@@ -61,6 +62,60 @@ function TreatmentRecordInner() {
   const router = useRouter();
   const locale = useLocale();
   const { user, profile, loading: authLoading } = useAuth();
+  const wide = useWideLayout();
+  // Width of the header row and the main column. When the user
+  // prefers the wide layout, both expand at the lg breakpoint;
+  // otherwise they stay at the narrow width on every screen.
+  const headerWidthClass = wide
+    ? 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4 lg:max-w-[var(--max-w-page-wide)]'
+    : 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4';
+  const mainWidthClass = wide
+    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-24 pt-6 lg:max-w-[var(--max-w-page-wide)]'
+    : 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-24 pt-6';
+  // The two-pane grid wrapper. When wide, becomes a 340px + form grid
+  // at lg; when compact, stays a plain block (single-column) so the
+  // page reads top-to-bottom even on a large screen.
+  const paneGridClass = wide
+    ? 'lg:mt-6 lg:grid lg:grid-cols-[340px_1fr] lg:gap-6 lg:items-start'
+    : '';
+  const asideClass = wide ? 'lg:sticky lg:top-6' : '';
+  // Reference cards container: stacks on mobile, row on sm, and when
+  // wide also stacks again at lg (narrow aside). When compact, the
+  // sm-row behaviour is kept (cards side-by-side) since there's no
+  // narrow aside to fit into.
+  const refCardsClass = wide
+    ? 'mt-4 flex flex-col gap-3 sm:flex-row sm:items-start lg:flex-col lg:items-stretch'
+    : 'mt-4 flex flex-col gap-3 sm:flex-row sm:items-start';
+  // Muscle-row element classes. When wide, the row goes single-line at
+  // lg (name flexes, side/units fixed width, × at the end). When
+  // compact, it stays in the two-line mobile shape on every screen.
+  const muscleRowClass = wide
+    ? 'flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-3'
+    : 'flex flex-col gap-2';
+  const muscleNameWrapClass = wide
+    ? 'flex items-center gap-2 lg:flex-1'
+    : 'flex items-center gap-2';
+  const muscleSideUnitsWrapClass = wide
+    ? 'flex gap-2 lg:gap-3 lg:shrink-0'
+    : 'flex gap-2';
+  const muscleSideLabelClass = wide
+    ? 'flex flex-1 items-center gap-2 lg:flex-none'
+    : 'flex flex-1 items-center gap-2';
+  const muscleSelectClass = wide
+    ? `${inputClasses} flex-1 lg:w-32 lg:flex-none`
+    : `${inputClasses} flex-1`;
+  const muscleUnitsInputClass = wide
+    ? `${inputClasses} flex-1 lg:w-20 lg:flex-none`
+    : `${inputClasses} flex-1`;
+  // The × button homes: inline-with-name (shown on mobile, and also on
+  // every screen when compact) vs end-of-row (shown only at lg when
+  // wide). When compact there is no end-of-row ×, and the inline one
+  // is always visible.
+  const muscleRemoveInlineClass = wide
+    ? '-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink lg:hidden'
+    : '-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink';
+  const muscleRemoveEndClass =
+    '-m-1.5 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink lg:flex';
   const sessionQuery = useCurrentClinicianSession(
     profile?.id ?? null,
     profile?.role
@@ -395,7 +450,7 @@ function TreatmentRecordInner() {
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4 lg:max-w-[var(--max-w-page-wide)]">
+        <div className={headerWidthClass}>
           <button
             type="button"
             onClick={back}
@@ -409,7 +464,7 @@ function TreatmentRecordInner() {
       </header>
 
       <main
-        className="mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-24 pt-6 lg:max-w-[var(--max-w-page-wide)]"
+        className={mainWidthClass}
         onInput={touchActivity}
       >
         <h1 className="font-display text-[24px] leading-tight text-ink">
@@ -470,8 +525,8 @@ function TreatmentRecordInner() {
             single-column flow — references on top, form below. The
             DOM order (references first, form second) is intentional
             so that mobile gets the same vertical order it has today. */}
-        <div className="lg:mt-6 lg:grid lg:grid-cols-[340px_1fr] lg:gap-6 lg:items-start">
-          <aside className="lg:sticky lg:top-6">
+        <div className={paneGridClass}>
+          <aside className={asideClass}>
         {/* Reference cards — both compact and tappable. Medication
             expands inline (it's edited here, so the editing UI stays
             on-page). Last treatment opens a modal with full details
@@ -479,7 +534,7 @@ function TreatmentRecordInner() {
             sit side-by-side to save vertical space. On lg+ (desktop
             two-pane), they stack again because the left aside is
             narrow. */}
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start lg:flex-col lg:items-stretch">
+        <div className={refCardsClass}>
           {/* Medication card */}
           <div className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft">
             {!medExpanded ? (
@@ -784,9 +839,9 @@ function TreatmentRecordInner() {
                   places: once inline with the name (mobile-only via
                   lg:hidden), once at the end of the row (lg-only via
                   hidden lg:flex). Same button visually, two homes. */}
-              <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
+              <div className={muscleRowClass}>
                 {/* Name input + (on mobile) × button next to it */}
-                <div className="flex items-center gap-2 lg:flex-1">
+                <div className={muscleNameWrapClass}>
                   <input
                     type="text"
                     value={inj.muscle}
@@ -803,7 +858,7 @@ function TreatmentRecordInner() {
                       type="button"
                       onClick={() => removeInjection(i)}
                       aria-label={`Remove muscle ${i + 1}`}
-                      className="-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink lg:hidden"
+                      className={muscleRemoveInlineClass}
                     >
                       <svg
                         width="16"
@@ -825,8 +880,8 @@ function TreatmentRecordInner() {
                 {/* Side + Units: side-by-side. On mobile they each
                     take half the row (flex-1). On lg they have
                     fixed widths and sit inline with the name. */}
-                <div className="flex gap-2 lg:gap-3 lg:shrink-0">
-                  <label className="flex flex-1 items-center gap-2 lg:flex-none">
+                <div className={muscleSideUnitsWrapClass}>
+                  <label className={muscleSideLabelClass}>
                     <span className="text-[12px] text-ink-muted">Side</span>
                     <select
                       value={inj.side}
@@ -835,7 +890,7 @@ function TreatmentRecordInner() {
                           side: e.target.value as InjectionSide
                         })
                       }
-                      className={`${inputClasses} flex-1 lg:w-32 lg:flex-none`}
+                      className={muscleSelectClass}
                     >
                       {INJECTION_SIDES.map((s) => (
                         <option key={s} value={s}>
@@ -844,7 +899,7 @@ function TreatmentRecordInner() {
                       ))}
                     </select>
                   </label>
-                  <label className="flex flex-1 items-center gap-2 lg:flex-none">
+                  <label className={muscleSideLabelClass}>
                     <span className="text-[12px] text-ink-muted">Units</span>
                     <input
                       type="number"
@@ -855,19 +910,22 @@ function TreatmentRecordInner() {
                       onChange={(e) =>
                         updateInjection(i, { doseUnits: e.target.value })
                       }
-                      className={`${inputClasses} flex-1 lg:w-20 lg:flex-none`}
+                      className={muscleUnitsInputClass}
                     />
                   </label>
                 </div>
 
                 {/* × button at the END of the row, but only on lg.
-                    On mobile, the × lives next to the name (above). */}
-                {injections.length > 1 && (
+                    On mobile, the × lives next to the name (above).
+                    Only rendered at all when the wide layout is
+                    active — in compact mode the inline × is always
+                    visible instead. */}
+                {wide && injections.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeInjection(i)}
                     aria-label={`Remove muscle ${i + 1}`}
-                    className="-m-1.5 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink lg:flex"
+                    className={muscleRemoveEndClass}
                   >
                     <svg
                       width="16"

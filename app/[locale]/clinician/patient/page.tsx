@@ -148,12 +148,12 @@ export default function ClinicianPatientPage() {
       <div className="min-h-dvh bg-cream">
         {/* Header bar — matches real header height */}
         <header className="border-b border-stone/70 bg-cream-soft/50">
-          <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
+          <div className="mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4 lg:max-w-[var(--max-w-page-wide)]">
             <SkeletonBlock width="w-16" height="h-4" />
             <SkeletonBlock width="w-8" height="h-8" shape="rounded-full" />
           </div>
         </header>
-        <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
+        <main className="mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-16 pt-6 lg:max-w-[var(--max-w-page-wide)]">
           <SkeletonScreen label="Loading patient">
             {/* Patient name heading */}
             <SkeletonBlock width="w-3/4" height="h-8" />
@@ -336,7 +336,7 @@ export default function ClinicianPatientPage() {
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto max-w-[480px] px-5 py-3">
+        <div className="mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-3 lg:max-w-[var(--max-w-page-wide)]">
           {/* Top row — controls only. The 'Viewing' eyebrow sits as
               the left peer of the buttons so the row reads as a band
               of small things, no orphan. */}
@@ -401,7 +401,12 @@ export default function ClinicianPatientPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
+      <main className="mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-16 pt-6 lg:max-w-[var(--max-w-page-wide)]">
+        {/* Pre-goals content (cycle context, action row, panels,
+            primary action) constrained to readable form width on
+            desktop. Otherwise the action row buttons + panels would
+            sparse-stretch across the full 1080px page width. */}
+        <div className="lg:mx-auto lg:max-w-[720px]">
         <div className="eyebrow">
           {t('cycleContext', {
             week: weekNumber
@@ -625,6 +630,7 @@ export default function ClinicianPatientPage() {
             {t('startNewCycle')}
           </span>
         </button>
+        </div>
 
         {/* Active goals with progress visualisation */}
         <section className="mt-10">
@@ -654,7 +660,7 @@ export default function ClinicianPatientPage() {
               {t('activeGoalsEmpty')}
             </p>
           ) : (
-            <ul className="mt-3 space-y-3">
+            <ul className="mt-3 space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
               {activeGoals.map((g) => (
                 <li key={g.id}>
                   <GoalProgressView
@@ -691,7 +697,7 @@ export default function ClinicianPatientPage() {
             the physician. Shown only when the therapist has recorded
             something. */}
         {(patient.physioExercisePlan || patient.physioAssistiveDevices) && (
-          <section className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+          <section className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4 lg:mx-auto lg:max-w-[720px]">
             <h2 className="font-display text-[18px] text-ink">
               {tPlan('title')}
             </h2>
