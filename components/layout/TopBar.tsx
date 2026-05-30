@@ -2,15 +2,19 @@
 
 import { useTranslations } from 'next-intl';
 import { AccountMenu } from './AccountMenu';
+import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 
 interface TopBarProps {
   /** When true, the inner row expands to the wide page width on
    *  `lg:` and above. Otherwise stays at the narrow (mobile) width.
    *  Defaults to false (narrow). */
   wide?: boolean;
+  /** When set, a "?" help button for this page appears next to the
+   *  account menu, opening the help modal for that page. */
+  helpPageKey?: string;
 }
 
-export function TopBar({ wide = false }: TopBarProps) {
+export function TopBar({ wide = false, helpPageKey }: TopBarProps) {
   const t = useTranslations('app');
 
   // Inner row uses the same width as the page body it sits above, so
@@ -57,7 +61,10 @@ export function TopBar({ wide = false }: TopBarProps) {
             {t('name')}
           </span>
         </div>
-        <AccountMenu />
+        <div className="flex items-center gap-2">
+          {helpPageKey && <PageHelpButton pageKey={helpPageKey} />}
+          <AccountMenu />
+        </div>
       </div>
     </header>
   );

@@ -544,5 +544,28 @@
     "saveError": "Din profil kunne ikke gemmes. Prøv venligst igen.",
     "nameRequired": "Indtast venligst et navn.",
     "professionOtherRequired": "Beskriv venligst professionen."
+  },
+  "help": {
+    "buttonLabel": "Hjælp",
+    "close": "Luk",
+    "dialogLabel": "Hjælp til denne side",
+    "patientHomeTitle": "Din startskærm",
+    "patientHomeBody": "Det er her, dine ugentlige tjek-ind vises. Når et er klar, ser du det her — tryk på det for at vurdere, hvordan dine mål går. Det tager kun et minut, og dit behandlingsteam ser dine svar, så de kan justere din behandling.",
+    "checkinTitle": "At lave et tjek-ind",
+    "checkinBody": "Vurdér hvert mål på en 0–10-skala for, hvordan det føles i denne uge. Du kan tilføje et par ord, hvis du vil — dit behandlingsteam læser dem. Der er ingen rigtige eller forkerte svar; svar bare ærligt, så billedet forbliver præcist.",
+    "clinicianPatientTitle": "Patientens side",
+    "clinicianPatientBody": "Det er din base for en oplåst patient. Graferne viser, hvordan hvert mål er skredet frem; knapperne åbner patientforslag, terapeutinput, historikken på tværs af forløb og EPJ-eksporten. Registrér en behandling herfra, og afslut sessionen, når du går.",
+    "treatmentTitle": "Registrering af en behandling",
+    "treatmentBody": "Indtast sessionsoplysningerne — dato, produkt, fortynding, vejledning — og tilføj derefter hver muskel med dens dosis. Totalen indtastes under muskellisten, når du har tilføjet dem alle. Kortene med medicin og seneste behandling ved siden af er til reference. Gem, når du er færdig; dette bliver forløbets behandlingsjournal.",
+    "historyTitle": "At læse historikken",
+    "historyBody": "Disse grafer viser tendenser på tværs af alle patientens behandlingsforløb — samlet dosis, måludfald, virkningsvarighed og genbehandlingstidspunkt. De farvede bånd er beskrivende (hvordan et resultat er sammenlignet med det forventede), ikke bestået eller ikke bestået. Der skal mindst to forløb til at vise en tendens.",
+    "newGoalTitle": "Registrering af et mål",
+    "newGoalBody": "Brug dette til et mål, patienten har fortalt dig i klinikken. Skriv det med deres egne ord, tilføj din kliniske formulering, og indstil derefter 0–10-spørgsmålet, de besvarer hver uge, og hvordan deres svar svarer til udfaldsniveauer. Målet tilhører stadig patienten — du registrerer det for dem.",
+    "suggestionTitle": "Gennemgang af et forslag",
+    "suggestionBody": "En patient har foreslået et mål. Læs det med deres ord, og godkend det derefter som det er, redigér og godkend, eller læg det til side for at drøfte det. Godkendelse åbner vurderingsopsætningen — 0–10-spørgsmålet og udfaldsniveauerne — så målet bliver en del af deres ugentlige tjek-ind.",
+    "physioPatientTitle": "Patientens side",
+    "physioPatientBody": "Det er din base for en oplåst patient. Graferne viser, hvordan hvert mål skrider frem — dine vurderinger og patientens egne vurderinger. Herfra kan du rapportere fremskridt, foreslå mål eller muskler til lægen og holde et kort plan-resumé, som de ser ved næste besøg.",
+    "physioProgressTitle": "Rapportering af fremskridt",
+    "physioProgressBody": "Vurdér, hvordan hvert mål skrider frem, og tilføj en kort note, som lægen kan se ved næste besøg. Din vurdering holdes adskilt fra patientens egne ugentlige vurderinger, så begge synsvinkler forbliver synlige på grafen."
   }
 }

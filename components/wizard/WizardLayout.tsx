@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { AccountMenu } from '@/components/layout/AccountMenu';
+import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 
 interface WizardLayoutProps {
   currentStep: number;
@@ -31,6 +32,9 @@ interface WizardLayoutProps {
    * always safe — this just makes that visible.
    */
   forgiving?: boolean;
+  /** When set, a "?" help button appears next to the account menu,
+   *  opening the help modal for that page. */
+  helpPageKey?: string;
   children: ReactNode;
 }
 
@@ -44,6 +48,7 @@ export function WizardLayout({
   primaryAction,
   stepLabels,
   forgiving = false,
+  helpPageKey,
   children
 }: WizardLayoutProps) {
   const t = useTranslations('patient.suggestGoal');
@@ -64,7 +69,10 @@ export function WizardLayout({
           <span className="eyebrow">
             {t('stepOf', { current: currentStep, total: totalSteps })}
           </span>
-          <AccountMenu />
+          <div className="flex items-center gap-2">
+            {helpPageKey && <PageHelpButton pageKey={helpPageKey} />}
+            <AccountMenu />
+          </div>
         </div>
 
         {/* Progress — named list when stepLabels given, else dots. */}

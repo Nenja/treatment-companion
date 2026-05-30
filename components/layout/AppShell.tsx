@@ -9,6 +9,9 @@ interface AppShellProps {
    *  work, therapist work in a clinic). Mobile and narrow windows
    *  still get the narrow width. Defaults to false. */
   wide?: boolean;
+  /** When set, a "?" help button for this page appears in the TopBar,
+   *  opening the help modal for that page. */
+  helpPageKey?: string;
 }
 
 /**
@@ -29,7 +32,7 @@ interface AppShellProps {
  * content instead of tabbing through the header on every page. The
  * link is visually hidden until focused.
  */
-export function AppShell({ children, wide = false }: AppShellProps) {
+export function AppShell({ children, wide = false, helpPageKey }: AppShellProps) {
   const mainWidthClass = wide
     ? 'max-w-[var(--max-w-page-narrow)] lg:max-w-[var(--max-w-page-wide)]'
     : 'max-w-[var(--max-w-page-narrow)]';
@@ -42,7 +45,7 @@ export function AppShell({ children, wide = false }: AppShellProps) {
       >
         Skip to main content
       </a>
-      <TopBar wide={wide} />
+      <TopBar wide={wide} helpPageKey={helpPageKey} />
       <main
         id="main-content"
         className={`mx-auto px-5 pb-16 pt-6 ${mainWidthClass}`}

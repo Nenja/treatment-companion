@@ -540,5 +540,28 @@
     "saveError": "Could not save your profile. Please try again.",
     "nameRequired": "Please enter a name.",
     "professionOtherRequired": "Please describe the profession."
+  },
+  "help": {
+    "buttonLabel": "Help",
+    "close": "Close",
+    "dialogLabel": "Help for this page",
+    "patientHomeTitle": "Your home screen",
+    "patientHomeBody": "This is where your weekly check-ins appear. When one is due, you'll see it here — tap it to rate how your goals are going. It only takes a minute, and your care team sees your answers so they can adjust your treatment.",
+    "checkinTitle": "Doing a check-in",
+    "checkinBody": "Rate each goal on a 0–10 scale for how things feel this week. You can add a few words if you like — your care team reads these. There are no right or wrong answers; just answer honestly so the picture stays accurate.",
+    "clinicianPatientTitle": "The patient's page",
+    "clinicianPatientBody": "This is your home base for an unlocked patient. The graphs show how each goal has progressed; the buttons open patient suggestions, therapist input, the cross-cycle history, and the EHR export. Record a treatment from here, and end the session when you step away.",
+    "treatmentTitle": "Recording a treatment",
+    "treatmentBody": "Enter the session details — date, product, dilution, guidance — then add each muscle with its dose. The total goes in below the muscle list, once you've added them all. The medication and last-treatment cards on the side are for reference. Save when done; this becomes the cycle's treatment record.",
+    "historyTitle": "Reading the history",
+    "historyBody": "These charts show trends across all of this patient's treatment cycles — total dose, goal outcomes, benefit duration, and re-treatment timing. The coloured bands are descriptive (how a result compares to expected), not a pass or fail. It needs at least two cycles to show a trend.",
+    "newGoalTitle": "Recording a goal",
+    "newGoalBody": "Use this for a goal the patient told you in clinic. Write it in their own words, add your clinical phrasing, then set the 0–10 question they'll answer each week and how their answers map to outcome levels. The goal still belongs to the patient — you're recording it for them.",
+    "suggestionTitle": "Reviewing a suggestion",
+    "suggestionBody": "A patient has suggested a goal. Read it in their words, then approve it as-is, edit and approve, or set it aside to discuss. Approving opens the rating setup — the 0–10 question and outcome levels — so the goal becomes part of their weekly check-ins.",
+    "physioPatientTitle": "The patient's page",
+    "physioPatientBody": "This is your home base for an unlocked patient. The graphs show how each goal is progressing — your assessments and the patient's own ratings. From here you can report progress, suggest goals or muscles for the physician, and keep a short plan summary they'll see at the next visit.",
+    "physioProgressTitle": "Reporting progress",
+    "physioProgressBody": "Rate how each goal is progressing and add a short note for the physician to see at the next visit. Your assessment is kept separate from the patient's own weekly ratings, so both points of view stay visible on the graph."
   }
 }
