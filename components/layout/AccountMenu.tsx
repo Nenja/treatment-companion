@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useSetTextScale } from '@/lib/supabase/textScale';
+import { useSetNightMode } from '@/lib/supabase/colorScheme';
+import { useSetLayoutPreference } from '@/lib/supabase/layoutPreference';
 import { professionLabel } from '@/lib/professionLabel';
 
 /**
@@ -148,6 +150,47 @@ export function AccountMenu() {
             </div>
           </div>
 
+          {/* Night mode quick toggle. The full palette picker lives on
+              the profile page; this is just the day/night switch,
+              surfaced here for one-tap access. */}
+          <div className="border-b border-stone/70 px-4 py-3">
+            <p className="text-[13px] font-semibold text-ink-soft">
+              {tAppearance('nightModeLabel')}
+            </p>
+            <div className="mt-2 flex gap-1.5">
+              <NightModeButton
+                night={false}
+                label={tAppearance('dayOption')}
+              />
+              <NightModeButton
+                night={true}
+                label={tAppearance('nightOption')}
+              />
+            </div>
+          </div>
+
+          {/* Layout density toggle. Only meaningful on large screens
+              (the two-pane layout needs the width), so the whole
+              section is hidden below lg via CSS. Patients never get a
+              two-pane layout, so it's hidden for them too. */}
+          {profile.role !== 'patient' && (
+            <div className="hidden border-b border-stone/70 px-4 py-3 lg:block">
+              <p className="text-[13px] font-semibold text-ink-soft">
+                {tAppearance('layoutLabel')}
+              </p>
+              <div className="mt-2 flex gap-1.5">
+                <LayoutButton
+                  preference="wide"
+                  label={tAppearance('layoutWide')}
+                />
+                <LayoutButton
+                  preference="compact"
+                  label={tAppearance('layoutCompact')}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Profile & settings — name, email, password, profession,
               and colour appearance all live there. */}
           <button
@@ -241,6 +284,66 @@ function TextScaleButton({
         // overrides the button's inherited font-size.
         fontSize: `${14 * scale}px`
       }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function NightModeButton({
+  night,
+  label
+}: {
+  night: boolean;
+  label: string;
+}) {
+  const { profile } = useAuth();
+  const setNight = useSetNightMode();
+  const isCurrent = Boolean(profile?.nightMode) === night;
+  return (
+    <button
+      type="button"
+      role="menuitemradio"
+      aria-checked={isCurrent}
+      onClick={() =>
+        setNight.mutate({
+          night,
+          currentPalette: profile?.colorScheme ?? null
+        })
+      }
+      className={`flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border text-[14px] font-semibold ${
+        isCurrent
+          ? 'border-sage bg-sage-soft text-sage-deep'
+          : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function LayoutButton({
+  preference,
+  label
+}: {
+  preference: 'wide' | 'compact';
+  label: string;
+}) {
+  const { profile } = useAuth();
+  const setLayout = useSetLayoutPreference();
+  const current = profile?.layoutPreference ?? 'wide';
+  const isCurrent = current === preference;
+  return (
+    <button
+      type="button"
+      role="menuitemradio"
+      aria-checked={isCurrent}
+      onClick={() => setLayout.mutate({ preference })}
+      className={`flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border text-[14px] font-semibold ${
+        isCurrent
+          ? 'border-sage bg-sage-soft text-sage-deep'
+          : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
+      }`}
     >
       {label}
     </button>
