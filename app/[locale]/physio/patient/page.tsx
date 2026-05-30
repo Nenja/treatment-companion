@@ -14,6 +14,7 @@ import {
   formatPatientSummary
 } from '@/lib/supabase/patientInfo';
 import { formatLongDate } from '@/lib/dates';
+import { useWideLayout } from '@/lib/useWideLayout';
 import { nrsToGas } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import {
@@ -52,6 +53,24 @@ export default function PhysioPatientPage() {
   const tSide = useTranslations('side');
   const tAmb = useTranslations('ambulation');
   const { user, profile, loading: authLoading } = useAuth();
+  const wide = useWideLayout();
+  // Width + layout classes gated on the layout preference. The
+  // therapist page is mixed-use (phone in clinic, desktop when
+  // writing up), so it expands gracefully when wide and stays
+  // single-column when compact or on a narrow screen.
+  const headerWidthClass = wide
+    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-3 lg:max-w-[var(--max-w-page-mid)]'
+    : 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-3';
+  const mainWidthClass = wide
+    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-16 pt-6 lg:max-w-[var(--max-w-page-mid)]'
+    : 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-16 pt-6';
+  // Page is capped at the mid width, so the body no longer needs its
+  // own inner cap — the page width handles it.
+  const bodyColumnClass = '';
+  // Goals list: 2-column grid at lg when wide; stacked when compact.
+  const goalsListClass = wide
+    ? 'mt-3 space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0'
+    : 'mt-3 space-y-3';
   const sessionQuery = useCurrentClinicianSession(
     profile?.id ?? null,
     profile?.role
@@ -241,7 +260,7 @@ export default function PhysioPatientPage() {
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto max-w-[480px] px-5 py-3">
+        <div className={headerWidthClass}>
           {/* Top row — controls only. Eyebrow on the left as the peer
               of the buttons; End session pill + AccountMenu on the
               right. Mirrors the clinician header exactly. */}
@@ -310,7 +329,7 @@ export default function PhysioPatientPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
+      <main className={mainWidthClass}>
         {patientData.isError ? (
           <div className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
             <p className="font-display text-[18px] text-ink">
@@ -346,7 +365,7 @@ export default function PhysioPatientPage() {
             </div>
           </SkeletonScreen>
         ) : (
-          <>
+          <div className={bodyColumnClass}>
             {/* Cycle context — name + summary now live in the header,
                 so the body starts directly here (matching the clinician
                 page, which also begins with cycle context under its
@@ -522,7 +541,7 @@ export default function PhysioPatientPage() {
                   {t('noGoals')}
                 </p>
               ) : (
-                <ul className="mt-3 space-y-3">
+                <ul className={goalsListClass}>
                   {patientData.data.goals.map((g) => (
                     <li key={g.id}>
                       <GoalProgressView
@@ -546,7 +565,7 @@ export default function PhysioPatientPage() {
               exercisePlan={patientData.data.patient.exercisePlan}
               assistiveDevices={patientData.data.patient.assistiveDevices}
             />
-          </>
+          </div>
         )}
       </main>
     </div>

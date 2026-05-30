@@ -33,6 +33,7 @@ import {
   SkeletonScreen
 } from '@/components/feedback/Skeleton';
 import { useModalA11y } from '@/lib/useModalA11y';
+import { useWideLayout } from '@/lib/useWideLayout';
 import { buildEhrExport } from '@/lib/ehrExport';
 import { useToast } from '@/components/feedback/Toast';
 import { useSetPhysioGoalSuggestionStatus } from '@/lib/supabase/physioGoalSuggestion';
@@ -71,6 +72,35 @@ export default function ClinicianPatientPage() {
   const setStatus = useSetSuggestionStatus();
   const archiveGoal = useArchiveGoal();
   const toast = useToast();
+  const wide = useWideLayout();
+  // Width / layout classes gated on the user's layout preference.
+  // When wide, the header + main expand at lg and the goals render
+  // in a 2-column grid; when compact, everything stays single-column
+  // even on a large screen. The clinician patient page is mostly
+  // review (goals, check-ins), so it uses the mid width (720px), not
+  // the full wide spread — that's reserved for the treatment page.
+  const headerWidthClass = wide
+    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-3 lg:max-w-[var(--max-w-page-mid)]'
+    : 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-3';
+  // Flex variant of the header width, for the skeleton header which
+  // lays its placeholders out in a row.
+  const flexHeaderWidthClass = wide
+    ? 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4 lg:max-w-[var(--max-w-page-mid)]'
+    : 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4';
+  const mainWidthClass = wide
+    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-16 pt-6 lg:max-w-[var(--max-w-page-mid)]'
+    : 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-16 pt-6';
+  // The whole page is now capped at the mid width, so pre-goals
+  // content and the plan section no longer need their own inner
+  // width caps — the page width handles it.
+  const preGoalsWidthClass = '';
+  // Goals list: 2-column grid at lg when wide (two cards within the
+  // 720px page, ~350px each); plain stacked list when compact.
+  const goalsListClass = wide
+    ? 'mt-3 space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0'
+    : 'mt-3 space-y-3';
+  const planSectionClass =
+    'mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4';
 
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [showExport, setShowExport] = useState(false);
@@ -148,12 +178,12 @@ export default function ClinicianPatientPage() {
       <div className="min-h-dvh bg-cream">
         {/* Header bar — matches real header height */}
         <header className="border-b border-stone/70 bg-cream-soft/50">
-          <div className="mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4 lg:max-w-[var(--max-w-page-wide)]">
+          <div className={flexHeaderWidthClass}>
             <SkeletonBlock width="w-16" height="h-4" />
             <SkeletonBlock width="w-8" height="h-8" shape="rounded-full" />
           </div>
         </header>
-        <main className="mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-16 pt-6 lg:max-w-[var(--max-w-page-wide)]">
+        <main className={mainWidthClass}>
           <SkeletonScreen label="Loading patient">
             {/* Patient name heading */}
             <SkeletonBlock width="w-3/4" height="h-8" />
@@ -336,7 +366,7 @@ export default function ClinicianPatientPage() {
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-3 lg:max-w-[var(--max-w-page-wide)]">
+        <div className={headerWidthClass}>
           {/* Top row — controls only. The 'Viewing' eyebrow sits as
               the left peer of the buttons so the row reads as a band
               of small things, no orphan. */}
@@ -401,12 +431,12 @@ export default function ClinicianPatientPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-16 pt-6 lg:max-w-[var(--max-w-page-wide)]">
+      <main className={mainWidthClass}>
         {/* Pre-goals content (cycle context, action row, panels,
             primary action) constrained to readable form width on
             desktop. Otherwise the action row buttons + panels would
             sparse-stretch across the full 1080px page width. */}
-        <div className="lg:mx-auto lg:max-w-[720px]">
+        <div className={preGoalsWidthClass}>
         <div className="eyebrow">
           {t('cycleContext', {
             week: weekNumber
@@ -660,7 +690,7 @@ export default function ClinicianPatientPage() {
               {t('activeGoalsEmpty')}
             </p>
           ) : (
-            <ul className="mt-3 space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+            <ul className={goalsListClass}>
               {activeGoals.map((g) => (
                 <li key={g.id}>
                   <GoalProgressView
@@ -697,7 +727,7 @@ export default function ClinicianPatientPage() {
             the physician. Shown only when the therapist has recorded
             something. */}
         {(patient.physioExercisePlan || patient.physioAssistiveDevices) && (
-          <section className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4 lg:mx-auto lg:max-w-[720px]">
+          <section className={planSectionClass}>
             <h2 className="font-display text-[18px] text-ink">
               {tPlan('title')}
             </h2>

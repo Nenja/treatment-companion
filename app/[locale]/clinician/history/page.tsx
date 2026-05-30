@@ -17,6 +17,7 @@ import {
   RetreatmentTimingTable
 } from '@/components/clinician/CycleAnalysisViews';
 import { SkeletonScreen, SkeletonBlock } from '@/components/feedback/Skeleton';
+import { useWideLayout } from '@/lib/useWideLayout';
 
 /**
  * Longitudinal trend page — physician only.
@@ -48,6 +49,26 @@ export default function ClinicianHistoryPage() {
   const patientId = sessionQuery.data?.patientId ?? null;
   const trend = usePatientTrend(patientId);
   const analysis = usePatientCycleAnalysis(patientId);
+  const wide = useWideLayout();
+  // Width + layout classes gated on the user's layout preference.
+  // When wide: header/main expand at lg; the two summary charts sit
+  // side-by-side; the two analysis tables also pair up. When compact:
+  // everything stays single-column on every screen. The history page
+  // uses the mid width (720px) like the other review pages — not the
+  // full wide spread.
+  const headerWidthClass = wide
+    ? 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center px-5 py-4 lg:max-w-[var(--max-w-page-mid)]'
+    : 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center px-5 py-4';
+  const mainWidthClass = wide
+    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-8 lg:max-w-[var(--max-w-page-mid)]'
+    : 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-8';
+  // At the mid width (720px), charts get more room stacked full-width
+  // than squeezed two-up (~350px each), so the summary charts stack.
+  // The analysis tables are fine at ~350px, so they still pair.
+  const chartStackClass = 'space-y-8';
+  const tablePairClass = wide
+    ? 'grid gap-8 lg:grid-cols-2 lg:gap-6'
+    : 'space-y-8';
 
   // Auth + role gate.
   useEffect(() => {
@@ -93,7 +114,7 @@ export default function ClinicianHistoryPage() {
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[480px] items-center px-5 py-4">
+        <div className={headerWidthClass}>
           <button
             type="button"
             onClick={() => router.push(patientPath)}
@@ -104,7 +125,7 @@ export default function ClinicianHistoryPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[480px] px-5 py-8">
+      <main className={mainWidthClass}>
         <h1 className="font-display text-[24px] leading-tight text-ink">
           {t('title')}
         </h1>
@@ -141,52 +162,35 @@ export default function ClinicianHistoryPage() {
 
         {!trend.isLoading && cycles.length >= 1 && (
           <div className="mt-7 space-y-8">
-            <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-              <DosePerCycleChart
-                cycles={cycles}
-                unitsLabel={t('doseChartTitle')}
-                locale={locale}
-              />
-            </section>
+            {/* Two summary charts — dose + outcome. At the mid page
+                width they stack full-width rather than squeezing two
+                narrow charts side-by-side. */}
+            <div className={chartStackClass}>
+              <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+                <DosePerCycleChart
+                  cycles={cycles}
+                  unitsLabel={t('doseChartTitle')}
+                  locale={locale}
+                />
+              </section>
 
-            <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-              <OutcomePerCycleChart
-                cycles={cycles}
-                outcomeLabel={t('outcomeChartTitle')}
-                locale={locale}
-              />
-              <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
-                {t('outcomeNote')}
-              </p>
-            </section>
+              <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+                <OutcomePerCycleChart
+                  cycles={cycles}
+                  outcomeLabel={t('outcomeChartTitle')}
+                  locale={locale}
+                />
+                <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
+                  {t('outcomeNote')}
+                </p>
+              </section>
+            </div>
 
             {/* --- Deeper analysis: only meaningful with 2+ cycles --- */}
             {(analysis.data?.cycles.length ?? 0) >= 2 && (
               <>
-                {/* Benefit duration */}
-                <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-                  <h2 className="text-[13px] font-semibold text-ink-soft">
-                    {t('benefitTitle')}
-                  </h2>
-                  <div className="mt-3">
-                    <BenefitDurationTable
-                      cycles={analysis.data!.cycles}
-                      labels={{
-                        cycle: t('cycleShort'),
-                        peak: t('colPeak'),
-                        duration: t('colDuration'),
-                        weeks: t('colWeeks'),
-                        held: t('benefitHeld'),
-                        noData: t('noData')
-                      }}
-                    />
-                  </div>
-                  <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
-                    {t('benefitNote')}
-                  </p>
-                </section>
-
-                {/* Per-muscle dose */}
+                {/* Per-muscle dose — full width on every layout; the
+                    grouped-bar chart benefits from horizontal room. */}
                 <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
                   <h2 className="text-[13px] font-semibold text-ink-soft">
                     {t('muscleTitle')}
@@ -204,31 +208,59 @@ export default function ClinicianHistoryPage() {
                   </p>
                 </section>
 
-                {/* Re-treatment timing */}
-                <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-                  <h2 className="text-[13px] font-semibold text-ink-soft">
-                    {t('retreatTitle')}
-                  </h2>
-                  <div className="mt-3">
-                    <RetreatmentTimingTable
-                      cycles={analysis.data!.cycles}
-                      labels={{
-                        cycle: t('cycleShort'),
-                        interval: t('colInterval'),
-                        fadeVsRetreat: t('colTiming'),
-                        weeks: t('colWeeks'),
-                        held: t('benefitHeld'),
-                        noNext: t('retreatNoNext'),
-                        faded: t('retreatFaded'),
-                        onTime: t('retreatOnTime'),
-                        late: t('retreatLate')
-                      }}
-                    />
-                  </div>
-                  <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
-                    {t('retreatNote')}
-                  </p>
-                </section>
+                {/* Two analysis tables — benefit duration + retreatment
+                    timing. Both tabular, so they pair side-by-side at
+                    the mid width (~350px each, fine for tables). */}
+                <div className={tablePairClass}>
+                  {/* Benefit duration */}
+                  <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+                    <h2 className="text-[13px] font-semibold text-ink-soft">
+                      {t('benefitTitle')}
+                    </h2>
+                    <div className="mt-3">
+                      <BenefitDurationTable
+                        cycles={analysis.data!.cycles}
+                        labels={{
+                          cycle: t('cycleShort'),
+                          peak: t('colPeak'),
+                          duration: t('colDuration'),
+                          weeks: t('colWeeks'),
+                          held: t('benefitHeld'),
+                          noData: t('noData')
+                        }}
+                      />
+                    </div>
+                    <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
+                      {t('benefitNote')}
+                    </p>
+                  </section>
+
+                  {/* Re-treatment timing */}
+                  <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+                    <h2 className="text-[13px] font-semibold text-ink-soft">
+                      {t('retreatTitle')}
+                    </h2>
+                    <div className="mt-3">
+                      <RetreatmentTimingTable
+                        cycles={analysis.data!.cycles}
+                        labels={{
+                          cycle: t('cycleShort'),
+                          interval: t('colInterval'),
+                          fadeVsRetreat: t('colTiming'),
+                          weeks: t('colWeeks'),
+                          held: t('benefitHeld'),
+                          noNext: t('retreatNoNext'),
+                          faded: t('retreatFaded'),
+                          onTime: t('retreatOnTime'),
+                          late: t('retreatLate')
+                        }}
+                      />
+                    </div>
+                    <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
+                      {t('retreatNote')}
+                    </p>
+                  </section>
+                </div>
               </>
             )}
           </div>

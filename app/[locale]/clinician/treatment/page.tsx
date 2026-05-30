@@ -743,13 +743,12 @@ function TreatmentRecordInner() {
 
           {/* Right pane: the actual treatment form. */}
           <div>
-        {/* Row 1: Date + Total units + Dilution. All three are short
-            numeric / short-string values, so they fit comfortably on
-            one line even on mobile. The per-muscle dose-sum readout
-            sits directly under Total units so the physician can
-            compare what they typed against the running tally without
-            scrolling. */}
-        <div className="mt-6 grid grid-cols-3 gap-3">
+        {/* Row 1: Date + Drug product — session setup fields entered
+            before the per-muscle work begins. Total units has moved
+            below the muscle list, since the physician records it once
+            the injections are chosen (it's the conclusion, not the
+            starting point). */}
+        <div className="mt-6 grid grid-cols-2 gap-3">
           <Field label="Date" inline>
             <input
               type="date"
@@ -758,42 +757,6 @@ function TreatmentRecordInner() {
               className={inputClasses}
             />
           </Field>
-          <Field label="Total units" inline>
-            <input
-              type="number"
-              inputMode="decimal"
-              min={0}
-              step="any"
-              value={totalUnits}
-              onChange={(e) => setTotalUnits(e.target.value)}
-              className={inputClasses}
-            />
-            {dosesSum > 0 && (
-              <p className="mt-1 text-[12px] text-ink-muted">
-                Per-muscle sum:{' '}
-                <span className="font-semibold tabular-nums text-ink-soft">
-                  {dosesSumLabel}
-                </span>
-              </p>
-            )}
-          </Field>
-          <Field label="Dilution" inline>
-            <input
-              type="text"
-              value={dilution}
-              onChange={(e) => setDilution(e.target.value)}
-              className={inputClasses}
-              maxLength={40}
-              placeholder="250 IU/ml"
-            />
-          </Field>
-        </div>
-
-        {/* Row 2: Drug product + Guidance. Both are wider-text fields
-            (product names like "Botox", guidance options like
-            "Electrical stimulation"), so they get more room together
-            than they would crowded next to the short fields above. */}
-        <div className="mt-3 grid grid-cols-2 gap-3">
           <Field label="Drug product" inline>
             <input
               type="text"
@@ -802,6 +765,20 @@ function TreatmentRecordInner() {
               className={inputClasses}
               maxLength={60}
               placeholder="e.g. Botox"
+            />
+          </Field>
+        </div>
+
+        {/* Row 2: Dilution + Guidance — also session setup. */}
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <Field label="Dilution" inline>
+            <input
+              type="text"
+              value={dilution}
+              onChange={(e) => setDilution(e.target.value)}
+              className={inputClasses}
+              maxLength={40}
+              placeholder="250 IU/ml"
             />
           </Field>
           <Field label="Guidance" inline>
@@ -1006,6 +983,34 @@ function TreatmentRecordInner() {
         >
           + Add another muscle
         </button>
+
+        {/* Total units — recorded after the per-muscle work is done,
+            so it sits below the muscle list rather than at the top of
+            the form. The per-muscle sum readout sits directly beneath
+            it so the physician can compare the figure they entered
+            against the running tally of the doses above. Constrained
+            width on desktop since it's a short numeric field. */}
+        <div className="mt-6 sm:max-w-[260px]">
+          <Field label="Total units" inline>
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="any"
+              value={totalUnits}
+              onChange={(e) => setTotalUnits(e.target.value)}
+              className={inputClasses}
+            />
+            {dosesSum > 0 && (
+              <p className="mt-1 text-[12px] text-ink-muted">
+                Per-muscle sum:{' '}
+                <span className="font-semibold tabular-nums text-ink-soft">
+                  {dosesSumLabel}
+                </span>
+              </p>
+            )}
+          </Field>
+        </div>
 
         {/* Session notes */}
         <Field label="Session notes" helper="Optional">

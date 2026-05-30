@@ -59,6 +59,14 @@
    */
   --max-w-page-narrow: 480px;
   --max-w-page-wide: 1080px;
+  /* Mid width — the standard for desktop pages that are mostly
+   * reading/review (clinician patient, history, therapist patient).
+   * Wide enough to use a desktop screen and place a couple of cards
+   * or goals side-by-side, but narrow enough that text and form
+   * fields stay at a comfortable reading measure. The treatment page
+   * is the deliberate exception: it uses the full wide width for its
+   * persistent reference + form two-pane. */
+  --max-w-page-mid: 720px;
 }
 
 /* Base layer */
