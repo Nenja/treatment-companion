@@ -15,6 +15,7 @@ import {
 } from '@/components/feedback/Skeleton';
 import { WizardLayout } from '@/components/wizard/WizardLayout';
 import { GoalRatingPicker } from '@/components/wizard/GoalRatingPicker';
+import { GasGoalRatingPicker } from '@/components/wizard/GasGoalRatingPicker';
 
 /**
  * Weekly check-in wizard. Lives at /checkin (or /<locale>/checkin).
@@ -36,6 +37,24 @@ export default function CheckinPage() {
       <CheckinPageInner />
     </Suspense>
   );
+}
+
+/** Plain-language meaning of a GAS level, for the summary review. */
+function gasLevelMeaning(v: number): string {
+  switch (v) {
+    case 2:
+      return 'Much better than expected';
+    case 1:
+      return 'Better than expected';
+    case 0:
+      return 'As expected';
+    case -1:
+      return 'Less than expected';
+    case -2:
+      return 'Much less than expected';
+    default:
+      return '—';
+  }
 }
 
 function CheckinPageInner() {
@@ -188,10 +207,12 @@ function CheckinPageInner() {
         if (typeof v !== 'number') {
           throw new Error('Missing rating for goal ' + g.id);
         }
-        return {
-          approvedGoalId: g.id,
-          nrsValue: v
-        };
+        // The draft stores one number per goal; its meaning depends on
+        // the goal kind. NRS goals send it as nrsValue (0–10); GAS goals
+        // send it as gasValue (−2..2, the level the patient picked).
+        return g.kind === 'gas'
+          ? { approvedGoalId: g.id, gasValue: v }
+          : { approvedGoalId: g.id, nrsValue: v };
       });
 
       const id = await submitMutation.mutateAsync({
@@ -221,17 +242,26 @@ function CheckinPageInner() {
     const goal = activeGoals[step - 1];
     title = t('rateGoalTitle');
     helper = t('rateGoalHelper');
-    body = (
-      <GoalRatingPicker
-        ariaLabel={`${goal.patientFacingText} — ${title}`}
-        goalText={goal.patientFacingText}
-        question={goal.nrs.question}
-        direction={goal.nrs.direction}
-        value={draft.ratings[goal.id]}
-        onChange={(v) => setRating(goal.id, v)}
-        previousRating={goal.previousRating}
-      />
-    );
+    body =
+      goal.kind === 'gas' ? (
+        <GasGoalRatingPicker
+          ariaLabel={`${goal.patientFacingText} — ${title}`}
+          goalText={goal.patientFacingText}
+          anchors={goal.gas ?? null}
+          value={draft.ratings[goal.id]}
+          onChange={(v) => setRating(goal.id, v)}
+        />
+      ) : (
+        <GoalRatingPicker
+          ariaLabel={`${goal.patientFacingText} — ${title}`}
+          goalText={goal.patientFacingText}
+          question={goal.nrs?.question ?? ''}
+          direction={goal.nrs?.direction ?? 'higherIsBetter'}
+          value={draft.ratings[goal.id]}
+          onChange={(v) => setRating(goal.id, v)}
+          previousRating={goal.previousRating}
+        />
+      );
   } else {
     title = t('commentTitle');
     helper = t('commentHelper');
@@ -301,8 +331,13 @@ function CheckinPageInner() {
           <dl className="mt-4 space-y-3 text-[14px]">
             {activeGoals.map((g, i) => {
               const rating = draft.ratings[g.id];
-              const answer =
-                typeof rating === 'number' ? `${rating} / 10` : '—';
+              let answer = '—';
+              if (typeof rating === 'number') {
+                answer =
+                  g.kind === 'gas'
+                    ? gasLevelMeaning(rating)
+                    : `${rating} / 10`;
+              }
               return (
                 <SummaryRow
                   key={g.id}

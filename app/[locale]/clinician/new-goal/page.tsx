@@ -4,7 +4,10 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
-import { useCreateGoalForPatient } from '@/lib/supabase/clinicianPatient';
+import {
+  useCreateGoalForPatient,
+  useCreateGasGoalForPatient
+} from '@/lib/supabase/clinicianPatient';
 import { GasCutPoints } from '@/components/clinician/GasCutPoints';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
@@ -48,11 +51,16 @@ function NewGoalInner() {
   const locale = useLocale();
   const { profile, loading: authLoading } = useAuth();
   const create = useCreateGoalForPatient();
+  const createGas = useCreateGasGoalForPatient();
   const toast = useToast();
 
   const patientId = searchParams.get('patient') ?? '';
   const prefix = locale === 'en' ? '' : `/${locale}`;
   const patientPath = `${prefix}/clinician/patient`;
+
+  // Which measurement model this goal uses. NRS (0–10 question + cut
+  // points) or GAS (five descriptive anchors the patient picks from).
+  const [goalKind, setGoalKind] = useState<'nrs' | 'gas'>('nrs');
 
   const [patientText, setPatientText] = useState('');
   const [smartText, setSmartText] = useState('');
@@ -63,6 +71,14 @@ function NewGoalInner() {
   const [cutLow, setCutLow] = useState('');
   const [cutZero, setCutZero] = useState('');
   const [cutHigh, setCutHigh] = useState('');
+
+  // GAS anchors — one sentence per outcome level. Required only when
+  // goalKind === 'gas'.
+  const [anchorMinus2, setAnchorMinus2] = useState('');
+  const [anchorMinus1, setAnchorMinus1] = useState('');
+  const [anchorZero, setAnchorZero] = useState('');
+  const [anchorPlus1, setAnchorPlus1] = useState('');
+  const [anchorPlus2, setAnchorPlus2] = useState('');
 
   const cutLowLowN = Number(cutLowLow);
   const cutLowN = Number(cutLow);
@@ -79,12 +95,19 @@ function NewGoalInner() {
     cutLowN < cutZeroN &&
     cutZeroN < cutHighN;
 
+  // GAS anchors are optional — a GAS goal needs only the goal text and
+  // clinical description. Any anchors the clinician does write are kept;
+  // blank ones simply show the patient the generic level meaning.
+  const commonValid =
+    patientText.trim().length > 0 && smartText.trim().length > 0;
+
   const canSubmit =
-    patientText.trim().length > 0 &&
-    smartText.trim().length > 0 &&
-    nrsQuestion.trim().length > 0 &&
-    cutsValid &&
-    !create.isPending;
+    commonValid &&
+    (goalKind === 'nrs'
+      ? nrsQuestion.trim().length > 0 && cutsValid
+      : true) &&
+    !create.isPending &&
+    !createGas.isPending;
 
   // Only a signed-in physician may use this page.
   if (!authLoading && profile && profile.role !== 'clinician') {
@@ -94,17 +117,30 @@ function NewGoalInner() {
   const onSubmit = async () => {
     if (!canSubmit || !patientId) return;
     try {
-      await create.mutateAsync({
-        patientId,
-        patientFacingText: patientText.trim(),
-        smartText: smartText.trim(),
-        nrsQuestion: nrsQuestion.trim(),
-        nrsDirection,
-        cutLowLow: cutLowLowN,
-        cutLow: cutLowN,
-        cutZero: cutZeroN,
-        cutHigh: cutHighN
-      });
+      if (goalKind === 'nrs') {
+        await create.mutateAsync({
+          patientId,
+          patientFacingText: patientText.trim(),
+          smartText: smartText.trim(),
+          nrsQuestion: nrsQuestion.trim(),
+          nrsDirection,
+          cutLowLow: cutLowLowN,
+          cutLow: cutLowN,
+          cutZero: cutZeroN,
+          cutHigh: cutHighN
+        });
+      } else {
+        await createGas.mutateAsync({
+          patientId,
+          patientFacingText: patientText.trim(),
+          smartText: smartText.trim(),
+          anchorMinus2: anchorMinus2.trim(),
+          anchorMinus1: anchorMinus1.trim(),
+          anchorZero: anchorZero.trim(),
+          anchorPlus1: anchorPlus1.trim(),
+          anchorPlus2: anchorPlus2.trim()
+        });
+      }
       toast.success('Goal recorded');
       router.push(patientPath);
     } catch (err) {
@@ -192,6 +228,61 @@ function NewGoalInner() {
           />
         </div>
 
+        <div className="mt-8">
+          <label className="block text-[14px] font-semibold text-ink">
+            How will the patient rate this goal?
+          </label>
+          <p className="mt-1 text-[14px] text-ink-muted">
+            Choose the measurement model for this goal.
+          </p>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => setGoalKind('nrs')}
+              className={`flex-1 rounded-[var(--radius-button)] border px-3 py-3 text-left ${
+                goalKind === 'nrs'
+                  ? 'border-sage bg-sage-soft'
+                  : 'border-stone bg-cream-soft hover:bg-stone-soft'
+              }`}
+            >
+              <span
+                className={`block text-[14px] font-semibold ${
+                  goalKind === 'nrs' ? 'text-sage-deep' : 'text-ink'
+                }`}
+              >
+                0–10 scale (NRS)
+              </span>
+              <span className="mt-0.5 block text-[12px] leading-snug text-ink-muted">
+                Patient answers a 0–10 question each week; you set how
+                the answer maps to outcome levels.
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setGoalKind('gas')}
+              className={`flex-1 rounded-[var(--radius-button)] border px-3 py-3 text-left ${
+                goalKind === 'gas'
+                  ? 'border-sage bg-sage-soft'
+                  : 'border-stone bg-cream-soft hover:bg-stone-soft'
+              }`}
+            >
+              <span
+                className={`block text-[14px] font-semibold ${
+                  goalKind === 'gas' ? 'text-sage-deep' : 'text-ink'
+                }`}
+              >
+                Descriptive levels (GAS)
+              </span>
+              <span className="mt-0.5 block text-[12px] leading-snug text-ink-muted">
+                You describe each outcome level in words; the patient
+                picks the one that matches.
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {goalKind === 'nrs' && (
+          <>
         <h2 className="mt-8 font-display text-[17px] text-ink">
           NRS rating setup
         </h2>
@@ -275,6 +366,72 @@ function NewGoalInner() {
             </p>
           )}
         </div>
+          </>
+        )}
+
+        {goalKind === 'gas' && (
+          <>
+            <h2 className="mt-8 font-display text-[17px] text-ink">
+              GAS outcome levels
+            </h2>
+            <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
+              Optionally describe what each level looks like for this
+              goal, in one sentence each. The patient reads these and
+              picks the level that matches — there is no 0–10 scale.
+              Leave any blank to let the patient rate against the goal
+              text using the level&apos;s general meaning. Describe
+              observable outcomes, with 0 as the expected result of
+              treatment.
+            </p>
+
+            <div className="mt-5 space-y-4">
+              <GasAnchorField
+                level="+2"
+                label="Much more than expected"
+                tone="better"
+                value={anchorPlus2}
+                onChange={setAnchorPlus2}
+                placeholder="e.g. Holds a full cup and drinks unaided, no spills."
+              />
+              <GasAnchorField
+                level="+1"
+                label="More than expected"
+                tone="better"
+                value={anchorPlus1}
+                onChange={setAnchorPlus1}
+                placeholder="e.g. Holds a half-full cup steadily for a few seconds."
+              />
+              <GasAnchorField
+                level="0"
+                label="Expected outcome"
+                tone="expected"
+                value={anchorZero}
+                onChange={setAnchorZero}
+                placeholder="e.g. Holds a light cup briefly with some effort."
+              />
+              <GasAnchorField
+                level="−1"
+                label="Less than expected"
+                tone="below"
+                value={anchorMinus1}
+                onChange={setAnchorMinus1}
+                placeholder="e.g. Can grip the cup but not lift it without spilling."
+              />
+              <GasAnchorField
+                level="−2"
+                label="Much less than expected"
+                tone="below"
+                value={anchorMinus2}
+                onChange={setAnchorMinus2}
+                placeholder="e.g. Cannot grip the cup at all."
+              />
+            </div>
+            <p className="mt-3 text-[13px] leading-relaxed text-ink-muted">
+              Tip: write the levels so they step up steadily, with no
+              gaps or overlaps between them.
+            </p>
+          </>
+        )}
 
         <div className="mt-8 flex gap-3">
           <button
@@ -294,6 +451,56 @@ function NewGoalInner() {
           </button>
         </div>
       </main>
+    </div>
+  );
+}
+
+/**
+ * One GAS anchor input: a colour-coded level badge (+2…−2), a short
+ * label, and the sentence field. Tone maps to the app's GAS palette so
+ * the levels read the same way they do on the progress graph (sage =
+ * better than expected, cream = expected, amber = below).
+ */
+function GasAnchorField({
+  level,
+  label,
+  tone,
+  value,
+  onChange,
+  placeholder
+}: {
+  level: string;
+  label: string;
+  tone: 'better' | 'expected' | 'below';
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  const badgeClass =
+    tone === 'better'
+      ? 'bg-sage-soft text-sage-deep'
+      : tone === 'below'
+        ? 'bg-amber-soft text-amber-deep'
+        : 'bg-stone text-ink-soft';
+  return (
+    <div>
+      <div className="flex items-center gap-2">
+        <span
+          className={`inline-flex h-6 min-w-[2rem] items-center justify-center rounded-[var(--radius-button)] px-1.5 text-[13px] font-semibold tabular-nums ${badgeClass}`}
+        >
+          {level}
+        </span>
+        <span className="text-[14px] font-semibold text-ink">{label}</span>
+        <span className="text-[12px] text-ink-muted">(optional)</span>
+      </div>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={2}
+        maxLength={300}
+        className={inputClasses}
+        placeholder={placeholder}
+      />
     </div>
   );
 }

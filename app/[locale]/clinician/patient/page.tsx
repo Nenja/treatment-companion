@@ -16,7 +16,8 @@ import {
 import {
   useClinicianPatientData,
   useSetSuggestionStatus,
-  useArchiveGoal
+  useRetireGoal,
+  type GoalOutcome
 } from '@/lib/supabase/clinicianPatient';
 import { formatLongDate } from '@/lib/dates';
 import { nrsToGas, injectionSideLabel, type GuidanceMethod } from '@/lib/types';
@@ -71,7 +72,7 @@ export default function ClinicianPatientPage() {
   const endSession = useEndClinicianSession();
   const touchSession = useTouchClinicianSession();
   const setStatus = useSetSuggestionStatus();
-  const archiveGoal = useArchiveGoal();
+  const retireGoal = useRetireGoal();
   const toast = useToast();
   const wide = useWideLayout();
   // Width / layout classes gated on the user's layout preference.
@@ -306,14 +307,22 @@ export default function ClinicianPatientPage() {
           {
             weekNumber: snappedWeek,
             nrs: r.nrsValue,
-            value: nrsToGas(r.nrsValue, {
-              question: goal.nrs.question,
-              direction: goal.nrs.direction,
-              cutLowLow: goal.nrs.cutLowLow,
-              cutLow: goal.nrs.cutLow,
-              cutZero: goal.nrs.cutZero,
-              cutHigh: goal.nrs.cutHigh
-            }),
+            // NRS goals derive GAS from the goal's cut points. GAS goals
+            // are rated as a level directly, so the recorded value is
+            // already the GAS level. (GAS rating capture itself ships in
+            // the check-in slice; this guard keeps the view correct and
+            // the build sound in the meantime.)
+            value:
+              goal.kind === 'nrs' && goal.nrs
+                ? nrsToGas(r.nrsValue, {
+                    question: goal.nrs.question,
+                    direction: goal.nrs.direction,
+                    cutLowLow: goal.nrs.cutLowLow,
+                    cutLow: goal.nrs.cutLow,
+                    cutZero: goal.nrs.cutZero,
+                    cutHigh: goal.nrs.cutHigh
+                  })
+                : ((r.nrsValue as unknown) as -2 | -1 | 0 | 1 | 2),
             note: a.note
           }
         ];
@@ -345,13 +354,14 @@ export default function ClinicianPatientPage() {
     );
   };
 
-  // Archive the goal currently held in goalToArchive, then close the
-  // dialog. History is preserved; the goal leaves the patient's future
-  // check-ins. The query invalidation refreshes the goal list.
-  const onArchiveGoal = async () => {
+  // Retire the goal currently held in goalToArchive with the chosen
+  // outcome, then close the dialog. History is preserved; the goal
+  // leaves the patient's future check-ins. The query invalidation
+  // refreshes the goal list.
+  const onRetireGoal = async (outcome: GoalOutcome) => {
     if (!goalToArchive) return;
     try {
-      await archiveGoal.mutateAsync({ goalId: goalToArchive.id });
+      await retireGoal.mutateAsync({ goalId: goalToArchive.id, outcome });
       toast.success(t('archiveToast'));
     } catch {
       toast.error(t('archiveError'));
@@ -701,9 +711,9 @@ export default function ClinicianPatientPage() {
                     ratings={ratingsByGoal.get(g.id) ?? []}
                     physioRatings={physioRatingsByGoal.get(g.id) ?? []}
                   />
-                  {/* Archive action — retires a goal that is no longer
-                      relevant. History is kept; the goal leaves the
-                      patient's future check-ins. */}
+                  {/* Retire action — retires a goal (achieved /
+                      partial / no longer suitable). History is kept;
+                      the goal leaves the patient's future check-ins. */}
                   <div className="mt-1.5 flex justify-end">
                     <button
                       type="button"
@@ -714,9 +724,25 @@ export default function ClinicianPatientPage() {
                           text: g.patientFacingText
                         });
                       }}
-                      className="text-[13px] font-semibold text-ink-muted hover:text-ink-soft"
+                      className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
                     >
-                      {t('archiveGoal')}
+                      {/* check-in-out / retire glyph */}
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                      </svg>
+                      {t('retireGoal')}
                     </button>
                   </div>
                 </li>
@@ -725,9 +751,41 @@ export default function ClinicianPatientPage() {
           )}
         </section>
 
-        {/* Therapist's exercise plan & devices — read-only context for
-            the physician. Shown only when the therapist has recorded
-            something. */}
+        {/* Earlier goals — retired this cycle, with how each ended.
+            Shows the climb (achieved goals) and course-corrections
+            (reframed / no longer suitable) without re-asking the
+            patient about them. Only rendered when there are archived
+            goals. Their check-in history is preserved in the export. */}
+        {archivedGoals.length > 0 && (
+          <section className="mt-10">
+            <h2 className="font-display text-[20px] leading-tight text-ink">
+              {t('earlierGoalsTitle')}
+            </h2>
+            <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
+              {t('earlierGoalsBody')}
+            </p>
+            <ul className="mt-4 space-y-2">
+              {archivedGoals.map((g) => (
+                <li
+                  key={g.id}
+                  className="flex items-start gap-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft px-4 py-3"
+                >
+                  <GoalOutcomeBadge outcome={g.outcome} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[15px] leading-snug text-ink">
+                      {g.patientFacingText}
+                    </span>
+                    {g.smartText && (
+                      <span className="mt-0.5 block text-[13px] leading-snug text-ink-muted">
+                        {g.smartText}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         {(patient.physioExercisePlan || patient.physioAssistiveDevices) && (
           <section className={planSectionClass}>
             <h2 className="font-display text-[18px] text-ink">
@@ -821,8 +879,8 @@ export default function ClinicianPatientPage() {
         <ArchiveGoalConfirmDialog
           goalText={goalToArchive.text}
           onCancel={() => setGoalToArchive(null)}
-          onArchive={onArchiveGoal}
-          archiveDisabled={archiveGoal.isPending}
+          onRetire={onRetireGoal}
+          retireDisabled={retireGoal.isPending}
         />
       )}
     </div>
@@ -830,21 +888,63 @@ export default function ClinicianPatientPage() {
 }
 
 /**
- * Confirmation before archiving a goal. Archiving is reversible in
- * principle but changes the patient's check-in, so it is confirmed
- * rather than fired on a single tap. The dialog states plainly what
- * archiving does and does not do.
+ * Small colour-coded badge for a retired goal's outcome, matching the
+ * retire dialog's language: achieved (sage), partially achieved
+ * (amber), no longer suitable (neutral). Falls back to a plain
+ * "retired" chip if the outcome is null (older archived goals from
+ * before outcomes were captured).
+ */
+function GoalOutcomeBadge({ outcome }: { outcome: GoalOutcome | null }) {
+  const t = useTranslations('clinician.patient');
+  const map: Record<
+    GoalOutcome,
+    { label: string; className: string }
+  > = {
+    achieved: {
+      label: t('retireAchieved'),
+      className: 'bg-sage-soft text-sage-deep'
+    },
+    partial: {
+      label: t('retirePartial'),
+      className: 'bg-amber-soft text-amber-deep'
+    },
+    noLongerSuitable: {
+      label: t('retireNoLongerSuitable'),
+      className: 'bg-stone text-ink-soft'
+    }
+  };
+  const item = outcome
+    ? map[outcome]
+    : { label: t('outcomeUnknown'), className: 'bg-stone text-ink-soft' };
+  return (
+    <span
+      className={`mt-0.5 inline-block shrink-0 rounded-[var(--radius-button)] px-2.5 py-1 text-[12px] font-semibold ${item.className}`}
+    >
+      {item.label}
+    </span>
+  );
+}
+
+/**
+ * Confirmation before retiring a goal, capturing *how* it ended.
+ * Goals are living — reviewed and adjusted at each visit — so retiring
+ * one is a clinical event with a meaningful outcome, not a flat
+ * "archive". The physician picks: achieved, partially achieved, or no
+ * longer suitable. All three retire the goal (it leaves the patient's
+ * check-ins, history preserved); they differ only in the recorded
+ * outcome, which feeds the per-cycle goal history. A keep-working
+ * escape leaves the goal active.
  */
 function ArchiveGoalConfirmDialog({
   goalText,
   onCancel,
-  onArchive,
-  archiveDisabled
+  onRetire,
+  retireDisabled
 }: {
   goalText: string;
   onCancel: () => void;
-  onArchive: () => void;
-  archiveDisabled: boolean;
+  onRetire: (outcome: GoalOutcome) => void;
+  retireDisabled: boolean;
 }) {
   const containerRef = useModalA11y(onCancel);
   const t = useTranslations('clinician.patient');
@@ -861,31 +961,70 @@ function ArchiveGoalConfirmDialog({
           id="archive-goal-title"
           className="font-display text-[20px] text-ink"
         >
-          {t('archiveConfirmTitle')}
+          {t('retireConfirmTitle')}
         </h2>
         <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
           &ldquo;{goalText}&rdquo;
         </p>
         <p className="mt-3 text-[14px] leading-relaxed text-ink-muted">
-          {t('archiveConfirmBody')}
+          {t('retireConfirmBody')}
         </p>
-        <div className="mt-5 flex flex-col gap-2">
+
+        <p className="mt-5 text-[13px] font-semibold uppercase tracking-wide text-ink-muted">
+          {t('retireOutcomePrompt')}
+        </p>
+        <div className="mt-2 flex flex-col gap-2">
+          {/* Achieved — the positive outcome, styled as the primary. */}
           <button
             type="button"
-            onClick={onArchive}
-            disabled={archiveDisabled}
-            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-60"
+            onClick={() => onRetire('achieved')}
+            disabled={retireDisabled}
+            className="flex flex-col items-start rounded-[var(--radius-button)] bg-sage-deep px-4 py-3 text-left hover:bg-ink-soft disabled:opacity-60"
           >
-            {t('archiveGoal')}
+            <span className="text-[15px] font-semibold text-on-accent">
+              {t('retireAchieved')}
+            </span>
+            <span className="text-[12px] leading-snug text-on-accent/85">
+              {t('retireAchievedHint')}
+            </span>
           </button>
+          {/* Partially achieved. */}
           <button
             type="button"
-            onClick={onCancel}
-            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
+            onClick={() => onRetire('partial')}
+            disabled={retireDisabled}
+            className="flex flex-col items-start rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-3 text-left hover:bg-stone-soft disabled:opacity-60"
           >
-            {t('archiveConfirmKeep')}
+            <span className="text-[15px] font-semibold text-ink">
+              {t('retirePartial')}
+            </span>
+            <span className="text-[12px] leading-snug text-ink-muted">
+              {t('retirePartialHint')}
+            </span>
+          </button>
+          {/* No longer suitable / reframed / dropped. */}
+          <button
+            type="button"
+            onClick={() => onRetire('noLongerSuitable')}
+            disabled={retireDisabled}
+            className="flex flex-col items-start rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-3 text-left hover:bg-stone-soft disabled:opacity-60"
+          >
+            <span className="text-[15px] font-semibold text-ink">
+              {t('retireNoLongerSuitable')}
+            </span>
+            <span className="text-[12px] leading-snug text-ink-muted">
+              {t('retireNoLongerSuitableHint')}
+            </span>
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={onCancel}
+          className="mt-4 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
+        >
+          {t('archiveConfirmKeep')}
+        </button>
       </div>
     </div>
   );
