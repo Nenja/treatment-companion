@@ -9,7 +9,7 @@ import { usePatientTrend } from '@/lib/supabase/patientTrend';
 import { usePatientCycleAnalysis } from '@/lib/supabase/patientCycleAnalysis';
 import {
   DosePerCycleChart,
-  OutcomePerCycleChart
+  CycleGoalsBreakdown
 } from '@/components/clinician/CycleTrendCharts';
 import {
   BenefitDurationTable,
@@ -190,13 +190,25 @@ export default function ClinicianHistoryPage() {
               </section>
 
               <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-                <OutcomePerCycleChart
+                <h2 className="mb-1 text-[13px] font-semibold text-ink-soft">
+                  {t('goalsByCycleTitle')}
+                </h2>
+                <CycleGoalsBreakdown
                   cycles={cycles}
-                  outcomeLabel={t('outcomeChartTitle')}
                   locale={locale}
+                  labels={{
+                    achieved: t('outcomeAchieved'),
+                    partial: t('outcomePartial'),
+                    noLongerSuitable: t('outcomeNoLongerSuitable'),
+                    ongoing: t('outcomeOngoing'),
+                    retired: t('outcomeRetired'),
+                    noGoals: t('goalsByCycleNone'),
+                    gasTag: t('goalKindGas'),
+                    nrsTag: t('goalKindNrs')
+                  }}
                 />
                 <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
-                  {t('outcomeNote')}
+                  {t('goalsByCycleNote')}
                 </p>
               </section>
             </div>
