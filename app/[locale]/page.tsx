@@ -127,7 +127,7 @@ export default function PatientHomePage() {
   const completedWeeksSet = new Set(data.completedWeeks);
 
   return (
-    <AppShell>
+    <AppShell helpPageKey="patientHome">
       {/* One-time orientation — shown only on a new patient's first visit. */}
       <OnboardingWizard role="patient" />
 

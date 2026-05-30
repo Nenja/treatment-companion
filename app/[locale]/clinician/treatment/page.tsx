@@ -30,6 +30,7 @@ import { useToast } from '@/components/feedback/Toast';
 import { useModalA11y } from '@/lib/useModalA11y';
 import { useWideLayout } from '@/lib/useWideLayout';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
+import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
 import { classifyError } from '@/lib/feedback';
 
@@ -467,6 +468,7 @@ function TreatmentRecordInner() {
           <span className="eyebrow">Treatment record</span>
           <div className="flex items-center gap-2">
             <EndSessionButton role="clinician" />
+            <PageHelpButton pageKey="treatment" />
             <AccountMenu />
           </div>
         </div>

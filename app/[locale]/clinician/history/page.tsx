@@ -20,6 +20,7 @@ import { SkeletonScreen, SkeletonBlock } from '@/components/feedback/Skeleton';
 import { useWideLayout } from '@/lib/useWideLayout';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
+import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
 
 /**
@@ -133,6 +134,7 @@ export default function ClinicianHistoryPage() {
           </button>
           <div className="flex items-center gap-2">
             <EndSessionButton role="clinician" />
+            <PageHelpButton pageKey="history" />
             <AccountMenu />
           </div>
         </div>

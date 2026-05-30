@@ -8,6 +8,7 @@ import { useCreateGoalForPatient } from '@/lib/supabase/clinicianPatient';
 import { GasCutPoints } from '@/components/clinician/GasCutPoints';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
+import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
 import type { NrsDirection } from '@/lib/types';
@@ -142,6 +143,7 @@ function NewGoalInner() {
           <span className="eyebrow">Record a goal</span>
           <div className="flex items-center gap-2">
             <EndSessionButton role="clinician" />
+            <PageHelpButton pageKey="newGoal" />
             <AccountMenu />
           </div>
         </div>

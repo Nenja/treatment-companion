@@ -34,6 +34,7 @@ import {
 } from '@/components/feedback/Skeleton';
 import { useModalA11y } from '@/lib/useModalA11y';
 import { useWideLayout } from '@/lib/useWideLayout';
+import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { buildEhrExport } from '@/lib/ehrExport';
 import { useToast } from '@/components/feedback/Toast';
 import { useSetPhysioGoalSuggestionStatus } from '@/lib/supabase/physioGoalSuggestion';
@@ -380,6 +381,7 @@ export default function ClinicianPatientPage() {
               >
                 {tSession('endSession')}
               </button>
+              <PageHelpButton pageKey="clinicianPatient" />
               <AccountMenu />
             </div>
           </div>

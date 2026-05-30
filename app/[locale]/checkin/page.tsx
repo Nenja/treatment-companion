@@ -337,6 +337,7 @@ function CheckinPageInner() {
         onBack={step > 1 ? goBack : undefined}
         onCancel={onCancel}
         forgiving
+        helpPageKey="checkin"
         stepLabels={[
           ...activeGoals.map((g) => ({
             label: g.patientFacingText,

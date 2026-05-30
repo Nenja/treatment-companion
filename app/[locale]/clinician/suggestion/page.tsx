@@ -18,6 +18,7 @@ import { formatLongDate } from '@/lib/dates';
 import type { NrsDirection } from '@/lib/types';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
+import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
 import { GasCutPoints } from '@/components/clinician/GasCutPoints';
 import { useToast } from '@/components/feedback/Toast';
@@ -274,6 +275,7 @@ function Inner() {
           <span className="eyebrow">{t('title')}</span>
           <div className="flex items-center gap-2">
             <EndSessionButton role="clinician" />
+            <PageHelpButton pageKey="suggestion" />
             <AccountMenu />
           </div>
         </div>

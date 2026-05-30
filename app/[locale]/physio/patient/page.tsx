@@ -15,6 +15,7 @@ import {
 } from '@/lib/supabase/patientInfo';
 import { formatLongDate } from '@/lib/dates';
 import { useWideLayout } from '@/lib/useWideLayout';
+import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { nrsToGas } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import {
@@ -274,6 +275,7 @@ export default function PhysioPatientPage() {
               >
                 End session
               </button>
+              <PageHelpButton pageKey="physioPatient" />
               <AccountMenu />
             </div>
           </div>

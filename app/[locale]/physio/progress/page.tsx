@@ -9,6 +9,7 @@ import { usePhysioPatientData } from '@/lib/supabase/physioPatient';
 import { PhysioProgressForm } from '@/components/physio/PhysioProgressForm';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
+import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
 import {
   SkeletonBlock,
@@ -120,6 +121,7 @@ export default function PhysioProgressPage() {
           </button>
           <div className="flex items-center gap-2">
             <EndSessionButton role="physiotherapist" />
+            <PageHelpButton pageKey="physioProgress" />
             <AccountMenu />
           </div>
         </div>
