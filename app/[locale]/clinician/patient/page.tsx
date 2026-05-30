@@ -17,6 +17,7 @@ import {
   useClinicianPatientData,
   useSetSuggestionStatus,
   useRetireGoal,
+  useReactivateGoal,
   type GoalOutcome
 } from '@/lib/supabase/clinicianPatient';
 import { formatLongDate } from '@/lib/dates';
@@ -73,6 +74,7 @@ export default function ClinicianPatientPage() {
   const touchSession = useTouchClinicianSession();
   const setStatus = useSetSuggestionStatus();
   const retireGoal = useRetireGoal();
+  const reactivateGoal = useReactivateGoal();
   const toast = useToast();
   const wide = useWideLayout();
   // Width / layout classes gated on the user's layout preference.
@@ -367,6 +369,19 @@ export default function ClinicianPatientPage() {
       toast.error(t('archiveError'));
     } finally {
       setGoalToArchive(null);
+    }
+  };
+
+  // Reactivate a goal retired by mistake — returns it to the patient's
+  // check-ins. No confirm dialog: it's a low-stakes, easily-reversed
+  // action (the goal can simply be retired again).
+  const onReactivateGoal = async (goalId: string) => {
+    touch();
+    try {
+      await reactivateGoal.mutateAsync({ goalId });
+      toast.success(t('reactivateToast'));
+    } catch {
+      toast.error(t('reactivateError'));
     }
   };
 
@@ -796,6 +811,31 @@ export default function ClinicianPatientPage() {
                       </span>
                     )}
                   </span>
+                  {/* Reactivate — for a goal retired by mistake. Returns
+                      it to the patient's active check-ins. */}
+                  <button
+                    type="button"
+                    onClick={() => onReactivateGoal(g.id)}
+                    disabled={reactivateGoal.isPending}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink disabled:opacity-60"
+                  >
+                    {/* restore / undo glyph */}
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path d="M3 7v6h6" />
+                      <path d="M3.5 13a9 9 0 1 0 2.3-9.3L3 7" />
+                    </svg>
+                    {t('reactivateGoal')}
+                  </button>
                 </li>
               ))}
             </ul>

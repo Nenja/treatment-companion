@@ -526,17 +526,11 @@ function TreatmentRecordInner() {
         className={mainWidthClass}
         onInput={touchActivity}
       >
-        <h1 className="font-display text-[24px] leading-tight text-ink">
-          {isNewCycle
-            ? 'Record treatment'
-            : existing
-              ? 'Edit treatment record'
-              : 'Record treatment'}
-        </h1>
-        <p className="mt-1 text-[14px] text-ink-soft">
-          {isNewCycle
-            ? `For ${patient.displayName} · New cycle`
-            : `For ${patient.displayName}`}
+        {/* Page heading is carried by the header eyebrow ("Treatment
+            record"); we keep only a quiet line naming the patient so
+            the clinician knows who this is for. */}
+        <p className="text-[14px] text-ink-soft">
+          {`For ${patient.displayName}`}
         </p>
 
         {/* Session-expiry warning. The unlock lasts one hour from the
