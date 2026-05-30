@@ -471,7 +471,8 @@
     "yearsSince": "{years} years since onset",
     "ambulation": "Ambulation",
     "notes": "Background notes",
-    "notesPlaceholder": "Anything else clinically relevant — comorbidities, prior treatments, cognition, etc."
+    "notesPlaceholder": "Anything else clinically relevant — comorbidities, prior treatments, cognition, etc.",
+    "sex": "Sex"
   },
   "etiology": {
     "stroke": "Stroke",
@@ -563,7 +564,12 @@
     "saved": "Profile saved",
     "saveError": "Could not save your profile. Please try again.",
     "nameRequired": "Please enter a name.",
-    "professionOtherRequired": "Please describe the profession."
+    "professionOtherRequired": "Please describe the profession.",
+    "sexLabel": "Sex",
+    "sexHelper": "Optional. Used for your care record and, in pseudonymised form, for research.",
+    "sexUnset": "Prefer not to answer now",
+    "sexSaved": "Saved",
+    "sexError": "Could not save. Please try again."
   },
   "help": {
     "buttonLabel": "Help",
@@ -587,5 +593,11 @@
     "physioPatientBody": "This is your home base for an unlocked patient. The graphs show how each goal is progressing — your assessments and the patient's own ratings. From here you can report progress, suggest goals or muscles for the physician, and keep a short plan summary they'll see at the next visit.",
     "physioProgressTitle": "Reporting progress",
     "physioProgressBody": "Rate how each goal is progressing and add a short note for the physician to see at the next visit. Your assessment is kept separate from the patient's own weekly ratings, so both points of view stay visible on the graph."
+  },
+  "sex": {
+    "female": "Female",
+    "male": "Male",
+    "other": "Other",
+    "preferNotToSay": "Prefer not to say"
   }
 }

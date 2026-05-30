@@ -26,6 +26,8 @@ export type AmbulationStatus =
 
 export type AffectedSide = 'left' | 'right' | 'bilateral';
 
+export type Sex = 'female' | 'male' | 'other' | 'preferNotToSay';
+
 export interface PatientInfo {
   patientId: string;
   displayName: string;
@@ -36,6 +38,7 @@ export interface PatientInfo {
   onsetYear: number | null;
   ambulation: AmbulationStatus | null;
   backgroundNotes: string | null;
+  sex: Sex | null;
 }
 
 /**
@@ -52,7 +55,7 @@ export function usePatientInfo(patientId: string | null) {
       const { data, error } = await supabase
         .from('patient')
         .select(
-          'id, date_of_birth, etiology, etiology_detail, affected_side, onset_year, ambulation, background_notes, profile:profile_id (display_name)'
+          'id, date_of_birth, etiology, etiology_detail, affected_side, onset_year, ambulation, background_notes, sex, profile:profile_id (display_name)'
         )
         .eq('id', patientId!)
         .maybeSingle();
@@ -70,7 +73,8 @@ export function usePatientInfo(patientId: string | null) {
         affectedSide: (data.affected_side as AffectedSide | null) ?? null,
         onsetYear: (data.onset_year as number | null) ?? null,
         ambulation: (data.ambulation as AmbulationStatus | null) ?? null,
-        backgroundNotes: (data.background_notes as string | null) ?? null
+        backgroundNotes: (data.background_notes as string | null) ?? null,
+        sex: (data.sex as Sex | null) ?? null
       };
     }
   });
@@ -85,6 +89,7 @@ export interface SetPatientInfoInput {
   onsetYear: number | null;
   ambulation: AmbulationStatus | null;
   backgroundNotes: string | null;
+  sex: Sex | null;
 }
 
 /**
@@ -104,7 +109,8 @@ export function useSetPatientInfo() {
         p_affected_side: input.affectedSide,
         p_onset_year: input.onsetYear,
         p_ambulation: input.ambulation,
-        p_background_notes: input.backgroundNotes
+        p_background_notes: input.backgroundNotes,
+        p_sex: input.sex
       });
       if (error) throw error;
     },
@@ -162,4 +168,45 @@ export function formatPatientSummary(
   if (info.affectedSide) parts.push(labels.side(info.affectedSide));
   if (info.ambulation) parts.push(labels.ambulation(info.ambulation));
   return parts.length > 0 ? parts.join(' · ') : null;
+}
+
+/**
+ * Patient-facing: read the caller's own sex (for their profile page).
+ * A patient can read their own patient row under RLS. Returns null
+ * while unknown/unset. Separate from usePatientInfo, which is the
+ * clinician/therapist view of the full clinical background.
+ */
+export function useOwnSex(enabled: boolean) {
+  return useQuery({
+    enabled,
+    queryKey: ['ownSex'],
+    queryFn: async (): Promise<Sex | null> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase
+        .from('patient')
+        .select('sex')
+        .maybeSingle();
+      if (error) throw error;
+      return ((data?.sex as Sex | null) ?? null) || null;
+    }
+  });
+}
+
+/**
+ * Patient-facing: set the caller's own sex via the patient-scoped
+ * set_own_sex RPC (which can touch only the caller's own row and only
+ * this one field).
+ */
+export function useSetOwnSex() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (sex: Sex | null): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_own_sex', { p_sex: sex });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ownSex'] });
+    }
+  });
 }

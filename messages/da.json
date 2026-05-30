@@ -475,7 +475,8 @@
     "yearsSince": "{years} år siden debut",
     "ambulation": "Gangfunktion",
     "notes": "Baggrundsnoter",
-    "notesPlaceholder": "Andet klinisk relevant — komorbiditeter, tidligere behandlinger, kognition mv."
+    "notesPlaceholder": "Andet klinisk relevant — komorbiditeter, tidligere behandlinger, kognition mv.",
+    "sex": "Køn"
   },
   "etiology": {
     "stroke": "Apopleksi",
@@ -567,7 +568,12 @@
     "saved": "Profilen er gemt",
     "saveError": "Din profil kunne ikke gemmes. Prøv venligst igen.",
     "nameRequired": "Indtast venligst et navn.",
-    "professionOtherRequired": "Beskriv venligst professionen."
+    "professionOtherRequired": "Beskriv venligst professionen.",
+    "sexLabel": "Køn",
+    "sexHelper": "Valgfrit. Bruges til din behandlingsjournal og, i pseudonymiseret form, til forskning.",
+    "sexUnset": "Ønsker ikke at svare nu",
+    "sexSaved": "Gemt",
+    "sexError": "Kunne ikke gemme. Prøv venligst igen."
   },
   "help": {
     "buttonLabel": "Hjælp",
@@ -591,5 +597,11 @@
     "physioPatientBody": "Det er din base for en oplåst patient. Graferne viser, hvordan hvert mål skrider frem — dine vurderinger og patientens egne vurderinger. Herfra kan du rapportere fremskridt, foreslå mål eller muskler til lægen og holde et kort plan-resumé, som de ser ved næste besøg.",
     "physioProgressTitle": "Rapportering af fremskridt",
     "physioProgressBody": "Vurdér, hvordan hvert mål skrider frem, og tilføj en kort note, som lægen kan se ved næste besøg. Din vurdering holdes adskilt fra patientens egne ugentlige vurderinger, så begge synsvinkler forbliver synlige på grafen."
+  },
+  "sex": {
+    "female": "Kvinde",
+    "male": "Mand",
+    "other": "Andet",
+    "preferNotToSay": "Ønsker ikke at oplyse"
   }
 }
