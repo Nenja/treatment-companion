@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseServiceClient } from '@/lib/supabase/serviceClient';
+import { writeAdminAudit } from '@/lib/supabase/adminAudit';
 
 /**
  * Admin endpoint: grant or revoke the is_admin flag on an existing
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   const { data: callerProfile } = await anon
     .from('profile')
-    .select('is_admin')
+    .select('is_admin, role')
     .eq('id', userResp.user.id)
     .maybeSingle();
 
@@ -89,6 +90,15 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+
+  await writeAdminAudit(
+    admin,
+    userResp.user.id,
+    callerProfile.role,
+    isAdmin ? 'admin_granted' : 'admin_revoked',
+    'profile',
+    profileId
+  );
 
   return NextResponse.json({ profileId, isAdmin });
 }

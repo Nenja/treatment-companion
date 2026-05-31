@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
@@ -11,8 +11,11 @@ import {
   useUpdateAccount,
   useSetAccountStatus,
   useDeleteAccount,
+  useResetPassword,
+  useActiveAccess,
   generateTempPassword,
-  type AdminAccount
+  type AdminAccount,
+  type ActiveAccessSession
 } from '@/lib/supabase/admin';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { useToast } from '@/components/feedback/Toast';
@@ -112,13 +115,15 @@ export default function AdminPage() {
           )}
           {accountsQuery.isError && (
             <p className="mt-3 text-[14px] text-amber-deep">
-              Could not load accounts: {(accountsQuery.error as Error).message}
+              {tAdmin('accountsLoadError', { error: (accountsQuery.error as Error).message })}
             </p>
           )}
           {accountsQuery.data && (
             <AccountsList accounts={accountsQuery.data} />
           )}
         </section>
+
+        <AccessSection enabled={!!profile && profile.isAdmin} />
       </main>
     </div>
   );
@@ -404,19 +409,223 @@ function CreateAccountSection() {
   );
 }
 
+const PAGE_SIZE = 20;
+
 function AccountsList({ accounts }: { accounts: AdminAccount[] }) {
   const tAdmin = useTranslations('admin');
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<
+    'all' | 'patient' | 'clinician' | 'physiotherapist' | 'admin'
+  >('all');
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'active' | 'inactive'
+  >('all');
+  const [page, setPage] = useState(1);
+
+  // Filter + search entirely client-side. The list is loaded in full,
+  // which is fine at pilot scale; if the account count grows large,
+  // this is the point to move to server-side search and pagination.
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return accounts.filter((a) => {
+      if (q) {
+        const hay = `${a.displayName} ${a.email}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (roleFilter === 'admin') {
+        if (!a.isAdmin) return false;
+      } else if (roleFilter !== 'all') {
+        if (a.role !== roleFilter) return false;
+      }
+      if (statusFilter === 'active' && a.deactivatedAt) return false;
+      if (statusFilter === 'inactive' && !a.deactivatedAt) return false;
+      return true;
+    });
+  }, [accounts, search, roleFilter, statusFilter]);
+
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pages);
+  const pageItems = filtered.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE
+  );
+
+  // Any filter change resets to the first page so results stay visible.
+  const onSearch = (v: string) => {
+    setSearch(v);
+    setPage(1);
+  };
+  const selectClass =
+    'rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[14px] text-ink';
+
   if (accounts.length === 0) {
     return (
       <p className="mt-3 text-[14px] text-ink-muted">{tAdmin('noAccounts')}</p>
     );
   }
+
   return (
-    <ul className="mt-3 divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
-      {accounts.map((a) => (
-        <AccountRow key={a.id} account={a} />
-      ))}
-    </ul>
+    <div className="mt-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => onSearch(e.target.value)}
+          placeholder={tAdmin('searchPlaceholder')}
+          className="flex-1 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[14px] text-ink"
+        />
+        <select
+          value={roleFilter}
+          onChange={(e) => {
+            setRoleFilter(e.target.value as typeof roleFilter);
+            setPage(1);
+          }}
+          className={selectClass}
+        >
+          <option value="all">{tAdmin('filterRoleAll')}</option>
+          <option value="patient">{tAdmin('filterRolePatient')}</option>
+          <option value="clinician">{tAdmin('filterRoleClinician')}</option>
+          <option value="physiotherapist">
+            {tAdmin('filterRoleTherapist')}
+          </option>
+          <option value="admin">{tAdmin('filterRoleAdmin')}</option>
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value as typeof statusFilter);
+            setPage(1);
+          }}
+          className={selectClass}
+        >
+          <option value="all">{tAdmin('filterStatusAll')}</option>
+          <option value="active">{tAdmin('filterStatusActive')}</option>
+          <option value="inactive">{tAdmin('filterStatusInactive')}</option>
+        </select>
+      </div>
+
+      <p className="mt-2 text-[13px] text-ink-muted">
+        {tAdmin('resultsCount', {
+          shown: filtered.length,
+          total: accounts.length
+        })}
+      </p>
+
+      {filtered.length === 0 ? (
+        <p className="mt-3 text-[14px] text-ink-muted">
+          {tAdmin('noMatches')}
+        </p>
+      ) : (
+        <ul className="mt-3 divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
+          {pageItems.map((a) => (
+            <AccountRow key={a.id} account={a} />
+          ))}
+        </ul>
+      )}
+
+      {pages > 1 && (
+        <div className="mt-3 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={safePage <= 1}
+            className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft disabled:cursor-not-allowed disabled:text-ink-muted"
+          >
+            {tAdmin('prevPage')}
+          </button>
+          <span className="text-[13px] text-ink-muted">
+            {tAdmin('pageOf', { page: safePage, pages })}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(pages, p + 1))}
+            disabled={safePage >= pages}
+            className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft disabled:cursor-not-allowed disabled:text-ink-muted"
+          >
+            {tAdmin('nextPage')}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Active-access panel — admin/auditor visibility into who can currently
+ * see a patient's record. Collapsed by default (it's a secondary,
+ * occasionally-checked view); expanding it loads the live session list.
+ * Read-only: this surfaces access, it does not yet revoke it.
+ */
+function AccessSection({ enabled }: { enabled: boolean }) {
+  const tAdmin = useTranslations('admin');
+  const [open, setOpen] = useState(false);
+  const accessQuery = useActiveAccess(enabled && open);
+
+  const fmt = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleString();
+    } catch {
+      return iso;
+    }
+  };
+
+  return (
+    <section className="mt-10">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-display text-[18px] text-ink">
+          {tAdmin('accessTitle')}
+        </h2>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
+        >
+          {open ? tAdmin('accessHide') : tAdmin('accessShow')}
+        </button>
+      </div>
+      <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
+        {tAdmin('accessIntro')}
+      </p>
+
+      {open && (
+        <div className="mt-3">
+          {accessQuery.isLoading && (
+            <p className="text-[14px] text-ink-muted">
+              {tAdmin('accessLoading')}
+            </p>
+          )}
+          {accessQuery.isError && (
+            <p className="text-[14px] text-amber-deep">
+              {tAdmin('accessError')}
+            </p>
+          )}
+          {accessQuery.data && accessQuery.data.length === 0 && (
+            <p className="text-[14px] text-ink-muted">
+              {tAdmin('accessNone')}
+            </p>
+          )}
+          {accessQuery.data && accessQuery.data.length > 0 && (
+            <ul className="divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
+              {accessQuery.data.map((sess: ActiveAccessSession) => (
+                <li key={sess.sessionId} className="px-4 py-3 text-[14px]">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <span className="font-semibold text-ink">
+                      {sess.professionalName}
+                    </span>
+                    <span className="text-[13px] text-ink-muted">
+                      {tAdmin('accessColSince')}: {fmt(sess.lastActivityAt)}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-ink-soft">
+                    {tAdmin('accessColPatient')}: {sess.patientName}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -439,6 +648,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
   const updateAccount = useUpdateAccount();
   const setStatus = useSetAccountStatus();
   const deleteAccount = useDeleteAccount();
+  const resetPassword = useResetPassword();
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -456,6 +666,20 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
   const isSelf = user?.id === a.id;
   const isDeactivated = a.deactivatedAt !== null;
   const isTherapist = a.role === 'physiotherapist';
+
+  const onResetPassword = () => {
+    resetPassword.mutate(
+      { profileId: a.id },
+      {
+        onSuccess: (res) =>
+          toast.success(
+            tAdmin('passwordResetDone', { password: res.tempPassword })
+          ),
+        onError: (err) =>
+          toast.error((err as Error).message ?? tAdmin('passwordResetError'))
+      }
+    );
+  };
 
   const onSaveEdit = () => {
     if (name.trim().length === 0) {
@@ -681,7 +905,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                 onClick={() => setEditing(true)}
                 className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
               >
-                Edit
+                {tAdmin('edit')}
               </button>
               <button
                 type="button"
@@ -690,6 +914,16 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                 className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {a.isAdmin ? tAdmin('removeAdmin') : tAdmin('makeAdmin')}
+              </button>
+              <button
+                type="button"
+                onClick={onResetPassword}
+                disabled={resetPassword.isPending}
+                className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {resetPassword.isPending
+                  ? tAdmin('resettingPassword')
+                  : tAdmin('resetPassword')}
               </button>
               <button
                 type="button"

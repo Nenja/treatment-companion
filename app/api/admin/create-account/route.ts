@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseServiceClient } from '@/lib/supabase/serviceClient';
+import { writeAdminAudit } from '@/lib/supabase/adminAudit';
 
 /**
  * Admin endpoint: create a new patient or clinician account.
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
 
   const { data: callerProfile } = await anon
     .from('profile')
-    .select('is_admin')
+    .select('is_admin, role')
     .eq('id', userResp.user.id)
     .maybeSingle();
 
@@ -212,6 +213,17 @@ export async function POST(req: NextRequest) {
       );
     }
   }
+
+  // Audit: record the account creation (and whether it granted admin).
+  await writeAdminAudit(
+    admin,
+    userResp.user.id,
+    callerProfile.role,
+    'admin_account_created',
+    'profile',
+    newUserId,
+    { role, isAdmin: newIsAdmin }
+  );
 
   return NextResponse.json({
     profileId: newUserId,

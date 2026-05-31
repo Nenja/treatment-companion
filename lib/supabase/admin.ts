@@ -113,6 +113,63 @@ export function useSetAdmin() {
 }
 
 /**
+ * Resets an account's password to a fresh temporary one and returns it
+ * so the admin can share it with the user. The user is flagged to set
+ * their own password on next login. Role/permissions are unaffected.
+ */
+/**
+ * One active access session — a professional currently able to see a
+ * patient's record (via an open, non-timed-out clinician session).
+ */
+export interface ActiveAccessSession {
+  sessionId: string;
+  professionalName: string;
+  professionalRole: string;
+  patientName: string;
+  startedAt: string;
+  lastActivityAt: string;
+}
+
+/**
+ * Lists currently-active access sessions for admin visibility:
+ * who can see which patient's record right now. Read-only.
+ */
+export function useActiveAccess(enabled: boolean) {
+  return useQuery({
+    queryKey: ['adminActiveAccess'],
+    enabled,
+    queryFn: async (): Promise<ActiveAccessSession[]> => {
+      const res = await fetch('/api/admin/list-access');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Load access failed (${res.status})`);
+      }
+      const data = await res.json();
+      return data.sessions as ActiveAccessSession[];
+    }
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: async (input: {
+      profileId: string;
+    }): Promise<{ tempPassword: string }> => {
+      const res = await fetch('/api/admin/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input)
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Password reset failed (${res.status})`);
+      }
+      return res.json();
+    }
+  });
+}
+
+/**
  * Edits an account's display name and (therapist accounts only)
  * profession. Role is intentionally not editable — see the
  * update-account route.

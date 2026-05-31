@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseServiceClient } from '@/lib/supabase/serviceClient';
+import { writeAdminAudit } from '@/lib/supabase/adminAudit';
 
 /**
  * Admin endpoint: deactivate or reactivate an account.
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   const { data: callerProfile } = await anon
     .from('profile')
-    .select('is_admin')
+    .select('is_admin, role')
     .eq('id', userResp.user.id)
     .maybeSingle();
 
@@ -116,6 +117,15 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+
+  await writeAdminAudit(
+    admin,
+    userResp.user.id,
+    callerProfile.role,
+    deactivate ? 'admin_account_deactivated' : 'admin_account_reactivated',
+    'profile',
+    profileId
+  );
 
   return NextResponse.json({ profileId, deactivated: deactivate });
 }
