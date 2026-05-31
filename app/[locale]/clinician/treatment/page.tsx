@@ -1238,6 +1238,7 @@ function CopyConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const t = useTranslations('treatment');
   const containerRef = useModalA11y(onCancel);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
@@ -1295,6 +1296,13 @@ function LastTreatmentDialog({
   onClose: () => void;
   onCopyRequested: () => void;
 }) {
+  const t = useTranslations('treatment');
+  const sideLabel = (sideValue: InjectionSide): string =>
+    ({
+      left: t('sideLeft'),
+      right: t('sideRight'),
+      bilateral: t('sideBilateral')
+    })[sideValue];
   const containerRef = useModalA11y(onClose);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
