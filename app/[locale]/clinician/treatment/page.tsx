@@ -21,7 +21,6 @@ import { useSessionExpiryWarning } from '@/lib/useSessionExpiryWarning';
 import {
   GUIDANCE_METHODS,
   INJECTION_SIDES,
-  injectionSideLabel,
   type GuidanceMethod,
   type InjectionSide
 } from '@/lib/types';
@@ -133,6 +132,26 @@ function TreatmentRecordInner() {
   const touchSession = useTouchClinicianSession();
   const toast = useToast();
   const tFeedback = useTranslations('feedback');
+  const t = useTranslations('treatment');
+  // Localised labels for guidance methods and injection sides — defined
+  // here so they can use the page's translator. Replace the module-level
+  // English helpers at the call sites.
+  const guidanceLabel = (g: GuidanceMethod): string =>
+    ({
+      emg: t('guidanceEmg'),
+      ultrasound: t('guidanceUltrasound'),
+      usEmg: t('guidanceUsEmg'),
+      electricalStimulation: t('guidanceElectricalStimulation'),
+      anatomicalLandmarks: t('guidanceAnatomicalLandmarks'),
+      none: t('guidanceNone'),
+      other: t('guidanceOther')
+    })[g];
+  const sideLabel = (sideValue: InjectionSide): string =>
+    ({
+      left: t('sideLeft'),
+      right: t('sideRight'),
+      bilateral: t('sideBilateral')
+    })[sideValue];
 
   // New-cycle mode: reached from the "start new cycle" dialog, which
   // passes ?newCycle=1&date=YYYY-MM-DD. In this mode NO cycle exists
@@ -433,15 +452,15 @@ function TreatmentRecordInner() {
   // Save button is never a silent dead end. Each item names a concrete
   // missing field; the clinician sees exactly what to fix.
   const missing: string[] = [];
-  if (!date.trim()) missing.push('a treatment date');
-  if (!drugProduct.trim()) missing.push('the drug product');
+  if (!date.trim()) missing.push(t('needDate'));
+  if (!drugProduct.trim()) missing.push(t('needDrugProduct'));
   if (!totalUnits.trim() || Number.isNaN(totalUnitsNum)) {
-    missing.push('the total units');
+    missing.push(t('needTotalUnits'));
   } else if (totalUnitsNum < 0) {
-    missing.push('a total units value of zero or more');
+    missing.push(t('needTotalNonNegative'));
   }
   if (validInjections.length === 0) {
-    missing.push('at least one muscle with a name and a dose');
+    missing.push(t('needMuscle'));
   }
 
   const submit = async () => {
@@ -587,6 +606,7 @@ function TreatmentRecordInner() {
             sit side-by-side to save vertical space. On lg+ (desktop
             two-pane), they stack again because the left aside is
             narrow. */}
+        <div className="eyebrow mb-2 text-ink-muted">{t('forReference')}</div>
         <div className={refCardsClass}>
           {/* Medication card */}
           <div className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft">
@@ -597,11 +617,11 @@ function TreatmentRecordInner() {
                 className="flex w-full items-center justify-between gap-2 p-3 text-left hover:bg-stone-soft/40"
               >
                 <div className="min-w-0">
-                  <div className="eyebrow">Anti-spastic medication</div>
+                  <div className="eyebrow">{t('medTitle')}</div>
                   <div className="mt-0.5 truncate text-[13px] text-ink-soft">
                     {dataQuery.data.patient.currentAntispasticMedication ?? (
                       <span className="text-ink-muted">
-                        Not recorded — tap to add
+                        {t('medNotRecordedTap')}
                       </span>
                     )}
                   </div>
@@ -613,7 +633,7 @@ function TreatmentRecordInner() {
             ) : (
               <div className="p-4">
                 <div className="flex items-baseline justify-between gap-2">
-                  <div className="eyebrow">Anti-spastic medication</div>
+                  <div className="eyebrow">{t('medTitle')}</div>
                   <div className="flex items-center gap-2">
                     {!editingMed && (
                       <button
@@ -621,7 +641,7 @@ function TreatmentRecordInner() {
                         onClick={() => setEditingMed(true)}
                         className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-stone-soft"
                       >
-                        Edit
+                        {t('edit')}
                       </button>
                     )}
                     <button
@@ -631,7 +651,7 @@ function TreatmentRecordInner() {
                         setMedExpanded(false);
                       }}
                       disabled={editingMed}
-                      aria-label="Collapse"
+                      aria-label={t('collapse')}
                       className="-m-1.5 flex h-8 w-8 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink disabled:opacity-30"
                     >
                       <span aria-hidden className="text-[14px]">
@@ -645,26 +665,26 @@ function TreatmentRecordInner() {
                   <div className="mt-2 space-y-2">
                     <div>
                       <div className="text-[12px] font-semibold text-ink-soft">
-                        Current
+                        {t('medCurrent')}
                       </div>
                       <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
                         {dataQuery.data.patient
                           .currentAntispasticMedication ?? (
                           <span className="text-ink-muted">
-                            Not recorded yet.
+                            {t('medNotRecordedYet')}
                           </span>
                         )}
                       </p>
                     </div>
                     <div>
                       <div className="text-[12px] font-semibold text-ink-soft">
-                        Previous
+                        {t('medPrevious')}
                       </div>
                       <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
                         {dataQuery.data.patient
                           .previousAntispasticMedication ?? (
                           <span className="text-ink-muted">
-                            Not recorded yet.
+                            {t('medNotRecordedYet')}
                           </span>
                         )}
                       </p>
@@ -677,7 +697,7 @@ function TreatmentRecordInner() {
                         htmlFor="med-current"
                         className="block text-[13px] font-semibold text-ink"
                       >
-                        Current anti-spastic medication
+                        {t('medCurrentLabel')}
                       </label>
                       <textarea
                         id="med-current"
@@ -685,7 +705,7 @@ function TreatmentRecordInner() {
                         onChange={(e) => setMedCurrent(e.target.value)}
                         rows={3}
                         maxLength={4000}
-                        placeholder="Drug, dose, frequency, start date (free text)"
+                        placeholder={t('medCurrentPlaceholder')}
                         className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
                       />
                     </div>
@@ -694,7 +714,7 @@ function TreatmentRecordInner() {
                         htmlFor="med-previous"
                         className="block text-[13px] font-semibold text-ink"
                       >
-                        Previous anti-spastic medication
+                        {t('medPreviousLabel')}
                       </label>
                       <textarea
                         id="med-previous"
@@ -702,7 +722,7 @@ function TreatmentRecordInner() {
                         onChange={(e) => setMedPrevious(e.target.value)}
                         rows={3}
                         maxLength={4000}
-                        placeholder="What was tried before, with reason for stopping if relevant"
+                        placeholder={t('medPreviousPlaceholder')}
                         className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
                       />
                     </div>
@@ -720,20 +740,18 @@ function TreatmentRecordInner() {
                             },
                             {
                               onSuccess: () => {
-                                toast.success('Medication updated.');
+                                toast.success(t('medUpdated'));
                                 setEditingMed(false);
                               },
                               onError: () =>
-                                toast.error(
-                                  'Could not save. Please try again.'
-                                )
+                                toast.error(t('medSaveError'))
                             }
                           );
                         }}
                         disabled={setMedication.isPending}
                         className="rounded-[var(--radius-button)] bg-sage-deep px-4 py-2 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
                       >
-                        {setMedication.isPending ? '…' : 'Save'}
+                        {setMedication.isPending ? '…' : t('save')}
                       </button>
                       <button
                         type="button"
@@ -751,7 +769,7 @@ function TreatmentRecordInner() {
                         disabled={setMedication.isPending}
                         className="rounded-[var(--radius-button)] border border-stone bg-cream px-4 py-2 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
                       >
-                        Cancel
+                        {t('cancel')}
                       </button>
                     </div>
                   </div>
@@ -775,17 +793,17 @@ function TreatmentRecordInner() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="eyebrow">Last treatment</div>
+                    <div className="eyebrow">{t('lastTreatment')}</div>
                     <div className="mt-0.5 truncate text-[13px] text-ink-soft">
                       {referenceTreatment.drugProduct} ·{' '}
-                      {referenceTreatment.totalUnits} units
+                      {referenceTreatment.totalUnits} {t('unitsSuffix')}
                     </div>
                     <div className="mt-0.5 truncate text-[12px] text-ink-muted">
                       {referenceTreatment.injections.length}{' '}
                       {referenceTreatment.injections.length === 1
-                        ? 'muscle'
-                        : 'muscles'}{' '}
-                      · tap for details
+                        ? t('muscleSingular')
+                        : t('musclePlural')}{' '}
+                      · {t('tapForDetails')}
                     </div>
                   </div>
                   <span aria-hidden className="text-[14px] text-ink-muted">
@@ -817,11 +835,10 @@ function TreatmentRecordInner() {
                     <rect x="9" y="9" width="11" height="11" rx="2" />
                     <path d="M5 15V5a2 2 0 0 1 2-2h10" />
                   </svg>
-                  Copy last treatment into the form
+                  {t('copyLastIntoForm')}
                 </button>
                 <p className="mt-1.5 text-[12px] leading-snug text-ink-muted">
-                  Fills every field from last time. You can then adjust
-                  doses and muscles before saving.
+                  {t('copyLastHelper')}
                 </p>
               </div>
             </div>
@@ -837,7 +854,7 @@ function TreatmentRecordInner() {
             the injections are chosen (it's the conclusion, not the
             starting point). */}
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <Field label="Date" inline>
+          <Field label={t('fieldDate')} inline>
             <input
               type="date"
               value={date}
@@ -845,31 +862,31 @@ function TreatmentRecordInner() {
               className={inputClasses}
             />
           </Field>
-          <Field label="Drug product" inline>
+          <Field label={t('fieldDrugProduct')} inline>
             <input
               type="text"
               value={drugProduct}
               onChange={(e) => setDrugProduct(e.target.value)}
               className={inputClasses}
               maxLength={60}
-              placeholder="e.g. Botox"
+              placeholder={t('drugProductPlaceholder')}
             />
           </Field>
         </div>
 
         {/* Row 2: Dilution + Guidance — also session setup. */}
         <div className="mt-3 grid grid-cols-2 gap-3">
-          <Field label="Dilution" inline>
+          <Field label={t('fieldDilution')} inline>
             <input
               type="text"
               value={dilution}
               onChange={(e) => setDilution(e.target.value)}
               className={inputClasses}
               maxLength={40}
-              placeholder="250 IU/ml"
+              placeholder={t('dilutionPlaceholder')}
             />
           </Field>
-          <Field label="Guidance" inline>
+          <Field label={t('fieldGuidance')} inline>
             <select
               value={guidance}
               onChange={(e) => setGuidance(e.target.value as GuidanceMethod)}
@@ -877,7 +894,7 @@ function TreatmentRecordInner() {
             >
               {GUIDANCE_METHODS.map((g) => (
                 <option key={g} value={g}>
-                  {labelForGuidance(g)}
+                  {guidanceLabel(g)}
                 </option>
               ))}
             </select>
@@ -886,10 +903,10 @@ function TreatmentRecordInner() {
 
         {/* Muscles section */}
         <h2 className="mt-8 font-display text-[18px] text-ink">
-          Muscles injected
+          {t('musclesTitle')}
         </h2>
         <p className="mt-1 text-[14px] text-ink-muted">
-          One row per muscle.
+          {t('musclesSubtitle')}
         </p>
         <ul className="mt-3 divide-y divide-stone/60">
           {injections.map((inj, i) => (
@@ -914,7 +931,7 @@ function TreatmentRecordInner() {
                       updateInjection(i, { muscle: e.target.value })
                     }
                     className={`${inputClasses} flex-1`}
-                    placeholder="Muscle name (e.g. Gastrocnemius)"
+                    placeholder={t('musclePlaceholder')}
                     maxLength={80}
                     aria-label={`Muscle ${i + 1} name`}
                   />
@@ -922,7 +939,7 @@ function TreatmentRecordInner() {
                     <button
                       type="button"
                       onClick={() => removeInjection(i)}
-                      aria-label={`Remove muscle ${i + 1}`}
+                      aria-label={t('removeMuscle', { n: i + 1 })}
                       className={muscleRemoveInlineClass}
                     >
                       <svg
@@ -947,7 +964,7 @@ function TreatmentRecordInner() {
                     fixed widths and sit inline with the name. */}
                 <div className={muscleSideUnitsWrapClass}>
                   <label className={muscleSideLabelClass}>
-                    <span className="text-[12px] text-ink-muted">Side</span>
+                    <span className="text-[12px] text-ink-muted">{t('fieldSide')}</span>
                     <select
                       value={inj.side}
                       onChange={(e) =>
@@ -959,13 +976,13 @@ function TreatmentRecordInner() {
                     >
                       {INJECTION_SIDES.map((s) => (
                         <option key={s} value={s}>
-                          {injectionSideLabel(s)}
+                          {sideLabel(s)}
                         </option>
                       ))}
                     </select>
                   </label>
                   <label className={muscleSideLabelClass}>
-                    <span className="text-[12px] text-ink-muted">Units</span>
+                    <span className="text-[12px] text-ink-muted">{t('fieldUnits')}</span>
                     <input
                       type="number"
                       inputMode="decimal"
@@ -989,7 +1006,7 @@ function TreatmentRecordInner() {
                   <button
                     type="button"
                     onClick={() => removeInjection(i)}
-                    aria-label={`Remove muscle ${i + 1}`}
+                    aria-label={t('removeMuscle', { n: i + 1 })}
                     className={muscleRemoveEndClass}
                   >
                     <svg
@@ -1018,7 +1035,7 @@ function TreatmentRecordInner() {
                   text so it doesn't resurrect on next render. */}
               {inj.noteOpen ? (
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="text-[12px] text-ink-muted">Note</span>
+                  <span className="text-[12px] text-ink-muted">{t('noteLabel')}</span>
                   <input
                     type="text"
                     value={inj.note}
@@ -1026,7 +1043,7 @@ function TreatmentRecordInner() {
                       updateInjection(i, { note: e.target.value })
                     }
                     className={`${inputClasses} flex-1`}
-                    placeholder="e.g. high EMG activity"
+                    placeholder={t('notePlaceholder')}
                     maxLength={200}
                   />
                   <button
@@ -1034,7 +1051,7 @@ function TreatmentRecordInner() {
                     onClick={() =>
                       updateInjection(i, { note: '', noteOpen: false })
                     }
-                    aria-label={`Remove note from muscle ${i + 1}`}
+                    aria-label={t('removeNote', { n: i + 1 })}
                     className="-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink"
                   >
                     <svg
@@ -1058,7 +1075,7 @@ function TreatmentRecordInner() {
                   onClick={() => updateInjection(i, { noteOpen: true })}
                   className="mt-1 text-[12px] font-semibold text-sage-deep hover:text-ink"
                 >
-                  + add note
+                  + {t('addNote')}
                 </button>
               )}
             </li>
@@ -1069,7 +1086,7 @@ function TreatmentRecordInner() {
           onClick={addInjection}
           className="mt-3 flex h-10 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
         >
-          + Add another muscle
+          + {t('addAnotherMuscle')}
         </button>
 
         {/* Total units — auto-filled from the per-muscle sum, with a
@@ -1079,7 +1096,7 @@ function TreatmentRecordInner() {
             below the muscle list (it's the conclusion of choosing
             muscles). Constrained width on desktop — short numeric. */}
         <div className="mt-6 sm:max-w-[260px]">
-          <Field label="Total units" inline>
+          <Field label={t('fieldTotalUnits')} inline>
             <input
               type="number"
               inputMode="decimal"
@@ -1095,7 +1112,7 @@ function TreatmentRecordInner() {
             />
             {!totalManual && dosesSum > 0 && (
               <p className="mt-1 text-[12px] text-ink-muted">
-                Added up from the muscles above. Edit to override.
+                {t('totalFromSum')}
               </p>
             )}
             {totalManual && dosesSum > 0 && (
@@ -1126,7 +1143,7 @@ function TreatmentRecordInner() {
         </div>
 
         {/* Session notes */}
-        <Field label="Session notes" helper="Optional">
+        <Field label={t('fieldSessionNotes')} helper={t('optional')}>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -1143,11 +1160,9 @@ function TreatmentRecordInner() {
           <div className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
             <p className="text-[14px] leading-relaxed text-ink-soft">
               <span className="font-semibold text-ink">
-                This treatment can no longer be edited.
+                {t('lockedTitle')}
               </span>{' '}
-              A treatment record can only be corrected on the day it was
-              entered. To change treatment now, go back and start a new
-              treatment cycle.
+              {t('lockedBody')}
             </p>
           </div>
         )}
@@ -1157,7 +1172,7 @@ function TreatmentRecordInner() {
         {!canSubmit && !editLocked && missing.length > 0 && (
           <p className="mt-6 text-[14px] leading-relaxed text-ink-soft">
             <span className="font-semibold text-ink">
-              Before saving, please add:{' '}
+              {t('beforeSaving')}
             </span>
             {missing.join(', ')}.
           </p>
@@ -1169,7 +1184,7 @@ function TreatmentRecordInner() {
             onClick={back}
             className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
-            {editLocked ? 'Back' : 'Cancel'}
+            {editLocked ? t('back') : t('cancel')}
           </button>
           {!editLocked && (
             <button
@@ -1180,11 +1195,11 @@ function TreatmentRecordInner() {
                 save.isPending ||
                 startCycleWithTreatment.isPending
               }
-              className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
+              className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-soft"
             >
               {save.isPending || startCycleWithTreatment.isPending
                 ? '…'
-                : 'Save'}
+                : t('save')}
             </button>
           )}
         </div>
@@ -1237,12 +1252,10 @@ function CopyConfirmDialog({
           id="copy-confirm-title"
           className="font-display text-[20px] leading-tight text-ink"
         >
-          Overwrite current entries?
+          {t('overwriteTitle')}
         </h2>
         <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
-          You&apos;ve already entered some details. Copying from the
-          previous treatment will replace what&apos;s here. The date
-          will be set to today.
+          {t('overwriteBody')}
         </p>
         <div className="mt-5 flex flex-col gap-2">
           <button
@@ -1250,14 +1263,14 @@ function CopyConfirmDialog({
             onClick={onConfirm}
             className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft"
           >
-            Yes, copy and overwrite
+            {t('overwriteConfirm')}
           </button>
           <button
             type="button"
             onClick={onCancel}
             className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
-            Cancel
+            {t('cancel')}
           </button>
         </div>
       </div>
@@ -1296,17 +1309,17 @@ function LastTreatmentDialog({
           id="last-treatment-title"
           className="font-display text-[20px] leading-tight text-ink"
         >
-          Last treatment
+          {t('lastTreatment')}
         </h2>
         <p className="mt-1 text-[14px] text-ink-soft">
-          {treatment.drugProduct} · {treatment.totalUnits} units
+          {treatment.drugProduct} · {treatment.totalUnits} {t('unitsSuffix')}
           {treatment.dilution && ` · ${treatment.dilution}`}
         </p>
         <ul className="mt-3 max-h-[280px] space-y-1 overflow-y-auto text-[14px] text-ink-soft">
           {treatment.injections.map((inj) => (
             <li key={inj.id}>
-              {inj.muscle} · {injectionSideLabel(inj.side)} ·{' '}
-              {inj.doseUnits} units
+              {inj.muscle} · {sideLabel(inj.side)} ·{' '}
+              {inj.doseUnits} {t('unitsSuffix')}
               {inj.note && (
                 <span className="text-ink-muted"> — {inj.note}</span>
               )}
@@ -1319,14 +1332,14 @@ function LastTreatmentDialog({
             onClick={onCopyRequested}
             className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft"
           >
-            Copy into the new plan
+            {t('copyIntoPlan')}
           </button>
           <button
             type="button"
             onClick={onClose}
             className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
-            Close
+            {t('close')}
           </button>
         </div>
       </div>
@@ -1359,21 +1372,3 @@ function Field({
   );
 }
 
-function labelForGuidance(g: GuidanceMethod): string {
-  switch (g) {
-    case 'emg':
-      return 'EMG';
-    case 'ultrasound':
-      return 'Ultrasound';
-    case 'usEmg':
-      return 'Ultrasound + EMG';
-    case 'electricalStimulation':
-      return 'Electrical stimulation';
-    case 'anatomicalLandmarks':
-      return 'Anatomical landmarks';
-    case 'none':
-      return 'None';
-    case 'other':
-      return 'Other';
-  }
-}

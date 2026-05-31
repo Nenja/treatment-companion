@@ -457,7 +457,7 @@ function Inner() {
                 type="button"
                 onClick={submitApprove}
                 disabled={!canSubmitApprove || approve.isPending}
-                className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-muted"
+                className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-soft"
               >
                 {approve.isPending ? '…' : tApprove('submit')}
               </button>

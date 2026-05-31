@@ -251,7 +251,7 @@ function CheckinPageInner() {
   if (!isLastStep) {
     const goal = activeGoals[step - 1];
     title = t('rateGoalTitle');
-    helper = t('rateGoalHelper');
+    helper = goal.kind === 'gas' ? t('rateGoalHelperGas') : t('rateGoalHelper');
     body =
       goal.kind === 'gas' ? (
         <GasGoalRatingPicker
