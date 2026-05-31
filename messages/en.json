@@ -159,26 +159,6 @@
       "rateGoalHelperGas": "Choose the option that best fits how this week went."
     }
   },
-  "goal": {
-    "reviewDate": "Review date: {date}",
-    "howMeasuredTitle": "How progress is measured",
-    "howMeasuredHelper": "Your care team uses a five-step scale. The middle step is what your team realistically expects.",
-    "anchorMinus2Label": "Much harder than expected",
-    "anchorMinus1Label": "A little harder than expected",
-    "anchorZeroLabel": "What your team realistically expects",
-    "anchorPlus1Label": "Better than expected",
-    "anchorPlus2Label": "Much better than expected"
-  },
-  "suggestion": {
-    "status": {
-      "needsReview": "Awaiting clinician review",
-      "active": "Active",
-      "discussAtNextVisit": "Will be discussed at your next visit",
-      "combinedWithAnother": "Combined with another goal",
-      "notSuitableThisCycle": "Not for this treatment cycle",
-      "archived": "Archived"
-    }
-  },
   "domain": {
     "pain": "Pain",
     "hygiene": "Hygiene",
@@ -196,12 +176,6 @@
     "low": "Nice to improve",
     "medium": "Important to me",
     "high": "Very important to me"
-  },
-  "timeframe": {
-    "4w": "In about 4 weeks",
-    "8w": "In about 8 weeks",
-    "12w": "In about 12 weeks",
-    "notSure": "I'm not sure"
   },
   "clinician": {
     "unlock": {
@@ -361,20 +335,6 @@
       "cutoffError": "Each NRS cut-off must be a whole number from 0 to 9, and each one higher than the one above it.",
       "gasIntro": "You decide the question they see and how to map their answer to a GAS bucket."
     }
-  },
-  "dev": {
-    "title": "Dev panel",
-    "subtitle": "Prototype only",
-    "role": "Role",
-    "rolePatient": "Patient",
-    "roleClinician": "Clinician",
-    "patient": "Patient",
-    "simulateWeek": "Simulate next week",
-    "viewAuditLog": "View audit log",
-    "hideAuditLog": "Hide audit log",
-    "reset": "Reset fake data",
-    "auditEmpty": "No events recorded yet.",
-    "virtualDate": "Virtual date: {date}"
   },
   "intro": {
     "dismiss": "Got it",

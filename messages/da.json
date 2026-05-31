@@ -163,26 +163,6 @@
       "rateGoalHelperGas": "Vælg den mulighed, der bedst passer til, hvordan ugen gik."
     }
   },
-  "goal": {
-    "reviewDate": "Opfølgningsdato: {date}",
-    "howMeasuredTitle": "Sådan måles fremgangen",
-    "howMeasuredHelper": "Dit behandlerteam bruger en skala med fem trin. Det midterste trin er det, dit team realistisk forventer.",
-    "anchorMinus2Label": "Meget sværere end forventet",
-    "anchorMinus1Label": "Lidt sværere end forventet",
-    "anchorZeroLabel": "Det dit team realistisk forventer",
-    "anchorPlus1Label": "Bedre end forventet",
-    "anchorPlus2Label": "Meget bedre end forventet"
-  },
-  "suggestion": {
-    "status": {
-      "needsReview": "Afventer klinikerens gennemgang",
-      "active": "Aktivt",
-      "discussAtNextVisit": "Drøftes ved næste besøg",
-      "combinedWithAnother": "Samlet med et andet mål",
-      "notSuitableThisCycle": "Ikke i dette behandlingsforløb",
-      "archived": "Arkiveret"
-    }
-  },
   "domain": {
     "pain": "Smerte",
     "hygiene": "Hygiejne",
@@ -200,12 +180,6 @@
     "low": "Rart at forbedre",
     "medium": "Vigtigt for mig",
     "high": "Meget vigtigt for mig"
-  },
-  "timeframe": {
-    "4w": "Om cirka 4 uger",
-    "8w": "Om cirka 8 uger",
-    "12w": "Om cirka 12 uger",
-    "notSure": "Jeg er ikke sikker"
   },
   "clinician": {
     "unlock": {
@@ -365,20 +339,6 @@
       "cutoffError": "Hver NRS-grænse skal være et helt tal fra 0 til 9, og hver enkelt højere end den ovenover.",
       "gasIntro": "Du bestemmer det spørgsmål, de ser, og hvordan deres svar omsættes til en GAS-kategori."
     }
-  },
-  "dev": {
-    "title": "Udviklerpanel",
-    "subtitle": "Kun prototype",
-    "role": "Rolle",
-    "rolePatient": "Patient",
-    "roleClinician": "Kliniker",
-    "patient": "Patient",
-    "simulateWeek": "Simulér næste uge",
-    "viewAuditLog": "Vis hændelseslog",
-    "hideAuditLog": "Skjul hændelseslog",
-    "reset": "Nulstil testdata",
-    "auditEmpty": "Ingen hændelser endnu.",
-    "virtualDate": "Virtuel dato: {date}"
   },
   "intro": {
     "dismiss": "Forstået",
