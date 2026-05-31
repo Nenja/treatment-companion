@@ -61,6 +61,7 @@ function CheckinPageInner() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('patient.checkin');
+  const tA11y = useTranslations('a11y');
   const searchParams = useSearchParams();
   const promptIdParam = searchParams.get('promptId');
 
@@ -474,6 +475,7 @@ function ThanksView({ onBackHome }: { onBackHome: () => void }) {
  * heading + helper text, body content, primary + secondary action row.
  */
 function CheckinSkeleton() {
+  const tA11y = useTranslations('a11y');
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
@@ -484,7 +486,7 @@ function CheckinSkeleton() {
         </div>
       </header>
       <main className="mx-auto max-w-[480px] px-5 pb-32 pt-6">
-        <SkeletonScreen label="Loading check-in">
+        <SkeletonScreen label={tA11y('loading')}>
           {/* Step heading */}
           <SkeletonBlock width="w-3/5" height="h-7" />
           <SkeletonBlock width="w-4/5" height="h-4" className="mt-2" />

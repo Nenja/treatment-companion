@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import {
   useCreateGoalForPatient,
@@ -49,6 +49,7 @@ function NewGoalInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const locale = useLocale();
+  const t = useTranslations('newGoal');
   const { profile, loading: authLoading } = useAuth();
   const create = useCreateGoalForPatient();
   const createGas = useCreateGasGoalForPatient();
@@ -141,13 +142,13 @@ function NewGoalInner() {
           anchorPlus2: anchorPlus2.trim()
         });
       }
-      toast.success('Goal recorded');
+      toast.success(t('toastRecorded'));
       router.push(patientPath);
     } catch (err) {
       toast.error(
         classifyError(err) === 'errorGeneric'
-          ? 'Could not record the goal. Please try again.'
-          : 'Could not record the goal.'
+          ? t('errorRecord')
+          : t('errorRecordShort')
       );
     }
   };
@@ -174,9 +175,9 @@ function NewGoalInner() {
             onClick={() => router.push(patientPath)}
             className="text-[14px] font-semibold text-ink-soft hover:text-ink"
           >
-            Cancel
+            {t('cancel')}
           </button>
-          <span className="eyebrow min-w-0 truncate px-2 text-center">Record a goal</span>
+          <span className="eyebrow min-w-0 truncate px-2 text-center">{t('eyebrow')}</span>
           <div className="flex shrink-0 items-center gap-1.5">
             <EndSessionButton role="clinician" />
             <PageHelpButton pageKey="newGoal" />
@@ -187,17 +188,15 @@ function NewGoalInner() {
 
       <main className="mx-auto max-w-[var(--max-w-page-mid)] px-5 py-8">
         <h1 className="font-display text-[24px] leading-tight text-ink">
-          Record a goal for this patient
+          {t('title')}
         </h1>
         <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
-          Use this for a goal the patient told you about in clinic.
-          Write it in the patient&apos;s own words — it becomes one of
-          their active goals straight away.
+          {t('intro')}
         </p>
 
         <div className="mt-2">
           <label className="block text-[14px] font-semibold text-ink">
-            Goal in the patient&apos;s words
+            {t('goalLabel')}
           </label>
           <p className="mt-1 text-[14px] text-ink-muted">
             Plain language, as the patient would say it.
@@ -208,7 +207,7 @@ function NewGoalInner() {
             rows={2}
             maxLength={300}
             className={inputClasses}
-            placeholder="e.g. I want to be able to hold a cup of tea steady."
+            placeholder={t('goalPlaceholder')}
           />
         </div>
 
@@ -287,13 +286,12 @@ function NewGoalInner() {
           NRS rating setup
         </h2>
         <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
-          The patient rates this goal 0–10 each week. You set the
-          question they see and how their answer maps to a GAS level.
+          {t('ratingSectionIntro')}
         </p>
 
         <div className="mt-5">
           <label className="block text-[14px] font-semibold text-ink">
-            NRS question (patient-facing)
+            {t('nrsQuestionLabel')}
           </label>
           <textarea
             value={nrsQuestion}
@@ -301,17 +299,16 @@ function NewGoalInner() {
             rows={3}
             maxLength={300}
             className={inputClasses}
-            placeholder="e.g. On a scale of 0-10, how steady is your hand when holding a cup?"
+            placeholder={t('nrsQuestionPlaceholder')}
           />
         </div>
 
         <div className="mt-7">
           <label className="block text-[14px] font-semibold text-ink">
-            Direction
+            {t('directionLabel')}
           </label>
           <p className="mt-1 text-[14px] text-ink-muted">
-            What &lsquo;higher&rsquo; means on the 0–10 scale for this
-            goal.
+            {t('directionHelp')}
           </p>
           <div className="mt-2 flex gap-2">
             <button
@@ -323,7 +320,7 @@ function NewGoalInner() {
                   : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
               }`}
             >
-              Higher is better
+              {t('higherIsBetter')}
             </button>
             <button
               type="button"
@@ -334,14 +331,14 @@ function NewGoalInner() {
                   : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
               }`}
             >
-              Lower is better
+              {t('lowerIsBetter')}
             </button>
           </div>
         </div>
 
         <div className="mt-7">
           <label className="block text-[14px] font-semibold text-ink">
-            GAS outcome levels
+            {t('gasLevelsLabel')}
           </label>
           <p className="mt-1 text-[14px] text-ink-muted">
             Set the highest NRS answer that counts as each outcome.
@@ -372,63 +369,56 @@ function NewGoalInner() {
         {goalKind === 'gas' && (
           <>
             <h2 className="mt-8 font-display text-[17px] text-ink">
-              GAS outcome levels
+              {t('gasLevelsLabel')}
             </h2>
             <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
-              Optionally describe what each level looks like for this
-              goal, in one sentence each. The patient reads these and
-              picks the level that matches — there is no 0–10 scale.
-              Leave any blank to let the patient rate against the goal
-              text using the level&apos;s general meaning. Describe
-              observable outcomes, with 0 as the expected result of
-              treatment.
+              {t('gasLevelsHelp')}
             </p>
 
             <div className="mt-5 space-y-4">
               <GasAnchorField
                 level="+2"
-                label="Much more than expected"
+                label={t('levelMuchMore')}
                 tone="better"
                 value={anchorPlus2}
                 onChange={setAnchorPlus2}
-                placeholder="e.g. Holds a full cup and drinks unaided, no spills."
+                placeholder={t('levelMuchMorePlaceholder')}
               />
               <GasAnchorField
                 level="+1"
-                label="More than expected"
+                label={t('levelMore')}
                 tone="better"
                 value={anchorPlus1}
                 onChange={setAnchorPlus1}
-                placeholder="e.g. Holds a half-full cup steadily for a few seconds."
+                placeholder={t('levelMorePlaceholder')}
               />
               <GasAnchorField
                 level="0"
-                label="Expected outcome"
+                label={t('levelExpected')}
                 tone="expected"
                 value={anchorZero}
                 onChange={setAnchorZero}
-                placeholder="e.g. Holds a light cup briefly with some effort."
+                placeholder={t('levelExpectedPlaceholder')}
               />
               <GasAnchorField
                 level="−1"
-                label="Less than expected"
+                label={t('levelLess')}
                 tone="below"
                 value={anchorMinus1}
                 onChange={setAnchorMinus1}
-                placeholder="e.g. Can grip the cup but not lift it without spilling."
+                placeholder={t('levelLessPlaceholder')}
               />
               <GasAnchorField
                 level="−2"
-                label="Much less than expected"
+                label={t('levelMuchLess')}
                 tone="below"
                 value={anchorMinus2}
                 onChange={setAnchorMinus2}
-                placeholder="e.g. Cannot grip the cup at all."
+                placeholder={t('levelMuchLessPlaceholder')}
               />
             </div>
             <p className="mt-3 text-[13px] leading-relaxed text-ink-muted">
-              Tip: write the levels so they step up steadily, with no
-              gaps or overlaps between them.
+              {t('gasTip')}
             </p>
           </>
         )}
@@ -439,7 +429,7 @@ function NewGoalInner() {
             onClick={() => router.push(patientPath)}
             className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
-            Cancel
+            {t('cancel')}
           </button>
           <button
             type="button"
@@ -447,7 +437,7 @@ function NewGoalInner() {
             disabled={!canSubmit}
             className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-soft"
           >
-            {create.isPending ? 'Recording…' : 'Record goal'}
+            {create.isPending ? t('recording') : t('recordAction')}
           </button>
         </div>
       </main>

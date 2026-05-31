@@ -33,6 +33,7 @@ export default function PhysioProgressPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('physio');
+  const tA11y = useTranslations('a11y');
 
   const { user, profile, loading: authLoading } = useAuth();
   const sessionQuery = useCurrentClinicianSession(
@@ -81,7 +82,7 @@ export default function PhysioProgressPage() {
     return (
       <div className="min-h-dvh bg-cream">
         <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
-          <SkeletonScreen label="Loading">
+          <SkeletonScreen label={tA11y('loading')}>
             <SkeletonBlock width="w-1/3" height="h-5" />
             <SkeletonBlock width="w-2/3" height="h-7" className="mt-3" />
             <div className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">

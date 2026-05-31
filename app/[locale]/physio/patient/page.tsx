@@ -48,6 +48,7 @@ export default function PhysioPatientPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('physio');
+  const tA11y = useTranslations('a11y');
   const tInfo = useTranslations('patientInfo');
   const tEt = useTranslations('etiology');
   const tSide = useTranslations('side');
@@ -313,8 +314,8 @@ export default function PhysioPatientPage() {
               <button
                 type="button"
                 onClick={onEndSession}
-                aria-label="End session"
-                title="End session"
+                aria-label={t('endSession')}
+                title={t('endSession')}
                 className="flex h-11 w-11 items-center justify-center gap-1.5 rounded-full border border-stone bg-cream text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink sm:w-auto sm:rounded-[var(--radius-button)] sm:px-3"
               >
                 <svg
@@ -333,7 +334,7 @@ export default function PhysioPatientPage() {
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
-                <span className="hidden sm:inline">End session</span>
+                <span className="hidden sm:inline">{t('endSession')}</span>
               </button>
               <PageHelpButton pageKey="physioPatient" />
               <AccountMenu />
@@ -367,7 +368,7 @@ export default function PhysioPatientPage() {
             </button>
           </div>
         ) : patientData.isLoading || !patientData.data ? (
-          <SkeletonScreen label="Loading patient">
+          <SkeletonScreen label={tA11y('loading')}>
             <SkeletonBlock width="w-3/4" height="h-8" />
             <SkeletonBlock width="w-1/2" height="h-4" className="mt-2" />
             <div className="mt-8">

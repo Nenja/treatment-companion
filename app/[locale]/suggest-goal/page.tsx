@@ -50,6 +50,7 @@ export default function SuggestGoalPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('patient.suggestGoal');
+  const tA11y = useTranslations('a11y');
   const tDomain = useTranslations('domain');
   const tImportance = useTranslations('importance');
   const { user, profile, loading: authLoading } = useAuth();
@@ -448,6 +449,7 @@ function ThanksView({ onBackHome }: { onBackHome: () => void }) {
  * wizard layout (header + heading + body + sticky bottom button).
  */
 function SuggestGoalSkeleton() {
+  const tA11y = useTranslations('a11y');
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
@@ -458,7 +460,7 @@ function SuggestGoalSkeleton() {
         </div>
       </header>
       <main className="mx-auto max-w-[480px] px-5 pb-32 pt-6">
-        <SkeletonScreen label="Loading">
+        <SkeletonScreen label={tA11y('loading')}>
           <SkeletonBlock width="w-3/5" height="h-7" />
           <SkeletonBlock width="w-4/5" height="h-4" className="mt-2" />
           <div className="mt-8 space-y-3">

@@ -47,6 +47,7 @@ export default function ClinicianPatientPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('clinician.patient');
+  const tA11y = useTranslations('a11y');
   const tSession = useTranslations('clinician.session');
   const tInfo = useTranslations('patientInfo');
   const tEt = useTranslations('etiology');
@@ -186,7 +187,7 @@ export default function ClinicianPatientPage() {
           </div>
         </header>
         <main className={mainWidthClass}>
-          <SkeletonScreen label="Loading patient">
+          <SkeletonScreen label={tA11y('loading')}>
             {/* Patient name heading */}
             <SkeletonBlock width="w-3/4" height="h-8" />
             <SkeletonBlock width="w-1/2" height="h-4" className="mt-2" />

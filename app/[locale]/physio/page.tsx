@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import {
   useCurrentClinicianSession,
@@ -40,6 +40,7 @@ export default function PhysioUnlockPage() {
   );
   const unlock = useUnlockWithCode();
   const toast = useToast();
+  const tPhysio = useTranslations('physio');
 
   const [input, setInput] = useState('');
 
@@ -96,7 +97,7 @@ export default function PhysioUnlockPage() {
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
         <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
-          <span className="eyebrow">Physiotherapist</span>
+          <span className="eyebrow">{tPhysio('eyebrow')}</span>
           <AccountMenu />
         </div>
       </header>

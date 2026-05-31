@@ -37,6 +37,7 @@ import {
  * flow at their next sign-in (or directly in Supabase for now).
  */
 export default function AdminPage() {
+  const tAdmin = useTranslations('admin');
   const router = useRouter();
   const locale = useLocale();
   const { user, profile, loading: authLoading } = useAuth();
@@ -75,7 +76,7 @@ export default function AdminPage() {
           >
             ← Back
           </button>
-          <span className="eyebrow">Admin</span>
+          <span className="eyebrow">{tAdmin('eyebrow')}</span>
           <AccountMenu />
         </div>
       </header>
@@ -92,7 +93,7 @@ export default function AdminPage() {
         <CreateAccountSection />
 
         <section className="mt-10">
-          <h2 className="font-display text-[18px] text-ink">Accounts</h2>
+          <h2 className="font-display text-[18px] text-ink">{tAdmin('accountsTitle')}</h2>
           {accountsQuery.isLoading && (
             <ul className="mt-3 divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
               {[0, 1, 2].map((i) => (
@@ -209,7 +210,7 @@ function CreateAccountSection() {
 
   return (
     <section className="mt-8 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5">
-      <h2 className="font-display text-[18px] text-ink">Create account</h2>
+      <h2 className="font-display text-[18px] text-ink">{tAdmin('createAccount')}</h2>
 
       {createdInfo && (
         <div className="mt-4 rounded-[var(--radius-button)] border border-sage/30 bg-sage-soft/40 p-4">
@@ -244,7 +245,7 @@ function CreateAccountSection() {
         </div>
       )}
 
-      <Field label="Role">
+      <Field label={tAdmin('roleLabel')}>
         <div className="mt-2 flex flex-col gap-2">
           <button
             type="button"
@@ -319,19 +320,19 @@ function CreateAccountSection() {
         </Field>
       )}
 
-      <Field label="Email" helper="Will be the sign-in identifier.">
+      <Field label={tAdmin('emailLabel')} helper="Will be the sign-in identifier.">
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="off"
           className={inputClasses}
-          placeholder="patient@example.com"
+          placeholder={tAdmin('emailPlaceholder')}
         />
       </Field>
 
       <Field
-        label="Display name"
+        label={tAdmin('displayNameLabel')}
         helper="Shown to the clinician in the patient list and the patient view."
       >
         <input
@@ -345,7 +346,7 @@ function CreateAccountSection() {
       </Field>
 
       <Field
-        label="Temporary password"
+        label={tAdmin('tempPasswordLabel')}
         helper="Auto-generated. Share with the new user. They should change it at first sign-in."
       >
         <div className="flex items-stretch gap-2">
@@ -397,16 +398,17 @@ function CreateAccountSection() {
         disabled={!canSubmit}
         className="mt-6 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-soft"
       >
-        {create.isPending ? '…' : 'Create account'}
+        {create.isPending ? '…' : tAdmin('createAccount')}
       </button>
     </section>
   );
 }
 
 function AccountsList({ accounts }: { accounts: AdminAccount[] }) {
+  const tAdmin = useTranslations('admin');
   if (accounts.length === 0) {
     return (
-      <p className="mt-3 text-[14px] text-ink-muted">No accounts yet.</p>
+      <p className="mt-3 text-[14px] text-ink-muted">{tAdmin('noAccounts')}</p>
     );
   }
   return (
@@ -429,6 +431,7 @@ function AccountsList({ accounts }: { accounts: AdminAccount[] }) {
  * last-admin protection, typed-confirm for delete).
  */
 function AccountRow({ account: a }: { account: AdminAccount }) {
+  const tAdmin = useTranslations('admin');
   const { user } = useAuth();
   const toast = useToast();
   const locale = useLocale();
@@ -456,7 +459,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
 
   const onSaveEdit = () => {
     if (name.trim().length === 0) {
-      toast.error('Name cannot be empty.');
+      toast.error(tAdmin('nameEmpty'));
       return;
     }
     updateAccount.mutate(
@@ -473,11 +476,11 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
       },
       {
         onSuccess: () => {
-          toast.success('Account updated.');
+          toast.success(tAdmin('accountUpdated'));
           setEditing(false);
         },
         onError: (err) =>
-          toast.error((err as Error).message ?? 'Could not update.')
+          toast.error((err as Error).message ?? tAdmin('couldNotUpdate'))
       }
     );
   };
@@ -487,7 +490,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
       { profileId: a.id, isAdmin: !a.isAdmin },
       {
         onError: (err) =>
-          toast.error((err as Error).message ?? 'Could not update.')
+          toast.error((err as Error).message ?? tAdmin('couldNotUpdate'))
       }
     );
   };
@@ -498,10 +501,10 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
       {
         onSuccess: () =>
           toast.success(
-            isDeactivated ? 'Account reactivated.' : 'Account deactivated.'
+            isDeactivated ? tAdmin('accountReactivated') : tAdmin('accountDeactivated')
           ),
         onError: (err) =>
-          toast.error((err as Error).message ?? 'Could not update.')
+          toast.error((err as Error).message ?? tAdmin('couldNotUpdate'))
       }
     );
   };
@@ -510,9 +513,9 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
     deleteAccount.mutate(
       { profileId: a.id },
       {
-        onSuccess: () => toast.success('Account permanently deleted.'),
+        onSuccess: () => toast.success(tAdmin('accountDeleted')),
         onError: (err) =>
-          toast.error((err as Error).message ?? 'Could not delete.')
+          toast.error((err as Error).message ?? tAdmin('couldNotDelete'))
       }
     );
   };
@@ -571,12 +574,12 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
           {/* --- Profile detail --- */}
           {!editing && (
             <div className="rounded-[var(--radius-button)] bg-cream px-3 py-2">
-              {detailRow('Name', a.displayName || '(no name)')}
-              {detailRow('Email', a.email)}
-              {detailRow('Role', a.role)}
+              {detailRow(tAdmin('colName'), a.displayName || '(no name)')}
+              {detailRow(tAdmin('colEmail'), a.email)}
+              {detailRow(tAdmin('colRole'), a.role)}
               {isTherapist &&
                 detailRow(
-                  'Profession',
+                  tAdmin('colProfession'),
                   professionLabel(
                     a.profession,
                     a.professionOther,
@@ -584,16 +587,16 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                   ) ?? '—'
                 )}
               {detailRow(
-                'Created',
+                tAdmin('colCreated'),
                 new Date(a.createdAt).toLocaleDateString()
               )}
               {detailRow(
-                'Status',
+                tAdmin('colStatus'),
                 isDeactivated
                   ? `Deactivated ${new Date(
                       a.deactivatedAt as string
                     ).toLocaleDateString()}`
-                  : 'Active'
+                  : tAdmin('statusActive')
               )}
             </div>
           )}
@@ -636,7 +639,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                       type="text"
                       value={professionOther}
                       onChange={(e) => setProfessionOther(e.target.value)}
-                      placeholder="Describe the profession"
+                      placeholder={tAdmin('describeProfession')}
                       maxLength={60}
                       className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
                     />
@@ -654,7 +657,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                   disabled={updateAccount.isPending}
                   className="rounded-[var(--radius-button)] bg-sage-deep px-3 py-1.5 text-[13px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
                 >
-                  {updateAccount.isPending ? 'Saving…' : 'Save'}
+                  {updateAccount.isPending ? tAdmin('saving') : tAdmin('save')}
                 </button>
                 <button
                   type="button"
@@ -686,7 +689,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                 disabled={setAdmin.isPending || (isSelf && a.isAdmin)}
                 className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {a.isAdmin ? 'Remove admin' : 'Make admin'}
+                {a.isAdmin ? tAdmin('removeAdmin') : tAdmin('makeAdmin')}
               </button>
               <button
                 type="button"
@@ -694,7 +697,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                 disabled={setStatus.isPending || (isSelf && !isDeactivated)}
                 className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isDeactivated ? 'Reactivate' : 'Deactivate'}
+                {isDeactivated ? tAdmin('reactivate') : tAdmin('deactivate')}
               </button>
               {!isSelf && (
                 <button
@@ -740,8 +743,8 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                   className="rounded-[var(--radius-button)] bg-amber-deep px-3 py-1.5 text-[13px] font-semibold text-on-accent hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {deleteAccount.isPending
-                    ? 'Deleting…'
-                    : 'Permanently delete'}
+                    ? tAdmin('deleting')
+                    : tAdmin('permanentlyDelete')}
                 </button>
                 <button
                   type="button"

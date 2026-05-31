@@ -42,6 +42,7 @@ function Inner() {
   const searchParams = useSearchParams();
   const locale = useLocale();
   const t = useTranslations('clinician.review');
+  const tA11y = useTranslations('a11y');
   const tApprove = useTranslations('clinician.approve');
   const tDomain = useTranslations('domain');
   const tImportance = useTranslations('importance');
@@ -138,7 +139,7 @@ function Inner() {
           </div>
         </header>
         <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
-          <SkeletonScreen label="Loading suggestion">
+          <SkeletonScreen label={tA11y('loading')}>
             <SkeletonBlock width="w-3/4" height="h-7" />
             <SkeletonBlock width="w-1/3" height="h-4" className="mt-2" />
 
@@ -372,27 +373,26 @@ function Inner() {
             </h3>
             <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
               The patient will rate this goal on a 0-10 scale each week.
-              You decide the question they see and how to map their
-              answer to a GAS bucket.
+              {tApprove('gasIntro')}
             </p>
 
             <Field
-              label="NRS question (patient-facing)"
-              helper="Write the exact question the patient sees each week."
+              label={tApprove('nrsQuestionLabel')}
+              helper={tApprove('nrsQuestionHelper')}
             >
               <textarea
                 value={nrsQuestion}
                 onChange={(e) => setNrsQuestion(e.target.value)}
                 rows={3}
-                placeholder="e.g. On a scale of 0-10, how easy is it to open your hand for washing? (0 = impossible, 10 = completely easy)"
+                placeholder={tApprove('nrsQuestionPlaceholder')}
                 className={inputClasses}
                 maxLength={300}
               />
             </Field>
 
             <Field
-              label="Direction"
-              helper="Pick what 'higher' means on the 0-10 scale for this goal."
+              label={tApprove('directionLabel')}
+              helper={tApprove('directionHelper')}
             >
               <div className="mt-2 flex gap-2">
                 <button
@@ -404,7 +404,7 @@ function Inner() {
                       : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
                   }`}
                 >
-                  Higher is better
+                  {tApprove('higherIsBetter')}
                 </button>
                 <button
                   type="button"
@@ -415,13 +415,13 @@ function Inner() {
                       : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
                   }`}
                 >
-                  Lower is better
+                  {tApprove('lowerIsBetter')}
                 </button>
               </div>
             </Field>
 
             <Field
-              label="GAS outcome levels"
+              label={tApprove('gasLevelsLabel')}
               helper="Set the highest NRS answer that counts as each outcome. The patient's weekly 0-10 answer falls into the matching level."
             >
               <GasCutPoints
@@ -439,8 +439,7 @@ function Inner() {
               />
               {!cutsValid && (cutLowLow || cutLow || cutZero || cutHigh) && (
                 <p className="mt-2 text-[14px] text-amber-deep">
-                  Each NRS cut-off must be a whole number from 0 to 9,
-                  and each one higher than the one above it.
+                  {tApprove('cutoffError')}
                 </p>
               )}
             </Field>

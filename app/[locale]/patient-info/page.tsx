@@ -53,6 +53,7 @@ export default function PatientInfoPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('patientInfo');
+  const tA11y = useTranslations('a11y');
   const tEt = useTranslations('etiology');
   const tAmb = useTranslations('ambulation');
   const tSex = useTranslations('sex');
@@ -340,7 +341,7 @@ export default function PatientInfoPage() {
               onChange={(e) => setOnsetYear(e.target.value)}
               min={1900}
               max={new Date().getFullYear()}
-              placeholder="YYYY"
+              placeholder={t('yearPlaceholder')}
               className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
             />
           </Field>
@@ -444,10 +445,11 @@ function Field({
 }
 
 function LoadingState() {
+  const tA11y = useTranslations('a11y');
   // Skeleton that mirrors the rough shape of the loaded page: a
   // heading, a small subtitle line, then a card with six rows.
   return (
-    <SkeletonScreen label="Loading patient info">
+    <SkeletonScreen label={tA11y('loading')}>
       <SkeletonBlock width="w-1/2" height="h-7" />
       <SkeletonBlock width="w-1/3" height="h-4" className="mt-2" />
       <div className="mt-6 space-y-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
