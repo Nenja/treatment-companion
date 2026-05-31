@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface WeekRating {
   weekNumber: number;
@@ -65,6 +66,7 @@ export function GoalProgressView({
   physioRatings = [],
   onExpand
 }: GoalProgressViewProps) {
+  const t = useTranslations('treatment');
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
 
   // Total weeks shown: max of current week, latest reported week, and
@@ -187,15 +189,15 @@ export function GoalProgressView({
             {goalText}
           </p>
           <p className="mt-0.5 text-[14px] text-ink-muted">
-            {reportedCount} of {currentWeek} weeks reported
+            {t('weeksReported', { reported: reportedCount, total: currentWeek })}
           </p>
         </div>
         {onExpand && (
           <button
             type="button"
             onClick={onExpand}
-            aria-label="Enlarge chart"
-            title="Enlarge chart"
+            aria-label={t('enlargeChart')}
+            title={t('enlargeChart')}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink"
           >
             {/* expand / fullscreen-corners glyph */}
@@ -511,13 +513,13 @@ export function GoalProgressView({
               )}
               {selected.submitterLabel === 'caregiver' && (
                 <span className="ml-2 inline-flex items-center rounded-full border border-stone bg-cream-soft px-2 py-0.5 text-[12px] uppercase tracking-wider text-ink-muted">
-                  with caregiver
+                  {t('withCaregiver')}
                 </span>
               )}
             </p>
             {selected.comment && (
               <p className="rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1.5 text-[14px] leading-relaxed text-ink">
-                <span className="text-ink-muted">Patient note: </span>
+                <span className="text-ink-muted">{t('patientNote')} </span>
                 {selected.comment}
               </p>
             )}
@@ -573,7 +575,7 @@ export function GoalProgressView({
             Week {selectedWeek}: not reported
           </p>
         ) : (
-          <p className="text-ink-soft">Tap a point for details.</p>
+          <p className="text-ink-soft">{t('tapPointForDetails')}</p>
         )}
       </div>
     </article>
