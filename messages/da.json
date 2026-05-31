@@ -877,5 +877,51 @@
     "adminLink": "Administration",
     "visitCode": "Besøgskode til din klinik",
     "signOut": "Log ud"
+  },
+  "login": {
+    "title": "Log ind",
+    "emailLabel": "E-mail",
+    "passwordLabel": "Adgangskode",
+    "show": "Vis",
+    "hide": "Skjul",
+    "submit": "Log ind",
+    "submitting": "Logger ind…",
+    "forgotPassword": "Glemt adgangskode?",
+    "newHere": "Ny her?",
+    "createAccount": "Opret en konto",
+    "errInvalid": "E-mailen eller adgangskoden passede ikke. Tjek begge dele, og prøv igen — eller brug “Glemt adgangskode?” nedenfor.",
+    "errNotActivated": "Denne konto er ikke aktiveret endnu. Kontakt venligst din klinik.",
+    "errRateLimit": "For mange forsøg. Vent et minut, og prøv igen.",
+    "errNetwork": "Netværksproblem. Tjek din forbindelse, og prøv igen.",
+    "errGeneric": "Noget gik galt under login. Prøv venligst igen."
+  },
+  "forgotPassword": {
+    "title": "Nulstil din adgangskode",
+    "intro": "Indtast den e-mail, din klinik har til dig. Vi sender et link til at nulstille din adgangskode.",
+    "emailLabel": "E-mail",
+    "submit": "Send nulstillingslink",
+    "submitting": "Sender…",
+    "sentTitle": "Tjek din e-mail",
+    "sentBody": "Hvis der findes en konto for den e-mail, har vi sendt et link til at nulstille din adgangskode. Hvis det ikke kommer frem, skal du tjekke dit spamfilter eller kontakte din klinik.",
+    "backToSignIn": "Tilbage til login",
+    "errRateLimit": "For mange anmodninger. Vent et minut, og prøv igen.",
+    "errGeneric": "Nulstillings-e-mailen kunne ikke sendes. Prøv venligst igen."
+  },
+  "resetPassword": {
+    "titleForced": "Vælg din adgangskode",
+    "titleNormal": "Angiv en ny adgangskode",
+    "introForced": "Din konto blev oprettet med en midlertidig adgangskode. Vælg din egen, så den er let for dig at huske.",
+    "introNormal": "Vælg en ny adgangskode til din konto.",
+    "passwordLabel": "Ny adgangskode",
+    "confirmLabel": "Bekræft ny adgangskode",
+    "show": "Vis",
+    "hide": "Skjul",
+    "submit": "Gem adgangskode",
+    "submitting": "Gemmer…",
+    "errTooShort": "Adgangskoden skal være på mindst 8 tegn.",
+    "errMismatch": "De to adgangskoder er ikke ens.",
+    "errSameAsCurrent": "Vælg venligst en adgangskode, der er forskellig fra din nuværende.",
+    "errWeak": "Vælg venligst en stærkere adgangskode.",
+    "errGeneric": "Din adgangskode kunne ikke opdateres. Prøv venligst igen."
   }
 }

@@ -873,5 +873,51 @@
     "adminLink": "Admin",
     "visitCode": "Visit code for your clinic",
     "signOut": "Sign out"
+  },
+  "login": {
+    "title": "Sign in",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "show": "Show",
+    "hide": "Hide",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "forgotPassword": "Forgot password?",
+    "newHere": "New here?",
+    "createAccount": "Create an account",
+    "errInvalid": "That email or password didn’t match. Check both and try again — or use “Forgot password?” below.",
+    "errNotActivated": "This account isn’t activated yet. Please contact your clinic.",
+    "errRateLimit": "Too many attempts. Please wait a minute, then try again.",
+    "errNetwork": "Network problem. Check your connection and try again.",
+    "errGeneric": "Something went wrong signing in. Please try again."
+  },
+  "forgotPassword": {
+    "title": "Reset your password",
+    "intro": "Enter the email your clinic has for you. We’ll send a link to reset your password.",
+    "emailLabel": "Email",
+    "submit": "Send reset link",
+    "submitting": "Sending…",
+    "sentTitle": "Check your email",
+    "sentBody": "If an account exists for that email, we’ve sent a link to reset your password. If it doesn’t arrive, check your spam folder or contact your clinic.",
+    "backToSignIn": "Back to sign in",
+    "errRateLimit": "Too many requests. Please wait a minute and try again.",
+    "errGeneric": "Could not send the reset email. Please try again."
+  },
+  "resetPassword": {
+    "titleForced": "Choose your password",
+    "titleNormal": "Set a new password",
+    "introForced": "Your account was set up with a temporary password. Choose your own so it’s easy for you to remember.",
+    "introNormal": "Choose a new password for your account.",
+    "passwordLabel": "New password",
+    "confirmLabel": "Confirm new password",
+    "show": "Show",
+    "hide": "Hide",
+    "submit": "Save password",
+    "submitting": "Saving…",
+    "errTooShort": "Password must be at least 8 characters.",
+    "errMismatch": "The two passwords don’t match.",
+    "errSameAsCurrent": "Please choose a password different from your current one.",
+    "errWeak": "Please choose a stronger password.",
+    "errGeneric": "Could not update your password. Please try again."
   }
 }
