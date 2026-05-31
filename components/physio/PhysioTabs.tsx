@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { PhysioProgressForm } from '@/components/physio/PhysioProgressForm';
 import { PhysioGoalSuggestionForm } from '@/components/physio/PhysioGoalSuggestionForm';
 import { PhysioMuscleSuggestionForm } from '@/components/physio/PhysioMuscleSuggestionForm';
@@ -30,13 +31,14 @@ interface PhysioTabsProps {
  * suggest the first goal.
  */
 export function PhysioTabs({ patientId, goals }: PhysioTabsProps) {
+  const t = useTranslations('physioForms');
   const hasGoals = goals.length > 0;
   const [tab, setTab] = useState<Tab>(hasGoals ? 'progress' : 'goal');
 
   const tabs: { id: Tab; label: string; disabled?: boolean }[] = [
-    { id: 'progress', label: 'Progress', disabled: !hasGoals },
-    { id: 'goal', label: 'Suggest goal' },
-    { id: 'muscle', label: 'Suggest muscle' }
+    { id: 'progress', label: t('tabProgress'), disabled: !hasGoals },
+    { id: 'goal', label: t('tabSuggestGoal') },
+    { id: 'muscle', label: t('tabSuggestMuscle') }
   ];
 
   return (
@@ -44,7 +46,7 @@ export function PhysioTabs({ patientId, goals }: PhysioTabsProps) {
       {/* Tab bar */}
       <div
         role="tablist"
-        aria-label="Physiotherapist tasks"
+        aria-label={t('tabsAria')}
         className="flex gap-1 rounded-[var(--radius-button)] border border-stone bg-cream-soft p-1"
       >
         {tabs.map((tdef) => {

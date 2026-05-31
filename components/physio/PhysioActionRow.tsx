@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 /**
  * Horizontal action row for the therapist patient page.
  *
@@ -85,6 +87,7 @@ export function PhysioActionRow({
    *  brief page/component upload mismatch can't break the build. */
   shortLabels?: Record<PhysioActionId, string>;
 }) {
+  const t = useTranslations('physioForms');
   const items: PhysioActionId[] = [
     'muscles',
     'suggestGoal',
@@ -93,7 +96,7 @@ export function PhysioActionRow({
   ];
 
   return (
-    <div className="mt-5 flex gap-2" role="group" aria-label="Therapist actions">
+    <div className="mt-5 flex gap-2" role="group" aria-label={t('actionsAria')}>
       {items.map((id) => {
         const isActive = openPanel === id;
         return (

@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 /**
  * Skeleton placeholders for the patient home page, shown while
  * data is loading from Supabase. Shapes roughly match the rendered
@@ -9,10 +11,11 @@
  * width/spacing stays consistent.
  */
 export function PatientHomeSkeleton() {
+  const tA11y = useTranslations('a11y');
   return (
     <div
       role="status"
-      aria-label="Loading"
+      aria-label={tA11y('loading')}
       className="animate-pulse space-y-6"
     >
       {/* Cycle context line */}

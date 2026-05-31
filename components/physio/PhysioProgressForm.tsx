@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { GoalRatingPicker } from '@/components/wizard/GoalRatingPicker';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
@@ -44,6 +44,7 @@ export function PhysioProgressForm({
 }: PhysioProgressFormProps) {
   const toast = useToast();
   const locale = useLocale();
+  const t = useTranslations('physioForms');
   const submit = useSubmitPhysioAssessment();
   const recent = usePhysioAssessments(patientId, true);
 
@@ -89,7 +90,7 @@ export function PhysioProgressForm({
         note: note.trim() || undefined,
         ratings: ratingInputs
       });
-      toast.success('Assessment saved');
+      toast.success(t('progressToast'));
       // Reset for the next assessment.
       setRatings({});
       setOpenGoals({});
@@ -100,8 +101,8 @@ export function PhysioProgressForm({
     } catch (err) {
       toast.error(
         classifyError(err) === 'errorGeneric'
-          ? 'Could not save the assessment. Please try again.'
-          : 'Could not save the assessment.'
+          ? t('progressError')
+          : t('progressErrorShort')
       );
     }
   };
@@ -159,7 +160,7 @@ export function PhysioProgressForm({
                         : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
                     }`}
                   >
-                    {isOpen ? 'Rating' : 'Rate'}
+                    {isOpen ? t('progressRating') : t('progressRate')}
                   </button>
                 </div>
 
@@ -212,7 +213,7 @@ export function PhysioProgressForm({
             rows={4}
             maxLength={2000}
             className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
-            placeholder="e.g. Patient reports tightening in calf mid-cycle; consider re-evaluating dose."
+            placeholder={t('progressNotePlaceholder')}
           />
         </div>
 
@@ -223,10 +224,10 @@ export function PhysioProgressForm({
           className="mt-6 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submit.isPending
-            ? 'Saving…'
+            ? t('progressSaving')
             : ratedCount > 0
               ? `Save assessment (${ratedCount} goal${ratedCount === 1 ? '' : 's'})`
-              : 'Rate at least one goal'}
+              : t('progressRateAtLeastOne')}
         </button>
       </section>
 
@@ -236,7 +237,7 @@ export function PhysioProgressForm({
           Recent assessments
         </h2>
         {recent.isLoading ? (
-          <p className="mt-3 text-[14px] text-ink-muted">Loading…</p>
+          <p className="mt-3 text-[14px] text-ink-muted">{t('loading')}</p>
         ) : !recent.data || recent.data.length === 0 ? (
           <p className="mt-3 text-[14px] text-ink-muted">
             No assessments recorded yet this cycle.

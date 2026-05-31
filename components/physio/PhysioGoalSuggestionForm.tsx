@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
 import { formatLongDate } from '@/lib/dates';
@@ -28,6 +28,7 @@ export function PhysioGoalSuggestionForm({
 }: PhysioGoalSuggestionFormProps) {
   const toast = useToast();
   const locale = useLocale();
+  const t = useTranslations('physioForms');
   const submit = useSubmitPhysioGoalSuggestion();
   const existing = usePhysioGoalSuggestions(patientId, true);
 
@@ -47,14 +48,14 @@ export function PhysioGoalSuggestionForm({
         suggestedGoal: goal.trim(),
         rationale: rationale.trim()
       });
-      toast.success('Suggestion sent');
+      toast.success(t('goalToast'));
       setGoal('');
       setRationale('');
     } catch (err) {
       toast.error(
         classifyError(err) === 'errorGeneric'
-          ? 'Could not send the suggestion. Please try again.'
-          : 'Could not send the suggestion.'
+          ? t('goalError')
+          : t('goalErrorShort')
       );
     }
   };
@@ -84,7 +85,7 @@ export function PhysioGoalSuggestionForm({
             rows={2}
             maxLength={500}
             className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
-            placeholder="e.g. Improve active ankle dorsiflexion to reduce foot drop during swing phase."
+            placeholder={t('goalPlaceholder')}
           />
         </div>
 
@@ -105,7 +106,7 @@ export function PhysioGoalSuggestionForm({
             rows={4}
             maxLength={1000}
             className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
-            placeholder="e.g. Persistent foot drop noted during gait training; patient compensating with hip hiking. Current goals don't address ankle control."
+            placeholder={t('goalRationalePlaceholder')}
           />
         </div>
 
@@ -115,7 +116,7 @@ export function PhysioGoalSuggestionForm({
           disabled={!canSubmit}
           className="mt-6 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {submit.isPending ? 'Sending…' : 'Send suggestion'}
+          {submit.isPending ? t('goalSending') : t('goalSend')}
         </button>
       </section>
 
@@ -124,7 +125,7 @@ export function PhysioGoalSuggestionForm({
           Suggestions made
         </h2>
         {existing.isLoading ? (
-          <p className="mt-3 text-[14px] text-ink-muted">Loading…</p>
+          <p className="mt-3 text-[14px] text-ink-muted">{t('loading')}</p>
         ) : !existing.data || existing.data.length === 0 ? (
           <p className="mt-3 text-[14px] text-ink-muted">
             No goal suggestions made yet this cycle.

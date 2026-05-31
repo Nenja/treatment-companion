@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
 import { formatLongDate } from '@/lib/dates';
@@ -18,12 +18,6 @@ interface PhysioMuscleSuggestionFormProps {
   goals: PhysioPatientData['goals'];
 }
 
-const SIDE_LABEL: Record<InjectionSide, string> = {
-  left: 'Left',
-  right: 'Right',
-  bilateral: 'Bilateral'
-};
-
 /**
  * Physiotherapist muscle-suggestion surface.
  *
@@ -39,6 +33,9 @@ export function PhysioMuscleSuggestionForm({
 }: PhysioMuscleSuggestionFormProps) {
   const toast = useToast();
   const locale = useLocale();
+  const t = useTranslations('physioForms');
+  const sideLabel = (sv: InjectionSide): string =>
+    ({ left: t('sideLeft'), right: t('sideRight'), bilateral: t('sideBilateral') })[sv];
   const submit = useSubmitPhysioMuscleSuggestion();
   const existing = usePhysioMuscleSuggestions(patientId, true);
 
@@ -68,7 +65,7 @@ export function PhysioMuscleSuggestionForm({
         rationale: rationale.trim(),
         relatedGoalId: relatedGoalId || null
       });
-      toast.success('Muscle suggestion sent');
+      toast.success(t('muscleToast'));
       setMuscle('');
       setSide('left');
       setRationale('');
@@ -76,8 +73,8 @@ export function PhysioMuscleSuggestionForm({
     } catch (err) {
       toast.error(
         classifyError(err) === 'errorGeneric'
-          ? 'Could not send the suggestion. Please try again.'
-          : 'Could not send the suggestion.'
+          ? t('muscleError')
+          : t('muscleErrorShort')
       );
     }
   };
@@ -108,7 +105,7 @@ export function PhysioMuscleSuggestionForm({
             onChange={(e) => setMuscle(e.target.value)}
             maxLength={80}
             className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
-            placeholder="e.g. Gastrocnemius"
+            placeholder={t('musclePlaceholder')}
           />
         </div>
 
@@ -119,7 +116,7 @@ export function PhysioMuscleSuggestionForm({
           </span>
           <div
             role="radiogroup"
-            aria-label="Side"
+            aria-label={t('sideAria')}
             className="mt-1.5 flex gap-2"
           >
             {INJECTION_SIDES.map((s) => (
@@ -135,7 +132,7 @@ export function PhysioMuscleSuggestionForm({
                     : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
                 }`}
               >
-                {SIDE_LABEL[s]}
+                {sideLabel(s)}
               </button>
             ))}
           </div>
@@ -161,7 +158,7 @@ export function PhysioMuscleSuggestionForm({
               onChange={(e) => setRelatedGoalId(e.target.value)}
               className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] text-ink focus:border-sage focus:outline-none"
             >
-              <option value="">No specific goal</option>
+              <option value="">{t('noSpecificGoal')}</option>
               {goals.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.patientFacingText}
@@ -189,7 +186,7 @@ export function PhysioMuscleSuggestionForm({
             rows={4}
             maxLength={1000}
             className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
-            placeholder="e.g. Marked tone in the left gastrocnemius limiting dorsiflexion during swing phase of gait."
+            placeholder={t('muscleRationalePlaceholder')}
           />
         </div>
 
@@ -199,7 +196,7 @@ export function PhysioMuscleSuggestionForm({
           disabled={!canSubmit}
           className="mt-6 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {submit.isPending ? 'Sending…' : 'Send muscle suggestion'}
+          {submit.isPending ? t('muscleSending') : t('muscleSend')}
         </button>
       </section>
 
@@ -208,7 +205,7 @@ export function PhysioMuscleSuggestionForm({
           Muscle suggestions made
         </h2>
         {existing.isLoading ? (
-          <p className="mt-3 text-[14px] text-ink-muted">Loading…</p>
+          <p className="mt-3 text-[14px] text-ink-muted">{t('loading')}</p>
         ) : !existing.data || existing.data.length === 0 ? (
           <p className="mt-3 text-[14px] text-ink-muted">
             No muscle suggestions made yet this cycle.
@@ -226,7 +223,7 @@ export function PhysioMuscleSuggestionForm({
                     <p className="font-display text-[16px] leading-snug text-ink">
                       {s.muscle}{' '}
                       <span className="text-ink-muted">
-                        · {SIDE_LABEL[s.side]}
+                        · {sideLabel(s.side)}
                       </span>
                     </p>
                     <span className="shrink-0 rounded-full border border-stone bg-cream px-2 py-0.5 text-[12px] uppercase tracking-wider text-ink-muted">
