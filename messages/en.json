@@ -481,7 +481,37 @@
     "reactivate": "Reactivate",
     "deactivate": "Deactivate",
     "deleting": "Deleting…",
-    "permanentlyDelete": "Permanently delete"
+    "permanentlyDelete": "Permanently delete",
+    "searchPlaceholder": "Search by name or email",
+    "filterRoleAll": "All roles",
+    "filterRolePatient": "Patients",
+    "filterRoleClinician": "Physicians",
+    "filterRoleTherapist": "Therapists",
+    "filterRoleAdmin": "Admins",
+    "filterStatusAll": "All",
+    "filterStatusActive": "Active",
+    "filterStatusInactive": "Deactivated",
+    "resultsCount": "{shown} of {total}",
+    "noMatches": "No accounts match your filters.",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageOf": "Page {page} of {pages}",
+    "edit": "Edit",
+    "resetPassword": "Reset password",
+    "resettingPassword": "Resetting…",
+    "passwordResetDone": "New temporary password: {password} — share it with the user. They will set their own on next login.",
+    "passwordResetError": "Could not reset the password.",
+    "accessTitle": "Active access",
+    "accessIntro": "Who can currently see a patient’s record, through an open session. Sessions end automatically after an hour of inactivity.",
+    "accessShow": "Show active access",
+    "accessHide": "Hide",
+    "accessNone": "No one currently has a patient record open.",
+    "accessColProfessional": "Professional",
+    "accessColPatient": "Patient",
+    "accessColSince": "Active since",
+    "accessError": "Could not load active access.",
+    "accessLoading": "Loading active access…",
+    "accountsLoadError": "Could not load accounts: {error}"
   },
   "patientInfo": {
     "subtitle": "Clinical background",
@@ -838,5 +868,10 @@
     "accountMenu": "Account menu",
     "patientActions": "Patient actions",
     "dosePerMuscle": "Dose per muscle across cycles"
+  },
+  "accountMenu": {
+    "adminLink": "Admin",
+    "visitCode": "Visit code for your clinic",
+    "signOut": "Sign out"
   }
 }

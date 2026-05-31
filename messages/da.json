@@ -485,7 +485,37 @@
     "reactivate": "Genaktivér",
     "deactivate": "Deaktivér",
     "deleting": "Sletter…",
-    "permanentlyDelete": "Slet permanent"
+    "permanentlyDelete": "Slet permanent",
+    "searchPlaceholder": "Søg på navn eller e-mail",
+    "filterRoleAll": "Alle roller",
+    "filterRolePatient": "Patienter",
+    "filterRoleClinician": "Læger",
+    "filterRoleTherapist": "Terapeuter",
+    "filterRoleAdmin": "Administratorer",
+    "filterStatusAll": "Alle",
+    "filterStatusActive": "Aktive",
+    "filterStatusInactive": "Deaktiverede",
+    "resultsCount": "{shown} af {total}",
+    "noMatches": "Ingen konti matcher dine filtre.",
+    "prevPage": "Forrige",
+    "nextPage": "Næste",
+    "pageOf": "Side {page} af {pages}",
+    "edit": "Redigér",
+    "resetPassword": "Nulstil adgangskode",
+    "resettingPassword": "Nulstiller…",
+    "passwordResetDone": "Ny midlertidig adgangskode: {password} — del den med brugeren. De vælger selv en ny ved næste login.",
+    "passwordResetError": "Adgangskoden kunne ikke nulstilles.",
+    "accessTitle": "Aktiv adgang",
+    "accessIntro": "Hvem der i øjeblikket kan se en patients journal via en åben session. Sessioner slutter automatisk efter en times inaktivitet.",
+    "accessShow": "Vis aktiv adgang",
+    "accessHide": "Skjul",
+    "accessNone": "Ingen har i øjeblikket en patientjournal åben.",
+    "accessColProfessional": "Fagperson",
+    "accessColPatient": "Patient",
+    "accessColSince": "Aktiv siden",
+    "accessError": "Aktiv adgang kunne ikke indlæses.",
+    "accessLoading": "Indlæser aktiv adgang…",
+    "accountsLoadError": "Konti kunne ikke indlæses: {error}"
   },
   "patientInfo": {
     "subtitle": "Klinisk baggrund",
@@ -842,5 +872,10 @@
     "accountMenu": "Kontomenu",
     "patientActions": "Patienthandlinger",
     "dosePerMuscle": "Dosis pr. muskel på tværs af forløb"
+  },
+  "accountMenu": {
+    "adminLink": "Administration",
+    "visitCode": "Besøgskode til din klinik",
+    "signOut": "Log ud"
   }
 }

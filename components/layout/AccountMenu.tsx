@@ -27,6 +27,7 @@ export function AccountMenu() {
   const tAppearance = useTranslations('appearance');
   const tA11y = useTranslations('a11y');
   const tProfile = useTranslations('profile');
+  const tMenu = useTranslations('accountMenu');
 
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -209,6 +210,28 @@ export function AccountMenu() {
             {tProfile('menuLink')}
           </button>
 
+          {/* Admin panel — shown only to admins. Admin is orthogonal to
+              the base role, so this is a privileged shortcut placed near
+              the top of the menu, where a clinician-admin would look for
+              it rather than having to return to the clinician home. */}
+          {profile.isAdmin && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                router.push(
+                  locale === 'en'
+                    ? '/clinician/admin'
+                    : `/${locale}/clinician/admin`
+                );
+              }}
+              role="menuitem"
+              className="block w-full border-b border-stone/70 px-4 py-3 text-left text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+            >
+              {tMenu('adminLink')}
+            </button>
+          )}
+
           {/* Visit code — patient-only. A utility used at clinic
               appointments, so it lives in the menu rather than on the
               daily home screen. Clearly labelled so a patient can find
@@ -225,7 +248,7 @@ export function AccountMenu() {
               role="menuitem"
               className="block w-full border-t border-stone/70 px-4 py-3 text-left text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
             >
-              Visit code for your clinic
+              {tMenu('visitCode')}
             </button>
           )}
 
@@ -272,7 +295,7 @@ export function AccountMenu() {
             role="menuitem"
             className="block w-full px-4 py-3 text-left text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
-            Sign out
+            {tMenu('signOut')}
           </button>
         </div>
       )}
