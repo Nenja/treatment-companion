@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useAuth } from '@/lib/supabase/auth';
@@ -15,6 +15,7 @@ import { useAuth } from '@/lib/supabase/auth';
 export default function LoginPage() {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('login');
   const { user, profile, loading } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -54,18 +55,18 @@ export default function LoginPage() {
   const friendlyError = (raw: string): string => {
     const m = raw.toLowerCase();
     if (m.includes('invalid login') || m.includes('credentials')) {
-      return 'That email or password didn\u2019t match. Check both and try again \u2014 or use "Forgot password?" below.';
+      return t('errInvalid');
     }
     if (m.includes('email not confirmed')) {
-      return 'This account isn\u2019t activated yet. Please contact your clinic.';
+      return t('errNotActivated');
     }
     if (m.includes('rate limit') || m.includes('too many')) {
-      return 'Too many attempts. Please wait a minute, then try again.';
+      return t('errRateLimit');
     }
     if (m.includes('network') || m.includes('fetch')) {
-      return 'Network problem. Check your connection and try again.';
+      return t('errNetwork');
     }
-    return 'Something went wrong signing in. Please try again.';
+    return t('errGeneric');
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -93,7 +94,7 @@ export default function LoginPage() {
     <div className="min-h-dvh bg-cream">
       <main className="mx-auto max-w-[420px] px-5 py-12">
         <h1 className="font-display text-[28px] leading-tight text-ink">
-          Sign in
+          {t('title')}
         </h1>
         <p className="mt-2 text-[15px] text-ink-soft">
           Use the email and password your clinic gave you.
@@ -105,7 +106,7 @@ export default function LoginPage() {
               htmlFor="email"
               className="block text-[14px] font-semibold text-ink"
             >
-              Email
+              {t('emailLabel')}
             </label>
             <input
               id="email"
@@ -123,7 +124,7 @@ export default function LoginPage() {
               htmlFor="password"
               className="block text-[14px] font-semibold text-ink"
             >
-              Password
+              {t('passwordLabel')}
             </label>
             <div className="relative mt-1.5">
               <input
@@ -143,7 +144,7 @@ export default function LoginPage() {
                 aria-pressed={showPassword}
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-[14px] font-semibold text-sage-deep hover:text-ink"
               >
-                {showPassword ? 'Hide' : 'Show'}
+                {showPassword ? t('hide') : t('show')}
               </button>
             </div>
           </div>
@@ -162,7 +163,7 @@ export default function LoginPage() {
             disabled={submitting || !email || !password}
             className="flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-soft"
           >
-            {submitting ? 'Signing in\u2026' : 'Sign in'}
+            {submitting ? t('submitting') : t('submit')}
           </button>
         </form>
 
@@ -172,17 +173,17 @@ export default function LoginPage() {
             href={`${prefix}/forgot-password`}
             className="font-semibold text-sage-deep hover:text-ink"
           >
-            Forgot password?
+            {t('forgotPassword')}
           </Link>
         </p>
 
         <p className="mt-4 text-center text-[14px] text-ink-soft">
-          New here?{' '}
+          {t('newHere')}{' '}
           <Link
             href={`${prefix}/signup`}
             className="font-semibold text-sage-deep hover:text-ink"
           >
-            Create an account
+            {t('createAccount')}
           </Link>
         </p>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 
@@ -18,6 +18,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
  */
 export default function ForgotPasswordPage() {
   const locale = useLocale();
+  const t = useTranslations('forgotPassword');
   const prefix = locale === 'en' ? '' : `/${locale}`;
 
   const [email, setEmail] = useState('');
@@ -48,8 +49,8 @@ export default function ForgotPasswordPage() {
       const m = resetError.message.toLowerCase();
       setError(
         m.includes('rate') || m.includes('too many')
-          ? 'Too many requests. Please wait a minute and try again.'
-          : 'Could not send the reset email. Please try again.'
+          ? t('errRateLimit')
+          : t('errGeneric')
       );
       setSubmitting(false);
       return;
@@ -64,22 +65,16 @@ export default function ForgotPasswordPage() {
       <div className="min-h-dvh bg-cream">
         <main className="mx-auto max-w-[420px] px-5 py-12">
           <h1 className="font-display text-[28px] leading-tight text-ink">
-            Check your email
+            {t('sentTitle')}
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
-            If an account exists for that email, we&apos;ve sent a link
-            to reset your password. Open the email and tap the link to
-            choose a new password.
-          </p>
-          <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
-            The link works for a limited time. If it doesn&apos;t
-            arrive, check your spam folder or contact your clinic.
+            {t('sentBody')}
           </p>
           <Link
             href={`${prefix}/login`}
             className="mt-8 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft"
           >
-            Back to sign in
+            {t('backToSignIn')}
           </Link>
         </main>
       </div>
@@ -90,7 +85,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-dvh bg-cream">
       <main className="mx-auto max-w-[420px] px-5 py-12">
         <h1 className="font-display text-[28px] leading-tight text-ink">
-          Reset your password
+          {t('title')}
         </h1>
         <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
           Enter the email your clinic has for you. We&apos;ll send a
@@ -103,7 +98,7 @@ export default function ForgotPasswordPage() {
               htmlFor="email"
               className="block text-[14px] font-semibold text-ink"
             >
-              Email
+              {t('emailLabel')}
             </label>
             <input
               id="email"
@@ -130,7 +125,7 @@ export default function ForgotPasswordPage() {
             disabled={submitting || !email}
             className="flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-soft"
           >
-            {submitting ? 'Sending\u2026' : 'Send reset link'}
+            {submitting ? t('submitting') : t('submit')}
           </button>
         </form>
 

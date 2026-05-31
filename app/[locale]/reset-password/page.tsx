@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useAuth } from '@/lib/supabase/auth';
 
@@ -28,6 +28,7 @@ import { useAuth } from '@/lib/supabase/auth';
 export default function ResetPasswordPage() {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('resetPassword');
   const prefix = locale === 'en' ? '' : `/${locale}`;
   const { user, profile, loading, refreshProfile } = useAuth();
 
@@ -52,10 +53,10 @@ export default function ResetPasswordPage() {
 
   const validate = (): string | null => {
     if (password.length < 8) {
-      return 'Password must be at least 8 characters.';
+      return t('errTooShort');
     }
     if (password !== confirm) {
-      return 'The two passwords don\u2019t match.';
+      return t('errMismatch');
     }
     return null;
   };
@@ -79,10 +80,10 @@ export default function ResetPasswordPage() {
       const m = updateError.message.toLowerCase();
       setError(
         m.includes('same') || m.includes('different')
-          ? 'Please choose a password different from your current one.'
+          ? t('errSameAsCurrent')
           : m.includes('weak') || m.includes('short')
-            ? 'Please choose a stronger password.'
-            : 'Could not update your password. Please try again.'
+            ? t('errWeak')
+            : t('errGeneric')
       );
       setSubmitting(false);
       return;
@@ -137,12 +138,12 @@ export default function ResetPasswordPage() {
     <div className="min-h-dvh bg-cream">
       <main className="mx-auto max-w-[420px] px-5 py-12">
         <h1 className="font-display text-[28px] leading-tight text-ink">
-          {forcedChange ? 'Choose your password' : 'Set a new password'}
+          {forcedChange ? t('titleForced') : t('titleNormal')}
         </h1>
         <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
           {forcedChange
-            ? 'Your account was set up with a temporary password. Choose your own so it\u2019s easy for you to remember.'
-            : 'Choose a new password for your account.'}
+            ? t('introForced')
+            : t('introNormal')}
         </p>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-4">
@@ -151,7 +152,7 @@ export default function ResetPasswordPage() {
               htmlFor="password"
               className="block text-[14px] font-semibold text-ink"
             >
-              New password
+              {t('passwordLabel')}
             </label>
             <div className="relative mt-1.5">
               <input
@@ -169,7 +170,7 @@ export default function ResetPasswordPage() {
                 aria-pressed={show}
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-[14px] font-semibold text-sage-deep hover:text-ink"
               >
-                {show ? 'Hide' : 'Show'}
+                {show ? t('hide') : t('show')}
               </button>
             </div>
             <p className="mt-1 text-[13px] text-ink-muted">
@@ -182,7 +183,7 @@ export default function ResetPasswordPage() {
               htmlFor="confirm"
               className="block text-[14px] font-semibold text-ink"
             >
-              Confirm new password
+              {t('confirmLabel')}
             </label>
             <input
               id="confirm"
@@ -209,7 +210,7 @@ export default function ResetPasswordPage() {
             disabled={submitting || !password || !confirm}
             className="flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-soft"
           >
-            {submitting ? 'Saving\u2026' : 'Save password'}
+            {submitting ? t('submitting') : t('submit')}
           </button>
         </form>
       </main>
