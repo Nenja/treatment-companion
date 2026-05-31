@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import {
   createContext,
   useCallback,
@@ -120,6 +122,7 @@ function ToastItem({
   toast: Toast;
   onDismiss: () => void;
 }) {
+  const tA11y = useTranslations('a11y');
   // Slide-in via class transition: mounts in `entering` then flips to
   // `entered` on next frame. Standard "css transitions need a layout
   // pass" pattern.
@@ -149,7 +152,7 @@ function ToastItem({
       <button
         type="button"
         onClick={onDismiss}
-        aria-label="Dismiss"
+        aria-label={tA11y('dismiss')}
         className="-mr-1 -mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[18px] leading-none text-ink-muted hover:bg-stone-soft hover:text-ink"
       >
         ×

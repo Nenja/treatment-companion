@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 /**
  * Horizontal action row for the clinician patient page.
  *
@@ -104,6 +106,7 @@ export function PatientActionRow({
    *  never fail to compile on a brief page/component mismatch. */
   shortLabels?: Record<PatientActionId, string>;
 }) {
+  const tA11y = useTranslations('a11y');
   const items: { id: PatientActionId; count?: number }[] = [
     { id: 'suggestions', count: suggestionCount },
     { id: 'physio', count: physioCount },
@@ -112,7 +115,7 @@ export function PatientActionRow({
   ];
 
   return (
-    <div className="mt-5 flex gap-2" role="group" aria-label="Patient actions">
+    <div className="mt-5 flex gap-2" role="group" aria-label={tA11y('patientActions')}>
       {items.map(({ id, count }) => {
         const isActive = openPanel === id;
         return (

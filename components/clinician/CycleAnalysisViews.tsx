@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import { useState } from 'react';
 import type {
   CycleAnalysis,
@@ -108,6 +110,7 @@ export function MuscleDoseChart({
   /** Shown when the physician has toggled every muscle off. */
   allHiddenLabel: string;
 }) {
+  const tA11y = useTranslations('a11y');
   // Muscles the physician has toggled OFF. Empty = all shown.
   const [hidden, setHidden] = useState<Set<string>>(new Set());
 
@@ -162,7 +165,7 @@ export function MuscleDoseChart({
         viewBox={`0 0 ${W} ${H}`}
         className="w-full"
         role="img"
-        aria-label="Dose per muscle across cycles"
+        aria-label={tA11y('dosePerMuscle')}
       >
         {/* Y axis */}
         <line

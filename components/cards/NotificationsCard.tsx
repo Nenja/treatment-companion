@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   pushSupported,
   isStandalone,
@@ -33,6 +33,7 @@ const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? '';
  */
 export function NotificationsCard({ profileId }: NotificationsCardProps) {
   const locale = useLocale();
+  const t = useTranslations('notifications');
   const [hidden, setHidden] = useState(true); // hidden until we mount
   const [status, setStatus] = useState<
     'idle' | 'pending' | 'ios_install' | 'denied' | 'error' | 'subscribed'
@@ -66,7 +67,7 @@ export function NotificationsCard({ profileId }: NotificationsCardProps) {
     if (!VAPID_PUBLIC_KEY) {
       setStatus('error');
       setErrorMsg(
-        'Notifications are not configured (missing VAPID key).'
+        t('notConfigured')
       );
       return;
     }
@@ -90,7 +91,7 @@ export function NotificationsCard({ profileId }: NotificationsCardProps) {
       setHidden(true); // silently hide
     } else {
       setStatus('error');
-      setErrorMsg(result.message ?? 'Could not enable notifications.');
+      setErrorMsg(result.message ?? t('couldNotEnable'));
     }
   };
 
@@ -108,24 +109,22 @@ export function NotificationsCard({ profileId }: NotificationsCardProps) {
   return (
     <section
       role="region"
-      aria-label="Enable notifications"
+      aria-label={t('regionAria')}
       className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
           <p className="text-[15px] font-semibold leading-snug text-ink">
-            Get reminded about your weekly check-in
+            {t('title')}
           </p>
           <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
-            We&apos;ll send a notification to this device when your
-            check-in is due, and one reminder if it&apos;s a couple of
-            days late. Nothing else.
+            {t('body')}
           </p>
         </div>
         <button
           type="button"
           onClick={onDismiss}
-          aria-label="Dismiss"
+          aria-label={t('dismissAria')}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[16px] text-ink-muted hover:bg-stone-soft hover:text-ink-soft"
         >
           ×
@@ -139,47 +138,44 @@ export function NotificationsCard({ profileId }: NotificationsCardProps) {
             onClick={onEnable}
             className="flex h-10 flex-1 items-center justify-center rounded-[var(--radius-button)] border border-sage/50 bg-cream px-4 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
           >
-            Enable notifications
+            {t('enable')}
           </button>
           <button
             type="button"
             onClick={onDismiss}
             className="flex h-10 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
-            Not now
+            {t('notNow')}
           </button>
         </div>
       )}
 
       {status === 'pending' && (
-        <p className="mt-3 text-[14px] text-ink-soft">Requesting…</p>
+        <p className="mt-3 text-[14px] text-ink-soft">{t('requesting')}</p>
       )}
 
       {status === 'subscribed' && (
         <p className="mt-3 text-[14px] font-semibold text-sage-deep">
-          You&apos;re all set. Notifications enabled.
+          {t('subscribed')}
         </p>
       )}
 
       {status === 'denied' && (
         <p className="mt-3 text-[14px] text-ink-soft">
-          Notifications were blocked. To turn them on later, open your
-          browser settings for this site and allow notifications.
+          {t('denied')}
         </p>
       )}
 
       {status === 'ios_install' && (
         <div className="mt-3 text-[14px] text-ink-soft">
-          <p className="font-semibold">To get reminders on iPhone:</p>
+          <p className="font-semibold">{t('iosTitle')}</p>
           <ol className="mt-1 ml-4 list-decimal space-y-1">
             <li>
-              Tap the Share button at the bottom of Safari (the square
-              with the arrow).
+              {t('iosStep1')}
             </li>
-            <li>Scroll down and tap &ldquo;Add to Home Screen&rdquo;.</li>
+            <li>{t('iosStep2')}</li>
             <li>
-              Open the app from the home screen, sign in, and tap
-              &ldquo;Enable notifications&rdquo; again.
+              {t('iosStep3')}
             </li>
           </ol>
         </div>
@@ -187,7 +183,7 @@ export function NotificationsCard({ profileId }: NotificationsCardProps) {
 
       {status === 'error' && (
         <p className="mt-3 text-[14px] text-amber-deep">
-          {errorMsg ?? 'Something went wrong.'}
+          {errorMsg ?? t('genericError')}
         </p>
       )}
     </section>

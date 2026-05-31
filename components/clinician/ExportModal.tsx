@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import { useEffect, useState } from 'react';
 import { useModalA11y } from '@/lib/useModalA11y';
 
@@ -15,6 +17,7 @@ interface ExportModalProps {
  * date formats, muscle names, abbreviations, etc.
  */
 export function ExportModal({ initialText, onClose }: ExportModalProps) {
+  const tA11y = useTranslations('a11y');
   const [text, setText] = useState(initialText);
   const [copied, setCopied] = useState(false);
 
@@ -61,7 +64,7 @@ export function ExportModal({ initialText, onClose }: ExportModalProps) {
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={tA11y('close')}
             className="flex h-11 w-11 items-center justify-center rounded-md text-ink-soft hover:bg-stone-soft hover:text-ink"
           >
             ✕

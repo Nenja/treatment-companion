@@ -25,6 +25,7 @@ export function AccountMenu() {
   const router = useRouter();
   const locale = useLocale();
   const tAppearance = useTranslations('appearance');
+  const tA11y = useTranslations('a11y');
   const tProfile = useTranslations('profile');
 
   const [open, setOpen] = useState(false);
@@ -97,7 +98,7 @@ export function AccountMenu() {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Account menu"
+        aria-label={tA11y('accountMenu')}
         className="flex h-11 w-11 items-center justify-center rounded-full border border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft focus:outline-none focus:ring-2 focus:ring-sage/40"
       >
         <svg
