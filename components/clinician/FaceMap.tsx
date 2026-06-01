@@ -67,6 +67,50 @@ function sideFromX(x: number): Side {
   return 'bilateral';
 }
 
+// --- PNG export helpers ----------------------------------------------------
+// These build SVG-string markup (not JSX) for the downloadable image. The
+// shapes/sizes/colours mirror the on-screen rendering so the exported picture
+// matches what the clinician placed. Ported from the prototype.
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function symbolSvgString(idx: number, x: number, y: number): string {
+  const s = 3;
+  if (idx === 0)
+    return `<circle cx="${x}" cy="${y}" r="${s}" fill="none" stroke="${SYMBOL_INK}" stroke-width="1.4"/>`;
+  if (idx === 1)
+    return `<polygon points="${x},${y - s} ${x - s},${y + s} ${x + s},${y + s}" fill="${SYMBOL_INK}"/>`;
+  if (idx === 2)
+    return `<rect x="${x - s}" y="${y - s}" width="${s * 2}" height="${s * 2}" fill="${SYMBOL_INK}"/>`;
+  if (idx === 3)
+    return `<polygon points="${x},${y - s} ${x + s},${y} ${x},${y + s} ${x - s},${y}" fill="${SYMBOL_INK}"/>`;
+  return (
+    `<line x1="${x - s}" y1="${y - s}" x2="${x + s}" y2="${y + s}" stroke="${SYMBOL_INK}" stroke-width="1.6" stroke-linecap="round"/>` +
+    `<line x1="${x - s}" y1="${y + s}" x2="${x + s}" y2="${y - s}" stroke="${SYMBOL_INK}" stroke-width="1.6" stroke-linecap="round"/>`
+  );
+}
+
+function markSvgString(m: FaceMarkInput, mode: FaceDisplayMode): string {
+  const x = m.posX * IMG_W;
+  const y = m.posY * IMG_H;
+  const idx = bandIndex(m.doseUnits);
+  if (mode === 'color') {
+    return (
+      `<circle cx="${x}" cy="${y}" r="3.8" fill="#ffffff" stroke="#1f2421" stroke-width="0.7"/>` +
+      `<circle cx="${x}" cy="${y}" r="3" fill="${DOSE_COLORS[idx]}" stroke="#ffffff" stroke-width="0.8"/>`
+    );
+  }
+  return (
+    `<circle cx="${x}" cy="${y}" r="4.2" fill="#ffffff" fill-opacity="0.75"/>` +
+    symbolSvgString(idx, x, y)
+  );
+}
+
 interface EditorState {
   index: number | null; // null = new mark
   xImg: number;
@@ -88,6 +132,7 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
   const svgRef = useRef<SVGSVGElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const [editor, setEditor] = useState<EditorState | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   const sideShort: Record<Side, string> = {
     right: t('sideRightShort'),
@@ -159,6 +204,117 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
     onChange(marks.filter((_, i) => i !== editor.index));
     setEditor(null);
   }
+
+  // Build a self-contained SVG string (base image inlined as a data URI,
+  // title + R/L + dose legend baked in, marks generated from the live list)
+  // for the PNG export. Mirrors the prototype's buildExportSVG.
+  const buildExportSvg = (imgHref: string): string => {
+    const padTop = 26;
+    const padBottom = displayMode === 'color' ? 34 : 40;
+    const outW = VIEW.w;
+    const outH = VIEW.h + padTop + padBottom;
+    const vy = VIEW.y - padTop;
+    const ly = VIEW.y + VIEW.h + 16;
+    const lx0 = VIEW.x + 4;
+
+    const title = `<text x="${VIEW.x + VIEW.w / 2}" y="${VIEW.y - 10}" text-anchor="middle" font-family="Georgia,serif" font-size="11" font-weight="700" fill="#1f2421">${escapeXml(t('exportTitle'))}</text>`;
+    const sideR = `<text x="${VIEW.x + 6}" y="${VIEW.y - 10}" font-family="sans-serif" font-size="7" font-weight="700" fill="#9a7c64">${escapeXml(t('sideRightShort'))}</text>`;
+    const sideL = `<text x="${VIEW.x + VIEW.w - 6}" y="${VIEW.y - 10}" text-anchor="end" font-family="sans-serif" font-size="7" font-weight="700" fill="#9a7c64">${escapeXml(t('sideLeftShort'))}</text>`;
+
+    let legX = lx0;
+    const legParts: string[] = [
+      `<text x="${legX}" y="${ly + 3}" font-family="sans-serif" font-size="8" font-weight="700" fill="#4b5450">${escapeXml(t('exportDose'))}</text>`
+    ];
+    legX += 26;
+    DOSE_LABELS.forEach((lab, i) => {
+      if (displayMode === 'color') {
+        legParts.push(
+          `<circle cx="${legX + 3}" cy="${ly}" r="3.4" fill="${DOSE_COLORS[i]}" stroke="#1f2421" stroke-width="0.5"/>`
+        );
+      } else {
+        legParts.push(symbolSvgString(i, legX + 3, ly));
+      }
+      legParts.push(
+        `<text x="${legX + 9}" y="${ly + 3}" font-family="sans-serif" font-size="7.5" fill="#4b5450">${escapeXml(lab)}</text>`
+      );
+      legX += 9 + lab.length * 4.0 + 7;
+    });
+    const legend = legParts.join('');
+    const marksMarkup = marks.map((m) => markSvgString(m, displayMode)).join('');
+
+    return (
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VIEW.x} ${vy} ${outW} ${outH}" width="${outW}" height="${outH}">` +
+      `<rect x="${VIEW.x}" y="${vy}" width="${outW}" height="${outH}" fill="#fbf8f2"/>` +
+      `${title}${sideR}${sideL}` +
+      `<image href="${imgHref}" x="0" y="0" width="${IMG_W}" height="${IMG_H}"/>` +
+      `${marksMarkup}${legend}</svg>`
+    );
+  };
+
+  // Rasterise the export SVG to a PNG and trigger a download. The base
+  // image is fetched and inlined as a data URI first, so the canvas isn't
+  // tainted by an external resource.
+  const downloadPng = async () => {
+    if (marks.length === 0 || downloading) return;
+    setDownloading(true);
+    try {
+      const resp = await fetch('/face-base.png');
+      const blob = await resp.blob();
+      const imgHref = await new Promise<string>((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result as string);
+        fr.onerror = () => reject(new Error('read failed'));
+        fr.readAsDataURL(blob);
+      });
+      const svgStr = buildExportSvg(imgHref);
+      const svgBlob = new Blob([svgStr], {
+        type: 'image/svg+xml;charset=utf-8'
+      });
+      const url = URL.createObjectURL(svgBlob);
+      await new Promise<void>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = 3; // crisp output
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            URL.revokeObjectURL(url);
+            reject(new Error('no canvas context'));
+            return;
+          }
+          ctx.scale(scale, scale);
+          ctx.drawImage(img, 0, 0);
+          URL.revokeObjectURL(url);
+          canvas.toBlob((b) => {
+            if (!b) {
+              reject(new Error('toBlob failed'));
+              return;
+            }
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(b);
+            a.download = 'face-dosing.png';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+            resolve();
+          }, 'image/png');
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error('image load failed'));
+        };
+        img.src = url;
+      });
+    } catch {
+      // If anything fails the button simply does nothing; nothing is
+      // saved half-formed.
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   // Editor popover screen position (mapped from image coords).
   function editorStyle(): React.CSSProperties {
@@ -419,6 +575,14 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
         <SummaryBox n={fmt(right)} label={t('rightU')} />
         <SummaryBox n={String(marks.length)} label={t('marksCount')} />
       </div>
+      <button
+        type="button"
+        onClick={downloadPng}
+        disabled={marks.length === 0 || downloading}
+        className="mt-2 flex h-10 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft text-[14px] font-semibold text-ink-soft hover:bg-stone-soft disabled:cursor-not-allowed disabled:text-ink-muted disabled:hover:bg-cream-soft"
+      >
+        {downloading ? '…' : t('download')}
+      </button>
       {marks.length === 0 && (
         <p className="mt-2 text-[13px] text-ink-muted">{t('emptyHint')}</p>
       )}
