@@ -366,7 +366,10 @@
       "leftU": "Venstre",
       "rightU": "Højre",
       "marksCount": "Markeringer",
-      "emptyHint": "Tryk på ansigtet for at tilføje en markering."
+      "emptyHint": "Tryk på ansigtet for at tilføje en markering.",
+      "download": "Hent billede (PNG)",
+      "exportTitle": "Ansigt — botulinumtoksin",
+      "exportDose": "Dosis:"
     }
   },
   "intro": {

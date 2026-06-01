@@ -362,7 +362,10 @@
       "leftU": "Left",
       "rightU": "Right",
       "marksCount": "Marks",
-      "emptyHint": "Tap the face to add a mark."
+      "emptyHint": "Tap the face to add a mark.",
+      "download": "Download image (PNG)",
+      "exportTitle": "Face — botulinum toxin",
+      "exportDose": "Dose:"
     }
   },
   "intro": {

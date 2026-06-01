@@ -283,6 +283,7 @@ function TreatmentRecordInner() {
 
     // Editing the current cycle's treatment: prefill from it.
     const existing = dataQuery.data.treatment;
+    const cycleData = dataQuery.data.cycle;
     if (existing) {
       setDate(existing.date);
       setDrugProduct(existing.drugProduct);
@@ -293,22 +294,40 @@ function TreatmentRecordInner() {
       setDilution(existing.dilution ?? '');
       setGuidance(existing.guidance as GuidanceMethod);
       setNotes(existing.notes ?? '');
+      // Option A: standard injections have no position; face marks carry
+      // a normalised pos_x/pos_y. Split the cycle's injections so the
+      // muscle list and the face map each hydrate from their own.
+      const standardInjections = existing.injections.filter(
+        (i) => i.posX == null
+      );
+      const faceInjections = existing.injections.filter(
+        (i) => i.posX != null
+      );
       setInjections(
-        existing.injections.map((i) => ({
+        standardInjections.length > 0
+          ? standardInjections.map((i) => ({
+              muscle: i.muscle,
+              side: i.side,
+              doseUnits: String(i.doseUnits),
+              note: i.note ?? '',
+              noteOpen: !!(i.note && i.note.trim())
+            }))
+          : [emptyInjection()]
+      );
+      setFaceMarks(
+        faceInjections.map((i) => ({
           muscle: i.muscle,
           side: i.side,
-          doseUnits: String(i.doseUnits),
-          note: i.note ?? '',
-          noteOpen: !!(i.note && i.note.trim())
+          doseUnits: i.doseUnits,
+          note: i.note ?? undefined,
+          posX: i.posX as number,
+          posY: i.posY as number
         }))
       );
-      // NOTE: the area flags + face marks are not yet returned by the
-      // data read path (PROGRESS #3), so an edited cycle hydrates as
-      // standard-only — the only kind that exists pre-face. Once
-      // ClinicianTreatmentRecord/cycle carry includes_standard,
-      // includes_face, face_display_mode and each injection's
-      // pos_x/pos_y, set includesStandard / includesFace /
-      // faceDisplayMode / faceMarks from `existing` here.
+      // Area flags + face display mode are cycle-level.
+      setIncludesStandard(cycleData.includesStandard);
+      setIncludesFace(cycleData.includesFace);
+      setFaceDisplayMode(cycleData.faceDisplayMode);
     }
     setHydrated(true);
   }, [dataQuery.data, hydrated, isNewCycle, newCycleDate]);
@@ -368,9 +387,13 @@ function TreatmentRecordInner() {
     setDilution(prev.dilution ?? '');
     setGuidance(prev.guidance as GuidanceMethod);
     setNotes(prev.notes ?? '');
+    // Split the copied injections the same way as edit hydration:
+    // standard (no position) vs face marks (normalised pos_x/pos_y).
+    const prevStandard = prev.injections.filter((i) => i.posX == null);
+    const prevFace = prev.injections.filter((i) => i.posX != null);
     setInjections(
-      prev.injections.length > 0
-        ? prev.injections.map((i) => ({
+      prevStandard.length > 0
+        ? prevStandard.map((i) => ({
             muscle: i.muscle,
             side: i.side,
             doseUnits: String(i.doseUnits),
@@ -379,6 +402,22 @@ function TreatmentRecordInner() {
           }))
         : [emptyInjection()]
     );
+    setFaceMarks(
+      prevFace.map((i) => ({
+        muscle: i.muscle,
+        side: i.side,
+        doseUnits: i.doseUnits,
+        note: i.note ?? undefined,
+        posX: i.posX as number,
+        posY: i.posY as number
+      }))
+    );
+    // Derive the areas from what was actually copied. Face display mode
+    // isn't carried on a treatment record, so it keeps its current value.
+    const copiedHasFace = prevFace.length > 0;
+    const copiedHasStandard = prevStandard.length > 0;
+    setIncludesStandard(copiedHasStandard || !copiedHasFace);
+    setIncludesFace(copiedHasFace);
     // Return Total units to auto: the copied muscles re-derive the same
     // total, and if the clinician then tweaks a dose the total tracks
     // it (rather than silently keeping last time's figure). The sync
@@ -399,7 +438,8 @@ function TreatmentRecordInner() {
       totalUnits.trim() ||
       dilution.trim() ||
       notes.trim() ||
-      injections.some((i) => i.muscle.trim() || i.doseUnits.trim());
+      injections.some((i) => i.muscle.trim() || i.doseUnits.trim()) ||
+      faceMarks.length > 0;
     if (hasContent) {
       setShowCopyConfirm(true);
     } else {
@@ -1422,6 +1462,12 @@ function LastTreatmentDialog({
       right: t('sideRight'),
       bilateral: t('sideBilateral')
     })[sideValue];
+  // Face marks are located muscle injections (pos set); standard
+  // injections have no position. Show them as separate groups.
+  const standardInjections = treatment.injections.filter(
+    (i) => i.posX == null
+  );
+  const faceMarks = treatment.injections.filter((i) => i.posX != null);
   const containerRef = useModalA11y(onClose);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
@@ -1443,7 +1489,22 @@ function LastTreatmentDialog({
           {treatment.dilution && ` · ${treatment.dilution}`}
         </p>
         <ul className="mt-3 max-h-[280px] space-y-1 overflow-y-auto text-[14px] text-ink-soft">
-          {treatment.injections.map((inj) => (
+          {standardInjections.length > 0 && faceMarks.length > 0 && (
+            <li className="font-semibold text-ink">{t('areaStandard')}</li>
+          )}
+          {standardInjections.map((inj) => (
+            <li key={inj.id}>
+              {inj.muscle} · {sideLabel(inj.side)} ·{' '}
+              {inj.doseUnits} {t('unitsSuffix')}
+              {inj.note && (
+                <span className="text-ink-muted"> — {inj.note}</span>
+              )}
+            </li>
+          ))}
+          {faceMarks.length > 0 && (
+            <li className="pt-1 font-semibold text-ink">{t('areaFace')}</li>
+          )}
+          {faceMarks.map((inj) => (
             <li key={inj.id}>
               {inj.muscle} · {sideLabel(inj.side)} ·{' '}
               {inj.doseUnits} {t('unitsSuffix')}

@@ -29,6 +29,9 @@ export interface ExportInjection {
   side: InjectionSide;
   doseUnits: number;
   note?: string;
+  /** True when this injection is a face mark (located on the face map),
+   *  so the export can list it under a separate "Face injections" group. */
+  isFace?: boolean;
 }
 
 export interface ExportTreatment {
@@ -93,14 +96,19 @@ export function buildEhrExport({
     if (treatment.dilution) headerParts.push(`Dilution: ${treatment.dilution}`);
     headerParts.push(`Guidance: ${guidanceLabel(treatment.guidance)}`);
     lines.push(headerParts.join(' · '));
-    if (treatment.injections.length > 0) {
+    const standardInjections = treatment.injections.filter((i) => !i.isFace);
+    const faceInjections = treatment.injections.filter((i) => i.isFace);
+    const renderInjection = (inj: ExportInjection): string => {
+      const noteSuffix = inj.note ? ` — ${inj.note}` : '';
+      return `- ${inj.muscle} (${sideLabel(inj.side)}) — ${inj.doseUnits} units${noteSuffix}`;
+    };
+    if (standardInjections.length > 0) {
       lines.push('Injections:');
-      for (const inj of treatment.injections) {
-        const noteSuffix = inj.note ? ` — ${inj.note}` : '';
-        lines.push(
-          `- ${inj.muscle} (${sideLabel(inj.side)}) — ${inj.doseUnits} units${noteSuffix}`
-        );
-      }
+      for (const inj of standardInjections) lines.push(renderInjection(inj));
+    }
+    if (faceInjections.length > 0) {
+      lines.push('Face injections:');
+      for (const inj of faceInjections) lines.push(renderInjection(inj));
     }
     if (treatment.notes) {
       lines.push(`Notes: ${treatment.notes}`);

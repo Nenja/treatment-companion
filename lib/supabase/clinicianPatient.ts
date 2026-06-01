@@ -68,6 +68,11 @@ export interface ClinicianTreatmentRecord {
     doseUnits: number;
     note: string | null;
     position: number;
+    /** Normalised face position (0..1) when this injection is a face
+     *  mark; null for standard injections (Option A — a face mark is a
+     *  located muscle injection). See migration 0059. */
+    posX: number | null;
+    posY: number | null;
   }[];
 }
 
@@ -119,6 +124,11 @@ export interface ClinicianPatientData {
     id: string;
     cycleNumber: number;
     startDate: string;
+    /** Treatment areas for this cycle (at least one true) and the face
+     *  map's per-cycle display preference. See migration 0059. */
+    includesStandard: boolean;
+    includesFace: boolean;
+    faceDisplayMode: FaceDisplayMode;
   };
   suggestions: ClinicianPatientSuggestion[];
   activeGoals: ClinicianPatientGoal[];
@@ -183,7 +193,9 @@ export function useClinicianPatientData(
       // 2. Active cycle
       const { data: cycleRow, error: cErr } = await supabase
         .from('treatment_cycle')
-        .select('id, cycle_number, start_date')
+        .select(
+          'id, cycle_number, start_date, includes_standard, includes_face, face_display_mode'
+        )
         .eq('patient_id', patient.id)
         .eq('status', 'active')
         .order('cycle_number', { ascending: false })
@@ -195,7 +207,11 @@ export function useClinicianPatientData(
       const cycle = {
         id: cycleRow.id as string,
         cycleNumber: cycleRow.cycle_number as number,
-        startDate: cycleRow.start_date as string
+        startDate: cycleRow.start_date as string,
+        includesStandard: (cycleRow.includes_standard as boolean) ?? true,
+        includesFace: (cycleRow.includes_face as boolean) ?? false,
+        faceDisplayMode:
+          (cycleRow.face_display_mode as FaceDisplayMode) ?? 'color'
       };
 
       // 3. Parallel queries for the rest
@@ -233,7 +249,7 @@ export function useClinicianPatientData(
           supabase
             .from('treatment_session')
             .select(
-              'id, date, recorded_at, drug_product, total_units, dilution, guidance, notes, injections:muscle_injection (id, muscle, side, dose_units, note, position)'
+              'id, date, recorded_at, drug_product, total_units, dilution, guidance, notes, injections:muscle_injection (id, muscle, side, dose_units, note, position, pos_x, pos_y)'
             )
             .eq('treatment_cycle_id', cycle.id)
             .order('date', { ascending: false })
@@ -367,6 +383,8 @@ export function useClinicianPatientData(
                 dose_units: number;
                 note: string | null;
                 position: number;
+                pos_x: number | null;
+                pos_y: number | null;
               }> | null ?? []
             )
               .map((i) => ({
@@ -375,7 +393,9 @@ export function useClinicianPatientData(
                 side: i.side,
                 doseUnits: Number(i.dose_units),
                 note: i.note,
-                position: i.position
+                position: i.position,
+                posX: i.pos_x == null ? null : Number(i.pos_x),
+                posY: i.pos_y == null ? null : Number(i.pos_y)
               }))
               .sort((a, b) => a.position - b.position)
           }
@@ -889,7 +909,7 @@ export function usePreviousTreatment(
       const { data: sessions, error: sErr } = await supabase
         .from('treatment_session')
         .select(
-          'id, date, recorded_at, drug_product, total_units, dilution, guidance, notes, injections:muscle_injection (id, muscle, side, dose_units, note, position)'
+          'id, date, recorded_at, drug_product, total_units, dilution, guidance, notes, injections:muscle_injection (id, muscle, side, dose_units, note, position, pos_x, pos_y)'
         )
         .in('treatment_cycle_id', prevCycleIds)
         .order('date', { ascending: false })
@@ -915,6 +935,8 @@ export function usePreviousTreatment(
             dose_units: number;
             note: string | null;
             position: number;
+            pos_x: number | null;
+            pos_y: number | null;
           }> | null ?? []
         )
           .map((i) => ({
@@ -923,7 +945,9 @@ export function usePreviousTreatment(
             side: i.side,
             doseUnits: Number(i.dose_units),
             note: i.note,
-            position: i.position
+            position: i.position,
+            posX: i.pos_x == null ? null : Number(i.pos_x),
+            posY: i.pos_y == null ? null : Number(i.pos_y)
           }))
           .sort((a, b) => a.position - b.position)
       };

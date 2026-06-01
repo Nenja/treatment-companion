@@ -867,7 +867,8 @@ export default function ClinicianPatientPage() {
                     muscle: i.muscle,
                     side: i.side,
                     doseUnits: i.doseUnits,
-                    note: i.note ?? undefined
+                    note: i.note ?? undefined,
+                    isFace: i.posX != null
                   })),
                   notes: treatment.notes ?? undefined
                 }
