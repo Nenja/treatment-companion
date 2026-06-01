@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useAuth } from '@/lib/supabase/auth';
 import { professionOptions, type ProfessionCode } from '@/lib/professionLabel';
+import { Wordmark } from '@/components/layout/Wordmark';
 
 /**
  * Public self-registration for PATIENTS and THERAPISTS.
@@ -123,6 +124,7 @@ export default function SignupPage() {
     return (
       <div className="min-h-dvh bg-cream">
         <main className="mx-auto max-w-[420px] px-5 py-12">
+          <Wordmark className="mb-8 block" />
           <h1 className="font-display text-[28px] leading-tight text-ink">
             {t('checkEmailTitle')}
           </h1>
@@ -145,6 +147,7 @@ export default function SignupPage() {
   return (
     <div className="min-h-dvh bg-cream">
       <main className="mx-auto max-w-[420px] px-5 py-12">
+        <Wordmark className="mb-8 block" />
         <h1 className="font-display text-[28px] leading-tight text-ink">
           {t('title')}
         </h1>

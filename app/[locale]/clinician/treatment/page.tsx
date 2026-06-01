@@ -708,36 +708,38 @@ function TreatmentRecordInner() {
             two-pane), they stack again because the left aside is
             narrow. */}
         <div className="eyebrow mb-2 text-ink-muted">{t('forReference')}</div>
-        <div className={refCardsClass}>
-          {/* Treatment areas — the control that decides which sections
-              appear in the form (standard muscle list / face map). It
-              lives in the reference column; at least one is required. */}
-          <div className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3">
-            <div className="eyebrow">{t('areasTitle')}</div>
-            <p className="mt-0.5 text-[12px] leading-snug text-ink-muted">
-              {t('areasSubtitle')}
-            </p>
-            <div className="mt-2 flex flex-col gap-1.5">
-              <label className="flex items-center gap-2 text-[14px] text-ink">
-                <input
-                  type="checkbox"
-                  checked={includesStandard}
-                  onChange={(e) => setIncludesStandard(e.target.checked)}
-                  className="h-4 w-4 accent-sage-deep"
-                />
-                {t('areaStandard')}
-              </label>
-              <label className="flex items-center gap-2 text-[14px] text-ink">
-                <input
-                  type="checkbox"
-                  checked={includesFace}
-                  onChange={(e) => setIncludesFace(e.target.checked)}
-                  className="h-4 w-4 accent-sage-deep"
-                />
-                {t('areaFace')}
-              </label>
-            </div>
+        {/* Treatment areas — the control that decides which sections
+            appear in the form (standard muscle list / face map). A
+            full-width block at the top of the reference column; kept out
+            of the card row below so it doesn't compress those cards in
+            compact mode. At least one area is required. */}
+        <div className="mb-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3">
+          <div className="eyebrow">{t('areasTitle')}</div>
+          <p className="mt-0.5 text-[12px] leading-snug text-ink-muted">
+            {t('areasSubtitle')}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2">
+            <label className="flex items-center gap-2 text-[14px] text-ink">
+              <input
+                type="checkbox"
+                checked={includesStandard}
+                onChange={(e) => setIncludesStandard(e.target.checked)}
+                className="h-4 w-4 accent-sage-deep"
+              />
+              {t('areaStandard')}
+            </label>
+            <label className="flex items-center gap-2 text-[14px] text-ink">
+              <input
+                type="checkbox"
+                checked={includesFace}
+                onChange={(e) => setIncludesFace(e.target.checked)}
+                className="h-4 w-4 accent-sage-deep"
+              />
+              {t('areaFace')}
+            </label>
           </div>
+        </div>
+        <div className={refCardsClass}>
           {/* Medication card */}
           <div className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft">
             {!medExpanded ? (
@@ -948,7 +950,7 @@ function TreatmentRecordInner() {
                 <button
                   type="button"
                   onClick={requestCopyFromPrevious}
-                  className="flex h-10 w-full items-center justify-center gap-2 rounded-[var(--radius-button)] border border-sage/50 bg-cream px-3 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
+                  className="flex min-h-10 w-full items-center justify-center gap-2 rounded-[var(--radius-button)] border border-sage/50 bg-cream px-3 py-2 text-center text-[14px] font-semibold leading-tight text-sage-deep hover:bg-sage-soft"
                 >
                   {/* duplicate/copy glyph */}
                   <svg
@@ -960,6 +962,7 @@ function TreatmentRecordInner() {
                     strokeWidth="1.8"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    className="shrink-0"
                     aria-hidden
                   >
                     <rect x="9" y="9" width="11" height="11" rx="2" />

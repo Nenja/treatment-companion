@@ -9,6 +9,7 @@ import {
   useUnlockWithCode
 } from '@/lib/supabase/clinicianSession';
 import { AccountMenu } from '@/components/layout/AccountMenu';
+import { Wordmark } from '@/components/layout/Wordmark';
 import { OnboardingWizard } from '@/components/feedback/OnboardingWizard';
 import { clearSessionEndingFlag } from '@/lib/sessionEndSignal';
 import { isTutorialReplayRequested } from '@/lib/tutorialReplay';
@@ -112,7 +113,8 @@ export default function ClinicianUnlockPage() {
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[480px] items-center justify-end px-5 py-3">
+        <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-3">
+          <Wordmark />
           <AccountMenu />
         </div>
       </header>

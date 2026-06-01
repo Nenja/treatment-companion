@@ -1,0 +1,25 @@
+Build tag: copybutton-fix
+Generated: 2026-06-01T19:47Z
+
+What changed in this build (vs the previous "face-ready" zip):
+- Treatment areas selector moved OUT of the reference card row into its own
+  full-width box at the top of the left "For reference" column. In the row it
+  squeezed the cards on narrow widths, which is what broke the layout.
+- "Copy last treatment into the form" button can now grow to fit its label
+  (was a fixed 40px height that clipped and overlapped the wrapped text — the
+  overlap you saw in the screenshot).
+- App wordmark ("Treatment Companion") added to login, signup, and clinician
+  home headers only.
+- Face module (areas, face map, read-path, EHR + PNG export): unchanged.
+
+How to confirm THIS build is the one deployed:
+- This file (BUILD.txt) is present at the repo root.
+- On the treatment page, the Standard / Face checkboxes are in a full-width box
+  at the TOP of the left "For reference" column — NOT inside the card row with
+  the medication and last-treatment cards.
+- The "Copy last treatment into the form" button shows its text on clean lines
+  with no overlap.
+
+If the page still shows the checkboxes inside the 3-card row, the deploy is
+serving an older build (Vercel may still be building, or an older zip was
+pushed).
