@@ -709,6 +709,35 @@ function TreatmentRecordInner() {
             narrow. */}
         <div className="eyebrow mb-2 text-ink-muted">{t('forReference')}</div>
         <div className={refCardsClass}>
+          {/* Treatment areas — the control that decides which sections
+              appear in the form (standard muscle list / face map). It
+              lives in the reference column; at least one is required. */}
+          <div className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3">
+            <div className="eyebrow">{t('areasTitle')}</div>
+            <p className="mt-0.5 text-[12px] leading-snug text-ink-muted">
+              {t('areasSubtitle')}
+            </p>
+            <div className="mt-2 flex flex-col gap-1.5">
+              <label className="flex items-center gap-2 text-[14px] text-ink">
+                <input
+                  type="checkbox"
+                  checked={includesStandard}
+                  onChange={(e) => setIncludesStandard(e.target.checked)}
+                  className="h-4 w-4 accent-sage-deep"
+                />
+                {t('areaStandard')}
+              </label>
+              <label className="flex items-center gap-2 text-[14px] text-ink">
+                <input
+                  type="checkbox"
+                  checked={includesFace}
+                  onChange={(e) => setIncludesFace(e.target.checked)}
+                  className="h-4 w-4 accent-sage-deep"
+                />
+                {t('areaFace')}
+              </label>
+            </div>
+          </div>
           {/* Medication card */}
           <div className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft">
             {!medExpanded ? (
@@ -1000,37 +1029,6 @@ function TreatmentRecordInner() {
               ))}
             </select>
           </Field>
-        </div>
-
-        {/* Treatment areas — two independent flags, at least one
-            required. Standard shows the muscle list; Face shows the
-            face map. Collected here (not in the new-cycle dialog) so the
-            treatment page stays the single source of truth. */}
-        <h2 className="mt-8 font-display text-[18px] text-ink">
-          {t('areasTitle')}
-        </h2>
-        <p className="mt-1 text-[14px] text-ink-muted">
-          {t('areasSubtitle')}
-        </p>
-        <div className="mt-3 flex flex-col gap-2">
-          <label className="flex items-center gap-2.5 text-[15px] text-ink">
-            <input
-              type="checkbox"
-              checked={includesStandard}
-              onChange={(e) => setIncludesStandard(e.target.checked)}
-              className="h-4 w-4 accent-sage-deep"
-            />
-            {t('areaStandard')}
-          </label>
-          <label className="flex items-center gap-2.5 text-[15px] text-ink">
-            <input
-              type="checkbox"
-              checked={includesFace}
-              onChange={(e) => setIncludesFace(e.target.checked)}
-              className="h-4 w-4 accent-sage-deep"
-            />
-            {t('areaFace')}
-          </label>
         </div>
 
         {/* Standard injections — the muscle list. Rendered only when the
