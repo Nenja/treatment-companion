@@ -703,6 +703,23 @@ export function useSetSuggestionStatus() {
   });
 }
 
+/**
+ * A face mark is a located muscle injection (Option A): muscle + side +
+ * dose, plus a normalised position (0..1) on the base face image, and an
+ * optional note. Stored in the same muscle_injection table as standard
+ * injections, with pos_x/pos_y set.
+ */
+export interface FaceMarkInput {
+  muscle: string;
+  side: 'left' | 'right' | 'bilateral';
+  doseUnits: number;
+  note?: string;
+  posX: number;
+  posY: number;
+}
+
+export type FaceDisplayMode = 'color' | 'symbol';
+
 export interface SaveTreatmentSessionInput {
   treatmentCycleId: string;
   date: string;
@@ -717,6 +734,10 @@ export interface SaveTreatmentSessionInput {
     doseUnits: number;
     note?: string;
   }[];
+  includesStandard: boolean;
+  includesFace: boolean;
+  faceDisplayMode: FaceDisplayMode;
+  faceMarks: FaceMarkInput[];
 }
 
 export function useSaveTreatmentSession() {
@@ -739,6 +760,17 @@ export function useSaveTreatmentSession() {
           side: i.side,
           dose_units: i.doseUnits,
           note: i.note ?? null
+        })),
+        p_includes_standard: input.includesStandard,
+        p_includes_face: input.includesFace,
+        p_face_display_mode: input.faceDisplayMode,
+        p_face_marks: input.faceMarks.map((m) => ({
+          muscle: m.muscle,
+          side: m.side,
+          dose_units: m.doseUnits,
+          note: m.note ?? null,
+          pos_x: m.posX,
+          pos_y: m.posY
         }))
       });
       if (error) throw error;
@@ -772,6 +804,10 @@ export interface StartCycleWithTreatmentInput {
     doseUnits: number;
     note?: string;
   }[];
+  includesStandard: boolean;
+  includesFace: boolean;
+  faceDisplayMode: FaceDisplayMode;
+  faceMarks: FaceMarkInput[];
 }
 
 export function useStartCycleWithTreatment() {
@@ -796,6 +832,17 @@ export function useStartCycleWithTreatment() {
             side: i.side,
             dose_units: i.doseUnits,
             note: i.note ?? null
+          })),
+          p_includes_standard: input.includesStandard,
+          p_includes_face: input.includesFace,
+          p_face_display_mode: input.faceDisplayMode,
+          p_face_marks: input.faceMarks.map((m) => ({
+            muscle: m.muscle,
+            side: m.side,
+            dose_units: m.doseUnits,
+            note: m.note ?? null,
+            pos_x: m.posX,
+            pos_y: m.posY
           }))
         }
       );

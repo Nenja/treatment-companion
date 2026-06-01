@@ -14,7 +14,9 @@ import {
   useStartCycleWithTreatment,
   usePreviousTreatment,
   useSetPatientMedication,
-  type ClinicianTreatmentRecord
+  type ClinicianTreatmentRecord,
+  type FaceMarkInput,
+  type FaceDisplayMode
 } from '@/lib/supabase/clinicianPatient';
 import { todayIso, isToday } from '@/lib/dates';
 import { useSessionExpiryWarning } from '@/lib/useSessionExpiryWarning';
@@ -29,6 +31,7 @@ import { useToast } from '@/components/feedback/Toast';
 import { useModalA11y } from '@/lib/useModalA11y';
 import { useWideLayout } from '@/lib/useWideLayout';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
+import { FaceMap } from '@/components/clinician/FaceMap';
 import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
 import { classifyError } from '@/lib/feedback';
@@ -253,6 +256,16 @@ function TreatmentRecordInner() {
   const [injections, setInjections] = useState<InjectionDraft[]>([
     emptyInjection()
   ]);
+  // Treatment areas — two independent flags, at least one required.
+  // Standard = located muscle injections (the muscle list below); Face =
+  // facial marks placed on the face map. A cycle can be standard-only,
+  // face-only, or both. faceMarks are located muscle injections with a
+  // normalised position; faceDisplayMode is stored per cycle.
+  const [includesStandard, setIncludesStandard] = useState(true);
+  const [includesFace, setIncludesFace] = useState(false);
+  const [faceDisplayMode, setFaceDisplayMode] =
+    useState<FaceDisplayMode>('color');
+  const [faceMarks, setFaceMarks] = useState<FaceMarkInput[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -289,6 +302,13 @@ function TreatmentRecordInner() {
           noteOpen: !!(i.note && i.note.trim())
         }))
       );
+      // NOTE: the area flags + face marks are not yet returned by the
+      // data read path (PROGRESS #3), so an edited cycle hydrates as
+      // standard-only — the only kind that exists pre-face. Once
+      // ClinicianTreatmentRecord/cycle carry includes_standard,
+      // includes_face, face_display_mode and each injection's
+      // pos_x/pos_y, set includesStandard / includesFace /
+      // faceDisplayMode / faceMarks from `existing` here.
     }
     setHydrated(true);
   }, [dataQuery.data, hydrated, isNewCycle, newCycleDate]);
@@ -410,10 +430,24 @@ function TreatmentRecordInner() {
   // manually, and the app never flags or judges a mismatch: it offers
   // the arithmetic as a default and a one-tap reset, but the recorded
   // total is always whatever the clinician decides.
-  const dosesSum = injections.reduce((sum, i) => {
-    const n = parseFloat(i.doseUnits);
-    return Number.isNaN(n) ? sum : sum + n;
-  }, 0);
+  // Auto-total source: the per-muscle sum (standard) plus the face-mark
+  // sum (face). A hidden area contributes nothing, so toggling Standard
+  // or Face off removes its doses from the auto-filled total. This keeps
+  // the total meaningful in all three modes (standard-only, face-only,
+  // both).
+  const standardDosesSum = includesStandard
+    ? injections.reduce((sum, i) => {
+        const n = parseFloat(i.doseUnits);
+        return Number.isNaN(n) ? sum : sum + n;
+      }, 0)
+    : 0;
+  const faceDosesSum = includesFace
+    ? faceMarks.reduce(
+        (sum, m) => sum + (Number.isFinite(m.doseUnits) ? m.doseUnits : 0),
+        0
+      )
+    : 0;
+  const dosesSum = standardDosesSum + faceDosesSum;
   // Tidy display: avoid a trailing ".0" on whole numbers.
   const dosesSumLabel = Number.isInteger(dosesSum)
     ? String(dosesSum)
@@ -439,19 +473,29 @@ function TreatmentRecordInner() {
   const editLocked =
     !isNewCycle && !!existing && !isToday(existing.recordedAt);
 
+  // At least one area, and each selected area must have content:
+  // Standard → ≥1 valid muscle injection; Face → ≥1 mark. Face marks are
+  // always valid (FaceMap won't save one without a muscle + a dose).
+  const hasArea = includesStandard || includesFace;
+  const standardOk = !includesStandard || validInjections.length > 0;
+  const faceOk = !includesFace || faceMarks.length > 0;
+
   const canSubmit =
     !editLocked &&
+    hasArea &&
     date.trim() &&
     drugProduct.trim() &&
     totalUnits.trim() &&
     !Number.isNaN(totalUnitsNum) &&
     totalUnitsNum >= 0 &&
-    validInjections.length > 0;
+    standardOk &&
+    faceOk;
 
   // What the form still needs before it can be saved — so a disabled
   // Save button is never a silent dead end. Each item names a concrete
   // missing field; the clinician sees exactly what to fix.
   const missing: string[] = [];
+  if (!hasArea) missing.push(t('needArea'));
   if (!date.trim()) missing.push(t('needDate'));
   if (!drugProduct.trim()) missing.push(t('needDrugProduct'));
   if (!totalUnits.trim() || Number.isNaN(totalUnitsNum)) {
@@ -459,8 +503,11 @@ function TreatmentRecordInner() {
   } else if (totalUnitsNum < 0) {
     missing.push(t('needTotalNonNegative'));
   }
-  if (validInjections.length === 0) {
+  if (includesStandard && validInjections.length === 0) {
     missing.push(t('needMuscle'));
+  }
+  if (includesFace && faceMarks.length === 0) {
+    missing.push(t('needFaceMark'));
   }
 
   const submit = async () => {
@@ -473,6 +520,12 @@ function TreatmentRecordInner() {
       doseUnits: parseFloat(i.doseUnits),
       note: i.note.trim() || undefined
     }));
+    // Send standard injections only when the Standard area is on, and
+    // face marks only when the Face area is on. Both RPCs receive the
+    // four area fields: the cycle stores the flags + the display mode,
+    // and face marks are persisted as located muscle injections.
+    const standardInjectionsPayload = includesStandard ? injectionsPayload : [];
+    const faceMarksPayload = includesFace ? faceMarks : [];
     try {
       if (isNewCycle) {
         // Create the new cycle AND record the treatment atomically.
@@ -485,7 +538,11 @@ function TreatmentRecordInner() {
           dilution: dilution.trim() || undefined,
           guidance,
           notes: notes.trim() || undefined,
-          injections: injectionsPayload
+          injections: standardInjectionsPayload,
+          includesStandard,
+          includesFace,
+          faceDisplayMode,
+          faceMarks: faceMarksPayload
         });
       } else {
         await save.mutateAsync({
@@ -496,7 +553,11 @@ function TreatmentRecordInner() {
           dilution: dilution.trim() || undefined,
           guidance,
           notes: notes.trim() || undefined,
-          injections: injectionsPayload
+          injections: standardInjectionsPayload,
+          includesStandard,
+          includesFace,
+          faceDisplayMode,
+          faceMarks: faceMarksPayload
         });
       }
       touchSession.mutate();
@@ -901,6 +962,41 @@ function TreatmentRecordInner() {
           </Field>
         </div>
 
+        {/* Treatment areas — two independent flags, at least one
+            required. Standard shows the muscle list; Face shows the
+            face map. Collected here (not in the new-cycle dialog) so the
+            treatment page stays the single source of truth. */}
+        <h2 className="mt-8 font-display text-[18px] text-ink">
+          {t('areasTitle')}
+        </h2>
+        <p className="mt-1 text-[14px] text-ink-muted">
+          {t('areasSubtitle')}
+        </p>
+        <div className="mt-3 flex flex-col gap-2">
+          <label className="flex items-center gap-2.5 text-[15px] text-ink">
+            <input
+              type="checkbox"
+              checked={includesStandard}
+              onChange={(e) => setIncludesStandard(e.target.checked)}
+              className="h-4 w-4 accent-sage-deep"
+            />
+            {t('areaStandard')}
+          </label>
+          <label className="flex items-center gap-2.5 text-[15px] text-ink">
+            <input
+              type="checkbox"
+              checked={includesFace}
+              onChange={(e) => setIncludesFace(e.target.checked)}
+              className="h-4 w-4 accent-sage-deep"
+            />
+            {t('areaFace')}
+          </label>
+        </div>
+
+        {/* Standard injections — the muscle list. Rendered only when the
+            Standard area is selected. */}
+        {includesStandard && (
+          <>
         {/* Muscles section */}
         <h2 className="mt-8 font-display text-[18px] text-ink">
           {t('musclesTitle')}
@@ -1088,6 +1184,29 @@ function TreatmentRecordInner() {
         >
           + {t('addAnotherMuscle')}
         </button>
+          </>
+        )}
+
+        {/* Face treatment — the face map. Rendered only when the Face
+            area is selected. Each mark is a located muscle injection
+            (muscle + side + dose + normalised position); FaceMap owns
+            its own colour/symbol toggle and legend, so we add only a
+            section heading here. */}
+        {includesFace && (
+          <>
+            <h2 className="mt-8 font-display text-[18px] text-ink">
+              {t('areaFace')}
+            </h2>
+            <div className="mt-3">
+              <FaceMap
+                marks={faceMarks}
+                onChange={setFaceMarks}
+                displayMode={faceDisplayMode}
+                onDisplayModeChange={setFaceDisplayMode}
+              />
+            </div>
+          </>
+        )}
 
         {/* Total units — auto-filled from the per-muscle sum, with a
             manual override. The total IS the sum in the common case, so
