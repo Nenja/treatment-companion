@@ -374,7 +374,7 @@
       "canvasAria": "Face — tap to place injection marks",
       "sideRightShort": "R",
       "sideLeftShort": "L",
-      "sideMidShort": "M",
+      "sideMidShort": "Midline",
       "editHint": "Tap to edit.",
       "newMark": "New mark",
       "editMark": "Edit mark",
@@ -394,6 +394,7 @@
       "marksCount": "Marks",
       "emptyHint": "Tap the face to add a mark.",
       "download": "Download image (PNG)",
+      "downloadHelper": "Download a PNG to paste into the patient\u2019s record.",
       "exportTitle": "Face — botulinum toxin",
       "exportDose": "Dose:"
     }
@@ -820,8 +821,8 @@
     "recordTitle": "Treatment record",
     "forPatient": "For {name}",
     "areasSubtitle": "Choose at least one.",
-    "areaStandard": "Standard treatment",
-    "areaFace": "Face treatment",
+    "areaStandard": "Body and neck",
+    "areaFace": "Face",
     "lockedTitle": "This treatment can no longer be edited.",
     "lockedBody": "A treatment record can only be corrected on the day it was entered. To change treatment now, go back and start a new treatment cycle.",
     "overwriteTitle": "Overwrite current entries?",

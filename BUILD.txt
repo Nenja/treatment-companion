@@ -1,18 +1,28 @@
-Build tag: facemap-copy-clear
-Generated: 2026-06-02T18:48Z
+Build tag: clinician-answers
+Generated: 2026-06-02T19:21Z
 
-What changed (vs "facemap-a11y-fixes"). Face map only; NO migration:
-- Copy-to-other-side is now allowed ONCE. After a copy, both copy buttons
-  disable and a short note appears ("Copied. Clear the marks to copy again.").
-  Clearing the marks re-enables copying.
-- Removed the four-box summary row under the map (Total / Left / Right / Marks).
-  (The cycle total is still computed by the treatment page; only the on-map
-  mini-summary is gone.)
-- New "Clear marks" button (under the copy buttons): destructive, so it uses a
-  two-step inline confirm — tap "Clear marks" → "Clear all? [Clear all][Cancel]".
-  Only shown when there are marks. Clearing also resets the copy-once lock.
+Changes from the audit walkthrough (clinician answers). UI-only; NO migration:
+- "Standard treatment" renamed to "Body and neck" (Danish "Krop og nakke"); the
+  face option shortened to "Face" / "Ansigt" for parallelism. This updates both
+  the area checkboxes and the last-treatment summary grouping.
+- Face-map midline side button relabelled "M" -> "Midline" ("Midtlinje").
+  (The body-muscle "Bilateral" label is unchanged — a body muscle injected on
+  both sides genuinely is bilateral; only the facial centre is "midline".)
+- Treatment page is now SINGLE COLUMN: the Treatment-areas selector and the
+  Last-treatment card sit at the top of the form instead of in a left
+  "For reference" column. The two-pane (wide) layout for this page is retired.
+- Face map: the finishing actions (copy / clear / download) are now visually
+  separated from the add flow by a divider.
+- The downloaded PNG now has the date stamped into the image itself, and a
+  caption under the button notes it's for pasting into the patient's record.
+
+No-change items the clinician confirmed: quick-dose presets, dose bands, the
+pilot face-model toggle (left visible), the removed on-map face total (left
+out). Export is clinician-only, so the anatomical/clinical text stays.
 
 How to confirm THIS build is deployed:
-- BUILD.txt tag "facemap-copy-clear".
-- No summary boxes beneath the face; a "Clear marks" button is present; using a
-  "Copy <side> → <side>" button once disables both copy buttons until cleared.
+- BUILD.txt tag "clinician-answers".
+- Treatment page: areas + last treatment are at the top of the form (no left
+  column); the body/face checkboxes read "Body and neck" / "Face".
+- Face map: the midline side button reads "Midline"; copy/clear/download sit
+  under a divider; the exported PNG shows a date.

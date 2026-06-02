@@ -378,7 +378,7 @@
       "canvasAria": "Ansigt — tryk for at placere injektionsmarkeringer",
       "sideRightShort": "H",
       "sideLeftShort": "V",
-      "sideMidShort": "M",
+      "sideMidShort": "Midtlinje",
       "editHint": "Tryk for at redigere.",
       "newMark": "Ny markering",
       "editMark": "Rediger markering",
@@ -398,6 +398,7 @@
       "marksCount": "Markeringer",
       "emptyHint": "Tryk på ansigtet for at tilføje en markering.",
       "download": "Hent billede (PNG)",
+      "downloadHelper": "Hent et PNG til at indsætte i patientens journal.",
       "exportTitle": "Ansigt — botulinumtoksin",
       "exportDose": "Dosis:"
     }
@@ -824,8 +825,8 @@
     "recordTitle": "Behandlingsjournal",
     "forPatient": "For {name}",
     "areasSubtitle": "Vælg mindst ét.",
-    "areaStandard": "Standardbehandling",
-    "areaFace": "Ansigtsbehandling",
+    "areaStandard": "Krop og nakke",
+    "areaFace": "Ansigt",
     "lockedTitle": "Denne behandling kan ikke længere redigeres.",
     "lockedBody": "En behandlingsregistrering kan kun rettes på den dag, den blev indtastet. For at ændre behandlingen nu skal du gå tilbage og starte et nyt behandlingsforløb.",
     "overwriteTitle": "Overskriv nuværende indtastninger?",
