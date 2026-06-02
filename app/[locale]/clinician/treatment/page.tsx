@@ -13,7 +13,6 @@ import {
   useSaveTreatmentSession,
   useStartCycleWithTreatment,
   usePreviousTreatment,
-  useSetPatientMedication,
   type ClinicianTreatmentRecord,
   type FaceMarkInput,
   type FaceDisplayMode
@@ -196,17 +195,6 @@ function TreatmentRecordInner() {
 
   const [showCopyConfirm, setShowCopyConfirm] = useState(false);
 
-  // Medication edit state. The view is read-only until the clinician
-  // taps Edit; tapping Save calls set_patient_medication and exits
-  // edit mode. Local-only state — server is the source of truth on
-  // (re)load.
-  const setMedication = useSetPatientMedication();
-  const [editingMed, setEditingMed] = useState(false);
-  const [medCurrent, setMedCurrent] = useState('');
-  const [medPrevious, setMedPrevious] = useState('');
-  // Compact-by-default: medication card is collapsed until the
-  // clinician taps the summary line.
-  const [medExpanded, setMedExpanded] = useState(false);
   // Last-treatment details modal — shown when the compact summary
   // line is tapped.
   const [showLastTreatmentModal, setShowLastTreatmentModal] =
@@ -331,19 +319,6 @@ function TreatmentRecordInner() {
     }
     setHydrated(true);
   }, [dataQuery.data, hydrated, isNewCycle, newCycleDate]);
-
-  // Hydrate medication state separately from the form. Always reflect
-  // the latest server values when NOT editing — so a clinician
-  // returning to the page after a save sees their saved text. When
-  // editing, we don't overwrite their in-progress changes.
-  useEffect(() => {
-    if (editingMed) return;
-    if (!dataQuery.data) return;
-    setMedCurrent(dataQuery.data.patient.currentAntispasticMedication ?? '');
-    setMedPrevious(
-      dataQuery.data.patient.previousAntispasticMedication ?? ''
-    );
-  }, [dataQuery.data, editingMed]);
 
   if (
     authLoading ||
@@ -631,8 +606,8 @@ function TreatmentRecordInner() {
           >
             ← Back
           </button>
-          <span className="eyebrow min-w-0 truncate px-2 text-center">
-            Treatment record
+          <span className="eyebrow hidden min-w-0 truncate px-2 text-center sm:inline">
+            {t('recordTitle')}
           </span>
           <div className="flex shrink-0 items-center gap-1.5">
             <EndSessionButton role="clinician" />
@@ -700,13 +675,11 @@ function TreatmentRecordInner() {
             so that mobile gets the same vertical order it has today. */}
         <div className={paneGridClass}>
           <aside className={asideClass}>
-        {/* Reference cards — both compact and tappable. Medication
-            expands inline (it's edited here, so the editing UI stays
-            on-page). Last treatment opens a modal with full details
-            and the Copy action. On mobile they stack; on sm+ they
-            sit side-by-side to save vertical space. On lg+ (desktop
-            two-pane), they stack again because the left aside is
-            narrow. */}
+        {/* Reference cards — compact and tappable. Last treatment opens
+            a modal with full details and the Copy action. (The
+            anti-spastic medication card was removed.) On mobile they
+            stack; on sm+ side-by-side; on lg+ they stack again because
+            the left aside is narrow. */}
         <div className="eyebrow mb-2 text-ink-muted">{t('forReference')}</div>
         {/* Treatment areas — the control that decides which sections
             appear in the form (standard muscle list / face map). A
@@ -740,176 +713,6 @@ function TreatmentRecordInner() {
           </div>
         </div>
         <div className={refCardsClass}>
-          {/* Medication card */}
-          <div className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft">
-            {!medExpanded ? (
-              <button
-                type="button"
-                onClick={() => setMedExpanded(true)}
-                className="flex w-full items-center justify-between gap-2 p-3 text-left hover:bg-stone-soft/40"
-              >
-                <div className="min-w-0">
-                  <div className="eyebrow">{t('medTitle')}</div>
-                  <div className="mt-0.5 truncate text-[13px] text-ink-soft">
-                    {dataQuery.data.patient.currentAntispasticMedication ?? (
-                      <span className="text-ink-muted">
-                        {t('medNotRecordedTap')}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <span aria-hidden className="text-[14px] text-ink-muted">
-                  ▾
-                </span>
-              </button>
-            ) : (
-              <div className="p-4">
-                <div className="flex items-baseline justify-between gap-2">
-                  <div className="eyebrow">{t('medTitle')}</div>
-                  <div className="flex items-center gap-2">
-                    {!editingMed && (
-                      <button
-                        type="button"
-                        onClick={() => setEditingMed(true)}
-                        className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-stone-soft"
-                      >
-                        {t('edit')}
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (editingMed) return;
-                        setMedExpanded(false);
-                      }}
-                      disabled={editingMed}
-                      aria-label={t('collapse')}
-                      className="-m-1.5 flex h-8 w-8 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink disabled:opacity-30"
-                    >
-                      <span aria-hidden className="text-[14px]">
-                        ▴
-                      </span>
-                    </button>
-                  </div>
-                </div>
-
-                {!editingMed ? (
-                  <div className="mt-2 space-y-2">
-                    <div>
-                      <div className="text-[12px] font-semibold text-ink-soft">
-                        {t('medCurrent')}
-                      </div>
-                      <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
-                        {dataQuery.data.patient
-                          .currentAntispasticMedication ?? (
-                          <span className="text-ink-muted">
-                            {t('medNotRecordedYet')}
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    <div>
-                      <div className="text-[12px] font-semibold text-ink-soft">
-                        {t('medPrevious')}
-                      </div>
-                      <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
-                        {dataQuery.data.patient
-                          .previousAntispasticMedication ?? (
-                          <span className="text-ink-muted">
-                            {t('medNotRecordedYet')}
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-2 space-y-3">
-                    <div>
-                      <label
-                        htmlFor="med-current"
-                        className="block text-[13px] font-semibold text-ink"
-                      >
-                        {t('medCurrentLabel')}
-                      </label>
-                      <textarea
-                        id="med-current"
-                        value={medCurrent}
-                        onChange={(e) => setMedCurrent(e.target.value)}
-                        rows={3}
-                        maxLength={4000}
-                        placeholder={t('medCurrentPlaceholder')}
-                        className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="med-previous"
-                        className="block text-[13px] font-semibold text-ink"
-                      >
-                        {t('medPreviousLabel')}
-                      </label>
-                      <textarea
-                        id="med-previous"
-                        value={medPrevious}
-                        onChange={(e) => setMedPrevious(e.target.value)}
-                        rows={3}
-                        maxLength={4000}
-                        placeholder={t('medPreviousPlaceholder')}
-                        className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMedication.mutate(
-                            {
-                              patientId: dataQuery.data!.patient.id,
-                              currentAntispasticMedication:
-                                medCurrent.trim() || null,
-                              previousAntispasticMedication:
-                                medPrevious.trim() || null
-                            },
-                            {
-                              onSuccess: () => {
-                                toast.success(t('medUpdated'));
-                                setEditingMed(false);
-                              },
-                              onError: () =>
-                                toast.error(t('medSaveError'))
-                            }
-                          );
-                        }}
-                        disabled={setMedication.isPending}
-                        className="rounded-[var(--radius-button)] bg-sage-deep px-4 py-2 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
-                      >
-                        {setMedication.isPending ? '…' : t('save')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMedCurrent(
-                            dataQuery.data?.patient
-                              .currentAntispasticMedication ?? ''
-                          );
-                          setMedPrevious(
-                            dataQuery.data?.patient
-                              .previousAntispasticMedication ?? ''
-                          );
-                          setEditingMed(false);
-                        }}
-                        disabled={setMedication.isPending}
-                        className="rounded-[var(--radius-button)] border border-stone bg-cream px-4 py-2 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
-                      >
-                        {t('cancel')}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
           {/* Last-treatment card. The summary area is tappable to open
               the full per-muscle details; below it, a prominent Copy
               button fills the whole form from last time (the most

@@ -18,6 +18,7 @@ import {
   useSetSuggestionStatus,
   useRetireGoal,
   useReactivateGoal,
+  useSetPatientMedication,
   type GoalOutcome
 } from '@/lib/supabase/clinicianPatient';
 import { formatLongDate } from '@/lib/dates';
@@ -110,9 +111,21 @@ export default function ClinicianPatientPage() {
   const [showNewCycle, setShowNewCycle] = useState(false);
   // Which inline action panel is open under the action row, if any.
   // History and export are not panels — they navigate / open a modal.
-  const [openPanel, setOpenPanel] = useState<'suggestions' | 'physio' | null>(
+  const [openPanel, setOpenPanel] = useState<'medication' | 'physio' | null>(
     null
   );
+  // Patient suggestions moved out of the action row to sit beside
+  // "Record a goal" (both concern goals). It toggles its own panel,
+  // independent of the action-row panels above.
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  // Anti-spastic medication edit state (now reached from the action
+  // row's Medication panel). Read-only until Edit; Save calls
+  // set_patient_medication. Local-only — server is source of truth on
+  // (re)load.
+  const setMedication = useSetPatientMedication();
+  const [editingMed, setEditingMed] = useState(false);
+  const [medCurrent, setMedCurrent] = useState('');
+  const [medPrevious, setMedPrevious] = useState('');
   // True once the physician has deliberately ended the session. While
   // this is set, the "no session → timeout" guard stands down: ending
   // the session naturally makes sessionQuery.data go null, and without
@@ -165,6 +178,20 @@ export default function ClinicianPatientPage() {
       );
     }
   }, [sessionQuery.status, sessionQuery.data, router, locale]);
+
+  // Hydrate medication fields from the server whenever NOT editing, so
+  // returning after a save shows the saved text; in-progress edits are
+  // left untouched.
+  useEffect(() => {
+    if (editingMed) return;
+    if (!patientData.data) return;
+    setMedCurrent(
+      patientData.data.patient.currentAntispasticMedication ?? ''
+    );
+    setMedPrevious(
+      patientData.data.patient.previousAntispasticMedication ?? ''
+    );
+  }, [patientData.data, editingMed]);
 
   if (
     authLoading ||
@@ -494,19 +521,18 @@ export default function ClinicianPatientPage() {
             Suggestions and therapist input open inline panels below;
             history navigates; export opens the modal. */}
         <PatientActionRow
-          suggestionCount={suggestions.length}
           physioCount={
             physioGoalSuggestions.length + physioMuscleSuggestions.length
           }
           openPanel={openPanel}
           labels={{
-            suggestions: t('actionSuggestions'),
+            medication: t('actionMedication'),
             physio: t('actionPhysio'),
             history: t('actionHistory'),
             export: t('actionExport')
           }}
           shortLabels={{
-            suggestions: t('actionShortSuggestions'),
+            medication: t('actionShortMedication'),
             physio: t('actionShortPhysio'),
             history: t('actionShortHistory'),
             export: t('actionShortExport')
@@ -522,14 +548,146 @@ export default function ClinicianPatientPage() {
             } else if (id === 'export') {
               setShowExport(true);
             } else {
-              // Toggle the inline panel (suggestions | physio).
+              // Toggle the inline panel (medication | physio).
               setOpenPanel((cur) => (cur === id ? null : id));
             }
           }}
         />
 
-        {/* Patient suggestions panel — opens from the action row. */}
-        {openPanel === 'suggestions' && (
+        {/* Anti-spastic medication panel — opens from the action row.
+            Read-only until Edit; Save persists via set_patient_medication
+            and returns to the read view. */}
+        {openPanel === 'medication' && (
+          <section className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="font-display text-[18px] leading-tight text-ink">
+                {t('medTitle')}
+              </h2>
+              {!editingMed && (
+                <button
+                  type="button"
+                  onClick={() => setEditingMed(true)}
+                  className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-stone-soft"
+                >
+                  {t('medEdit')}
+                </button>
+              )}
+            </div>
+            {!editingMed ? (
+              <div className="mt-3 space-y-3">
+                <div>
+                  <div className="text-[12px] font-semibold text-ink-soft">
+                    {t('medCurrent')}
+                  </div>
+                  <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
+                    {patient.currentAntispasticMedication ?? (
+                      <span className="text-ink-muted">
+                        {t('medNotRecordedYet')}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <div className="text-[12px] font-semibold text-ink-soft">
+                    {t('medPrevious')}
+                  </div>
+                  <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
+                    {patient.previousAntispasticMedication ?? (
+                      <span className="text-ink-muted">
+                        {t('medNotRecordedYet')}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-3 space-y-3">
+                <div>
+                  <label
+                    htmlFor="med-current"
+                    className="block text-[13px] font-semibold text-ink"
+                  >
+                    {t('medCurrentLabel')}
+                  </label>
+                  <textarea
+                    id="med-current"
+                    value={medCurrent}
+                    onChange={(e) => setMedCurrent(e.target.value)}
+                    rows={3}
+                    maxLength={4000}
+                    placeholder={t('medCurrentPlaceholder')}
+                    className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="med-previous"
+                    className="block text-[13px] font-semibold text-ink"
+                  >
+                    {t('medPreviousLabel')}
+                  </label>
+                  <textarea
+                    id="med-previous"
+                    value={medPrevious}
+                    onChange={(e) => setMedPrevious(e.target.value)}
+                    rows={3}
+                    maxLength={4000}
+                    placeholder={t('medPreviousPlaceholder')}
+                    className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      touch();
+                      setMedication.mutate(
+                        {
+                          patientId: patient.id,
+                          currentAntispasticMedication:
+                            medCurrent.trim() || null,
+                          previousAntispasticMedication:
+                            medPrevious.trim() || null
+                        },
+                        {
+                          onSuccess: () => {
+                            toast.success(t('medUpdated'));
+                            setEditingMed(false);
+                          },
+                          onError: () => toast.error(t('medSaveError'))
+                        }
+                      );
+                    }}
+                    disabled={setMedication.isPending}
+                    className="rounded-[var(--radius-button)] bg-sage-deep px-4 py-2 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
+                  >
+                    {setMedication.isPending ? '…' : t('medSave')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMedCurrent(
+                        patient.currentAntispasticMedication ?? ''
+                      );
+                      setMedPrevious(
+                        patient.previousAntispasticMedication ?? ''
+                      );
+                      setEditingMed(false);
+                    }}
+                    disabled={setMedication.isPending}
+                    className="rounded-[var(--radius-button)] border border-stone bg-cream px-4 py-2 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+                  >
+                    {t('medCancel')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Patient suggestions panel — now opened from the button beside
+            "Record a goal" (below), not the action row. */}
+        {showSuggestions && (
           <section className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
             <h2 className="font-display text-[18px] leading-tight text-ink">
               {t('patientSuggestionsHeading')}
@@ -710,22 +868,56 @@ export default function ClinicianPatientPage() {
             <h2 className="font-display text-[20px] leading-tight text-ink">
               {t('activeGoalsTitle')}
             </h2>
-            {/* Record a goal the patient voiced in clinic. The goal
-                still originates from the patient; the physician is the
-                scribe — see create_goal_for_patient. */}
-            <button
-              type="button"
-              onClick={() =>
-                router.push(
-                  locale === 'en'
-                    ? `/clinician/new-goal?patient=${patient.id}`
-                    : `/${locale}/clinician/new-goal?patient=${patient.id}`
-                )
-              }
-              className="shrink-0 rounded-[var(--radius-button)] border border-sage/50 bg-cream-soft px-3 py-2 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
-            >
-              + Record a goal
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              {/* Patient suggestions — moved here from the action row so
+                  both goal-related actions sit together. Toggles the
+                  suggestions panel above; the badge shows how many await
+                  review. */}
+              <button
+                type="button"
+                onClick={() => {
+                  touch();
+                  setShowSuggestions((v) => !v);
+                }}
+                aria-pressed={showSuggestions}
+                aria-label={
+                  suggestions.length > 0
+                    ? `${t('actionSuggestions')} (${suggestions.length})`
+                    : t('actionSuggestions')
+                }
+                className={`relative rounded-[var(--radius-button)] border px-3 py-2 text-[14px] font-semibold transition-colors ${
+                  showSuggestions
+                    ? 'border-sage-deep bg-sage-deep text-on-accent'
+                    : 'border-sage/50 bg-cream-soft text-sage-deep hover:bg-sage-soft'
+                }`}
+              >
+                {t('actionShortSuggestions')}
+                {suggestions.length > 0 && (
+                  <span
+                    aria-hidden
+                    className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-cream bg-amber-deep px-1 text-[10px] font-bold text-on-accent"
+                  >
+                    {suggestions.length}
+                  </span>
+                )}
+              </button>
+              {/* Record a goal the patient voiced in clinic. The goal
+                  still originates from the patient; the physician is the
+                  scribe — see create_goal_for_patient. */}
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    locale === 'en'
+                      ? `/clinician/new-goal?patient=${patient.id}`
+                      : `/${locale}/clinician/new-goal?patient=${patient.id}`
+                  )
+                }
+                className="rounded-[var(--radius-button)] border border-sage/50 bg-cream-soft px-3 py-2 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
+              >
+                {t('recordGoal')}
+              </button>
+            </div>
           </div>
           {activeGoals.length === 0 ? (
             <p className="mt-3 text-[14px] text-ink-muted">

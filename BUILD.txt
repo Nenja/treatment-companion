@@ -1,25 +1,18 @@
-Build tag: copybutton-fix
-Generated: 2026-06-01T19:47Z
+Build tag: meds-to-actionrow
+Generated: 2026-06-02T06:59Z
 
-What changed in this build (vs the previous "face-ready" zip):
-- Treatment areas selector moved OUT of the reference card row into its own
-  full-width box at the top of the left "For reference" column. In the row it
-  squeezed the cards on narrow widths, which is what broke the layout.
-- "Copy last treatment into the form" button can now grow to fit its label
-  (was a fixed 40px height that clipped and overlapped the wrapped text — the
-  overlap you saw in the screenshot).
-- App wordmark ("Treatment Companion") added to login, signup, and clinician
-  home headers only.
-- Face module (areas, face map, read-path, EHR + PNG export): unchanged.
+What changed (vs "trim-header-and-meds"):
+- Clinician patient page (logged into a patient):
+  * Patient suggestions moved OUT of the action row to sit beside
+    "Record a goal" (same panel, same review flow, keeps its count badge).
+  * Anti-spastic medication added to the action row as a new icon (pill),
+    opening an inline panel with the same read/Edit/Save UI it had on the
+    treatment page. Saves via set_patient_medication.
+  * Action row still has 4 icons: Medication, Therapist input, History, Export.
+- Treatment page: medication card stays removed (from previous build).
+- Face module, read-path, exports, header, wordmark: unchanged.
 
-How to confirm THIS build is the one deployed:
-- This file (BUILD.txt) is present at the repo root.
-- On the treatment page, the Standard / Face checkboxes are in a full-width box
-  at the TOP of the left "For reference" column — NOT inside the card row with
-  the medication and last-treatment cards.
-- The "Copy last treatment into the form" button shows its text on clean lines
-  with no overlap.
-
-If the page still shows the checkboxes inside the 3-card row, the deploy is
-serving an older build (Vercel may still be building, or an older zip was
-pushed).
+How to confirm THIS build is deployed:
+- BUILD.txt at repo root says tag "meds-to-actionrow".
+- On the patient page the action row's first icon is "Medication" (pill), NOT
+  "Suggestions"; the Suggestions button sits next to "Record a goal".
