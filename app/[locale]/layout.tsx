@@ -4,6 +4,7 @@ import { ToastProvider } from '@/components/feedback/Toast';
 import { TextScaleApplier } from '@/components/feedback/TextScaleApplier';
 import { PasswordChangeGuard } from '@/components/feedback/PasswordChangeGuard';
 import { ThemeApplier } from '@/components/feedback/ThemeApplier';
+import { BrandBar } from '@/components/layout/BrandBar';
 import type { ReactNode } from 'react';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
@@ -88,6 +89,7 @@ export default async function LocaleLayout({
                 <TextScaleApplier />
                 <ThemeApplier />
                 <PasswordChangeGuard />
+                <BrandBar />
                 {children}
               </AuthProvider>
             </ToastProvider>

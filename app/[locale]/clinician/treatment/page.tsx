@@ -67,28 +67,19 @@ function TreatmentRecordInner() {
   const locale = useLocale();
   const { user, profile, loading: authLoading } = useAuth();
   const wide = useWideLayout();
-  // Width of the header row and the main column. When the user
-  // prefers the wide layout, both expand at the lg breakpoint;
-  // otherwise they stay at the narrow width on every screen.
-  const headerWidthClass = wide
-    ? 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4 lg:max-w-[var(--max-w-page-wide)]'
-    : 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4';
-  const mainWidthClass = wide
-    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-24 pt-6 lg:max-w-[var(--max-w-page-wide)]'
-    : 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-24 pt-6';
-  // Single-column layout: the area selector and last-treatment card now
-  // sit at the top of the form (not a separate left column), per clinician
-  // request. The two-pane grid is retired; `wide` still drives the
-  // muscle-row layout and the page max-width below.
+  // Single column capped at the mid width (720px) — wide enough for the
+  // single-line muscle rows (which were built for the old ~700px form
+  // column) but no longer stretched across the full 1080px. Mobile is
+  // unaffected (viewport < 720). `wide` still drives the muscle-row
+  // layout below.
+  const headerWidthClass =
+    'mx-auto flex max-w-[var(--max-w-page-mid)] items-center justify-between px-5 py-4';
+  const mainWidthClass = 'mx-auto max-w-[var(--max-w-page-mid)] px-5 pb-24 pt-6';
+  // Single-column layout: the area selector and last-treatment card sit
+  // at the top of the form (not a separate left column), side by side on
+  // sm+ and stacked on mobile, per clinician request.
   const paneGridClass = '';
   const asideClass = '';
-  // Reference cards container: stacks on mobile, row on sm, and when
-  // wide also stacks again at lg (narrow aside). When compact, the
-  // sm-row behaviour is kept (cards side-by-side) since there's no
-  // narrow aside to fit into.
-  const refCardsClass = wide
-    ? 'mt-4 flex flex-col gap-3 sm:flex-row sm:items-start lg:flex-col lg:items-stretch'
-    : 'mt-4 flex flex-col gap-3 sm:flex-row sm:items-start';
   // Muscle-row element classes. When wide, the row goes single-line at
   // lg (name flexes, side/units fixed width, × at the end). When
   // compact, it stays in the two-line mobile shape on every screen.
@@ -676,15 +667,13 @@ function TreatmentRecordInner() {
             so that mobile gets the same vertical order it has today. */}
         <div className={paneGridClass}>
           <aside className={asideClass}>
-        {/* Area selector + last-treatment now sit atop the form (single
-            column). The area selector decides which sections render; the
-            last-treatment card offers the Copy-from-previous action. */}
+        {/* Area selector + last-treatment, side by side on sm+ (stacked
+            on mobile), at the top of the form. */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         {/* Treatment areas — the control that decides which sections
-            appear in the form (standard muscle list / face map). A
-            full-width block at the top of the reference column; kept out
-            of the card row below so it doesn't compress those cards in
-            compact mode. At least one area is required. */}
-        <div className="mb-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3">
+            appear in the form (Body-and-neck muscle list / face map).
+            At least one area is required. */}
+        <div className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3">
           <div className="eyebrow">{t('areasTitle')}</div>
           <p className="mt-0.5 text-[12px] leading-snug text-ink-muted">
             {t('areasSubtitle')}
@@ -710,14 +699,11 @@ function TreatmentRecordInner() {
             </label>
           </div>
         </div>
-        <div className={refCardsClass}>
-          {/* Last-treatment card. The summary area is tappable to open
-              the full per-muscle details; below it, a prominent Copy
-              button fills the whole form from last time (the most
-              common starting point), so copying no longer requires
-              opening the dialog first. Only shown when a previous
-              treatment exists. */}
-          {referenceTreatment && (
+        {/* Last-treatment card. The summary area is tappable to open
+            the full per-muscle details; below it, a prominent Copy
+            button fills the whole form from last time. Only shown when a
+            previous treatment exists. */}
+        {referenceTreatment && (
             <div className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft">
               <button
                 type="button"

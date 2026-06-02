@@ -1,28 +1,41 @@
-Build tag: clinician-answers
-Generated: 2026-06-02T19:21Z
+Build tag: facemap-revert-and-global-brand
+Generated: 2026-06-02T19:57Z
 
-Changes from the audit walkthrough (clinician answers). UI-only; NO migration:
-- "Standard treatment" renamed to "Body and neck" (Danish "Krop og nakke"); the
-  face option shortened to "Face" / "Ansigt" for parallelism. This updates both
-  the area checkboxes and the last-treatment summary grouping.
-- Face-map midline side button relabelled "M" -> "Midline" ("Midtlinje").
-  (The body-muscle "Bilateral" label is unchanged — a body muscle injected on
-  both sides genuinely is bilateral; only the facial centre is "midline".)
-- Treatment page is now SINGLE COLUMN: the Treatment-areas selector and the
-  Last-treatment card sit at the top of the form instead of in a left
-  "For reference" column. The two-pane (wide) layout for this page is retired.
-- Face map: the finishing actions (copy / clear / download) are now visually
-  separated from the add flow by a divider.
-- The downloaded PNG now has the date stamped into the image itself, and a
-  caption under the button notes it's for pasting into the patient's record.
+Reverts + layout, from the latest review. UI-only; NO migration:
 
-No-change items the clinician confirmed: quick-dose presets, dose bands, the
-pilot face-model toggle (left visible), the removed on-map face total (left
-out). Export is clinician-only, so the anatomical/clinical text stays.
+Face map:
+- Dose dots reverted to the ORIGINAL colour ramp; the printed dose number
+  on each mark is removed (on-screen and in the exported PNG). Symbol-mode
+  marks reverted to their original backing. (Trade-off below.)
+- The "+ Add a mark" button is removed (it added a mark at a default spot,
+  which made little sense on a tap surface). Tapping the face still adds a
+  mark; tapping a mark still edits/removes it.
+
+Treatment page:
+- No longer stretched: the single column is now capped at the mid width
+  (720px) instead of expanding to 1080px. Mobile is unchanged.
+- The "Treatment areas" selector and the "Last treatment" card now sit
+  SIDE BY SIDE at the top of the form (stacked on mobile).
+
+Brand on every page:
+- A slim brand strip (the sage chevron + "Treatment Companion") now renders
+  once in the layout, so it appears at the top of EVERY page. To avoid
+  showing the brand twice, it was removed from the old per-page spots: the
+  TopBar (used by the front page + patient-info) now carries only the
+  account/help controls, and the text wordmark was removed from login,
+  signup, and the clinician home.
+
+A11y trade-offs reopened by the reverts (by request; flagged honestly):
+- Dose-by-colour alone is not reliably distinguishable across 5 bands and
+  no longer has the printed-number fallback. Exact dose is still shown when
+  you tap a mark, the legend keys each band, and Symbol mode remains as the
+  colour-independent option.
+- Removing the add button means there is no keyboard-only way to CREATE a
+  mark (editing existing marks stays keyboard-accessible).
 
 How to confirm THIS build is deployed:
-- BUILD.txt tag "clinician-answers".
-- Treatment page: areas + last treatment are at the top of the form (no left
-  column); the body/face checkboxes read "Body and neck" / "Face".
-- Face map: the midline side button reads "Midline"; copy/clear/download sit
-  under a divider; the exported PNG shows a date.
+- BUILD.txt tag "facemap-revert-and-global-brand".
+- Every page shows the chevron + "Treatment Companion" strip at the very top.
+- Face marks are the original colours with no printed numbers; no "Add a
+  mark" button. Treatment page is narrower with areas + last treatment side
+  by side.

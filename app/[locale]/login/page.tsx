@@ -6,7 +6,6 @@ import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useAuth } from '@/lib/supabase/auth';
-import { Wordmark } from '@/components/layout/Wordmark';
 
 /**
  * Email + password login. On success the AuthProvider picks up the new
@@ -94,7 +93,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-dvh bg-cream">
       <main className="mx-auto max-w-[420px] px-5 py-12">
-        <Wordmark className="mb-8 block" />
         <h1 className="font-display text-[28px] leading-tight text-ink">
           {t('title')}
         </h1>
