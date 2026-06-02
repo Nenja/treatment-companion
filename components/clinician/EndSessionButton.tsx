@@ -89,7 +89,13 @@ export function EndSessionButton({
           <polyline points="16 17 21 12 16 7" />
           <line x1="21" y1="12" x2="9" y2="12" />
         </svg>
-        <span className="hidden sm:inline">{t('endSession')}</span>
+        {/* Label tiers: icon-only on mobile, the short "End" on tablet
+            (sm), the full label only on desktop (lg) where there's room.
+            Keeps the header from clipping in the middle band. */}
+        <span className="hidden sm:inline lg:hidden">
+          {t('endSessionShort')}
+        </span>
+        <span className="hidden lg:inline">{t('endSession')}</span>
       </button>
 
       {confirmOpen && (

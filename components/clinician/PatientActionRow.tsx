@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
  * Horizontal action row for the clinician patient page.
  *
  * Four entry points, always visible under the patient name:
- *   - patient suggestions  (count badge — opens an inline panel)
+ *   - medication           (no count — opens an inline panel)
  *   - therapist input      (count badge — opens an inline panel)
  *   - history              (no count — navigates to the history page)
  *   - export               (no count — opens the export modal)
@@ -24,7 +24,7 @@ import { useTranslations } from 'next-intl';
  * icon library is bundled).
  */
 
-export type PatientActionId = 'suggestions' | 'physio' | 'history' | 'export';
+export type PatientActionId = 'medication' | 'physio' | 'history' | 'export';
 
 function Badge({ count }: { count: number }) {
   if (count <= 0) return null;
@@ -50,11 +50,12 @@ function iconFor(id: PatientActionId) {
     strokeLinejoin: 'round' as const
   };
   switch (id) {
-    case 'suggestions':
-      // speech bubble
+    case 'medication':
+      // pill / capsule
       return (
         <svg {...common}>
-          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+          <path d="M10.5 20.5a4.95 4.95 0 0 1-7-7l6-6a4.95 4.95 0 0 1 7 7l-6 6z" />
+          <path d="M8.5 8.5l7 7" />
         </svg>
       );
     case 'physio':
@@ -87,17 +88,15 @@ function iconFor(id: PatientActionId) {
 }
 
 export function PatientActionRow({
-  suggestionCount,
   physioCount,
   openPanel,
   onSelect,
   labels,
   shortLabels
 }: {
-  suggestionCount: number;
   physioCount: number;
   /** Which inline panel is currently open, if any. */
-  openPanel: 'suggestions' | 'physio' | null;
+  openPanel: 'medication' | 'physio' | null;
   onSelect: (id: PatientActionId) => void;
   /** Full labels — used for the accessible name (with count). */
   labels: Record<PatientActionId, string>;
@@ -108,7 +107,7 @@ export function PatientActionRow({
 }) {
   const tA11y = useTranslations('a11y');
   const items: { id: PatientActionId; count?: number }[] = [
-    { id: 'suggestions', count: suggestionCount },
+    { id: 'medication' },
     { id: 'physio', count: physioCount },
     { id: 'history' },
     { id: 'export' }
