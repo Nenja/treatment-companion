@@ -21,8 +21,9 @@
  * clinician chose to inject.
  */
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useToast } from '@/components/feedback/Toast';
 import type { FaceMarkInput, FaceDisplayMode } from '@/lib/supabase/clinicianPatient';
 
 // Base image is 146 x 228; viewBox adds margins for the R/L side labels.
@@ -46,7 +47,14 @@ const DEAD = 7; // dead-zone half-width around the midline → bilateral
 
 const QUICK = [2.5, 5, 7.5, 10, 15];
 const DOSE_LABELS = ['2.5 U', '5 U', '7.5 U', '10 U', '> 10 U'];
-const DOSE_COLORS = ['#a9c2b3', '#6f9482', '#3f5a4b', '#2a3f33', '#16201a'];
+// Dose-band colours. Re-spaced for monotonic LUMINANCE (light → dark) so
+// the bands are as distinguishable as 5 steps allow (~2:1 between
+// neighbours — 3:1 across five bands is geometrically impossible within
+// black↔white) and so they degrade sensibly in greyscale and for
+// colour-blind users. Colour is a quick visual cue only; the exact dose
+// is also printed on every mark, so reading dose never depends on telling
+// these greens apart.
+const DOSE_COLORS = ['#eef3ee', '#a7c3ad', '#5f8369', '#324839', '#11180f'];
 const SYMBOL_INK = '#243029';
 
 const MUSCLE_NAMES = [
@@ -111,15 +119,21 @@ function markSvgString(m: FaceMarkInput, mode: FaceDisplayMode): string {
   const x = m.posX * IMG_W;
   const y = m.posY * IMG_H;
   const idx = bandIndex(m.doseUnits);
+  const doseLabel =
+    `<text x="${x}" y="${y + 8.5}" text-anchor="middle" font-family="sans-serif" ` +
+    `font-size="5" font-weight="700" fill="#1f2421" stroke="#fbf8f2" stroke-width="1.1" ` +
+    `paint-order="stroke">${fmt(m.doseUnits)}</text>`;
   if (mode === 'color') {
     return (
       `<circle cx="${x}" cy="${y}" r="3.8" fill="#ffffff" stroke="#1f2421" stroke-width="0.7"/>` +
-      `<circle cx="${x}" cy="${y}" r="3" fill="${DOSE_COLORS[idx]}" stroke="#ffffff" stroke-width="0.8"/>`
+      `<circle cx="${x}" cy="${y}" r="3" fill="${DOSE_COLORS[idx]}" stroke="#ffffff" stroke-width="0.8"/>` +
+      doseLabel
     );
   }
   return (
-    `<circle cx="${x}" cy="${y}" r="4.2" fill="#ffffff" fill-opacity="0.75"/>` +
-    symbolSvgString(idx, x, y)
+    `<circle cx="${x}" cy="${y}" r="4.2" fill="#ffffff" fill-opacity="0.85" stroke="#1f2421" stroke-width="0.6"/>` +
+    symbolSvgString(idx, x, y) +
+    doseLabel
   );
 }
 
@@ -137,14 +151,20 @@ interface FaceMapProps {
   onChange: (marks: FaceMarkInput[]) => void;
   displayMode: FaceDisplayMode;
   onDisplayModeChange: (mode: FaceDisplayMode) => void;
+  /** Optional label (e.g. patient name) folded into the export filename
+   *  so downloaded images don't all collide as "face-dosing.png". */
+  exportLabel?: string;
 }
 
-export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: FaceMapProps) {
+export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange, exportLabel }: FaceMapProps) {
   const t = useTranslations('clinician.faceMap');
   const svgRef = useRef<SVGSVGElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const lastFocusedRef = useRef<HTMLElement | null>(null);
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const toast = useToast();
   // Which base-face image is shown (local A/B preference; see FaceModel).
   const [faceModel, setFaceModel] = useState<FaceModel>('line');
 
@@ -184,6 +204,21 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
       dose: m.doseUnits,
       muscle: m.muscle,
       side: m.side
+    });
+  }
+
+  // Non-spatial way to start a mark (keyboard / switch users, who can't
+  // tap a position). Opens the editor at the midline, mid-face; the
+  // clinician sets muscle/dose/side and can re-place by tapping later.
+  function addMarkManually() {
+    if (editor) return;
+    setEditor({
+      index: null,
+      xImg: MIDLINE,
+      yImg: IMG_H / 2,
+      dose: null,
+      muscle: '',
+      side: sideFromX(MIDLINE)
     });
   }
 
@@ -250,8 +285,8 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
     const lx0 = VIEW.x + 4;
 
     const title = `<text x="${VIEW.x + VIEW.w / 2}" y="${VIEW.y - 10}" text-anchor="middle" font-family="Georgia,serif" font-size="11" font-weight="700" fill="#1f2421">${escapeXml(t('exportTitle'))}</text>`;
-    const sideR = `<text x="${VIEW.x + 6}" y="${VIEW.y - 10}" font-family="sans-serif" font-size="7" font-weight="700" fill="#9a7c64">${escapeXml(t('sideRightShort'))}</text>`;
-    const sideL = `<text x="${VIEW.x + VIEW.w - 6}" y="${VIEW.y - 10}" text-anchor="end" font-family="sans-serif" font-size="7" font-weight="700" fill="#9a7c64">${escapeXml(t('sideLeftShort'))}</text>`;
+    const sideR = `<text x="${VIEW.x + 6}" y="${VIEW.y - 10}" font-family="sans-serif" font-size="7" font-weight="700" fill="#4b5450">${escapeXml(t('sideRightShort'))}</text>`;
+    const sideL = `<text x="${VIEW.x + VIEW.w - 6}" y="${VIEW.y - 10}" text-anchor="end" font-family="sans-serif" font-size="7" font-weight="700" fill="#4b5450">${escapeXml(t('sideLeftShort'))}</text>`;
 
     let legX = lx0;
     const legParts: string[] = [
@@ -326,7 +361,13 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
             }
             const a = document.createElement('a');
             a.href = URL.createObjectURL(b);
-            a.download = 'face-dosing.png';
+            const stamp = new Date().toISOString().slice(0, 10);
+            const base =
+              (exportLabel ?? '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '') || 'face-dosing';
+            a.download = `${base}-${stamp}.png`;
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -340,9 +381,11 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
         };
         img.src = url;
       });
+      toast.success(t('downloadDone'));
     } catch {
-      // If anything fails the button simply does nothing; nothing is
-      // saved half-formed.
+      // If anything fails, surface it rather than silently doing nothing;
+      // nothing is saved half-formed.
+      toast.error(t('downloadError'));
     } finally {
       setDownloading(false);
     }
@@ -397,6 +440,20 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
   const rightCount = marks.filter((m) => m.side === 'right').length;
 
   const editorValid = !!editor && editor.dose != null && editor.muscle.trim().length > 0;
+  const editorOpen = editor != null;
+
+  // Dialog focus management: when the editor opens, remember what was
+  // focused and move focus into the popover (so screen readers announce
+  // it and keyboard users land inside); restore focus to the trigger on
+  // close. Keyed on open/close only, not on every field edit.
+  useEffect(() => {
+    if (editorOpen) {
+      lastFocusedRef.current = (document.activeElement as HTMLElement) ?? null;
+      const id = requestAnimationFrame(() => popoverRef.current?.focus());
+      return () => cancelAnimationFrame(id);
+    }
+    lastFocusedRef.current?.focus?.();
+  }, [editorOpen]);
 
   return (
     <div>
@@ -406,6 +463,7 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
         <button
           type="button"
           onClick={() => onDisplayModeChange('color')}
+          aria-pressed={displayMode === 'color'}
           className={`rounded-[var(--radius-button)] border px-3 py-1.5 text-[13px] ${
             displayMode === 'color'
               ? 'border-sage-deep bg-sage-deep font-bold text-on-accent'
@@ -417,6 +475,7 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
         <button
           type="button"
           onClick={() => onDisplayModeChange('symbol')}
+          aria-pressed={displayMode === 'symbol'}
           className={`rounded-[var(--radius-button)] border px-3 py-1.5 text-[13px] ${
             displayMode === 'symbol'
               ? 'border-sage-deep bg-sage-deep font-bold text-on-accent'
@@ -487,10 +546,10 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <image href={FACE_MODEL_SRC[faceModel]} x={0} y={0} width={IMG_W} height={IMG_H} />
-          <text x={-12} y={118} textAnchor="middle" fill="#9a7c64" fontSize={8} fontWeight={700} letterSpacing="0.06em">
+          <text x={-12} y={118} textAnchor="middle" fill="#4b5450" fontSize={8} fontWeight={700} letterSpacing="0.06em">
             {t('sideRightShort')}
           </text>
-          <text x={158} y={118} textAnchor="middle" fill="#9a7c64" fontSize={8} fontWeight={700} letterSpacing="0.06em">
+          <text x={158} y={118} textAnchor="middle" fill="#4b5450" fontSize={8} fontWeight={700} letterSpacing="0.06em">
             {t('sideLeftShort')}
           </text>
 
@@ -525,10 +584,26 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
                   </>
                 ) : (
                   <>
-                    <circle cx={x} cy={y} r={4.2} fill="#ffffff" fillOpacity={0.75} />
+                    <circle cx={x} cy={y} r={4.2} fill="#ffffff" fillOpacity={0.85} stroke="#1f2421" strokeWidth={0.6} />
                     {renderSymbol(idx, x, y)}
                   </>
                 )}
+                {/* exact dose printed below the mark, with a light halo so
+                    it reads on any background — so dose never depends on
+                    telling the band colours/shapes apart. */}
+                <text
+                  x={x}
+                  y={y + 8.5}
+                  textAnchor="middle"
+                  fontSize={5}
+                  fontWeight={700}
+                  fill="#1f2421"
+                  stroke="#fbf8f2"
+                  strokeWidth={1.1}
+                  style={{ paintOrder: 'stroke' }}
+                >
+                  {fmt(m.doseUnits)}
+                </text>
               </g>
             );
           })}
@@ -537,7 +612,19 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
         {/* editor popover */}
         {editor && (
           <div
-            className="absolute z-30 w-[236px] rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft p-3 shadow-xl"
+            ref={popoverRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={editor.index == null ? t('newMark') : t('editMark')}
+            tabIndex={-1}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                closeEditor();
+              }
+            }}
+            className="absolute z-30 w-[236px] rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft p-3 shadow-xl focus:outline-none"
             style={editorStyle()}
           >
             <h3 className="mb-2 font-display text-[14px] text-ink">
@@ -551,9 +638,10 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
                   key={q}
                   type="button"
                   onClick={() => setEditor({ ...editor, dose: q })}
+                  aria-pressed={editor.dose === q}
                   className={`rounded-[var(--radius-button)] border px-2.5 py-1.5 text-[13px] ${
                     editor.dose === q
-                      ? 'border-sage-deep bg-sage font-bold text-on-accent'
+                      ? 'border-sage-deep bg-sage-deep font-bold text-on-accent'
                       : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
                   }`}
                 >
@@ -571,7 +659,7 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
                 const v = parseFloat(e.target.value);
                 setEditor({ ...editor, dose: !isNaN(v) && v > 0 ? v : null });
               }}
-              className="mb-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-2 py-1.5 text-[14px] text-ink"
+              className="mb-2 block w-full rounded-[var(--radius-button)] border border-[#8f897c] bg-cream px-2 py-1.5 text-[14px] text-ink"
             />
 
             <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-ink-muted">{t('muscleRequired')}</label>
@@ -581,7 +669,7 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
               placeholder={t('musclePlaceholder')}
               value={editor.muscle}
               onChange={(e) => setEditor({ ...editor, muscle: e.target.value })}
-              className="mb-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-2 py-1.5 text-[14px] text-ink"
+              className="mb-2 block w-full rounded-[var(--radius-button)] border border-[#8f897c] bg-cream px-2 py-1.5 text-[14px] text-ink"
             />
             <datalist id="face-muscle-names">
               {MUSCLE_NAMES.map((n) => (
@@ -596,6 +684,7 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
                   key={s}
                   type="button"
                   onClick={() => setEditor({ ...editor, side: s })}
+                  aria-pressed={editor.side === s}
                   className={`flex-1 rounded-[var(--radius-button)] border px-1 py-1.5 text-[12px] ${
                     editor.side === s
                       ? 'border-sage-deep bg-sage-deep font-bold text-on-accent'
@@ -613,8 +702,12 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
               <button
                 type="button"
                 onClick={deleteMark}
-                style={{ color: '#9a3b3b' }}
-                className="rounded-[var(--radius-button)] border border-[#d8b9b9] bg-cream px-3 py-1.5 text-[13px] hover:bg-stone-soft"
+                style={editor.index == null ? undefined : { color: '#9a3b3b' }}
+                className={
+                  editor.index == null
+                    ? 'rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] text-ink-soft hover:bg-stone-soft'
+                    : 'rounded-[var(--radius-button)] border border-[#d8b9b9] bg-cream px-3 py-1.5 text-[13px] hover:bg-stone-soft'
+                }
               >
                 {editor.index == null ? t('cancel') : t('remove')}
               </button>
@@ -622,7 +715,7 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
                 type="button"
                 onClick={saveEditor}
                 disabled={!editorValid}
-                className="rounded-[var(--radius-button)] border border-sage-deep bg-sage-deep px-3 py-1.5 text-[13px] font-bold text-on-accent disabled:cursor-not-allowed disabled:border-stone disabled:bg-stone disabled:text-ink-muted"
+                className="rounded-[var(--radius-button)] border border-sage-deep bg-sage-deep px-3 py-1.5 text-[13px] font-bold text-on-accent disabled:cursor-not-allowed disabled:border-stone disabled:bg-stone disabled:text-ink-soft"
               >
                 {editor.index == null ? t('addMark') : t('save')}
               </button>
@@ -630,6 +723,20 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
           </div>
         )}
       </div>
+
+      {/* persistent instruction — always visible, so the core action is
+          discoverable after the first mark too (not just on an empty map). */}
+      <p className="mt-2 text-[12px] leading-snug text-ink-muted">{t('tapHint')}</p>
+
+      {/* non-spatial add, for keyboard/switch users who can't tap a point */}
+      <button
+        type="button"
+        onClick={addMarkManually}
+        disabled={editorOpen}
+        className="mt-2 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-sage-soft disabled:cursor-not-allowed disabled:text-ink-muted"
+      >
+        {t('addManual')}
+      </button>
 
       {/* compact running summary */}
       <div className="mt-3 flex gap-2">
@@ -665,9 +772,6 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
       >
         {downloading ? '…' : t('download')}
       </button>
-      {marks.length === 0 && (
-        <p className="mt-2 text-[13px] text-ink-muted">{t('emptyHint')}</p>
-      )}
     </div>
   );
 }
@@ -676,7 +780,7 @@ function SummaryBox({ n, label }: { n: string; label: string }) {
   return (
     <div className="flex-1 rounded-[var(--radius-button)] border border-stone bg-stone-soft px-1.5 py-2.5 text-center">
       <div className="font-display text-[20px] font-semibold text-sage-deep">{n}</div>
-      <div className="text-[11px] uppercase tracking-wide text-ink-muted">{label}</div>
+      <div className="text-[11px] uppercase tracking-wide text-ink-soft">{label}</div>
     </div>
   );
 }

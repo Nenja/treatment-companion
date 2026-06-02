@@ -1,5 +1,8 @@
 # "Don't Make Me Think" audit — Face module (FaceMap + treatment-area flow)
 
+> **Status (build `facemap-a11y-fixes`):** Implemented — #1 + #2 (persistent "tap to add / tap a mark to edit" instruction, always visible), #4 (Cancel is now neutral; only Remove is red), #7 (download success toast + patient/date in the filename), #8 (exact dose now printed on each mark). Still open / needs your eyes or a clinician: #3 (do the two toggles read as one control? — on-screen check), #5 (legend framing — minor), #6 (quick-pick/custom coupling — minor), #10 ("Standard" naming — ask a clinician).
+
+
 Scope: the `FaceMap` component (tap-to-place facial injection mapping) and the
 Standard / Face area-selection flow on the clinician treatment page. Lens: Krug's
 self-evidence principle — every interaction should be obvious without instruction;

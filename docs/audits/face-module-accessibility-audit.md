@@ -1,5 +1,8 @@
 # Accessibility audit (WCAG 2.1 AA) — Face module (FaceMap)
 
+> **Status (build `facemap-a11y-fixes`):** Implemented — #1 (dose ramp re-spaced for luminance + exact dose printed on every mark), #3 (keyboard "Add a mark" button), #4 (input borders darkened to ≥3:1), #5 (symbol-mode mark now has a dark edge), #6 (R/L labels → ink-soft), #7 (summary caption, disabled-save text, active dose chip), #8 (editor is now role=dialog with focus in/out + Escape), #9 (aria-pressed on all toggle groups). Still open / needs your eyes: #2 (symbol glyph size on a real phone) and #10 (canvas role pairs with the now-added keyboard path — re-check on device). Note on #1: 5 bands cannot reach 3:1 by colour alone (max ~2:1); the printed dose number is what makes dose non-colour-dependent.
+
+
 Scope: the `FaceMap` tap-to-place component and its controls. Lens: WCAG 2.1 AA —
 keyboard operability, focus, screen-reader semantics, colour contrast, the
 colour-vs-symbol question for colourblind users, and touch-target sizing.
