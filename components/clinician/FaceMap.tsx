@@ -165,6 +165,11 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange, exp
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [downloading, setDownloading] = useState(false);
   const toast = useToast();
+  // Copy-to-other-side is allowed once (a second copy would just stack
+  // duplicates). Reset when the map is cleared.
+  const [copied, setCopied] = useState(false);
+  // Two-step confirm for the destructive "clear marks" action.
+  const [confirmClear, setConfirmClear] = useState(false);
   // Which base-face image is shown (local A/B preference; see FaceModel).
   const [faceModel, setFaceModel] = useState<FaceModel>('line');
 
@@ -270,6 +275,15 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange, exp
       }));
     if (mirrored.length === 0) return;
     onChange([...marks, ...mirrored]);
+    setCopied(true);
+  }
+
+  // Remove every mark and reset the per-session copy lock.
+  function clearMarks() {
+    onChange([]);
+    setCopied(false);
+    setConfirmClear(false);
+    setEditor(null);
   }
 
   // Build a self-contained SVG string (base image inlined as a data URI,
@@ -433,9 +447,9 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange, exp
     );
   }
 
-  const total = marks.reduce((s, m) => s + m.doseUnits, 0);
-  const left = marks.filter((m) => m.side === 'left').reduce((s, m) => s + m.doseUnits, 0);
-  const right = marks.filter((m) => m.side === 'right').reduce((s, m) => s + m.doseUnits, 0);
+  // Per-side mark counts gate the copy buttons (nothing to copy from an
+  // empty side). The dose totals that used to feed the on-map summary
+  // were removed with that summary; the parent computes the cycle total.
   const leftCount = marks.filter((m) => m.side === 'left').length;
   const rightCount = marks.filter((m) => m.side === 'right').length;
 
@@ -738,19 +752,12 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange, exp
         {t('addManual')}
       </button>
 
-      {/* compact running summary */}
-      <div className="mt-3 flex gap-2">
-        <SummaryBox n={fmt(total)} label={t('totalU')} />
-        <SummaryBox n={fmt(left)} label={t('leftU')} />
-        <SummaryBox n={fmt(right)} label={t('rightU')} />
-        <SummaryBox n={String(marks.length)} label={t('marksCount')} />
-      </div>
       {/* copy one side's marks to the other (mirror across the midline) */}
       <div className="mt-2 flex gap-2">
         <button
           type="button"
           onClick={() => copySide('right')}
-          disabled={rightCount === 0}
+          disabled={copied || rightCount === 0}
           className="flex-1 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-2 py-2 text-[13px] font-semibold text-sage-deep hover:bg-sage-soft disabled:cursor-not-allowed disabled:text-ink-muted disabled:hover:bg-cream-soft"
         >
           {t('copyRightToLeft')}
@@ -758,12 +765,46 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange, exp
         <button
           type="button"
           onClick={() => copySide('left')}
-          disabled={leftCount === 0}
+          disabled={copied || leftCount === 0}
           className="flex-1 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-2 py-2 text-[13px] font-semibold text-sage-deep hover:bg-sage-soft disabled:cursor-not-allowed disabled:text-ink-muted disabled:hover:bg-cream-soft"
         >
           {t('copyLeftToRight')}
         </button>
       </div>
+      {copied && (
+        <p className="mt-1 text-[12px] text-ink-muted">{t('copiedNote')}</p>
+      )}
+      {/* clear all marks — destructive, so a two-step confirm guards it */}
+      {marks.length > 0 &&
+        (confirmClear ? (
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-[13px] text-ink-soft">{t('clearConfirm')}</span>
+            <button
+              type="button"
+              onClick={clearMarks}
+              style={{ color: '#9a3b3b' }}
+              className="rounded-[var(--radius-button)] border border-[#d8b9b9] bg-cream px-3 py-1.5 text-[13px] font-semibold hover:bg-stone-soft"
+            >
+              {t('clearAll')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmClear(false)}
+              className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] text-ink-soft hover:bg-stone-soft"
+            >
+              {t('cancel')}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmClear(true)}
+            style={{ color: '#9a3b3b' }}
+            className="mt-2 w-full rounded-[var(--radius-button)] border border-[#d8b9b9] bg-cream-soft px-2 py-2 text-[13px] font-semibold hover:bg-stone-soft"
+          >
+            {t('clearMarks')}
+          </button>
+        ))}
       <button
         type="button"
         onClick={downloadPng}
@@ -772,15 +813,6 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange, exp
       >
         {downloading ? '…' : t('download')}
       </button>
-    </div>
-  );
-}
-
-function SummaryBox({ n, label }: { n: string; label: string }) {
-  return (
-    <div className="flex-1 rounded-[var(--radius-button)] border border-stone bg-stone-soft px-1.5 py-2.5 text-center">
-      <div className="font-display text-[20px] font-semibold text-sage-deep">{n}</div>
-      <div className="text-[11px] uppercase tracking-wide text-ink-soft">{label}</div>
     </div>
   );
 }
