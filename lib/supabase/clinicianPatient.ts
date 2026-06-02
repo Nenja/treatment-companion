@@ -114,11 +114,11 @@ export interface ClinicianPatientData {
      *  physician — context at the injection visit). */
     physioExercisePlan: string | null;
     physioAssistiveDevices: string | null;
-    /** Anti-spastic medication currently on board and previously
-     *  tried. Free-text, edited on the treatment record page (where
-     *  the physician needs it at the moment of dose decision). */
-    currentAntispasticMedication: string | null;
-    previousAntispasticMedication: string | null;
+    /** Medication currently on board and previously tried. Free-text,
+     *  edited by the clinician (current treatment information). Applies
+     *  to spasticity and dystonia alike. */
+    currentMedication: string | null;
+    previousMedication: string | null;
   };
   cycle: {
     id: string;
@@ -164,7 +164,7 @@ export function useClinicianPatientData(
       const { data: pRow, error: pErr } = await supabase
         .from('patient')
         .select(
-          'id, share_muscles_with_physio, physio_exercise_plan, physio_assistive_devices, current_antispastic_medication, previous_antispastic_medication, profile:profile_id (display_name)'
+          'id, share_muscles_with_physio, physio_exercise_plan, physio_assistive_devices, current_medication, previous_medication, profile:profile_id (display_name)'
         )
         .eq('id', patientId!)
         .maybeSingle();
@@ -184,10 +184,10 @@ export function useClinicianPatientData(
           (pRow.physio_exercise_plan as string | null) ?? null,
         physioAssistiveDevices:
           (pRow.physio_assistive_devices as string | null) ?? null,
-        currentAntispasticMedication:
-          (pRow.current_antispastic_medication as string | null) ?? null,
-        previousAntispasticMedication:
-          (pRow.previous_antispastic_medication as string | null) ?? null
+        currentMedication:
+          (pRow.current_medication as string | null) ?? null,
+        previousMedication:
+          (pRow.previous_medication as string | null) ?? null
       };
 
       // 2. Active cycle
@@ -988,24 +988,24 @@ export function useStartNewCycle() {
 }
 
 /**
- * Clinician-only write for the patient's anti-spastic medication
- * (current + previous, both free-text). Server enforces clinician
- * role + active session. Invalidates the clinicianPatient query so
- * the treatment page picks up new values immediately.
+ * Clinician-only write for the patient's medication (current +
+ * previous, both free-text). Server enforces clinician role + active
+ * session. Invalidates the clinicianPatient query so the page picks up
+ * new values immediately.
  */
 export function useSetPatientMedication() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: {
       patientId: string;
-      currentAntispasticMedication: string | null;
-      previousAntispasticMedication: string | null;
+      currentMedication: string | null;
+      previousMedication: string | null;
     }): Promise<void> => {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.rpc('set_patient_medication', {
         p_patient_id: input.patientId,
-        p_current_antispastic_medication: input.currentAntispasticMedication,
-        p_previous_antispastic_medication: input.previousAntispasticMedication
+        p_current_medication: input.currentMedication,
+        p_previous_medication: input.previousMedication
       });
       if (error) throw error;
     },

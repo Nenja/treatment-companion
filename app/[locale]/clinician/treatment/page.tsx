@@ -606,9 +606,8 @@ function TreatmentRecordInner() {
           >
             ← Back
           </button>
-          <span className="eyebrow hidden min-w-0 truncate px-2 text-center sm:inline">
-            {t('recordTitle')}
-          </span>
+          {/* Title moved into the body (below) so it can't be clipped
+              between Back and the right-hand controls on narrow widths. */}
           <div className="flex shrink-0 items-center gap-1.5">
             <EndSessionButton role="clinician" />
             <PageHelpButton pageKey="treatment" />
@@ -621,11 +620,14 @@ function TreatmentRecordInner() {
         className={mainWidthClass}
         onInput={touchActivity}
       >
-        {/* Page heading is carried by the header eyebrow ("Treatment
-            record"); we keep only a quiet line naming the patient so
-            the clinician knows who this is for. */}
-        <p className="text-[14px] text-ink-soft">
-          {`For ${patient.displayName}`}
+        {/* Page heading lives here in the body (not the header bar) so
+            it can't be clipped by the back button / controls. A quiet
+            line beneath names the patient this record is for. */}
+        <h1 className="font-display text-[22px] leading-tight text-ink">
+          {t('recordTitle')}
+        </h1>
+        <p className="mt-1 text-[14px] text-ink-soft">
+          {t('forPatient', { name: patient.displayName })}
         </p>
 
         {/* Session-expiry warning. The unlock lasts one hour from the
@@ -677,7 +679,7 @@ function TreatmentRecordInner() {
           <aside className={asideClass}>
         {/* Reference cards — compact and tappable. Last treatment opens
             a modal with full details and the Copy action. (The
-            anti-spastic medication card was removed.) On mobile they
+            medication card was removed.) On mobile they
             stack; on sm+ side-by-side; on lg+ they stack again because
             the left aside is narrow. */}
         <div className="eyebrow mb-2 text-ink-muted">{t('forReference')}</div>

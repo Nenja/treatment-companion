@@ -118,7 +118,7 @@ export default function ClinicianPatientPage() {
   // "Record a goal" (both concern goals). It toggles its own panel,
   // independent of the action-row panels above.
   const [showSuggestions, setShowSuggestions] = useState(false);
-  // Anti-spastic medication edit state (now reached from the action
+  // Medication edit state (now reached from the action
   // row's Medication panel). Read-only until Edit; Save calls
   // set_patient_medication. Local-only — server is source of truth on
   // (re)load.
@@ -186,10 +186,10 @@ export default function ClinicianPatientPage() {
     if (editingMed) return;
     if (!patientData.data) return;
     setMedCurrent(
-      patientData.data.patient.currentAntispasticMedication ?? ''
+      patientData.data.patient.currentMedication ?? ''
     );
     setMedPrevious(
-      patientData.data.patient.previousAntispasticMedication ?? ''
+      patientData.data.patient.previousMedication ?? ''
     );
   }, [patientData.data, editingMed]);
 
@@ -554,7 +554,7 @@ export default function ClinicianPatientPage() {
           }}
         />
 
-        {/* Anti-spastic medication panel — opens from the action row.
+        {/* Medication panel — opens from the action row.
             Read-only until Edit; Save persists via set_patient_medication
             and returns to the read view. */}
         {openPanel === 'medication' && (
@@ -580,7 +580,7 @@ export default function ClinicianPatientPage() {
                     {t('medCurrent')}
                   </div>
                   <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
-                    {patient.currentAntispasticMedication ?? (
+                    {patient.currentMedication ?? (
                       <span className="text-ink-muted">
                         {t('medNotRecordedYet')}
                       </span>
@@ -592,7 +592,7 @@ export default function ClinicianPatientPage() {
                     {t('medPrevious')}
                   </div>
                   <p className="mt-0.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-soft">
-                    {patient.previousAntispasticMedication ?? (
+                    {patient.previousMedication ?? (
                       <span className="text-ink-muted">
                         {t('medNotRecordedYet')}
                       </span>
@@ -644,9 +644,9 @@ export default function ClinicianPatientPage() {
                       setMedication.mutate(
                         {
                           patientId: patient.id,
-                          currentAntispasticMedication:
+                          currentMedication:
                             medCurrent.trim() || null,
-                          previousAntispasticMedication:
+                          previousMedication:
                             medPrevious.trim() || null
                         },
                         {
@@ -667,10 +667,10 @@ export default function ClinicianPatientPage() {
                     type="button"
                     onClick={() => {
                       setMedCurrent(
-                        patient.currentAntispasticMedication ?? ''
+                        patient.currentMedication ?? ''
                       );
                       setMedPrevious(
-                        patient.previousAntispasticMedication ?? ''
+                        patient.previousMedication ?? ''
                       );
                       setEditingMed(false);
                     }}
@@ -685,54 +685,8 @@ export default function ClinicianPatientPage() {
           </section>
         )}
 
-        {/* Patient suggestions panel — now opened from the button beside
-            "Record a goal" (below), not the action row. */}
-        {showSuggestions && (
-          <section className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-            <h2 className="font-display text-[18px] leading-tight text-ink">
-              {t('patientSuggestionsHeading')}
-            </h2>
-            <div className="mt-3">
-          {suggestions.length === 0 ? (
-            <p className="text-[14px] text-ink-muted">
-                {t('suggestionsEmpty')}
-              </p>
-            ) : (
-              <ul className="space-y-3">
-                {suggestions.map((s) => (
-                  <li
-                    key={s.id}
-                    className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
-                  >
-                    <div className="flex items-baseline justify-between gap-3">
-                      <div className="eyebrow text-ink-muted">
-                        {tDomain(s.domain)} · {tImportance(s.importance)}
-                      </div>
-                    </div>
-                    <p className="mt-1.5 text-[15px] leading-relaxed text-ink">
-                      &ldquo;{s.patientWording}&rdquo;
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        touch();
-                        router.push(
-                          locale === 'en'
-                            ? `/clinician/suggestion?id=${s.id}`
-                            : `/${locale}/clinician/suggestion?id=${s.id}`
-                        );
-                      }}
-                      className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
-                    >
-                      {t('review')}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            </div>
-          </section>
-        )}
+        {/* (Patient suggestions panel now renders in the goals section,
+            directly beneath the Suggestions button — see below.) */}
 
         {/* Therapist input panel — opens from the action row. */}
         {openPanel === 'physio' && (
@@ -919,6 +873,56 @@ export default function ClinicianPatientPage() {
               </button>
             </div>
           </div>
+
+          {/* Patient suggestions panel — renders here, right under the
+              Suggestions button, so it opens in relation to the button
+              that toggles it (not up by the action row). */}
+          {showSuggestions && (
+            <section className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+              <h2 className="font-display text-[18px] leading-tight text-ink">
+                {t('patientSuggestionsHeading')}
+              </h2>
+              <div className="mt-3">
+                {suggestions.length === 0 ? (
+                  <p className="text-[14px] text-ink-muted">
+                    {t('suggestionsEmpty')}
+                  </p>
+                ) : (
+                  <ul className="space-y-3">
+                    {suggestions.map((s) => (
+                      <li
+                        key={s.id}
+                        className="rounded-[var(--radius-card)] border border-stone bg-cream p-4"
+                      >
+                        <div className="flex items-baseline justify-between gap-3">
+                          <div className="eyebrow text-ink-muted">
+                            {tDomain(s.domain)} · {tImportance(s.importance)}
+                          </div>
+                        </div>
+                        <p className="mt-1.5 text-[15px] leading-relaxed text-ink">
+                          &ldquo;{s.patientWording}&rdquo;
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            touch();
+                            router.push(
+                              locale === 'en'
+                                ? `/clinician/suggestion?id=${s.id}`
+                                : `/${locale}/clinician/suggestion?id=${s.id}`
+                            );
+                          }}
+                          className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
+                        >
+                          {t('review')}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </section>
+          )}
           {activeGoals.length === 0 ? (
             <p className="mt-3 text-[14px] text-ink-muted">
               {t('activeGoalsEmpty')}

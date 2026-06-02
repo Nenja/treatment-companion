@@ -1,18 +1,32 @@
-Build tag: meds-to-actionrow
-Generated: 2026-06-02T06:59Z
+Build tag: medication-rename
+Generated: 2026-06-02T11:01Z
 
-What changed (vs "trim-header-and-meds"):
-- Clinician patient page (logged into a patient):
-  * Patient suggestions moved OUT of the action row to sit beside
-    "Record a goal" (same panel, same review flow, keeps its count badge).
-  * Anti-spastic medication added to the action row as a new icon (pill),
-    opening an inline panel with the same read/Edit/Save UI it had on the
-    treatment page. Saves via set_patient_medication.
-  * Action row still has 4 icons: Medication, Therapist input, History, Export.
-- Treatment page: medication card stays removed (from previous build).
-- Face module, read-path, exports, header, wordmark: unchanged.
+What changed (vs "panel-and-title-fixes"):
+- "Anti-spastic medication" -> "Medication" everywhere a user or the current
+  code touches (the app now serves dystonia too):
+  * UI: action-row label, panel title, and the Current/Previous field labels
+    all now say just "Medication" / "Current medication" / "Previous medication"
+    (Danish: "Medicin" / "Nuværende medicin" / "Tidligere medicin").
+  * Removed the dead treatment-namespace med* strings left over from the old
+    treatment-page card.
+  * Renamed DB columns + RPC params + TS fields to neutral names:
+      patient.current_antispastic_medication  -> current_medication
+      patient.previous_antispastic_medication -> previous_medication
+      set_patient_medication params p_current/previous_antispastic_medication
+        -> p_current/previous_medication
+      TS: currentAntispasticMedication -> currentMedication (etc.)
+
+REQUIRES A MIGRATION — run 0061_medication_rename_generic.sql:
+- It renames the two columns (idempotent) and recreates set_patient_medication
+  with the new param names. No data is changed.
+- DEPLOY TOGETHER with this code: the app now calls the RPC with the new param
+  names and reads the renamed columns. Old-code+new-DB or new-code+old-DB will
+  error on medication read/write until both are in place. On the dev DB with no
+  real patients, just run 0061 and deploy this build in one sitting.
+- Historical migrations 0048/0049 still contain the old names — that's correct
+  (they record what was already applied) and must NOT be edited.
 
 How to confirm THIS build is deployed:
-- BUILD.txt at repo root says tag "meds-to-actionrow".
-- On the patient page the action row's first icon is "Medication" (pill), NOT
-  "Suggestions"; the Suggestions button sits next to "Record a goal".
+- BUILD.txt at repo root says tag "medication-rename".
+- Nowhere in the UI says "anti-spastic" — the medication icon/title/labels read
+  "Medication".
