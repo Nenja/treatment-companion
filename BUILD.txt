@@ -1,20 +1,17 @@
-Build tag: face-model-toggle
-Generated: 2026-06-02T11:57Z
+Build tag: copy-to-other-side
+Generated: 2026-06-02T18:22Z
 
-What changed (vs "medication-rename"):
-- Face treatment page: a "Face model" toggle on the face map lets the clinician
-  switch the base image between the line drawing ("Line drawing") and the new
-  muscle-anatomy render ("Muscle anatomy"). Pilot A/B so users can say which
-  they prefer.
-- The anatomical image was cropped to the SAME 146x228 frame as the line
-  drawing, so a mark's normalised position lands on the same spot in either
-  model. Both the on-screen map and the PNG export honour the selected model.
-- The toggle is a LOCAL UI preference (not saved to the DB) — switching models
-  doesn't change stored data, and existing marks render on whichever model is
-  shown. No migration required.
-- New static asset: public/face-base-anatomical.png.
+What changed (vs "face-model-toggle"):
+- Face map: two buttons under the map — "Copy right → left" and
+  "Copy left → right". Each takes the marks on the source side, mirrors them
+  across the midline (posX -> 1 - posX) with the side flipped, and appends them
+  as new marks. Originals are kept; center/bilateral marks are not copied. Each
+  button disables when its source side has no marks.
+- Orientation is patient-perspective (matches the R/L labels and side
+  auto-detect): "right" = patient's right = viewer's left.
+- No DB change (marks save through the normal path). No migration.
 
 How to confirm THIS build is deployed:
-- BUILD.txt at repo root says tag "face-model-toggle".
-- On the face map there's a "Face model:" row with "Line drawing" /
-  "Muscle anatomy"; switching swaps the base image under the marks.
+- BUILD.txt at repo root says tag "copy-to-other-side".
+- Place marks on one side of the face; the matching "Copy <side> → <side>"
+  button becomes enabled and one click mirrors them to the other side.
