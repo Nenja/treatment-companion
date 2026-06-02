@@ -1,32 +1,20 @@
-Build tag: medication-rename
-Generated: 2026-06-02T11:01Z
+Build tag: face-model-toggle
+Generated: 2026-06-02T11:57Z
 
-What changed (vs "panel-and-title-fixes"):
-- "Anti-spastic medication" -> "Medication" everywhere a user or the current
-  code touches (the app now serves dystonia too):
-  * UI: action-row label, panel title, and the Current/Previous field labels
-    all now say just "Medication" / "Current medication" / "Previous medication"
-    (Danish: "Medicin" / "Nuværende medicin" / "Tidligere medicin").
-  * Removed the dead treatment-namespace med* strings left over from the old
-    treatment-page card.
-  * Renamed DB columns + RPC params + TS fields to neutral names:
-      patient.current_antispastic_medication  -> current_medication
-      patient.previous_antispastic_medication -> previous_medication
-      set_patient_medication params p_current/previous_antispastic_medication
-        -> p_current/previous_medication
-      TS: currentAntispasticMedication -> currentMedication (etc.)
-
-REQUIRES A MIGRATION — run 0061_medication_rename_generic.sql:
-- It renames the two columns (idempotent) and recreates set_patient_medication
-  with the new param names. No data is changed.
-- DEPLOY TOGETHER with this code: the app now calls the RPC with the new param
-  names and reads the renamed columns. Old-code+new-DB or new-code+old-DB will
-  error on medication read/write until both are in place. On the dev DB with no
-  real patients, just run 0061 and deploy this build in one sitting.
-- Historical migrations 0048/0049 still contain the old names — that's correct
-  (they record what was already applied) and must NOT be edited.
+What changed (vs "medication-rename"):
+- Face treatment page: a "Face model" toggle on the face map lets the clinician
+  switch the base image between the line drawing ("Line drawing") and the new
+  muscle-anatomy render ("Muscle anatomy"). Pilot A/B so users can say which
+  they prefer.
+- The anatomical image was cropped to the SAME 146x228 frame as the line
+  drawing, so a mark's normalised position lands on the same spot in either
+  model. Both the on-screen map and the PNG export honour the selected model.
+- The toggle is a LOCAL UI preference (not saved to the DB) — switching models
+  doesn't change stored data, and existing marks render on whichever model is
+  shown. No migration required.
+- New static asset: public/face-base-anatomical.png.
 
 How to confirm THIS build is deployed:
-- BUILD.txt at repo root says tag "medication-rename".
-- Nowhere in the UI says "anti-spastic" — the medication icon/title/labels read
-  "Medication".
+- BUILD.txt at repo root says tag "face-model-toggle".
+- On the face map there's a "Face model:" row with "Line drawing" /
+  "Muscle anatomy"; switching swaps the base image under the marks.
