@@ -28,6 +28,18 @@ import type { FaceMarkInput, FaceDisplayMode } from '@/lib/supabase/clinicianPat
 // Base image is 146 x 228; viewBox adds margins for the R/L side labels.
 const IMG_W = 146;
 const IMG_H = 228;
+
+// Two base-face images to A/B during the pilot. Both are cropped to the
+// same 146×228 frame, so a mark's normalised position lands on the same
+// place regardless of which is shown. 'line' is the original line
+// drawing; 'anatomical' is the muscle render. This is a local UI
+// preference only — not persisted; we just want to learn which clinicians
+// prefer.
+type FaceModel = 'line' | 'anatomical';
+const FACE_MODEL_SRC: Record<FaceModel, string> = {
+  line: '/face-base.png',
+  anatomical: '/face-base-anatomical.png'
+};
 const VIEW = { x: -26, y: -4, w: 198, h: 236 };
 const MIDLINE = 73; // image-space x of the facial midline
 const DEAD = 7; // dead-zone half-width around the midline → bilateral
@@ -133,6 +145,8 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
   const shellRef = useRef<HTMLDivElement | null>(null);
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [downloading, setDownloading] = useState(false);
+  // Which base-face image is shown (local A/B preference; see FaceModel).
+  const [faceModel, setFaceModel] = useState<FaceModel>('line');
 
   const sideShort: Record<Side, string> = {
     right: t('sideRightShort'),
@@ -258,7 +272,7 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
     if (marks.length === 0 || downloading) return;
     setDownloading(true);
     try {
-      const resp = await fetch('/face-base.png');
+      const resp = await fetch(FACE_MODEL_SRC[faceModel]);
       const blob = await resp.blob();
       const imgHref = await new Promise<string>((resolve, reject) => {
         const fr = new FileReader();
@@ -393,6 +407,35 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
         </button>
       </div>
 
+      {/* face-model toggle (pilot A/B: line drawing vs muscle render) */}
+      <div className="mb-2.5 flex items-center gap-2">
+        <span className="text-[13px] text-ink-muted">{t('modelLabel')}</span>
+        <button
+          type="button"
+          onClick={() => setFaceModel('line')}
+          aria-pressed={faceModel === 'line'}
+          className={`rounded-[var(--radius-button)] border px-3 py-1.5 text-[13px] ${
+            faceModel === 'line'
+              ? 'border-sage-deep bg-sage-deep font-bold text-on-accent'
+              : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
+          }`}
+        >
+          {t('modelLine')}
+        </button>
+        <button
+          type="button"
+          onClick={() => setFaceModel('anatomical')}
+          aria-pressed={faceModel === 'anatomical'}
+          className={`rounded-[var(--radius-button)] border px-3 py-1.5 text-[13px] ${
+            faceModel === 'anatomical'
+              ? 'border-sage-deep bg-sage-deep font-bold text-on-accent'
+              : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
+          }`}
+        >
+          {t('modelAnatomical')}
+        </button>
+      </div>
+
       {/* dose legend above the picture */}
       <div className="mb-3 rounded-[var(--radius-button)] border border-stone bg-stone-soft px-2.5 py-2 text-[13px] font-semibold text-ink-soft">
         <span className="mr-1">{displayMode === 'color' ? t('doseByColour') : t('doseBySymbol')}</span>
@@ -423,7 +466,7 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
           aria-label={t('canvasAria')}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <image href="/face-base.png" x={0} y={0} width={IMG_W} height={IMG_H} />
+          <image href={FACE_MODEL_SRC[faceModel]} x={0} y={0} width={IMG_W} height={IMG_H} />
           <text x={-12} y={118} textAnchor="middle" fill="#9a7c64" fontSize={8} fontWeight={700} letterSpacing="0.06em">
             {t('sideRightShort')}
           </text>
