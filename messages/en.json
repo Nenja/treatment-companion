@@ -359,6 +359,8 @@
       "modelLabel": "Face model:",
       "modelLine": "Line drawing",
       "modelAnatomical": "Muscle anatomy",
+      "copyRightToLeft": "Copy right → left",
+      "copyLeftToRight": "Copy left → right",
       "doseByColour": "Dose by colour:",
       "doseBySymbol": "Dose by symbol:",
       "canvasAria": "Face — tap to place injection marks",

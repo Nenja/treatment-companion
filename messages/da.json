@@ -363,6 +363,8 @@
       "modelLabel": "Ansigtsmodel:",
       "modelLine": "Stregtegning",
       "modelAnatomical": "Muskelanatomi",
+      "copyRightToLeft": "Kopiér højre → venstre",
+      "copyLeftToRight": "Kopiér venstre → højre",
       "doseByColour": "Dosis efter farve:",
       "doseBySymbol": "Dosis efter symbol:",
       "canvasAria": "Ansigt — tryk for at placere injektionsmarkeringer",
