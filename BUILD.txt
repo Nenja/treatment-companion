@@ -1,17 +1,39 @@
-Build tag: copy-to-other-side
-Generated: 2026-06-02T18:22Z
+Build tag: facemap-a11y-fixes
+Generated: 2026-06-02T18:41Z
 
-What changed (vs "face-model-toggle"):
-- Face map: two buttons under the map — "Copy right → left" and
-  "Copy left → right". Each takes the marks on the source side, mirrors them
-  across the midline (posX -> 1 - posX) with the side flipped, and appends them
-  as new marks. Originals are kept; center/bilateral marks are not copied. Each
-  button disables when its source side has no marks.
-- Orientation is patient-perspective (matches the R/L labels and side
-  auto-detect): "right" = patient's right = viewer's left.
-- No DB change (marks save through the normal path). No migration.
+Implements the safe, code-verified findings from the two FaceMap audits
+(Don't-Make-Me-Think + Accessibility). UI-only; NO migration.
+
+Accessibility (WCAG):
+- Dose ramp re-spaced for monotonic LUMINANCE (#eef3ee→#a7c3ad→#5f8369→
+  #324839→#11180f), ~2:1 between neighbours (3:1 across 5 bands is
+  geometrically impossible). The exact dose is now PRINTED on every mark
+  (haloed number), so reading dose never depends on telling bands apart.
+- Keyboard "+ Add a mark" button (opens the editor at midline/mid-face) —
+  clears the 2.1.1 "no keyboard way to create a mark" failure.
+- Input borders darkened to #8f897c (≥3:1 vs background).
+- Symbol-mode mark backing now has a dark edge (was invisible on light skin).
+- R/L side labels #9a7c64 → ink-soft #4b5450 (3.43:1 → 6.96:1).
+- Summary caption + disabled-save text ink-muted → ink-soft; active dose
+  chip bg-sage → bg-sage-deep (4.45:1 → 7.14:1).
+- Editor popover is now role="dialog" aria-modal, focuses in on open and
+  restores focus on close, and closes on Escape.
+- aria-pressed added to all toggle groups (colour/symbol, dose chips, side).
+
+Don't-Make-Me-Think:
+- Persistent instruction under the map ("Tap the face to add a mark. Tap a
+  mark to edit or remove it.") — visible always, not just on an empty map.
+- Cancel (new mark) is now neutral; only Remove (existing mark) is red.
+- Download: success toast + filename now "<patient>-<date>.png" (was always
+  face-dosing.png).
+
+STILL OPEN (need on-screen check / a clinician, deliberately not changed):
+- Symbol glyph size on a real phone (a11y #2).
+- Do the two toggles read as one control? (DMT #3).
+- "Standard" naming (DMT #10) — ask a clinician.
+See docs/audits/*.md (status banners updated).
 
 How to confirm THIS build is deployed:
-- BUILD.txt at repo root says tag "copy-to-other-side".
-- Place marks on one side of the face; the matching "Copy <side> → <side>"
-  button becomes enabled and one click mirrors them to the other side.
+- BUILD.txt tag "facemap-a11y-fixes".
+- Each face mark shows a small dose number; there's a "+ Add a mark" button
+  and a persistent tap instruction under the map.

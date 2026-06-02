@@ -1049,6 +1049,7 @@ function TreatmentRecordInner() {
                 onChange={setFaceMarks}
                 displayMode={faceDisplayMode}
                 onDisplayModeChange={setFaceDisplayMode}
+                exportLabel={patient.displayName}
               />
             </div>
           </>
