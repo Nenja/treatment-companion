@@ -219,6 +219,24 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
     setEditor(null);
   }
 
+  // Copy one side's marks to the other: mirror across the midline
+  // (posX -> 1 - posX, which is exact since the midline x=73 is half of
+  // IMG_W=146) and flip the side. Originals are kept; the mirrored marks
+  // are appended. Center / bilateral marks are NOT copied — they're not
+  // on either side. A no-op if the source side has no marks.
+  function copySide(from: 'left' | 'right') {
+    const to: 'left' | 'right' = from === 'left' ? 'right' : 'left';
+    const mirrored = marks
+      .filter((m) => m.side === from)
+      .map((m) => ({
+        ...m,
+        side: to,
+        posX: 1 - m.posX
+      }));
+    if (mirrored.length === 0) return;
+    onChange([...marks, ...mirrored]);
+  }
+
   // Build a self-contained SVG string (base image inlined as a data URI,
   // title + R/L + dose legend baked in, marks generated from the live list)
   // for the PNG export. Mirrors the prototype's buildExportSVG.
@@ -375,6 +393,8 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
   const total = marks.reduce((s, m) => s + m.doseUnits, 0);
   const left = marks.filter((m) => m.side === 'left').reduce((s, m) => s + m.doseUnits, 0);
   const right = marks.filter((m) => m.side === 'right').reduce((s, m) => s + m.doseUnits, 0);
+  const leftCount = marks.filter((m) => m.side === 'left').length;
+  const rightCount = marks.filter((m) => m.side === 'right').length;
 
   const editorValid = !!editor && editor.dose != null && editor.muscle.trim().length > 0;
 
@@ -617,6 +637,25 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange }: F
         <SummaryBox n={fmt(left)} label={t('leftU')} />
         <SummaryBox n={fmt(right)} label={t('rightU')} />
         <SummaryBox n={String(marks.length)} label={t('marksCount')} />
+      </div>
+      {/* copy one side's marks to the other (mirror across the midline) */}
+      <div className="mt-2 flex gap-2">
+        <button
+          type="button"
+          onClick={() => copySide('right')}
+          disabled={rightCount === 0}
+          className="flex-1 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-2 py-2 text-[13px] font-semibold text-sage-deep hover:bg-sage-soft disabled:cursor-not-allowed disabled:text-ink-muted disabled:hover:bg-cream-soft"
+        >
+          {t('copyRightToLeft')}
+        </button>
+        <button
+          type="button"
+          onClick={() => copySide('left')}
+          disabled={leftCount === 0}
+          className="flex-1 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-2 py-2 text-[13px] font-semibold text-sage-deep hover:bg-sage-soft disabled:cursor-not-allowed disabled:text-ink-muted disabled:hover:bg-cream-soft"
+        >
+          {t('copyLeftToRight')}
+        </button>
       </div>
       <button
         type="button"
