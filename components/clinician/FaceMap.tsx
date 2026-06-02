@@ -298,9 +298,13 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange, exp
     const ly = VIEW.y + VIEW.h + 16;
     const lx0 = VIEW.x + 4;
 
-    const title = `<text x="${VIEW.x + VIEW.w / 2}" y="${VIEW.y - 10}" text-anchor="middle" font-family="Georgia,serif" font-size="11" font-weight="700" fill="#1f2421">${escapeXml(t('exportTitle'))}</text>`;
-    const sideR = `<text x="${VIEW.x + 6}" y="${VIEW.y - 10}" font-family="sans-serif" font-size="7" font-weight="700" fill="#4b5450">${escapeXml(t('sideRightShort'))}</text>`;
-    const sideL = `<text x="${VIEW.x + VIEW.w - 6}" y="${VIEW.y - 10}" text-anchor="end" font-family="sans-serif" font-size="7" font-weight="700" fill="#4b5450">${escapeXml(t('sideLeftShort'))}</text>`;
+    const title = `<text x="${VIEW.x + VIEW.w / 2}" y="${VIEW.y - 12}" text-anchor="middle" font-family="Georgia,serif" font-size="11" font-weight="700" fill="#1f2421">${escapeXml(t('exportTitle'))}</text>`;
+    // Date stamps the image itself (not just the filename) so a pasted /
+    // printed copy stays self-identifying. Generation date (ISO).
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const dateText = `<text x="${VIEW.x + VIEW.w / 2}" y="${VIEW.y - 3}" text-anchor="middle" font-family="sans-serif" font-size="6.5" fill="#686d69">${escapeXml(dateStr)}</text>`;
+    const sideR = `<text x="${VIEW.x + 6}" y="${VIEW.y - 12}" font-family="sans-serif" font-size="7" font-weight="700" fill="#4b5450">${escapeXml(t('sideRightShort'))}</text>`;
+    const sideL = `<text x="${VIEW.x + VIEW.w - 6}" y="${VIEW.y - 12}" text-anchor="end" font-family="sans-serif" font-size="7" font-weight="700" fill="#4b5450">${escapeXml(t('sideLeftShort'))}</text>`;
 
     let legX = lx0;
     const legParts: string[] = [
@@ -326,7 +330,7 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange, exp
     return (
       `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VIEW.x} ${vy} ${outW} ${outH}" width="${outW}" height="${outH}">` +
       `<rect x="${VIEW.x}" y="${vy}" width="${outW}" height="${outH}" fill="#fbf8f2"/>` +
-      `${title}${sideR}${sideL}` +
+      `${title}${dateText}${sideR}${sideL}` +
       `<image href="${imgHref}" x="0" y="0" width="${IMG_W}" height="${IMG_H}"/>` +
       `${marksMarkup}${legend}</svg>`
     );
@@ -752,8 +756,12 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange, exp
         {t('addManual')}
       </button>
 
-      {/* copy one side's marks to the other (mirror across the midline) */}
-      <div className="mt-2 flex gap-2">
+      {/* finishing / management actions — copy, clear, export — kept
+          visually separate from the add flow above so the map + add reads
+          as the primary task and these read as "once you're done". */}
+      <div className="mt-4 border-t border-stone/60 pt-3">
+        {/* copy one side's marks to the other (mirror across the midline) */}
+        <div className="flex gap-2">
         <button
           type="button"
           onClick={() => copySide('right')}
@@ -805,14 +813,18 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange, exp
             {t('clearMarks')}
           </button>
         ))}
-      <button
-        type="button"
-        onClick={downloadPng}
-        disabled={marks.length === 0 || downloading}
-        className="mt-2 flex h-10 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft text-[14px] font-semibold text-ink-soft hover:bg-stone-soft disabled:cursor-not-allowed disabled:text-ink-muted disabled:hover:bg-cream-soft"
-      >
-        {downloading ? '…' : t('download')}
-      </button>
+        <button
+          type="button"
+          onClick={downloadPng}
+          disabled={marks.length === 0 || downloading}
+          className="mt-2 flex h-10 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft text-[14px] font-semibold text-ink-soft hover:bg-stone-soft disabled:cursor-not-allowed disabled:text-ink-muted disabled:hover:bg-cream-soft"
+        >
+          {downloading ? '…' : t('download')}
+        </button>
+        <p className="mt-1 text-[12px] leading-snug text-ink-muted">
+          {t('downloadHelper')}
+        </p>
+      </div>
     </div>
   );
 }

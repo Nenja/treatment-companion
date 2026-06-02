@@ -76,13 +76,12 @@ function TreatmentRecordInner() {
   const mainWidthClass = wide
     ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-24 pt-6 lg:max-w-[var(--max-w-page-wide)]'
     : 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-24 pt-6';
-  // The two-pane grid wrapper. When wide, becomes a 340px + form grid
-  // at lg; when compact, stays a plain block (single-column) so the
-  // page reads top-to-bottom even on a large screen.
-  const paneGridClass = wide
-    ? 'lg:mt-6 lg:grid lg:grid-cols-[340px_1fr] lg:gap-6 lg:items-start'
-    : '';
-  const asideClass = wide ? 'lg:sticky lg:top-6' : '';
+  // Single-column layout: the area selector and last-treatment card now
+  // sit at the top of the form (not a separate left column), per clinician
+  // request. The two-pane grid is retired; `wide` still drives the
+  // muscle-row layout and the page max-width below.
+  const paneGridClass = '';
+  const asideClass = '';
   // Reference cards container: stacks on mobile, row on sm, and when
   // wide also stacks again at lg (narrow aside). When compact, the
   // sm-row behaviour is kept (cards side-by-side) since there's no
@@ -677,12 +676,9 @@ function TreatmentRecordInner() {
             so that mobile gets the same vertical order it has today. */}
         <div className={paneGridClass}>
           <aside className={asideClass}>
-        {/* Reference cards — compact and tappable. Last treatment opens
-            a modal with full details and the Copy action. (The
-            medication card was removed.) On mobile they
-            stack; on sm+ side-by-side; on lg+ they stack again because
-            the left aside is narrow. */}
-        <div className="eyebrow mb-2 text-ink-muted">{t('forReference')}</div>
+        {/* Area selector + last-treatment now sit atop the form (single
+            column). The area selector decides which sections render; the
+            last-treatment card offers the Copy-from-previous action. */}
         {/* Treatment areas — the control that decides which sections
             appear in the form (standard muscle list / face map). A
             full-width block at the top of the reference column; kept out
