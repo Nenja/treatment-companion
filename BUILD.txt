@@ -1,39 +1,18 @@
-Build tag: facemap-a11y-fixes
-Generated: 2026-06-02T18:41Z
+Build tag: facemap-copy-clear
+Generated: 2026-06-02T18:48Z
 
-Implements the safe, code-verified findings from the two FaceMap audits
-(Don't-Make-Me-Think + Accessibility). UI-only; NO migration.
-
-Accessibility (WCAG):
-- Dose ramp re-spaced for monotonic LUMINANCE (#eef3ee→#a7c3ad→#5f8369→
-  #324839→#11180f), ~2:1 between neighbours (3:1 across 5 bands is
-  geometrically impossible). The exact dose is now PRINTED on every mark
-  (haloed number), so reading dose never depends on telling bands apart.
-- Keyboard "+ Add a mark" button (opens the editor at midline/mid-face) —
-  clears the 2.1.1 "no keyboard way to create a mark" failure.
-- Input borders darkened to #8f897c (≥3:1 vs background).
-- Symbol-mode mark backing now has a dark edge (was invisible on light skin).
-- R/L side labels #9a7c64 → ink-soft #4b5450 (3.43:1 → 6.96:1).
-- Summary caption + disabled-save text ink-muted → ink-soft; active dose
-  chip bg-sage → bg-sage-deep (4.45:1 → 7.14:1).
-- Editor popover is now role="dialog" aria-modal, focuses in on open and
-  restores focus on close, and closes on Escape.
-- aria-pressed added to all toggle groups (colour/symbol, dose chips, side).
-
-Don't-Make-Me-Think:
-- Persistent instruction under the map ("Tap the face to add a mark. Tap a
-  mark to edit or remove it.") — visible always, not just on an empty map.
-- Cancel (new mark) is now neutral; only Remove (existing mark) is red.
-- Download: success toast + filename now "<patient>-<date>.png" (was always
-  face-dosing.png).
-
-STILL OPEN (need on-screen check / a clinician, deliberately not changed):
-- Symbol glyph size on a real phone (a11y #2).
-- Do the two toggles read as one control? (DMT #3).
-- "Standard" naming (DMT #10) — ask a clinician.
-See docs/audits/*.md (status banners updated).
+What changed (vs "facemap-a11y-fixes"). Face map only; NO migration:
+- Copy-to-other-side is now allowed ONCE. After a copy, both copy buttons
+  disable and a short note appears ("Copied. Clear the marks to copy again.").
+  Clearing the marks re-enables copying.
+- Removed the four-box summary row under the map (Total / Left / Right / Marks).
+  (The cycle total is still computed by the treatment page; only the on-map
+  mini-summary is gone.)
+- New "Clear marks" button (under the copy buttons): destructive, so it uses a
+  two-step inline confirm — tap "Clear marks" → "Clear all? [Clear all][Cancel]".
+  Only shown when there are marks. Clearing also resets the copy-once lock.
 
 How to confirm THIS build is deployed:
-- BUILD.txt tag "facemap-a11y-fixes".
-- Each face mark shows a small dose number; there's a "+ Add a mark" button
-  and a persistent tap instruction under the map.
+- BUILD.txt tag "facemap-copy-clear".
+- No summary boxes beneath the face; a "Clear marks" button is present; using a
+  "Copy <side> → <side>" button once disables both copy buttons until cleared.
