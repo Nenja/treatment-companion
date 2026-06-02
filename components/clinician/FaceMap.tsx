@@ -47,14 +47,12 @@ const DEAD = 7; // dead-zone half-width around the midline → bilateral
 
 const QUICK = [2.5, 5, 7.5, 10, 15];
 const DOSE_LABELS = ['2.5 U', '5 U', '7.5 U', '10 U', '> 10 U'];
-// Dose-band colours. Re-spaced for monotonic LUMINANCE (light → dark) so
-// the bands are as distinguishable as 5 steps allow (~2:1 between
-// neighbours — 3:1 across five bands is geometrically impossible within
-// black↔white) and so they degrade sensibly in greyscale and for
-// colour-blind users. Colour is a quick visual cue only; the exact dose
-// is also printed on every mark, so reading dose never depends on telling
-// these greens apart.
-const DOSE_COLORS = ['#eef3ee', '#a7c3ad', '#5f8369', '#324839', '#11180f'];
+// Dose-band colours (original ramp — the clinician preferred these).
+// Colour is the quick at-a-glance cue; the exact dose is always
+// available by tapping a mark to open the editor, and the legend keys
+// each band to its dose. Symbol mode remains as the colour-independent
+// alternative for greyscale / colour-vision needs.
+const DOSE_COLORS = ['#a9c2b3', '#6f9482', '#3f5a4b', '#2a3f33', '#16201a'];
 const SYMBOL_INK = '#243029';
 
 const MUSCLE_NAMES = [
@@ -119,21 +117,15 @@ function markSvgString(m: FaceMarkInput, mode: FaceDisplayMode): string {
   const x = m.posX * IMG_W;
   const y = m.posY * IMG_H;
   const idx = bandIndex(m.doseUnits);
-  const doseLabel =
-    `<text x="${x}" y="${y + 8.5}" text-anchor="middle" font-family="sans-serif" ` +
-    `font-size="5" font-weight="700" fill="#1f2421" stroke="#fbf8f2" stroke-width="1.1" ` +
-    `paint-order="stroke">${fmt(m.doseUnits)}</text>`;
   if (mode === 'color') {
     return (
       `<circle cx="${x}" cy="${y}" r="3.8" fill="#ffffff" stroke="#1f2421" stroke-width="0.7"/>` +
-      `<circle cx="${x}" cy="${y}" r="3" fill="${DOSE_COLORS[idx]}" stroke="#ffffff" stroke-width="0.8"/>` +
-      doseLabel
+      `<circle cx="${x}" cy="${y}" r="3" fill="${DOSE_COLORS[idx]}" stroke="#ffffff" stroke-width="0.8"/>`
     );
   }
   return (
-    `<circle cx="${x}" cy="${y}" r="4.2" fill="#ffffff" fill-opacity="0.85" stroke="#1f2421" stroke-width="0.6"/>` +
-    symbolSvgString(idx, x, y) +
-    doseLabel
+    `<circle cx="${x}" cy="${y}" r="4.2" fill="#ffffff" fill-opacity="0.75"/>` +
+    symbolSvgString(idx, x, y)
   );
 }
 
@@ -209,21 +201,6 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange, exp
       dose: m.doseUnits,
       muscle: m.muscle,
       side: m.side
-    });
-  }
-
-  // Non-spatial way to start a mark (keyboard / switch users, who can't
-  // tap a position). Opens the editor at the midline, mid-face; the
-  // clinician sets muscle/dose/side and can re-place by tapping later.
-  function addMarkManually() {
-    if (editor) return;
-    setEditor({
-      index: null,
-      xImg: MIDLINE,
-      yImg: IMG_H / 2,
-      dose: null,
-      muscle: '',
-      side: sideFromX(MIDLINE)
     });
   }
 
@@ -602,26 +579,10 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange, exp
                   </>
                 ) : (
                   <>
-                    <circle cx={x} cy={y} r={4.2} fill="#ffffff" fillOpacity={0.85} stroke="#1f2421" strokeWidth={0.6} />
+                    <circle cx={x} cy={y} r={4.2} fill="#ffffff" fillOpacity={0.75} />
                     {renderSymbol(idx, x, y)}
                   </>
                 )}
-                {/* exact dose printed below the mark, with a light halo so
-                    it reads on any background — so dose never depends on
-                    telling the band colours/shapes apart. */}
-                <text
-                  x={x}
-                  y={y + 8.5}
-                  textAnchor="middle"
-                  fontSize={5}
-                  fontWeight={700}
-                  fill="#1f2421"
-                  stroke="#fbf8f2"
-                  strokeWidth={1.1}
-                  style={{ paintOrder: 'stroke' }}
-                >
-                  {fmt(m.doseUnits)}
-                </text>
               </g>
             );
           })}
@@ -745,16 +706,6 @@ export function FaceMap({ marks, onChange, displayMode, onDisplayModeChange, exp
       {/* persistent instruction — always visible, so the core action is
           discoverable after the first mark too (not just on an empty map). */}
       <p className="mt-2 text-[12px] leading-snug text-ink-muted">{t('tapHint')}</p>
-
-      {/* non-spatial add, for keyboard/switch users who can't tap a point */}
-      <button
-        type="button"
-        onClick={addMarkManually}
-        disabled={editorOpen}
-        className="mt-2 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-sage-soft disabled:cursor-not-allowed disabled:text-ink-muted"
-      >
-        {t('addManual')}
-      </button>
 
       {/* finishing / management actions — copy, clear, export — kept
           visually separate from the add flow above so the map + add reads
