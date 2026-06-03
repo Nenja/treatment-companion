@@ -25,6 +25,7 @@ import { formatLongDate } from '@/lib/dates';
 import { nrsToGas, injectionSideLabel, type GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { GoalGraphModal } from '@/components/clinician/GoalGraphModal';
+import { TrainingOverview } from '@/components/clinician/TrainingOverview';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
 import {
@@ -272,6 +273,16 @@ export default function ClinicianPatientPage() {
     (todayMs - startMs) / (24 * 60 * 60 * 1000)
   );
   const weekNumber = Math.max(1, Math.floor(daysSinceStart / 7) + 1);
+
+  // Per-week training days for the Home training overview. A check-in
+  // with trainingDays === null means "not reported"; an empty array
+  // means "reported, trained no days" (a real, counted data point).
+  const trainingByWeek = new Map<number, number[]>();
+  for (const c of checkins) {
+    if (c.trainingDays !== null) {
+      trainingByWeek.set(c.weekNumber, c.trainingDays);
+    }
+  }
 
   // Build per-goal ratings for the progress views.
   const ratingsByGoal = new Map<
@@ -922,6 +933,12 @@ export default function ClinicianPatientPage() {
                 )}
               </div>
             </section>
+          )}
+          {checkins.length > 0 && (
+            <TrainingOverview
+              currentWeek={weekNumber}
+              daysByWeek={trainingByWeek}
+            />
           )}
           {activeGoals.length === 0 ? (
             <p className="mt-3 text-[14px] text-ink-muted">

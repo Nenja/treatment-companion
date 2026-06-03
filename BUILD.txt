@@ -1,36 +1,35 @@
-Build tag: checkin-training-days
+Build tag: clinician-training-overview
 
-NEW: weekly training-day reporting in the check-in
-- A new step is added to the check-in wizard, AFTER the goal ratings and
-  BEFORE the comment/summary step: "Which days did you train this week?"
-  Seven Mon–Sun toggles (multi-select). It's optional — selecting none and
-  continuing means "no training this week".
-- Stored on weekly_checkin.training_days as ISO weekday numbers
-  (1=Mon … 7=Sun). NULL = not reported; {} = reported no training.
-- The step is part of the normal flow (the wizard progress now shows it),
-  and the selection is saved in the resumable draft like the ratings.
+NEW: "Home training" overview on the clinician patient page
+- A card at the top of the active-cycle goals section (above the goal
+  graphs) showing the patient's training reports as a week × day grid:
+  rows = Mon–Sun, columns = weeks left→right (same timeline as the goal
+  charts), filled cell = trained that day. A summary line shows
+  "avg X days/week · N total", and the current week is marked.
+- Reads weekly_checkin.training_days for the ACTIVE cycle only (past
+  cycles are not shown, as requested). Weeks with no reported training
+  show empty; an empty report (checked in, trained no days) counts as a
+  reported week in the average.
+- The card appears once the patient has at least one check-in. If no
+  training has been reported yet it shows "No training reported yet".
 
-DATABASE — NEW MIGRATION (must run)
-- supabase/migrations/0063_training_days.sql (also attached standalone):
-    * adds weekly_checkin.training_days
-    * adds set_checkin_training_days(checkin_id, days) — a small RPC the
-      app calls right after submit to store the days (so the submit RPC is
-      unchanged). It checks the check-in belongs to the calling patient.
-- Run it in the Supabase SQL editor, then deploy this code.
+Includes the patient-side capture from the previous build (the check-in
+training-days step) unchanged.
 
-CLINICIAN VIEW
-- This build is the patient-side capture only. There's no clean per-week
-  spot on the clinician page yet to show training days (check-in data is
-  currently folded into the per-goal graphs). Showing it to the clinician
-  — e.g. a small weekly adherence row on the patient page or in the
-  history view — is the natural next slice; tell me where you'd like it.
+MIGRATIONS
+- No NEW migration. This is display-only and needs 0063_training_days.sql
+  (previous build) applied — it adds weekly_checkin.training_days and the
+  capture path. If you've already run 0063, nothing more to run.
+
+DEPLOY
+- Upload this zip to GitHub -> Vercel. (Run 0063 first if you haven't.)
 
 VERIFY ON SCREEN (I can't see rendered output)
-- Do a check-in: after rating the goals you should see the training-days
-  step (7 day toggles), then the comment step. Toggle some days, submit,
-  and confirm weekly_checkin.training_days holds those numbers for that
-  check-in.
+- Open a patient who has reported training (e.g. do a check-in as a test
+  patient and tick some days). On the clinician patient page you should
+  see the "Home training" grid above the goal graphs, with the ticked
+  days filled and the weekly trend visible.
 
 How to confirm THIS build is deployed:
-- BUILD.txt tag "checkin-training-days".
-- The check-in flow has a "Which days did you train this week?" step.
+- BUILD.txt tag "clinician-training-overview".
+- The clinician patient page shows a "Home training" week × day grid.
