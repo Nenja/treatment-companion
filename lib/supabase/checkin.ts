@@ -41,6 +41,12 @@ export interface CheckinGoal {
    * gated in the check-in UI.
    */
   videoEnabled: boolean;
+  /**
+   * True when this goal already has a video recorded earlier in the
+   * current cycle. The recorder is offered at weeks 6–8 only until one
+   * video exists, so there's at most one per cycle.
+   */
+  videoAlreadyInCycle: boolean;
 }
 
 export interface CheckinData {
@@ -181,6 +187,25 @@ export function useCheckinData(
         }
       }
 
+      // One video per cycle: which of these goals already have a video
+      // recorded somewhere in this cycle. If so, we won't offer the
+      // recorder again (it's shown at weeks 6–8 until one is recorded).
+      const videoInCycle = new Set<string>();
+      if (goalIds.length > 0) {
+        const { data: vidRows, error: vErr } = await supabase
+          .from('weekly_goal_rating')
+          .select(
+            'approved_goal_id, weekly_checkin!inner(treatment_cycle_id)'
+          )
+          .in('approved_goal_id', goalIds)
+          .not('video_path', 'is', null)
+          .eq('weekly_checkin.treatment_cycle_id', cycleId);
+        if (vErr) throw vErr;
+        for (const row of vidRows ?? []) {
+          videoInCycle.add(row.approved_goal_id as string);
+        }
+      }
+
       const goals: CheckinGoal[] = goalRowsArr.map((g) => {
         const kind = (g.goal_kind as 'nrs' | 'gas') ?? 'nrs';
         return {
@@ -213,7 +238,8 @@ export function useCheckinData(
             kind === 'nrs'
               ? previousByGoal.get(g.id as string) ?? null
               : null,
-          videoEnabled: (g.video_enabled as boolean) ?? false
+          videoEnabled: (g.video_enabled as boolean) ?? false,
+          videoAlreadyInCycle: videoInCycle.has(g.id as string)
         };
       });
 
@@ -243,6 +269,9 @@ export interface SubmitCheckinInput {
   }[];
   comment?: string;
   submitterLabel?: 'self' | 'caregiver';
+  /** ISO weekday numbers (1=Mon..7=Sun) the patient trained this week.
+   *  Empty array = reported no training. Omitted = not reported. */
+  trainingDays?: number[];
 }
 
 /**
@@ -294,7 +323,25 @@ export function useSubmitCheckin() {
         p_submitter_label: input.submitterLabel ?? 'self'
       });
       if (error) throw error;
-      return data as string;
+      const checkinId = data as string;
+
+      // Training days are stored on the check-in via a small follow-up
+      // RPC (keeps the submit RPC stable). Best-effort: if it fails the
+      // check-in itself is already saved, so we don't reject — the prompt
+      // is now completed and resubmitting isn't possible.
+      if (input.trainingDays) {
+        try {
+          const { error: tdErr } = await supabase.rpc(
+            'set_checkin_training_days',
+            { p_checkin_id: checkinId, p_days: input.trainingDays }
+          );
+          if (tdErr) console.error('set_checkin_training_days failed', tdErr);
+        } catch (e) {
+          console.error('set_checkin_training_days threw', e);
+        }
+      }
+
+      return checkinId;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['patientHome'] });

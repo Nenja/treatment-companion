@@ -7,7 +7,8 @@
 //
 // Wizard step shape:
 //   - Steps 1..N  — one step per active goal
-//   - Step N+1    — optional comment + summary review
+//   - Step N+1    — which days the patient trained this week
+//   - Step N+2    — optional comment + summary review
 // ---------------------------------------------------------------------------
 
 export interface CheckinDraft {
@@ -19,6 +20,10 @@ export interface CheckinDraft {
   currentStep: number;
   /** Map of approvedGoalId → NRS value (0..10). Missing = not yet rated. */
   ratings: Record<string, number>;
+  /** ISO weekday numbers (1=Mon..7=Sun) the patient trained this week.
+   *  Undefined until the patient reaches the training step; an empty
+   *  array means "no training this week". */
+  trainingDays?: number[];
   comment?: string;
   /** Who filled this in: patient themself, or someone helping them.
    *  Defaults to undefined until the patient explicitly picks; we ask
