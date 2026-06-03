@@ -1172,7 +1172,7 @@ begin
     patient_id, treatment_cycle_id, domain, patient_wording,
     importance, hoped_timeframe, difficulty_context, status
   ) values (
-    v_patient_id, v_cycle_id, 'mobility',
+    v_patient_id, v_cycle_id, 'walking',
     'I want to stand more steadily at the sink',
     'high', '8w', 'Loses balance and grabs the counter.', 'active'
   ) returning id into v_suggestion;
