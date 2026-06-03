@@ -1,41 +1,22 @@
-Build tag: facemap-revert-and-global-brand
-Generated: 2026-06-02T19:57Z
+Build tag: brand-follows-page-width
+Generated: 2026-06-02T20:13Z
 
-Reverts + layout, from the latest review. UI-only; NO migration:
+Single change from the previous build (facemap-revert-and-global-brand);
+UI-only, NO migration:
+- The global brand strip's content is now centred at the page content
+  width (mid / 720px) instead of the viewport's far-left corner. The strip
+  still spans the full width (standard app-bar look), but the chevron +
+  "Treatment Companion" now sit at the top-left of the content column, so
+  they line up with the page below on the main clinician work pages
+  (treatment, patient, new-goal, physio patient — all 720px).
 
-Face map:
-- Dose dots reverted to the ORIGINAL colour ramp; the printed dose number
-  on each mark is removed (on-screen and in the exported PNG). Symbol-mode
-  marks reverted to their original backing. (Trade-off below.)
-- The "+ Add a mark" button is removed (it added a mark at a default spot,
-  which made little sense on a tap surface). Tapping the face still adds a
-  mark; tapping a mark still edits/removes it.
-
-Treatment page:
-- No longer stretched: the single column is now capped at the mid width
-  (720px) instead of expanding to 1080px. Mobile is unchanged.
-- The "Treatment areas" selector and the "Last treatment" card now sit
-  SIDE BY SIDE at the top of the form (stacked on mobile).
-
-Brand on every page:
-- A slim brand strip (the sage chevron + "Treatment Companion") now renders
-  once in the layout, so it appears at the top of EVERY page. To avoid
-  showing the brand twice, it was removed from the old per-page spots: the
-  TopBar (used by the front page + patient-info) now carries only the
-  account/help controls, and the text wordmark was removed from login,
-  signup, and the clinician home.
-
-A11y trade-offs reopened by the reverts (by request; flagged honestly):
-- Dose-by-colour alone is not reliably distinguishable across 5 bands and
-  no longer has the printed-number fallback. Exact dose is still shown when
-  you tap a mark, the legend keys each band, and Symbol mode remains as the
-  colour-independent option.
-- Removing the add button means there is no keyboard-only way to CREATE a
-  mark (editing existing marks stays keyboard-accessible).
+Note: pages that use a different content width (history + patient-info are
+wider at 1080; the patient-facing pages are 480) may show the brand a touch
+off from their content on a wide desktop window. If you want pixel-exact
+alignment on every page, the next step is to feed each page's own width to
+the strip — say the word and I'll wire it.
 
 How to confirm THIS build is deployed:
-- BUILD.txt tag "facemap-revert-and-global-brand".
-- Every page shows the chevron + "Treatment Companion" strip at the very top.
-- Face marks are the original colours with no printed numbers; no "Add a
-  mark" button. Treatment page is narrower with areas + last treatment side
-  by side.
+- BUILD.txt tag "brand-follows-page-width".
+- On the treatment/patient pages, the brand lines up with the left edge of
+  the page content instead of the window corner.
