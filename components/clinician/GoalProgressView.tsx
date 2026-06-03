@@ -24,6 +24,9 @@ interface PhysioPoint {
 
 interface GoalProgressViewProps {
   goalText: string;
+  /** Which graph to draw. NRS goals plot the raw 0–10 value; GAS goals
+   *  plot the −2..+2 level on the banded chart. Defaults to GAS. */
+  kind?: 'nrs' | 'gas';
   /** Current week number since treatment (1-indexed). Drives the x-axis size. */
   currentWeek: number;
   ratings: WeekRating[];
@@ -61,6 +64,7 @@ interface GoalProgressViewProps {
  */
 export function GoalProgressView({
   goalText,
+  kind = 'gas',
   currentWeek,
   ratings,
   physioRatings = [],
@@ -68,6 +72,19 @@ export function GoalProgressView({
 }: GoalProgressViewProps) {
   const t = useTranslations('treatment');
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+
+  // NRS goals plot the raw 0–10 value on a 0–10 axis; GAS goals plot the
+  // −2..+2 level on the banded axis. plotVal picks the right field.
+  const isNrs = kind === 'nrs';
+  const yMin = isNrs ? 0 : -2;
+  const yMax = isNrs ? 10 : 2;
+  const neutralVal = isNrs ? 5 : 0;
+  const plotVal = (
+    r: { value: number | null; nrs: number | null } | null
+  ): number | null => (r == null ? null : isNrs ? r.nrs : r.value);
+  // How a physio point reads in the caption, matching the active chart.
+  const physioValue = (p: PhysioPoint) =>
+    isNrs ? `NRS ${p.nrs}/10` : `GAS ${formatGas(p.value)}`;
 
   // Total weeks shown: max of current week, latest reported week, and
   // latest physio-rated week, with a minimum of 4.
@@ -115,15 +132,14 @@ export function GoalProgressView({
     if (totalWeeks <= 1) return padLeft + innerWidth / 2;
     return padLeft + ((week - 1) / (totalWeeks - 1)) * innerWidth;
   };
-  // y position for a rating value (-2..+2). +2 is at the top.
+  // y position for a plotted value, flipped so the max is at the top.
   const yFor = (value: number) => {
-    // Map -2..+2 to 0..1 with +2 at top (so flipped).
-    const t = (value + 2) / 4;
-    return padTop + (1 - t) * innerHeight;
+    const frac = (value - yMin) / (yMax - yMin);
+    return padTop + (1 - frac) * innerHeight;
   };
 
-  // Each rating value occupies a horizontal band of height innerHeight/5
-  // centred on yFor(value). The band edges sit at midpoints.
+  // GAS only: each level occupies a horizontal band of height
+  // innerHeight/5 centred on yFor(value). The band edges sit at midpoints.
   const bandTop = (value: number) => yFor(value) - innerHeight / 10;
   const bandBottom = (value: number) => yFor(value) + innerHeight / 10;
 
@@ -140,17 +156,19 @@ export function GoalProgressView({
   for (let i = 0; i < byWeek.length - 1; i++) {
     const a = byWeek[i];
     const b = byWeek[i + 1];
+    const av = plotVal(a);
+    const bv = plotVal(b);
     if (
       a?.reported &&
-      typeof a.value === 'number' &&
+      typeof av === 'number' &&
       b?.reported &&
-      typeof b.value === 'number'
+      typeof bv === 'number'
     ) {
       segments.push({
         x1: xFor(i + 1),
-        y1: yFor(a.value),
+        y1: yFor(av),
         x2: xFor(i + 2),
-        y2: yFor(b.value)
+        y2: yFor(bv)
       });
     }
   }
@@ -175,9 +193,9 @@ export function GoalProgressView({
     const wb = physioWeeks[i + 1];
     physioSegments.push({
       x1: xFor(wa),
-      y1: yFor(physioByWeek.get(wa)!.value),
+      y1: yFor(plotVal(physioByWeek.get(wa)!)!),
       x2: xFor(wb),
-      y2: yFor(physioByWeek.get(wb)!.value)
+      y2: yFor(plotVal(physioByWeek.get(wb)!)!)
     });
   }
 
@@ -227,49 +245,67 @@ export function GoalProgressView({
         role="img"
         aria-label={`Weekly ratings chart for: ${goalText}`}
       >
-        {/* Background bands — muted directional colors */}
-        <rect
-          x={padLeft}
-          y={bandTop(2)}
-          width={innerWidth}
-          height={bandBottom(2) - bandTop(2)}
-          fill="var(--color-sage-soft)"
-          opacity={0.6}
-        />
-        <rect
-          x={padLeft}
-          y={bandTop(1)}
-          width={innerWidth}
-          height={bandBottom(1) - bandTop(1)}
-          fill="var(--color-sage-soft)"
-          opacity={0.35}
-        />
-        <rect
-          x={padLeft}
-          y={bandTop(0)}
-          width={innerWidth}
-          height={bandBottom(0) - bandTop(0)}
-          fill="var(--color-cream)"
-        />
-        <rect
-          x={padLeft}
-          y={bandTop(-1)}
-          width={innerWidth}
-          height={bandBottom(-1) - bandTop(-1)}
-          fill="var(--color-amber-soft)"
-          opacity={0.35}
-        />
-        <rect
-          x={padLeft}
-          y={bandTop(-2)}
-          width={innerWidth}
-          height={bandBottom(-2) - bandTop(-2)}
-          fill="var(--color-amber-soft)"
-          opacity={0.6}
-        />
+        {/* Background. GAS: five muted directional bands. NRS: faint
+            gridlines at 0 / 5 / 10 on the plain card. */}
+        {isNrs ? (
+          [0, 5, 10].map((v) => (
+            <line
+              key={`grid-${v}`}
+              x1={padLeft}
+              x2={padLeft + innerWidth}
+              y1={yFor(v)}
+              y2={yFor(v)}
+              stroke="var(--color-stone)"
+              strokeWidth={1}
+              opacity={0.6}
+            />
+          ))
+        ) : (
+          <>
+            <rect
+              x={padLeft}
+              y={bandTop(2)}
+              width={innerWidth}
+              height={bandBottom(2) - bandTop(2)}
+              fill="var(--color-sage-soft)"
+              opacity={0.6}
+            />
+            <rect
+              x={padLeft}
+              y={bandTop(1)}
+              width={innerWidth}
+              height={bandBottom(1) - bandTop(1)}
+              fill="var(--color-sage-soft)"
+              opacity={0.35}
+            />
+            <rect
+              x={padLeft}
+              y={bandTop(0)}
+              width={innerWidth}
+              height={bandBottom(0) - bandTop(0)}
+              fill="var(--color-cream)"
+            />
+            <rect
+              x={padLeft}
+              y={bandTop(-1)}
+              width={innerWidth}
+              height={bandBottom(-1) - bandTop(-1)}
+              fill="var(--color-amber-soft)"
+              opacity={0.35}
+            />
+            <rect
+              x={padLeft}
+              y={bandTop(-2)}
+              width={innerWidth}
+              height={bandBottom(-2) - bandTop(-2)}
+              fill="var(--color-amber-soft)"
+              opacity={0.6}
+            />
+          </>
+        )}
 
         {/* Y-axis labels */}
-        {[2, 1, 0, -1, -2].map((v) => (
+        {(isNrs ? [10, 5, 0] : [2, 1, 0, -1, -2]).map((v) => (
           <text
             key={v}
             x={padLeft - 6}
@@ -279,7 +315,7 @@ export function GoalProgressView({
             className="fill-ink-muted"
             fontSize={10}
           >
-            {v > 0 ? `+${v}` : `${v}`}
+            {isNrs ? `${v}` : v > 0 ? `+${v}` : `${v}`}
           </text>
         ))}
 
@@ -333,6 +369,7 @@ export function GoalProgressView({
           const isCurrent = week === currentWeek;
           const isSelected = week === selectedWeek;
           const x = xFor(week);
+          const ev = plotVal(entry);
 
           // Past-or-current weeks with no rating → missing marker at y=0.
           const showMissing =
@@ -369,11 +406,11 @@ export function GoalProgressView({
                 }
                 style={{ cursor: 'pointer' }}
               />
-              {entry?.reported && typeof entry.value === 'number' ? (
+              {entry?.reported && typeof ev === 'number' ? (
                 <>
                   <circle
                     cx={x}
-                    cy={yFor(entry.value)}
+                    cy={yFor(ev)}
                     r={isSelected ? 5 : isCurrent ? 4.5 : 4}
                     fill="var(--color-sage-deep)"
                     stroke={
@@ -391,7 +428,7 @@ export function GoalProgressView({
                       so it reads as an annotation, not data. */}
                   {entry.comment && (
                     <g
-                      transform={`translate(${x + 5}, ${yFor(entry.value) - 11})`}
+                      transform={`translate(${x + 5}, ${yFor(ev) - 11})`}
                       style={{ pointerEvents: 'none' }}
                     >
                       <rect
@@ -418,7 +455,7 @@ export function GoalProgressView({
               ) : (
                 <circle
                   cx={x}
-                  cy={yFor(0)}
+                  cy={yFor(neutralVal)}
                   r={4}
                   fill="none"
                   stroke={
@@ -450,14 +487,15 @@ export function GoalProgressView({
         ))}
         {physioWeeks.map((w) => {
           const p = physioByWeek.get(w)!;
+          const py = yFor(plotVal(p)!);
           return (
             <rect
               key={`pt-${w}`}
               x={xFor(w) - 4}
-              y={yFor(p.value) - 4}
+              y={py - 4}
               width={8}
               height={8}
-              transform={`rotate(45 ${xFor(w)} ${yFor(p.value)})`}
+              transform={`rotate(45 ${xFor(w)} ${py})`}
               fill="var(--color-amber-deep)"
               stroke="var(--color-cream-soft)"
               strokeWidth={1.25}
@@ -496,20 +534,12 @@ export function GoalProgressView({
           <>
             <p className="text-ink-soft">
               Week {selected.weekNumber}:{' '}
-              {typeof selected.nrs === 'number' ? (
-                <>
-                  <span className="font-semibold text-ink">
-                    NRS {selected.nrs}/10
-                  </span>
-                  {selected.value !== null && (
-                    <span className="text-ink-muted">
-                      {' '}
-                      · GAS {formatGas(selected.value)}
-                    </span>
-                  )}
-                </>
+              {isNrs ? (
+                <span className="font-semibold text-ink">
+                  NRS {selected.nrs}/10
+                </span>
               ) : (
-                formatGas(selected.value)
+                <span className="text-ink">{formatGas(selected.value)}</span>
               )}
               {selected.submitterLabel === 'caregiver' && (
                 <span className="ml-2 inline-flex items-center rounded-full border border-stone bg-cream-soft px-2 py-0.5 text-[12px] uppercase tracking-wider text-ink-muted">
@@ -529,11 +559,7 @@ export function GoalProgressView({
                   Physiotherapist:
                 </span>{' '}
                 <span className="font-semibold text-ink">
-                  NRS {selectedPhysio.nrs}/10
-                </span>
-                <span className="text-ink-muted">
-                  {' '}
-                  · GAS {formatGas(selectedPhysio.value)}
+                  {physioValue(selectedPhysio)}
                 </span>
               </p>
             )}
@@ -554,11 +580,7 @@ export function GoalProgressView({
                 Physiotherapist:
               </span>{' '}
               <span className="font-semibold text-ink">
-                NRS {selectedPhysio.nrs}/10
-              </span>
-              <span className="text-ink-muted">
-                {' '}
-                · GAS {formatGas(selectedPhysio.value)}
+                {physioValue(selectedPhysio)}
               </span>
             </p>
             {selectedPhysio.note && (

@@ -15,6 +15,7 @@ import { useModalA11y } from '@/lib/useModalA11y';
  */
 export function GoalGraphModal({
   goalText,
+  kind,
   currentWeek,
   ratings,
   physioRatings,
@@ -22,6 +23,7 @@ export function GoalGraphModal({
   onClose
 }: {
   goalText: string;
+  kind?: 'nrs' | 'gas';
   currentWeek: number;
   // Loosely typed to avoid duplicating GoalProgressView's row shapes;
   // the page passes exactly what GoalProgressView expects.
@@ -52,6 +54,7 @@ export function GoalGraphModal({
         </div>
         <GoalProgressView
           goalText={goalText}
+          kind={kind}
           currentWeek={currentWeek}
           ratings={ratings}
           physioRatings={physioRatings}
