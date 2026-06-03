@@ -1,22 +1,22 @@
-Build tag: brand-follows-page-width
-Generated: 2026-06-02T20:13Z
+Build tag: brand-pixel-aligned
+Generated: 2026-06-03T06:39Z
 
-Single change from the previous build (facemap-revert-and-global-brand);
-UI-only, NO migration:
-- The global brand strip's content is now centred at the page content
-  width (mid / 720px) instead of the viewport's far-left corner. The strip
-  still spans the full width (standard app-bar look), but the chevron +
-  "Treatment Companion" now sit at the top-left of the content column, so
-  they line up with the page below on the main clinician work pages
-  (treatment, patient, new-goal, physio patient — all 720px).
+Single change from the previous build (brand-follows-page-width); UI-only,
+NO migration:
+- The global brand strip now aligns PIXEL-PERFECT to each page's content
+  column, whatever width that page uses. Instead of a fixed width, the
+  strip measures the page's <main> element (its left offset + width) and
+  matches its inner row to it; since <main> shares the same px-5 inset, the
+  mark lands exactly at the content's left edge. It re-measures on window
+  resize and on navigation, and falls back to a centred mid-width row
+  before measurement / if no <main> is present.
 
-Note: pages that use a different content width (history + patient-info are
-wider at 1080; the patient-facing pages are 480) may show the brand a touch
-off from their content on a wide desktop window. If you want pixel-exact
-alignment on every page, the next step is to feed each page's own width to
-the strip — say the word and I'll wire it.
+Why this works everywhere: every page renders its content inside a centred
+<main> (directly or via AppShell), so this adapts to the 480 / 720 / 1080
+token widths AND the page-specific pixel widths (e.g. the 420px auth pages)
+without hardcoding any of them.
 
 How to confirm THIS build is deployed:
-- BUILD.txt tag "brand-follows-page-width".
-- On the treatment/patient pages, the brand lines up with the left edge of
-  the page content instead of the window corner.
+- BUILD.txt tag "brand-pixel-aligned".
+- On any page, the chevron + "Treatment Companion" line up exactly with the
+  left edge of that page's content, at any window width.
