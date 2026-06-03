@@ -20,10 +20,12 @@ export interface CheckinDraft {
   currentStep: number;
   /** Map of approvedGoalId → NRS value (0..10). Missing = not yet rated. */
   ratings: Record<string, number>;
-  /** ISO weekday numbers (1=Mon..7=Sun) the patient trained this week.
+  /** ISO weekday numbers (1=Mon..7=Sun) trained AT HOME this week.
    *  Undefined until the patient reaches the training step; an empty
-   *  array means "no training this week". */
+   *  array means "no home training this week". */
   trainingDays?: number[];
+  /** ISO weekday numbers (1=Mon..7=Sun) trained WITH A THERAPIST this week. */
+  trainingDaysTherapist?: number[];
   comment?: string;
   /** Who filled this in: patient themself, or someone helping them.
    *  Defaults to undefined until the patient explicitly picks; we ask

@@ -1,35 +1,31 @@
-Build tag: clinician-training-overview
+Build tag: training-home-vs-therapist
 
-NEW: "Home training" overview on the clinician patient page
-- A card at the top of the active-cycle goals section (above the goal
-  graphs) showing the patient's training reports as a week × day grid:
-  rows = Mon–Sun, columns = weeks left→right (same timeline as the goal
-  charts), filled cell = trained that day. A summary line shows
-  "avg X days/week · N total", and the current week is marked.
-- Reads weekly_checkin.training_days for the ACTIVE cycle only (past
-  cycles are not shown, as requested). Weeks with no reported training
-  show empty; an empty report (checked in, trained no days) counts as a
-  reported week in the average.
-- The card appears once the patient has at least one check-in. If no
-  training has been reported yet it shows "No training reported yet".
+CHANGES SINCE clinician-training-overview
+1. Training is now split into "At home" vs "With a therapist".
+   - Check-in: the training step now has TWO Mon–Sun selectors — "At home"
+     and "With a therapist" (each optional; empty = none).
+   - Stored on the check-in: training_days (home, existing) and the new
+     training_days_therapist. A day can be in both.
+2. The clinician "Training" overview (active-cycle patient page) is now
+   COLLAPSIBLE. The header stays visible with the summary
+   ("home X/wk · therapist N×") and a chevron; the grid collapses.
+   On the grid: a filled sage cell = trained at home that day; an amber ring
+   = a session with a therapist that day (a cell can be both). Legend updated.
 
-Includes the patient-side capture from the previous build (the check-in
-training-days step) unchanged.
-
-MIGRATIONS
-- No NEW migration. This is display-only and needs 0063_training_days.sql
-  (previous build) applied — it adds weekly_checkin.training_days and the
-  capture path. If you've already run 0063, nothing more to run.
-
-DEPLOY
-- Upload this zip to GitHub -> Vercel. (Run 0063 first if you haven't.)
+DATABASE — NEW MIGRATION (must run)
+- supabase/migrations/0064_training_with_therapist.sql (also attached):
+    * adds weekly_checkin.training_days_therapist
+    * replaces set_checkin_training_days with a two-array version
+      (home + therapist; therapist defaults null). Owner-checked, validates 1..7.
+- Run it in the Supabase SQL editor, then deploy this code. (0062 and 0063
+  from earlier builds must also be applied.)
 
 VERIFY ON SCREEN (I can't see rendered output)
-- Open a patient who has reported training (e.g. do a check-in as a test
-  patient and tick some days). On the clinician patient page you should
-  see the "Home training" grid above the goal graphs, with the ticked
-  days filled and the weekly trend visible.
+- Do a check-in: the training step shows two day selectors (home + therapist).
+  Tick some in each, submit. On the clinician patient page, the "Training"
+  card collapses/expands, and the grid shows home (filled) and therapist
+  (amber ring) for those days.
 
 How to confirm THIS build is deployed:
-- BUILD.txt tag "clinician-training-overview".
-- The clinician patient page shows a "Home training" week × day grid.
+- BUILD.txt tag "training-home-vs-therapist".
+- The check-in training step has "At home" and "With a therapist" selectors.

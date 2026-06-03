@@ -266,7 +266,8 @@ function CheckinPageInner() {
         ratings,
         comment: draft.comment?.trim() || undefined,
         submitterLabel: draft.submitterLabel ?? 'self',
-        trainingDays: draft.trainingDays ?? []
+        trainingDays: draft.trainingDays ?? [],
+        trainingDaysTherapist: draft.trainingDaysTherapist ?? []
       });
 
       checkinDraftStorage.clear(prompt.id);
@@ -302,10 +303,28 @@ function CheckinPageInner() {
     title = tTraining('title');
     helper = tTraining('helper');
     body = (
-      <TrainingDaysPicker
-        value={draft.trainingDays ?? []}
-        onChange={(days) => update({ trainingDays: days })}
-      />
+      <div className="space-y-5">
+        <div>
+          <p className="mb-2 text-[14px] font-semibold text-ink">
+            {tTraining('atHome')}
+          </p>
+          <TrainingDaysPicker
+            ariaLabel={tTraining('atHome')}
+            value={draft.trainingDays ?? []}
+            onChange={(days) => update({ trainingDays: days })}
+          />
+        </div>
+        <div>
+          <p className="mb-2 text-[14px] font-semibold text-ink">
+            {tTraining('withTherapist')}
+          </p>
+          <TrainingDaysPicker
+            ariaLabel={tTraining('withTherapist')}
+            value={draft.trainingDaysTherapist ?? []}
+            onChange={(days) => update({ trainingDaysTherapist: days })}
+          />
+        </div>
+      </div>
     );
   } else if (!isLastStep) {
     const goal = activeGoals[step - 1];

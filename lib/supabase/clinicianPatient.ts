@@ -43,9 +43,11 @@ export interface ClinicianPatientCheckin {
   weekNumber: number;
   comment: string | null;
   submitterLabel: 'self' | 'caregiver';
-  /** ISO weekday numbers (1=Mon..7=Sun) the patient trained that week,
-   *  or null if not reported. */
+  /** ISO weekday numbers (1=Mon..7=Sun) trained at home that week, or
+   *  null if not reported. */
   trainingDays: number[] | null;
+  /** ISO weekday numbers trained with a therapist that week, or null. */
+  trainingDaysTherapist: number[] | null;
   ratings: {
     approvedGoalId: string;
     ratingValue: number | null;
@@ -245,7 +247,7 @@ export function useClinicianPatientData(
           supabase
             .from('weekly_checkin')
             .select(
-              'id, week_number, comment, submitter_label, training_days, ratings:weekly_goal_rating (approved_goal_id, rating_value, nrs_value)'
+              'id, week_number, comment, submitter_label, training_days, training_days_therapist, ratings:weekly_goal_rating (approved_goal_id, rating_value, nrs_value)'
             )
             .eq('treatment_cycle_id', cycle.id)
             .order('week_number', { ascending: true }),
@@ -357,6 +359,8 @@ export function useClinicianPatientData(
           comment: (c.comment as string | null) ?? null,
           submitterLabel: (c.submitter_label as 'self' | 'caregiver') ?? 'self',
           trainingDays: (c.training_days as number[] | null) ?? null,
+          trainingDaysTherapist:
+            (c.training_days_therapist as number[] | null) ?? null,
           ratings: (c.ratings as Array<{
             approved_goal_id: string;
             rating_value: number | null;

@@ -274,13 +274,19 @@ export default function ClinicianPatientPage() {
   );
   const weekNumber = Math.max(1, Math.floor(daysSinceStart / 7) + 1);
 
-  // Per-week training days for the Home training overview. A check-in
-  // with trainingDays === null means "not reported"; an empty array
-  // means "reported, trained no days" (a real, counted data point).
-  const trainingByWeek = new Map<number, number[]>();
+  // Per-week training for the Home/therapist training overview. A check-in
+  // with both fields null = not reported; an empty array = reported none
+  // for that category (a real, counted data point).
+  const trainingByWeek = new Map<
+    number,
+    { home: number[]; therapist: number[] }
+  >();
   for (const c of checkins) {
-    if (c.trainingDays !== null) {
-      trainingByWeek.set(c.weekNumber, c.trainingDays);
+    if (c.trainingDays !== null || c.trainingDaysTherapist !== null) {
+      trainingByWeek.set(c.weekNumber, {
+        home: c.trainingDays ?? [],
+        therapist: c.trainingDaysTherapist ?? []
+      });
     }
   }
 

@@ -269,9 +269,11 @@ export interface SubmitCheckinInput {
   }[];
   comment?: string;
   submitterLabel?: 'self' | 'caregiver';
-  /** ISO weekday numbers (1=Mon..7=Sun) the patient trained this week.
-   *  Empty array = reported no training. Omitted = not reported. */
+  /** ISO weekday numbers (1=Mon..7=Sun) trained AT HOME this week.
+   *  Empty array = reported none. Omitted = not reported. */
   trainingDays?: number[];
+  /** ISO weekday numbers (1=Mon..7=Sun) trained WITH A THERAPIST this week. */
+  trainingDaysTherapist?: number[];
 }
 
 /**
@@ -325,15 +327,18 @@ export function useSubmitCheckin() {
       if (error) throw error;
       const checkinId = data as string;
 
-      // Training days are stored on the check-in via a small follow-up
-      // RPC (keeps the submit RPC stable). Best-effort: if it fails the
-      // check-in itself is already saved, so we don't reject — the prompt
-      // is now completed and resubmitting isn't possible.
-      if (input.trainingDays) {
+      // Training days (home + with therapist) are stored on the check-in
+      // via a small follow-up RPC (keeps the submit RPC stable). Best-effort:
+      // the check-in is already saved, so we don't reject on failure.
+      if (input.trainingDays || input.trainingDaysTherapist) {
         try {
           const { error: tdErr } = await supabase.rpc(
             'set_checkin_training_days',
-            { p_checkin_id: checkinId, p_days: input.trainingDays }
+            {
+              p_checkin_id: checkinId,
+              p_days: input.trainingDays ?? [],
+              p_days_therapist: input.trainingDaysTherapist ?? []
+            }
           );
           if (tdErr) console.error('set_checkin_training_days failed', tdErr);
         } catch (e) {
