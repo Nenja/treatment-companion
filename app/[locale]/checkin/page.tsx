@@ -20,6 +20,7 @@ import {
   GoalVideoRecorder,
   type RecordedVideo
 } from '@/components/wizard/GoalVideoRecorder';
+import { TrainingDaysPicker } from '@/components/wizard/TrainingDaysPicker';
 
 /**
  * Weekly check-in wizard. Lives at /checkin (or /<locale>/checkin).
@@ -66,6 +67,7 @@ function CheckinPageInner() {
   const locale = useLocale();
   const t = useTranslations('patient.checkin');
   const tA11y = useTranslations('a11y');
+  const tTraining = useTranslations('training');
   const searchParams = useSearchParams();
   const promptIdParam = searchParams.get('promptId');
 
@@ -172,13 +174,21 @@ function CheckinPageInner() {
   }
 
   // Step bookkeeping --------------------------------------------------
-  const totalSteps = activeGoals.length + 1;
+  // Steps: 1..N goal ratings, then training-days, then comment/submit.
+  const totalSteps = activeGoals.length + 2;
   const step = Math.min(Math.max(draft.currentStep, 1), totalSteps);
+  const trainingStep = activeGoals.length + 1;
+  const isTrainingStep = step === trainingStep;
   const isLastStep = step === totalSteps;
 
   const currentStepComplete = (() => {
     if (isLastStep) {
       return isCheckinComplete(draft, activeGoals.map((g) => g.id));
+    }
+    // Training days are optional — an empty selection means "didn't
+    // train this week", so the patient can always continue.
+    if (isTrainingStep) {
+      return true;
     }
     const goal = activeGoals[step - 1];
     return typeof draft.ratings[goal.id] === 'number';
@@ -255,7 +265,8 @@ function CheckinPageInner() {
         promptId: prompt.id,
         ratings,
         comment: draft.comment?.trim() || undefined,
-        submitterLabel: draft.submitterLabel ?? 'self'
+        submitterLabel: draft.submitterLabel ?? 'self',
+        trainingDays: draft.trainingDays ?? []
       });
 
       checkinDraftStorage.clear(prompt.id);
@@ -287,14 +298,27 @@ function CheckinPageInner() {
     </div>
   );
 
-  if (!isLastStep) {
+  if (isTrainingStep) {
+    title = tTraining('title');
+    helper = tTraining('helper');
+    body = (
+      <TrainingDaysPicker
+        value={draft.trainingDays ?? []}
+        onChange={(days) => update({ trainingDays: days })}
+      />
+    );
+  } else if (!isLastStep) {
     const goal = activeGoals[step - 1];
     title = t('rateGoalTitle');
     helper = goal.kind === 'gas' ? t('rateGoalHelperGas') : t('rateGoalHelper');
-    // Optional video is offered only when the clinician enabled it for
-    // this goal AND we're at the single peak-effect check-in (week 6),
-    // so there's at most one video per cycle. Change the week here.
-    const showVideo = goal.videoEnabled && prompt.weekNumber === 6;
+    // Optional video is offered when the clinician enabled it for this
+    // goal AND we're in the peak-effect window (weeks 6–8) AND no video
+    // has been recorded for this goal yet this cycle — so the patient can
+    // choose any one of those weeks, but only one video per cycle.
+    const showVideo =
+      goal.videoEnabled &&
+      [6, 7, 8].includes(prompt.weekNumber) &&
+      !goal.videoAlreadyInCycle;
     const picker =
       goal.kind === 'gas' ? (
         <GasGoalRatingPicker
@@ -451,6 +475,10 @@ function CheckinPageInner() {
             label: g.patientFacingText,
             done: typeof draft.ratings[g.id] === 'number'
           })),
+          {
+            label: tTraining('stepLabel'),
+            done: step > trainingStep
+          },
           {
             label: t('summaryStepLabel'),
             // The summary step is "done" only once submitted; while the

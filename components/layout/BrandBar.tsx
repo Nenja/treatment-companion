@@ -28,9 +28,26 @@ export function BrandBar() {
   const [box, setBox] = useState<{ left: number; width: number } | null>(null);
 
   useEffect(() => {
+    let observed: Element | null = null;
+    const ro =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => measure())
+        : null;
+
     const measure = () => {
       const main = document.querySelector('main');
       if (!main) return;
+      // Keep the observer pointed at the current <main>. The element can
+      // be swapped (loading skeleton → content) and its width can change
+      // without a viewport resize — most importantly when the profile
+      // loads and the layout flips between wide and compact, which
+      // changes <main>'s max-width class. Re-attaching here, plus the
+      // ResizeObserver, catches all of those.
+      if (ro && observed !== main) {
+        ro.disconnect();
+        ro.observe(main);
+        observed = main;
+      }
       const r = main.getBoundingClientRect();
       setBox((prev) =>
         prev && prev.left === r.left && prev.width === r.width
@@ -38,18 +55,19 @@ export function BrandBar() {
           : { left: r.left, width: r.width }
       );
     };
-    // Measure after layout for the current route, plus a short safety
-    // re-measure to catch a loading→content swap that changes <main>.
+
+    // Measure now, then a couple of delayed passes to catch an async
+    // <main> appearing or the layout preference loading after first paint.
     const raf = requestAnimationFrame(measure);
-    const timer = window.setTimeout(measure, 250);
-    // <main>'s width/left only change with the viewport (its size is
-    // driven by CSS max-width, not content), so a resize listener covers
-    // all steady-state changes; route changes are handled by the
-    // pathname dependency.
+    const t1 = window.setTimeout(measure, 250);
+    const t2 = window.setTimeout(measure, 900);
+    // Fallback for environments without ResizeObserver.
     window.addEventListener('resize', measure);
     return () => {
       cancelAnimationFrame(raf);
-      window.clearTimeout(timer);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      ro?.disconnect();
       window.removeEventListener('resize', measure);
     };
   }, [pathname]);
