@@ -863,7 +863,7 @@
   },
   "newGoal": {
     "videoLabel": "Bed om en kort video ved check-in",
-    "videoHelp": "Patienten kan optage en valgfri video på ca. 30 sekunder til dette mål, som tilbydes i uge 6-8 (maksimal effekt).",
+    "videoHelp": "Patienten kan optage én valgfri video på ca. 30 sekunder til dette mål, som tilbydes ved check-in i uge 6 (maksimal effekt).",
     "eyebrow": "Registrér et mål",
     "cancel": "Annullér",
     "title": "Registrér et mål for denne patient",

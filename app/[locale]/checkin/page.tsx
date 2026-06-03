@@ -292,9 +292,9 @@ function CheckinPageInner() {
     title = t('rateGoalTitle');
     helper = goal.kind === 'gas' ? t('rateGoalHelperGas') : t('rateGoalHelper');
     // Optional video is offered only when the clinician enabled it for
-    // this goal AND we're in the peak-effect window (weeks 6–8).
-    const showVideo =
-      goal.videoEnabled && [6, 7, 8].includes(prompt.weekNumber);
+    // this goal AND we're at the single peak-effect check-in (week 6),
+    // so there's at most one video per cycle. Change the week here.
+    const showVideo = goal.videoEnabled && prompt.weekNumber === 6;
     const picker =
       goal.kind === 'gas' ? (
         <GasGoalRatingPicker

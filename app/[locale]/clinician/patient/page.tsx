@@ -933,6 +933,7 @@ export default function ClinicianPatientPage() {
                 <li key={g.id}>
                   <GoalProgressView
                     goalText={g.patientFacingText}
+                    kind={g.kind}
                     currentWeek={weekNumber}
                     ratings={ratingsByGoal.get(g.id) ?? []}
                     physioRatings={physioRatingsByGoal.get(g.id) ?? []}
@@ -1120,6 +1121,7 @@ export default function ClinicianPatientPage() {
           return (
             <GoalGraphModal
               goalText={g.patientFacingText}
+              kind={g.kind}
               currentWeek={weekNumber}
               ratings={ratingsByGoal.get(g.id) ?? []}
               physioRatings={physioRatingsByGoal.get(g.id) ?? []}

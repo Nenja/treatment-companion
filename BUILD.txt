@@ -1,47 +1,39 @@
-Build tag: goal-video-capture
-Feature: optional short patient video as part of goal reporting (capture pipeline).
+Build tag: nrs-graphs-and-week6-video
 
-WHAT'S IN THIS BUILD
-- Clinician: a "Ask for a short video at check-in" toggle on the new-goal form
-  (NRS and GAS). It flips a per-goal flag.
-- Patient (check-in): for a video-enabled goal, ONLY in the peak-effect window
-  (weeks 6, 7, 8), an OPTIONAL recorder appears under the goal's rating:
-  explicit consent each time -> camera -> record (auto-stops at 30s) ->
-  preview -> keep / re-record / discard. On submit the clip uploads to a
-  private Storage bucket and its path is saved on that goal's rating.
-- A failed video upload does NOT block the check-in (video is optional); the
-  patient sees a gentle "saved, but video couldn't upload" notice.
-- Clinician PLAYBACK is intentionally NOT in this build — it's the next slice,
-  to add once capture is confirmed working on real devices.
+CHANGES SINCE goal-video-capture
+1. One video per cycle: the optional video is now offered at a SINGLE
+   check-in (week 6) instead of the 6–8 window, so there's at most one per
+   cycle. The week is one line in app/[locale]/checkin/page.tsx
+   (prompt.weekNumber === 6) — change the 6 to 7 or 8 if you prefer.
+2. NRS goals are now graphed on a 0–10 NRS chart; GAS goals keep the
+   −2..+2 banded GAS chart. The clinician already chooses NRS or GAS when
+   creating a goal; each goal now shows on its matching graph.
+   - NRS chart: 0–10 axis with gridlines at 0/5/10, the raw weekly value
+     plotted (no conversion to GAS). Tapping a week shows "NRS x/10".
+   - GAS chart: unchanged (five directional bands, levels −2..+2).
+   - Applies everywhere the chart appears: clinician patient page, the
+     enlarged modal, and the physiotherapist patient page.
+   No data change — the raw 0–10 value was already stored per week, so this
+   is a display change only.
 
-DEPLOY (in this order)
-1. Run the migration supabase/migrations/0062_goal_video.sql in the Supabase
-   SQL editor. It:
-     - adds approved_goal.video_enabled and weekly_goal_rating.video_path
-     - adds set_approved_goal_video_enabled() and submit_weekly_checkin_v4()
-     - CREATES the private Storage bucket 'goal-videos' and its row-level
-       policies (patient manages only their own folder; clinician reads only
-       patients they have an active session with).
-   Run it as the project owner (the SQL editor does this). If your project
-   restricts creating storage policies via SQL, create the 'goal-videos'
-   bucket (private) and the two policies from the dashboard instead — the
-   policy logic is in the migration's comments.
-2. Deploy this code (upload the zip to GitHub -> Vercel as usual).
+MIGRATIONS
+- No NEW migration in this build. 0062_goal_video.sql (from the previous
+  build) is unchanged and is still required if you haven't run it yet
+  (it adds the video columns, RPCs, and the goal-videos Storage bucket).
 
-MUST TEST ON REAL DEVICES (I cannot test any of this myself)
-- Camera permission, recording, the 30s auto-stop, preview, and upload.
-- iOS Safari especially: it records .mp4 (H.264); Android/Chrome record .webm.
-  The code detects this and stores the right extension/content-type, but the
-  end-to-end (record on iPhone -> file lands in Storage) needs your check.
-- Confirm a recorded clip appears in the 'goal-videos' bucket under
-  <patient_id>/<prompt_id>/<goal_id>.<ext> after a week-6/7/8 check-in.
+DEPLOY
+- Upload this zip to GitHub -> Vercel as usual. If 0062 hasn't been run,
+  run it in the Supabase SQL editor first (see that file's header).
 
-NOTES
-- The peak-effect window is hard-coded as weeks [6, 7, 8] in the check-in page
-  (one line) — easy to change.
-- v3 of the check-in RPC is left intact; the app now calls v4.
+VERIFY ON SCREEN (I can't see rendered output)
+- Open a patient with an NRS goal that has weekly check-ins: confirm the
+  chart shows a 0–10 axis and plots the raw values, and that tapping a week
+  reads "NRS x/10" (no GAS line). Confirm a GAS goal still shows the banded
+  −2..+2 chart. Check both the inline chart and the enlarged (tap-to-expand)
+  modal, and the physiotherapist view.
+- Still pending from before: clinician PLAYBACK of recorded videos (next
+  slice), and on-device testing of video capture/upload.
 
 How to confirm THIS build is deployed:
-- BUILD.txt tag "goal-video-capture".
-- New-goal form shows the video toggle; a week-6/7/8 check-in on a
-  video-enabled goal shows the consent + recorder.
+- BUILD.txt tag "nrs-graphs-and-week6-video".
+- An NRS goal's progress chart shows a 0–10 axis (not −2..+2 bands).

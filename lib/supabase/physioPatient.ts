@@ -18,6 +18,8 @@ export interface PhysioPatientData {
   goals: {
     id: string;
     patientFacingText: string;
+    /** Which graph this goal uses. */
+    kind: 'nrs' | 'gas';
     /** NRS question + direction, needed to render the rating picker. */
     nrsQuestion: string;
     nrsDirection: 'higherIsBetter' | 'lowerIsBetter';
@@ -136,7 +138,7 @@ export function usePhysioPatientData(
         const { data: goalRows, error: gErr } = await supabase
           .from('approved_goal')
           .select(
-            'id, patient_facing_text, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high'
+            'id, patient_facing_text, goal_kind, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high'
           )
           .eq('treatment_cycle_id', cycleRow.id as string)
           .eq('status', 'active')
@@ -145,6 +147,7 @@ export function usePhysioPatientData(
         goals = (goalRows ?? []).map((g) => ({
           id: g.id as string,
           patientFacingText: g.patient_facing_text as string,
+          kind: (g.goal_kind as 'nrs' | 'gas') ?? 'nrs',
           nrsQuestion: (g.nrs_question as string) ?? '',
           nrsDirection:
             (g.nrs_direction as 'higherIsBetter' | 'lowerIsBetter') ??

@@ -859,7 +859,7 @@
   },
   "newGoal": {
     "videoLabel": "Ask for a short video at check-in",
-    "videoHelp": "The patient can record an optional ~30-second video for this goal, offered at weeks 6–8 (peak effect).",
+    "videoHelp": "The patient can record one optional ~30-second video for this goal, offered at the week 6 check-in (peak effect).",
     "eyebrow": "Record a goal",
     "cancel": "Cancel",
     "title": "Record a goal for this patient",
