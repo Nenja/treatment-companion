@@ -40,7 +40,7 @@ export function TrainingOverview({
   daysByWeek
 }: TrainingOverviewProps) {
   const t = useTranslations('training');
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const panelId = useId();
 
   const latestReported = daysByWeek.size

@@ -202,7 +202,27 @@ export function OnboardingWizard({
         <p className="text-[15px] leading-relaxed text-ink-soft">
           {t('graphBody')}
         </p>
-        <div className="mt-4">
+
+        {/* NRS goals: the raw 0–10 the patient reported, no bands. */}
+        <p className="mt-4 text-[14px] font-semibold text-ink">
+          {t('graphNrsLabel')}
+        </p>
+        <div className="mt-2 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3">
+          <GoalProgressView
+            goalText={t('graphSampleGoalNrs')}
+            kind="nrs"
+            currentWeek={8}
+            ratings={SAMPLE_RATINGS}
+            physioRatings={SAMPLE_PHYSIO}
+          />
+        </div>
+
+        {/* GAS goals: descriptive bands. The illustration is the legend;
+            the live chart below matches the real component. */}
+        <p className="mt-4 text-[14px] font-semibold text-ink">
+          {t('graphGasLabel')}
+        </p>
+        <div className="mt-2">
           <GraphBandsIllustration
             betterLabel={t('graphBetter')}
             expectedLabel={t('graphExpected')}
@@ -211,22 +231,23 @@ export function OnboardingWizard({
             therapistLabel={t('graphTherapistLine')}
           />
         </div>
-        {/* Live, tappable sample of the real chart so "tap a dot" is
-            literally true and always matches the actual component. */}
+        <div className="mt-2 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3">
+          <GoalProgressView
+            goalText={t('graphSampleGoal')}
+            kind="gas"
+            currentWeek={8}
+            ratings={SAMPLE_RATINGS}
+            physioRatings={SAMPLE_PHYSIO}
+          />
+        </div>
+
+        {/* "Tap a dot" is literally true for both live charts above. */}
         <p className="mt-4 text-[14px] font-semibold text-ink">
           {t('graphTryTitle')}
         </p>
         <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">
           {t('graphTryHint')}
         </p>
-        <div className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3">
-          <GoalProgressView
-            goalText={t('graphSampleGoal')}
-            currentWeek={8}
-            ratings={SAMPLE_RATINGS}
-            physioRatings={SAMPLE_PHYSIO}
-          />
-        </div>
       </div>
     );
   } else if (current === 'actions') {
