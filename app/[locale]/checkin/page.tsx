@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useCheckinData, useSubmitCheckin, uploadGoalVideo } from '@/lib/supabase/checkin';
 import { useCheckinDraft, checkinDraftStorage } from '@/lib/useCheckinDraft';
+import { useModalA11y } from '@/lib/useModalA11y';
 import { isCheckinComplete } from '@/lib/checkinDraft';
 import { classifyError } from '@/lib/feedback';
 import { useToast } from '@/components/feedback/Toast';
@@ -198,8 +199,9 @@ function CheckinPageInner() {
   // is always safe. "Save & finish later" just navigates home — no
   // discard, no confirmation dialog. The patient resumes exactly where
   // they left off next time they open the check-in.
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const onCancel = () => {
-    goHome();
+    setConfirmLeave(true);
   };
 
   const goNext = () => {
@@ -487,7 +489,7 @@ function CheckinPageInner() {
         helper={helper}
         onBack={step > 1 ? goBack : undefined}
         onCancel={onCancel}
-        forgiving
+        forgiving={false}
         helpPageKey="checkin"
         stepLabels={[
           ...activeGoals.map((g) => ({
@@ -518,7 +520,66 @@ function CheckinPageInner() {
         {weekBanner}
         {body}
       </WizardLayout>
+      {confirmLeave && (
+        <CancelCheckinDialog
+          onLeave={goHome}
+          onKeep={() => setConfirmLeave(false)}
+        />
+      )}
     </>
+  );
+}
+
+/**
+ * Confirm dialog shown when the patient taps Cancel mid-check-in. Their
+ * draft is kept either way (it auto-persists), so "Leave for now" just
+ * navigates home and the check-in can be resumed this week.
+ */
+function CancelCheckinDialog({
+  onLeave,
+  onKeep
+}: {
+  onLeave: () => void;
+  onKeep: () => void;
+}) {
+  const t = useTranslations('patient.checkin');
+  const containerRef = useModalA11y(onKeep);
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="checkin-cancel-title"
+        className="w-full max-w-[400px] rounded-[var(--radius-card)] border border-stone bg-cream p-6 shadow-xl"
+      >
+        <h2
+          id="checkin-cancel-title"
+          className="font-display text-[20px] leading-tight text-ink"
+        >
+          {t('cancelConfirmTitle')}
+        </h2>
+        <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+          {t('cancelConfirmBody')}
+        </p>
+        <div className="mt-6 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={onKeep}
+            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft"
+          >
+            {t('cancelConfirmKeep')}
+          </button>
+          <button
+            type="button"
+            onClick={onLeave}
+            className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
+          >
+            {t('cancelConfirmDiscard')}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `training-home-vs-therapist`._
+> _Last updated for build tag: `dev-scenario-launcher`._
 
 ---
 
@@ -58,7 +58,9 @@ blocks that host, so a real build **fails** unless you stub them first.
 3. **Assert `BrandBar` is still present** in the file after stubbing (a global
    `<BrandBar/>` lives in layout.tsx — see §5.3).
 4. `rm -rf .next && NEXT_TELEMETRY_DISABLED=1 npx next build`
-5. **Success = exit 0 and "✓ Generating static pages (55/55)".** The only
+5. **Success = exit 0 and "✓ Generating static pages (58/58)".** (Was 55
+   before the dev Scenarios launcher added the `/dev/scenarios` page in two
+   locales + the API route.) The only
    expected warning is a Sentry/OpenTelemetry "critical dependency" message
    (unrelated, ignore).
 6. **Restore** `app/[locale]/layout.tsx` from `/tmp/layout.tsx.orig`, then verify:
@@ -183,6 +185,9 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 - `set_checkin_training_days(p_checkin_id, p_days smallint[], p_days_therapist
   smallint[] default null)` (0063, extended in 0064 — home + therapist days;
   SECURITY DEFINER, owner-checked, validates 1..7). Called right after submit.
+- `set_cycle_clinician_note(p_cycle_id, p_note)` (0065, SECURITY DEFINER,
+  checks `clinician_can_access_patient`). Saves the per-cycle "since last
+  visit" clinician note (`treatment_cycle.clinician_note`).
 - Helpers: `nrs_to_gas(...)`, `gas_label(int)`.
 
 ### 4.5 Storage
@@ -206,8 +211,12 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
   `set_checkin_training_days`.
 - `0064_training_with_therapist.sql` — `weekly_checkin.training_days_therapist`
   + extends the setter to take both arrays.
+- `0065_cycle_clinician_note.sql` — `treatment_cycle.clinician_note` +
+  `set_cycle_clinician_note`.
+- `0066_dev_seed_functions.sql` — DEV-ONLY. Wraps the seed blocks into
+  `dev_seed_b1..b8()` + `dev_reseed_all()` for one-click reseed.
 
-> If unsure whether the user's DB is current, confirm 0062, 0063 and 0064 are applied.
+> If unsure whether the user's DB is current, confirm 0062–0066 are applied (0066 is dev-only).
 
 ---
 
@@ -280,7 +289,7 @@ GAS (the default). Physio patient query now also selects `goal_kind`.
   — a **collapsible** "Training" card at the top of the active-cycle goals
   section, **active cycle only**. The header (always visible) carries the
   summary "home X/wk · therapist N×" and a chevron toggle (`aria-expanded`).
-  The body is a week × day grid: **filled sage cell = home** that day, **amber
+  **Collapsed by default.** The body is a week × day grid: **filled sage cell = home** that day, **amber
   ring = with-therapist** that day (a cell can be both). Current week marked;
   weeks beyond current faded. Reads both arrays (built into `trainingByWeek` =
   `Map<week, {home, therapist}>` on the patient page). Shown once ≥1 check-in.
@@ -289,12 +298,41 @@ GAS (the default). Physio patient query now also selects `goal_kind`.
   against (would need a new "days/week" field at goal/cycle setup).
 
 ### 5.7 UX/accessibility audits — `docs/audits/`
-Six face-module lens docs + a sample patient-page six-lens doc are written. The
+Six face-module lens docs, a sample patient-page six-lens doc, and an
+**onboarding/intro-wizards audit** (`docs/audits/onboarding-and-intro-wizards-audit.md`)
+are written. The onboarding audit’s copy fixes are now **implemented** (build
+`onboarding-content-fixes`): the graph tour shows both NRS and GAS live
+charts, and the tour + Help now cover GAS goals, the optional video, training
+days, and the visit note. A *forced* re-show of the tour to existing users
+remains optional (would need an onboarding-version field). The
 **6 app-wide per-lens docs (clinician + patient + physio pages)** are approved
 but **not yet written**. Style: issue → why → specific fix, severity-ranked,
 measured where possible, `[verified-in-code]` vs `[needs-on-screen-check]` tags.
 Known still-open a11y items: FaceMap dose-by-colour can't reach WCAG 3:1 across
 5 bands; no keyboard-only mark creation — both **accepted by the clinician**.
+
+### 5.9 Dev scenario launcher (test environment)
+**DELIVERED (dev-only).** A `/dev/scenarios` page that resets the demo data
+(optional), signs you in as the right account, opens the clinician session
+where needed, and lands you on the screen — no visit codes, minimal clicking.
+Pieces: `lib/dev/scenarios.ts` (the catalog), `app/[locale]/dev/scenarios/page.tsx`
+(the launcher UI), `app/api/dev/scenario/route.ts` (service-role route: reseed
++ `auth.admin.generateLink` to mint a sign-in token + a reusable `visit_code`
+for professional scenarios), and migration `0066` (`dev_reseed_all`). The
+client calls `verifyOtp` with the token, then `unlock_with_visit_code` for
+clinician/physio scenarios. **Gating (must stay off in prod):**
+`NEXT_PUBLIC_ENABLE_DEV_TOOLS=1` shows the page; `ENABLE_DEV_TOOLS=1` lets the
+route run; both 404/disable otherwise. Needs `SUPABASE_SERVICE_ROLE_KEY` (the
+admin features already use it). **Unverified by me** — I can’t exercise auth or
+a live Supabase; the sign-in/session/seed flow needs on-machine testing.
+
+### 5.8 "Since last visit" clinician note
+`components/clinician/ClinicianVisitNote.tsx` — a free-text note card on the
+patient page (rendered just above the active-goals section). Read view shows
+the note (or an empty hint) + Edit/Add; edit view is a textarea + Save/Cancel.
+Stored per **active cycle** in `treatment_cycle.clinician_note` via
+`set_cycle_clinician_note` (`useSetCycleClinicianNote` hook), so it naturally
+resets each new cycle/visit. The page passes `cycle.id` + `cycle.clinicianNote`.
 
 ---
 
@@ -307,19 +345,28 @@ Known still-open a11y items: FaceMap dose-by-colour can't reach WCAG 3:1 across
 `brand-pixel-aligned` → `goal-video-capture` (0062) →
 `nrs-graphs-and-week6-video` → `nrs-graphs-and-video-6to8` →
 `brandbar-compact-and-test-seed` → `checkin-training-days` (0063) →
-`clinician-training-overview` → **`training-home-vs-therapist`** (0064, current).
+`clinician-training-overview` → `training-home-vs-therapist` (0064) →
+`visit-note-and-collapse-default` (0065) →
+`checkin-cancel-and-onboarding-audit` →
+`onboarding-content-fixes` → **`dev-scenario-launcher`** (0066, current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-training-home-vs-therapist.zip`
-- **Tag:** `training-home-vs-therapist`
-- **Contains:** everything above. Most recent change = training split into
-  home vs with-therapist (extra check-in picker + `training_days_therapist`)
-  and the clinician "Training" overview made collapsible with both encoded on
-  one grid (§5.6).
-- **DB needed:** migrations through **0064** applied (esp. 0062, 0063, 0064).
+- **Zip:** `treatment-companion-dev-scenario-launcher.zip`
+- **Tag:** `dev-scenario-launcher`
+- **Contains:** everything above, plus the onboarding/help copy fixes from the
+  audit — the graph step now renders both an NRS (0–10) and a GAS (banded)
+  live chart (passing `kind` to `GoalProgressView`); the check-in tour and
+  Help are kind-agnostic and mention training + the optional video;
+  new-goal/suggestion Help cover NRS-vs-GAS + GAS levels + the video toggle;
+  clinician Help describes the Training panel and the visit note; new `intro`
+  keys `graphNrsLabel`/`graphGasLabel`/`graphSampleGoalNrs` (en+da), plus the
+  **dev-only Scenarios launcher** (§5.9) with migration `0066`.
+- **DB needed:** migrations through **0066** applied (0066 is dev-only). Dev
+  launcher also needs `NEXT_PUBLIC_ENABLE_DEV_TOOLS=1` + `ENABLE_DEV_TOOLS=1`
+  + `SUPABASE_SERVICE_ROLE_KEY`.
 
 ---
 
@@ -330,7 +377,12 @@ Known still-open a11y items: FaceMap dose-by-colour can't reach WCAG 3:1 across
 3. **Training overview follow-ups** — tap-a-week caption, history (past cycles),
    prescribed-frequency target — §5.6.
 4. **6 app-wide per-lens audit docs** — approved, unwritten — §5.7.
-5. **Confirm migrations 0062 & 0063 are applied** in the user's Supabase.
+5. **(DONE in `onboarding-content-fixes`)** Onboarding/help content fixes from
+   the audit. Optional leftover: a *forced* re-show of the updated tour to
+   existing users (needs an onboarding-version field; Help already carries it).
+   The **dev-only scenario/test launcher** is now built (§5.9) — remaining:
+   verify its auth/session/seed flow on a real machine (I couldn’t test it).
+6. **Confirm migrations 0062–0065 are applied** in the user's Supabase.
 
 ---
 
@@ -366,6 +418,7 @@ components/clinician/FaceMap.tsx             injection-site map (clinician-only 
 components/clinician/GoalProgressView.tsx    per-goal chart (kind-aware: NRS 0–10 / GAS −2..2)
 components/clinician/GoalGraphModal.tsx      enlarged chart (forwards kind)
 components/clinician/TrainingOverview.tsx    collapsible "Training" grid (home + therapist)
+components/clinician/ClinicianVisitNote.tsx  editable "since last visit" note (per cycle)
 components/wizard/GoalRatingPicker.tsx       NRS 0–10 picker
 components/wizard/GasGoalRatingPicker.tsx    GAS level picker
 components/wizard/GoalVideoRecorder.tsx      consent + camera + 30s record + preview

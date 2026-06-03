@@ -1,31 +1,46 @@
-Build tag: training-home-vs-therapist
+Build tag: dev-scenario-launcher
 
-CHANGES SINCE clinician-training-overview
-1. Training is now split into "At home" vs "With a therapist".
-   - Check-in: the training step now has TWO Mon–Sun selectors — "At home"
-     and "With a therapist" (each optional; empty = none).
-   - Stored on the check-in: training_days (home, existing) and the new
-     training_days_therapist. A day can be in both.
-2. The clinician "Training" overview (active-cycle patient page) is now
-   COLLAPSIBLE. The header stays visible with the summary
-   ("home X/wk · therapist N×") and a chevron; the grid collapses.
-   On the grid: a filled sage cell = trained at home that day; an amber ring
-   = a session with a therapist that day (a cell can be both). Legend updated.
+NEW: a dev-only "Scenarios" test environment at /dev/scenarios
+Pick a scenario → it (optionally) resets the demo data, signs you in as the
+right account, opens the clinician session where needed, and lands you on the
+screen. No visit codes, minimal clicking. Includes 6 clinician scenarios, a
+physio scenario, and 2 patient scenarios (test1–test6).
 
-DATABASE — NEW MIGRATION (must run)
-- supabase/migrations/0064_training_with_therapist.sql (also attached):
-    * adds weekly_checkin.training_days_therapist
-    * replaces set_checkin_training_days with a two-array version
-      (home + therapist; therapist defaults null). Owner-checked, validates 1..7.
-- Run it in the Supabase SQL editor, then deploy this code. (0062 and 0063
-  from earlier builds must also be applied.)
+DATABASE — NEW MIGRATION (dev-only, must run to use the launcher's reseed)
+- supabase/migrations/0066_dev_seed_functions.sql (also attached): wraps the
+  existing six demo-patient seed blocks (verbatim) into dev_seed_b1..b8() and a
+  dev_reseed_all() function, so "Reset demo data" works from the UI instead of
+  pasting the seed into the SQL editor. Same prerequisites as the seed: the six
+  test accounts + at least one clinician must exist. Run it once in the
+  Supabase SQL editor. (Migrations 0062–0065 must also be applied.)
 
-VERIFY ON SCREEN (I can't see rendered output)
-- Do a check-in: the training step shows two day selectors (home + therapist).
-  Tick some in each, submit. On the clinician patient page, the "Training"
-  card collapses/expands, and the grid shows home (filled) and therapist
-  (amber ring) for those days.
+ENV VARS (required to enable the launcher — keep OFF in production)
+- NEXT_PUBLIC_ENABLE_DEV_TOOLS=1   (client: shows the /dev/scenarios page)
+- ENABLE_DEV_TOOLS=1               (server: lets /api/dev/scenario run)
+- SUPABASE_SERVICE_ROLE_KEY        (already used by the admin features)
+With these unset, the page shows "disabled" and the API route 404s — so it
+cannot run in production.
+
+HOW IT WORKS (so you can verify / debug)
+- The route uses the service role to: optionally run dev_reseed_all(); pick the
+  account to sign in as (the test patient, or the first clinician/physio
+  profile); mint a magic-link token via auth.admin.generateLink; and, for
+  clinician/physio scenarios, insert a REUSABLE visit_code for the patient.
+- The page then calls supabase.auth.verifyOtp(token) to sign in, and for
+  clinician/physio calls unlock_with_visit_code(code) before navigating.
+
+IMPORTANT — UNVERIFIED BY ME
+I can't exercise auth flows or a live Supabase here, so the sign-in → session →
+landing path and the reseed function need testing on your machine. If sign-in
+fails, check SUPABASE_SERVICE_ROLE_KEY and that generateLink/verifyOtp are
+allowed for your project; if reseed fails, confirm 0066 ran and the test
+accounts exist.
+
+DEPLOY
+- Upload this zip to GitHub -> Vercel. Run 0066 in the SQL editor. Set the env
+  vars above ONLY in the environment where you want the launcher (e.g. preview),
+  not production.
 
 How to confirm THIS build is deployed:
-- BUILD.txt tag "training-home-vs-therapist".
-- The check-in training step has "At home" and "With a therapist" selectors.
+- BUILD.txt tag "dev-scenario-launcher".
+- With the env vars set, /dev/scenarios lists scenarios with Launch buttons.

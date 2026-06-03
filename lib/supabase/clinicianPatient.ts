@@ -134,6 +134,8 @@ export interface ClinicianPatientData {
     includesStandard: boolean;
     includesFace: boolean;
     faceDisplayMode: FaceDisplayMode;
+    /** Free-text clinician note for this cycle ("since last visit"). */
+    clinicianNote: string | null;
   };
   suggestions: ClinicianPatientSuggestion[];
   activeGoals: ClinicianPatientGoal[];
@@ -199,7 +201,7 @@ export function useClinicianPatientData(
       const { data: cycleRow, error: cErr } = await supabase
         .from('treatment_cycle')
         .select(
-          'id, cycle_number, start_date, includes_standard, includes_face, face_display_mode'
+          'id, cycle_number, start_date, includes_standard, includes_face, face_display_mode, clinician_note'
         )
         .eq('patient_id', patient.id)
         .eq('status', 'active')
@@ -216,7 +218,8 @@ export function useClinicianPatientData(
         includesStandard: (cycleRow.includes_standard as boolean) ?? true,
         includesFace: (cycleRow.includes_face as boolean) ?? false,
         faceDisplayMode:
-          (cycleRow.face_display_mode as FaceDisplayMode) ?? 'color'
+          (cycleRow.face_display_mode as FaceDisplayMode) ?? 'color',
+        clinicianNote: (cycleRow.clinician_note as string | null) ?? null
       };
 
       // 3. Parallel queries for the rest
@@ -688,6 +691,30 @@ export function useCreateGasGoalForPatient() {
  * the existing create RPCs don't need to change. The server checks the
  * caller can access the goal's patient.
  */
+/**
+ * Saves the clinician's free-text "since last visit" note on a cycle.
+ * Server checks the caller can access the cycle's patient.
+ */
+export function useSetCycleClinicianNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      cycleId: string;
+      note: string;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_cycle_clinician_note', {
+        p_cycle_id: input.cycleId,
+        p_note: input.note
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
 export function useSetGoalVideoEnabled() {
   const qc = useQueryClient();
   return useMutation({
