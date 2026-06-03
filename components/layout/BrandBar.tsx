@@ -14,7 +14,14 @@ export function BrandBar() {
   const t = useTranslations('app');
   return (
     <div className="border-b border-stone/70 bg-cream-soft">
-      <div className="mx-auto flex items-center gap-2.5 px-5 py-2.5">
+      {/* The strip spans the viewport, but its content is centred at the
+          page content width (mid / 720px) and left-padded the same as the
+          page body, so the mark sits at the top-left of the content
+          column — aligned with the page below, not jammed into the
+          viewport's far corner. (720px matches the main clinician work
+          pages — treatment, patient, new-goal, physio patient. The few
+          wider/narrower pages may sit a touch off until matched per-page.) */}
+      <div className="mx-auto flex max-w-[var(--max-w-page-mid)] items-center gap-2.5 px-5 py-2.5">
         {/* Mark: a soft sage chevron — quiet visual identity, no logotype */}
         <svg
           aria-hidden
