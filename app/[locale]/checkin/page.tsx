@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
-import { useCheckinData, useSubmitCheckin } from '@/lib/supabase/checkin';
+import { useCheckinData, useSubmitCheckin, uploadGoalVideo } from '@/lib/supabase/checkin';
 import { useCheckinDraft, checkinDraftStorage } from '@/lib/useCheckinDraft';
 import { isCheckinComplete } from '@/lib/checkinDraft';
 import { classifyError } from '@/lib/feedback';
@@ -16,6 +16,10 @@ import {
 import { WizardLayout } from '@/components/wizard/WizardLayout';
 import { GoalRatingPicker } from '@/components/wizard/GoalRatingPicker';
 import { GasGoalRatingPicker } from '@/components/wizard/GasGoalRatingPicker';
+import {
+  GoalVideoRecorder,
+  type RecordedVideo
+} from '@/components/wizard/GoalVideoRecorder';
 
 /**
  * Weekly check-in wizard. Lives at /checkin (or /<locale>/checkin).
@@ -100,6 +104,10 @@ function CheckinPageInner() {
   // the redirect synchronously.
   const submittingRef = useRef(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
+  // Recorded videos, keyed by goal id. Kept in ephemeral state (not the
+  // persisted draft) because Blobs can't be serialised to storage and
+  // are only relevant in this session, right before submit.
+  const [videos, setVideos] = useState<Record<string, RecordedVideo>>({});
 
   // Redirect home if there's nothing to check in on. Skip during submit
   // (the thanks view takes over) and skip while data is still loading.
@@ -203,6 +211,29 @@ function CheckinPageInner() {
     submittingRef.current = true;
 
     try {
+      // Upload any recorded videos first and collect their Storage paths.
+      // A video is optional, so a failed upload must NOT block the
+      // check-in — we drop that video and flag it afterwards.
+      const patientId = checkinQuery.data?.patientId ?? null;
+      const videoPaths: Record<string, string> = {};
+      let videoFailed = false;
+      for (const g of activeGoals) {
+        const rec = videos[g.id];
+        if (!rec || !patientId) continue;
+        try {
+          videoPaths[g.id] = await uploadGoalVideo({
+            patientId,
+            promptId: prompt.id,
+            goalId: g.id,
+            blob: rec.blob,
+            ext: rec.ext
+          });
+        } catch (e) {
+          console.error('goal video upload failed', g.id, e);
+          videoFailed = true;
+        }
+      }
+
       const ratings = activeGoals.map((g) => {
         const v = draft.ratings[g.id];
         if (typeof v !== 'number') {
@@ -211,9 +242,13 @@ function CheckinPageInner() {
         // The draft stores one number per goal; its meaning depends on
         // the goal kind. NRS goals send it as nrsValue (0–10); GAS goals
         // send it as gasValue (−2..2, the level the patient picked).
-        return g.kind === 'gas'
-          ? { approvedGoalId: g.id, gasValue: v }
-          : { approvedGoalId: g.id, nrsValue: v };
+        const base =
+          g.kind === 'gas'
+            ? { approvedGoalId: g.id, gasValue: v }
+            : { approvedGoalId: g.id, nrsValue: v };
+        return videoPaths[g.id]
+          ? { ...base, videoPath: videoPaths[g.id] }
+          : base;
       });
 
       const id = await submitMutation.mutateAsync({
@@ -227,6 +262,9 @@ function CheckinPageInner() {
       reset();
       setSubmittedId(id);
       toast.success(tFeedback('successCheckin'));
+      if (videoFailed) {
+        toast.error(tFeedback('videoUploadPartial'));
+      }
     } catch (err) {
       console.error('submitCheckin failed', err);
       submittingRef.current = false;
@@ -253,7 +291,11 @@ function CheckinPageInner() {
     const goal = activeGoals[step - 1];
     title = t('rateGoalTitle');
     helper = goal.kind === 'gas' ? t('rateGoalHelperGas') : t('rateGoalHelper');
-    body =
+    // Optional video is offered only when the clinician enabled it for
+    // this goal AND we're in the peak-effect window (weeks 6–8).
+    const showVideo =
+      goal.videoEnabled && [6, 7, 8].includes(prompt.weekNumber);
+    const picker =
       goal.kind === 'gas' ? (
         <GasGoalRatingPicker
           ariaLabel={`${goal.patientFacingText} — ${title}`}
@@ -273,6 +315,26 @@ function CheckinPageInner() {
           previousRating={goal.previousRating}
         />
       );
+    body = (
+      <>
+        {picker}
+        {showVideo && (
+          <GoalVideoRecorder
+            value={videos[goal.id] ?? null}
+            onChange={(v) =>
+              setVideos((prev) => {
+                if (!v) {
+                  const next = { ...prev };
+                  delete next[goal.id];
+                  return next;
+                }
+                return { ...prev, [goal.id]: v };
+              })
+            }
+          />
+        )}
+      </>
+    );
   } else {
     title = t('commentTitle');
     helper = t('commentHelper');

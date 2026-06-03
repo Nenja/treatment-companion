@@ -674,6 +674,32 @@ export function useCreateGasGoalForPatient() {
   });
 }
 
+/**
+ * Enables or disables the optional patient video for a goal. The goal is
+ * created first (NRS or GAS); this is then called to flip the flag, so
+ * the existing create RPCs don't need to change. The server checks the
+ * caller can access the goal's patient.
+ */
+export function useSetGoalVideoEnabled() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      goalId: string;
+      enabled: boolean;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_approved_goal_video_enabled', {
+        p_goal_id: input.goalId,
+        p_enabled: input.enabled
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
 export function useApproveSuggestion() {
   const qc = useQueryClient();
   return useMutation({

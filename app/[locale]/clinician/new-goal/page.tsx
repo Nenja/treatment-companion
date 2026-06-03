@@ -6,7 +6,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import {
   useCreateGoalForPatient,
-  useCreateGasGoalForPatient
+  useCreateGasGoalForPatient,
+  useSetGoalVideoEnabled
 } from '@/lib/supabase/clinicianPatient';
 import { GasCutPoints } from '@/components/clinician/GasCutPoints';
 import { AccountMenu } from '@/components/layout/AccountMenu';
@@ -53,6 +54,7 @@ function NewGoalInner() {
   const { profile, loading: authLoading } = useAuth();
   const create = useCreateGoalForPatient();
   const createGas = useCreateGasGoalForPatient();
+  const setVideo = useSetGoalVideoEnabled();
   const toast = useToast();
 
   const patientId = searchParams.get('patient') ?? '';
@@ -62,6 +64,8 @@ function NewGoalInner() {
   // Which measurement model this goal uses. NRS (0–10 question + cut
   // points) or GAS (five descriptive anchors the patient picks from).
   const [goalKind, setGoalKind] = useState<'nrs' | 'gas'>('nrs');
+  // Whether to ask the patient for an optional short video at check-in.
+  const [videoEnabled, setVideoEnabled] = useState(false);
 
   const [patientText, setPatientText] = useState('');
   const [smartText, setSmartText] = useState('');
@@ -118,8 +122,9 @@ function NewGoalInner() {
   const onSubmit = async () => {
     if (!canSubmit || !patientId) return;
     try {
+      let goalId: string;
       if (goalKind === 'nrs') {
-        await create.mutateAsync({
+        goalId = await create.mutateAsync({
           patientId,
           patientFacingText: patientText.trim(),
           smartText: smartText.trim(),
@@ -131,7 +136,7 @@ function NewGoalInner() {
           cutHigh: cutHighN
         });
       } else {
-        await createGas.mutateAsync({
+        goalId = await createGas.mutateAsync({
           patientId,
           patientFacingText: patientText.trim(),
           smartText: smartText.trim(),
@@ -141,6 +146,9 @@ function NewGoalInner() {
           anchorPlus1: anchorPlus1.trim(),
           anchorPlus2: anchorPlus2.trim()
         });
+      }
+      if (videoEnabled && goalId) {
+        await setVideo.mutateAsync({ goalId, enabled: true });
       }
       toast.success(t('toastRecorded'));
       router.push(patientPath);
@@ -422,6 +430,26 @@ function NewGoalInner() {
             </p>
           </>
         )}
+
+        {/* Optional patient video for this goal (offered at weeks 6–8). */}
+        <div className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={videoEnabled}
+              onChange={(e) => setVideoEnabled(e.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-[#3f5a4b]"
+            />
+            <span>
+              <span className="block text-[15px] font-semibold text-ink">
+                {t('videoLabel')}
+              </span>
+              <span className="mt-0.5 block text-[13px] leading-relaxed text-ink-muted">
+                {t('videoHelp')}
+              </span>
+            </span>
+          </label>
+        </div>
 
         <div className="mt-8 flex gap-3">
           <button

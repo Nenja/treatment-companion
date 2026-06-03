@@ -4,6 +4,7 @@
   },
   "feedback": {
     "successCheckin": "Check-in saved",
+    "videoUploadPartial": "Your check-in was saved, but the video couldn’t be uploaded. You can try again from your next check-in.",
     "successSuggestion": "Suggestion sent",
     "successTreatment": "Treatment recorded",
     "successApproved": "Goal approved",
@@ -835,7 +836,30 @@
     "patientNote": "Patient note:",
     "tapPointForDetails": "Tap a point for details."
   },
+  "goalVideo": {
+    "introTitle": "Record a short video (optional)",
+    "introHelp": "Your therapist asked for an optional short video for this goal. You can skip it.",
+    "recordCta": "Record a video",
+    "consentTitle": "Before you record",
+    "consentBody": "This records a short video, up to 30 seconds, that only your care team can see. It's stored securely as part of your check-in. You can re-record or remove it before you send.",
+    "consentAgree": "I agree — turn on camera",
+    "consentCancel": "Not now",
+    "readyToRecord": "Ready to record",
+    "record": "Record",
+    "secondsLeft": "{n}s left",
+    "stop": "Stop",
+    "useVideo": "Use this video",
+    "reRecord": "Re-record",
+    "discard": "Discard",
+    "ready": "Video ready to send",
+    "remove": "Remove",
+    "back": "Back",
+    "cameraError": "Couldn't access the camera. Check your browser's camera permission and try again.",
+    "notSupported": "Video recording isn't supported on this browser."
+  },
   "newGoal": {
+    "videoLabel": "Ask for a short video at check-in",
+    "videoHelp": "The patient can record an optional ~30-second video for this goal, offered at weeks 6–8 (peak effect).",
     "eyebrow": "Record a goal",
     "cancel": "Cancel",
     "title": "Record a goal for this patient",

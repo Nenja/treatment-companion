@@ -1,22 +1,47 @@
-Build tag: brand-pixel-aligned
-Generated: 2026-06-03T06:39Z
+Build tag: goal-video-capture
+Feature: optional short patient video as part of goal reporting (capture pipeline).
 
-Single change from the previous build (brand-follows-page-width); UI-only,
-NO migration:
-- The global brand strip now aligns PIXEL-PERFECT to each page's content
-  column, whatever width that page uses. Instead of a fixed width, the
-  strip measures the page's <main> element (its left offset + width) and
-  matches its inner row to it; since <main> shares the same px-5 inset, the
-  mark lands exactly at the content's left edge. It re-measures on window
-  resize and on navigation, and falls back to a centred mid-width row
-  before measurement / if no <main> is present.
+WHAT'S IN THIS BUILD
+- Clinician: a "Ask for a short video at check-in" toggle on the new-goal form
+  (NRS and GAS). It flips a per-goal flag.
+- Patient (check-in): for a video-enabled goal, ONLY in the peak-effect window
+  (weeks 6, 7, 8), an OPTIONAL recorder appears under the goal's rating:
+  explicit consent each time -> camera -> record (auto-stops at 30s) ->
+  preview -> keep / re-record / discard. On submit the clip uploads to a
+  private Storage bucket and its path is saved on that goal's rating.
+- A failed video upload does NOT block the check-in (video is optional); the
+  patient sees a gentle "saved, but video couldn't upload" notice.
+- Clinician PLAYBACK is intentionally NOT in this build — it's the next slice,
+  to add once capture is confirmed working on real devices.
 
-Why this works everywhere: every page renders its content inside a centred
-<main> (directly or via AppShell), so this adapts to the 480 / 720 / 1080
-token widths AND the page-specific pixel widths (e.g. the 420px auth pages)
-without hardcoding any of them.
+DEPLOY (in this order)
+1. Run the migration supabase/migrations/0062_goal_video.sql in the Supabase
+   SQL editor. It:
+     - adds approved_goal.video_enabled and weekly_goal_rating.video_path
+     - adds set_approved_goal_video_enabled() and submit_weekly_checkin_v4()
+     - CREATES the private Storage bucket 'goal-videos' and its row-level
+       policies (patient manages only their own folder; clinician reads only
+       patients they have an active session with).
+   Run it as the project owner (the SQL editor does this). If your project
+   restricts creating storage policies via SQL, create the 'goal-videos'
+   bucket (private) and the two policies from the dashboard instead — the
+   policy logic is in the migration's comments.
+2. Deploy this code (upload the zip to GitHub -> Vercel as usual).
+
+MUST TEST ON REAL DEVICES (I cannot test any of this myself)
+- Camera permission, recording, the 30s auto-stop, preview, and upload.
+- iOS Safari especially: it records .mp4 (H.264); Android/Chrome record .webm.
+  The code detects this and stores the right extension/content-type, but the
+  end-to-end (record on iPhone -> file lands in Storage) needs your check.
+- Confirm a recorded clip appears in the 'goal-videos' bucket under
+  <patient_id>/<prompt_id>/<goal_id>.<ext> after a week-6/7/8 check-in.
+
+NOTES
+- The peak-effect window is hard-coded as weeks [6, 7, 8] in the check-in page
+  (one line) — easy to change.
+- v3 of the check-in RPC is left intact; the app now calls v4.
 
 How to confirm THIS build is deployed:
-- BUILD.txt tag "brand-pixel-aligned".
-- On any page, the chevron + "Treatment Companion" line up exactly with the
-  left edge of that page's content, at any window width.
+- BUILD.txt tag "goal-video-capture".
+- New-goal form shows the video toggle; a week-6/7/8 check-in on a
+  video-enabled goal shows the consent + recorder.

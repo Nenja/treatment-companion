@@ -8,6 +8,7 @@
   },
   "feedback": {
     "successCheckin": "Status gemt",
+    "videoUploadPartial": "Din check-in blev gemt, men videoen kunne ikke uploades. Du kan prøve igen ved næste check-in.",
     "successSuggestion": "Forslag sendt",
     "successTreatment": "Behandling registreret",
     "successApproved": "Mål godkendt",
@@ -839,7 +840,30 @@
     "patientNote": "Patientnote:",
     "tapPointForDetails": "Tryk på et punkt for detaljer."
   },
+  "goalVideo": {
+    "introTitle": "Optag en kort video (valgfrit)",
+    "introHelp": "Din terapeut har bedt om en valgfri kort video til dette mål. Du kan springe den over.",
+    "recordCta": "Optag en video",
+    "consentTitle": "Inden du optager",
+    "consentBody": "Dette optager en kort video på op til 30 sekunder, som kun dit behandlingsteam kan se. Den gemmes sikkert som en del af din check-in. Du kan optage igen eller fjerne den, før du sender.",
+    "consentAgree": "Jeg accepterer – tænd kameraet",
+    "consentCancel": "Ikke nu",
+    "readyToRecord": "Klar til optagelse",
+    "record": "Optag",
+    "secondsLeft": "{n}s tilbage",
+    "stop": "Stop",
+    "useVideo": "Brug denne video",
+    "reRecord": "Optag igen",
+    "discard": "Kassér",
+    "ready": "Video klar til at sende",
+    "remove": "Fjern",
+    "back": "Tilbage",
+    "cameraError": "Kunne ikke få adgang til kameraet. Tjek browserens kameratilladelse, og prøv igen.",
+    "notSupported": "Videooptagelse understøttes ikke i denne browser."
+  },
   "newGoal": {
+    "videoLabel": "Bed om en kort video ved check-in",
+    "videoHelp": "Patienten kan optage en valgfri video på ca. 30 sekunder til dette mål, som tilbydes i uge 6-8 (maksimal effekt).",
     "eyebrow": "Registrér et mål",
     "cancel": "Annullér",
     "title": "Registrér et mål for denne patient",

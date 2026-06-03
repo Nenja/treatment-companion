@@ -35,6 +35,12 @@ export interface CheckinGoal {
     nrsValue: number;
     weekNumber: number;
   } | null;
+  /**
+   * True when the clinician enabled an optional short video for this goal.
+   * The recorder is only offered in the peak-effect window (weeks 6–8),
+   * gated in the check-in UI.
+   */
+  videoEnabled: boolean;
 }
 
 export interface CheckinData {
@@ -42,6 +48,9 @@ export interface CheckinData {
     id: string;
     weekNumber: number;
   };
+  /** The current patient's id — used to namespace uploaded videos in
+   *  Storage (the bucket's RLS requires the path's first folder to match). */
+  patientId: string;
   goals: CheckinGoal[];
 }
 
@@ -125,7 +134,7 @@ export function useCheckinData(
       // Load active goals with their NRS configs.
       const { data: goalRows, error: gErr } = await supabase
         .from('approved_goal')
-        .select('id, patient_facing_text, goal_kind, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2')
+        .select('id, patient_facing_text, goal_kind, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2, video_enabled')
         .eq('treatment_cycle_id', cycleId)
         .eq('status', 'active')
         .order('approved_at', { ascending: true });
@@ -203,7 +212,8 @@ export function useCheckinData(
           previousRating:
             kind === 'nrs'
               ? previousByGoal.get(g.id as string) ?? null
-              : null
+              : null,
+          videoEnabled: (g.video_enabled as boolean) ?? false
         };
       });
 
@@ -212,6 +222,7 @@ export function useCheckinData(
           id: promptRow.id as string,
           weekNumber: promptRow.week_number as number
         },
+        patientId,
         goals
       };
     }
@@ -226,27 +237,58 @@ export interface SubmitCheckinInput {
     nrsValue?: number | null;
     /** Set for GAS goals (−2..2, the level picked). Null for NRS. */
     gasValue?: number | null;
+    /** Storage object key of an optional recorded video for this goal,
+     *  if the patient recorded one. Null/omitted otherwise. */
+    videoPath?: string | null;
   }[];
   comment?: string;
   submitterLabel?: 'self' | 'caregiver';
 }
 
 /**
- * Submits a check-in via the submit_weekly_checkin_v3 RPC. The server
+ * Uploads a recorded goal video to the private `goal-videos` bucket and
+ * returns its object key. The path is namespaced by patient id (required
+ * by the bucket's row-level policy) and keyed by prompt + goal, so a
+ * re-recorded clip overwrites the previous one for that goal/check-in.
+ */
+export async function uploadGoalVideo(params: {
+  patientId: string;
+  promptId: string;
+  goalId: string;
+  blob: Blob;
+  ext: string;
+}): Promise<string> {
+  const { patientId, promptId, goalId, blob, ext } = params;
+  const supabase = createSupabaseBrowserClient();
+  const path = `${patientId}/${promptId}/${goalId}.${ext}`;
+  const { error } = await supabase.storage
+    .from('goal-videos')
+    .upload(path, blob, {
+      contentType: blob.type || `video/${ext}`,
+      upsert: true
+    });
+  if (error) throw error;
+  return path;
+}
+
+/**
+ * Submits a check-in via the submit_weekly_checkin_v4 RPC. The server
  * derives GAS from NRS for NRS goals, and stores the picked level
- * directly for GAS goals. A single check-in may mix both kinds.
+ * directly for GAS goals. A single check-in may mix both kinds. An
+ * optional per-goal video path is stored only for video-enabled goals.
  */
 export function useSubmitCheckin() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: SubmitCheckinInput): Promise<string> => {
       const supabase = createSupabaseBrowserClient();
-      const { data, error } = await supabase.rpc('submit_weekly_checkin_v3', {
+      const { data, error } = await supabase.rpc('submit_weekly_checkin_v4', {
         p_prompt_id: input.promptId,
         p_ratings: input.ratings.map((r) => ({
           approved_goal_id: r.approvedGoalId,
           nrs_value: r.nrsValue ?? null,
-          gas_value: r.gasValue ?? null
+          gas_value: r.gasValue ?? null,
+          video_path: r.videoPath ?? null
         })),
         p_comment: input.comment ?? null,
         p_submitter_label: input.submitterLabel ?? 'self'
