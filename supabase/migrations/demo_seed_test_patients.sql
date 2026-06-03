@@ -1120,3 +1120,109 @@ begin
     raise notice 'enriched %.', v_rec.email;
   end loop;
 end $$;
+
+
+-- ===========================================================================
+-- FEATURE COVERAGE ADD-ONS (appended; run after the per-patient blocks)
+--
+-- The blocks above create NRS goals only. These add-ons give test1 a GAS
+-- goal (so the GAS chart is exercised alongside the NRS chart) and turn on
+-- the optional check-in video for one of test1's goals (test1 is mid-cycle
+-- around week 8, so the recorder is offered at the week-6–8 check-in).
+--
+-- Purely additive and idempotent: test1's own block wipes and re-creates
+-- its data first, so re-running the whole script re-creates these too.
+-- ===========================================================================
+do $$
+declare
+  v_patient_id uuid;
+  v_cycle_id   uuid;
+  v_clinician_id uuid;
+  v_suggestion uuid;
+  v_goal_gas   uuid;
+  v_checkin_id uuid;
+  v_week int;
+  v_lvl  int;
+begin
+  select p.id into v_patient_id
+    from patient p join profile pr on pr.id = p.profile_id
+   where pr.email = 'test1@example.com';
+  if v_patient_id is null then
+    raise warning 'test1 add-ons: no patient — skipped.';
+    return;
+  end if;
+
+  select id into v_cycle_id from treatment_cycle
+   where patient_id = v_patient_id and status = 'active'
+   order by cycle_number desc limit 1;
+  if v_cycle_id is null then
+    raise warning 'test1 add-ons: no active cycle — skipped.';
+    return;
+  end if;
+
+  select id into v_clinician_id from clinician limit 1;
+  if v_clinician_id is null then
+    raise warning 'test1 add-ons: no clinician — skipped.';
+    return;
+  end if;
+
+  -- A GAS goal: the patient picks a descriptive level (−2..+2) directly,
+  -- so this renders on the banded GAS chart (no 0–10 axis).
+  insert into goal_suggestion (
+    patient_id, treatment_cycle_id, domain, patient_wording,
+    importance, hoped_timeframe, difficulty_context, status
+  ) values (
+    v_patient_id, v_cycle_id, 'mobility',
+    'I want to stand more steadily at the sink',
+    'high', '8w', 'Loses balance and grabs the counter.', 'active'
+  ) returning id into v_suggestion;
+
+  insert into approved_goal (
+    suggestion_id, patient_id, treatment_cycle_id,
+    patient_facing_text, smart_text, goal_kind,
+    anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2,
+    approved_by_clinician_id, status
+  ) values (
+    v_suggestion, v_patient_id, v_cycle_id,
+    'Stand more steadily at the sink',
+    'Patient will stand at the sink for 2 minutes without holding on, within 8 weeks.',
+    'gas',
+    'Cannot stand without holding on',
+    'Stands a few seconds before needing support',
+    'Stands ~2 minutes with light fingertip support (the goal)',
+    'Stands 2 minutes hands-free now and then',
+    'Stands hands-free every time',
+    v_clinician_id, 'active'
+  ) returning id into v_goal_gas;
+
+  -- Add a GAS rating for this goal to each of test1's existing completed
+  -- check-ins (weeks 1–7), trending up: −2 → +1.
+  for v_week in 1..7 loop
+    select id into v_checkin_id from weekly_checkin
+     where patient_id = v_patient_id
+       and treatment_cycle_id = v_cycle_id
+       and week_number = v_week;
+    if v_checkin_id is not null then
+      v_lvl := (array[-2,-1,-1,0,0,1,1])[v_week];
+      insert into weekly_goal_rating (
+        weekly_checkin_id, approved_goal_id, rating_label, rating_value, nrs_value
+      ) values (
+        v_checkin_id, v_goal_gas,
+        (array['muchWorseThanExpected','aLittleWorseThanExpected','asExpected',
+               'betterThanExpected','muchBetterThanExpected'])[v_lvl + 3]::rating_label,
+        v_lvl, null
+      );
+    end if;
+  end loop;
+
+  -- Turn on the optional check-in video for test1's NRS hand goal. test1
+  -- is mid-cycle (~week 8), so the recorder will appear at the week-6–8
+  -- check-in (once per cycle).
+  update approved_goal
+     set video_enabled = true
+   where patient_id = v_patient_id
+     and goal_kind = 'nrs'
+     and patient_facing_text ilike '%open my hand%';
+
+  raise notice 'test1 add-ons: GAS standing goal + video on hand goal.';
+end $$;
