@@ -1,32 +1,44 @@
-BUILD TAG: checkin-leave-button-fix
+BUILD TAG: test1-video-on-current-checkin
 DATE: 2026-06-04
-NEW MIGRATION: none (no DB changes)
+NEW MIGRATION: none (seed-data change; no new numbered migration)
 
-WHAT THIS FIXES
----------------
-In the patient check-in, the "Leave your check-in?" dialog's "Leave for now"
-button did nothing when tapped.
-
-Cause: it called a soft client-side navigation (router.push to the home path),
-which is unreliable from the check-in page — the push was being swallowed, so
-nothing happened. The app already had this problem on the post-submit "thanks"
-screen and solved it there with a hard navigation (window.location). The Cancel
-dialog was still using the old soft version.
-
-Fix: "Leave for now" now uses the same reliable hard navigation home as the
-thanks screen. The check-in draft is auto-saved on every change, so leaving this
-way keeps your answers and you can resume the check-in later this week.
-Only file changed: app/[locale]/checkin/page.tsx.
-
-DEPLOY STEPS
+WHAT CHANGED
 ------------
-1. Unzip and push the contents to your GitHub repo (replace the working tree).
-2. Vercel builds & deploys automatically on push.
-3. No migrations to run, no new environment variables.
+Test patient 1's optional check-in video now appears on the CURRENT check-in,
+instead of you having to open an earlier ("previous"/catch-up) check-in to find it.
 
-HOW TO CONFIRM IT'S DEPLOYED
-----------------------------
-1. Start a check-in, then tap Cancel (top-left) to open the dialog.
-2. "Keep going" closes the dialog (unchanged).
-3. "Leave for now" now returns you to the home screen.
-4. Re-open the check-in: your previous answers are still there (draft kept).
+Why it was off: the app shows the optional video at weeks 6-8 of a cycle. test1's
+cycle started 8 weeks ago with weeks 1-7 already completed, so the *current* week
+(by date) was week 8-9 — at or just past the window — and week 8 showed up as an
+overdue catch-up. So the video landed on a previous/catch-up check-in, not the
+current one.
+
+Fix: test1's cycle now starts 5 weeks ago and completes weeks 1-5, so the current
+pending check-in is week 6 — comfortably inside the 6-8 window. The current
+check-in stays in-window for about 3 weeks (the current week walks 6 -> 7 -> 8)
+before it drifts out again; re-running the seed resets it.
+
+FILES
+-----
+- supabase/migrations/demo_seed_test_patients.sql  (block 1: cycle start -56 -> -35,
+  completes weeks 1-5, 5-element trend arrays; block 8 made explicit 1..5)
+- supabase/migrations/0066_dev_seed_functions.sql  (dev_seed_b1 mirrors the same)
+- lib/dev/scenarios.ts  (one dev-launcher description: "~week 8" -> "~week 6")
+
+HOW TO APPLY
+------------
+1. In the Supabase SQL editor, run the attached demo_seed_test_patients.sql
+   (idempotent — it wipes & rebuilds each patient). That reseeds test1 with the
+   week-6 current check-in. This is all you need.
+2. Optional: if you reseed using the dev launcher's "reset" (dev_reseed_all)
+   instead of the SQL file, run the updated 0066 first so dev_seed_b1 matches,
+   then use the launcher.
+3. No app redeploy needed for the data change. (The only code change is a dev-only
+   description string; push the zip if you want it, but it's not required.)
+
+HOW TO CONFIRM
+--------------
+1. Sign in as test1@example.com.
+2. Open the current check-in from the home screen (it should be "week 6").
+3. On the hand goal's step ("...open my hand..."), the optional video recorder
+   appears right there — no need to open a previous/earlier week.

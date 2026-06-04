@@ -20,7 +20,7 @@ export const DEV_SCENARIOS: DevScenario[] = [
     id: 'clinician-going-well',
     title: 'Going well — clinician view',
     description:
-      'test1, ~week 8. Two goals trending positive. Lands on the patient page.',
+      'test1, ~week 6. Two goals trending positive. Lands on the patient page.',
     landAs: 'clinician',
     patientEmail: 'test1@example.com'
   },

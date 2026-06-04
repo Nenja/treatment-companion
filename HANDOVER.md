@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `checkin-leave-button-fix`._
+> _Last updated for build tag: `test1-video-on-current-checkin`._
 
 ---
 
@@ -385,24 +385,35 @@ left in but unused).
 `demo-sandbox` →
 `checkin-hooks-order-fix` →
 `since-last-visit-change-list` →
-**`checkin-leave-button-fix`** (current, no new migration).
+`checkin-leave-button-fix` →
+**`test1-video-on-current-checkin`** (current, seed-data change; no new numbered migration).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-checkin-leave-button-fix.zip`
-- **Tag:** `checkin-leave-button-fix`
-- **Fixes:** "Leave for now" in the check-in Cancel dialog did nothing. It called
-  `goHome` (`router.push(homePath)`), which is unreliable from this page — the
-  same reason the thanks screen already used `goHomeHard` (a `window.location.href`
-  hard navigation). Pointed the dialog's `onLeave` at `goHomeHard` and removed the
-  now-unused `goHome`. The draft is auto-persisted, so the hard navigation home is
-  safe and resumable. One file: `app/[locale]/checkin/page.tsx`.
-- **Carried forward:** the auto-generated "Since last visit" change list
-  (§5.8) and the earlier React #310 check-in crash fix.
-- **DB needed:** unchanged — migrations through **0066**. **No new migration**, no
-  new env vars.
+- **Zip:** `treatment-companion-test1-video-on-current-checkin.zip`
+- **Standalone:** `demo_seed_test_patients.sql` (re-run this to apply — it's the
+  artifact that reseeds the patients).
+- **Tag:** `test1-video-on-current-checkin`
+- **Change (seed data):** test1's optional check-in video now appears on the
+  **current** check-in instead of an overdue catch-up week. Root cause: test1's
+  cycle started 8 weeks ago and completed weeks 1–7, so the *current* week (by
+  date) was 8–9 — at/just past the 6–8 video window — while week 8 became an
+  overdue "catch-up". Fix: cycle now starts **5 weeks ago**, completes **weeks
+  1–5**, so the current pending check-in is **week 6** (well inside 6–8, ~3-week
+  buffer). Changed in seed block 1 and mirrored in `0066`'s `dev_seed_b1()`. Block
+  8 (the GAS add-on) made explicit `1..5`; its result is unchanged. Also updated
+  one dev-launcher description string (`lib/dev/scenarios.ts`) and stale HANDOVER
+  notes (incl. the §10 map entry that still listed the removed `ClinicianVisitNote`).
+- **To apply:** re-run `demo_seed_test_patients.sql` in the Supabase SQL editor.
+  If you reseed via the dev launcher (`dev_reseed_all`) instead, re-run the updated
+  `0066` first so `dev_seed_b1()` matches. No app redeploy is required for the seed
+  change (the `scenarios.ts` text is the only code change and is dev-only).
+- **DB needed:** unchanged — migrations through **0066**. No new migration, no env
+  changes.
+- **Carried forward:** the auto "Since last visit" change list (§5.8), the
+  "Leave for now" fix, and the React #310 check-in crash fix.
 
 ---
 
@@ -434,9 +445,14 @@ Scenarios: test1 going-well, test2 struggling, test3 pending suggestions, test4
 missed check-ins, test5 late cycle / re-treatment due, test6 longitudinal (3
 done + 1 active cycle). **Feature coverage added to test1** (appended block in
 the seed): a GAS goal with history (exercises the GAS chart alongside test1's
-NRS goals) + **video enabled** on test1's hand goal (test1 is ~week 8, so the
-week-6/7/8 check-in offers the recorder). _Note: a past seed bug used an invalid
-`goal_domain` `'mobility'`; valid values are in §4.3._
+NRS goals) + **video enabled** on test1's hand goal. test1's cycle now starts
+**5 weeks ago** (was 8) and completes **weeks 1–5**, so its **current (pending)
+check-in is week 6** — inside the 6–8 optional-video window. This means the video
+recorder shows on the *current* check-in (not on an overdue catch-up week). The
+window holds for ~3 weeks (current week walks 6→7→8) before drifting; re-seed to
+reset. This week change lives in seed block 1 **and** `0066`'s `dev_seed_b1()`
+(kept in sync). _Note: a past seed bug used an invalid `goal_domain` `'mobility'`;
+valid values are in §4.3._
 
 ---
 
@@ -454,7 +470,7 @@ components/clinician/FaceMap.tsx             injection-site map (clinician-only 
 components/clinician/GoalProgressView.tsx    per-goal chart (kind-aware: NRS 0–10 / GAS −2..2)
 components/clinician/GoalGraphModal.tsx      enlarged chart (forwards kind)
 components/clinician/TrainingOverview.tsx    collapsible "Training" grid (home + therapist)
-components/clinician/ClinicianVisitNote.tsx  editable "since last visit" note (per cycle)
+components/clinician/VisitChanges.tsx       auto "since last visit" change list (read-only, computed)
 components/wizard/GoalRatingPicker.tsx       NRS 0–10 picker
 components/wizard/GasGoalRatingPicker.tsx    GAS level picker
 components/wizard/GoalVideoRecorder.tsx      consent + camera + 30s record + preview
