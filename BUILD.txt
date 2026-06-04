@@ -1,57 +1,32 @@
-BUILD TAG: checkin-hooks-order-fix
+BUILD TAG: checkin-leave-button-fix
 DATE: 2026-06-04
-NEW MIGRATION: none (no DB changes in this build)
+NEW MIGRATION: none (no DB changes)
 
 WHAT THIS FIXES
 ---------------
-The patient check-in crashed to the global error screen ("Something went wrong /
-The app ran into an unexpected problem...") with, in the browser console:
+In the patient check-in, the "Leave your check-in?" dialog's "Leave for now"
+button did nothing when tapped.
 
-    Error: Minified React error #310
-    (= "Rendered more hooks than during the previous render")
+Cause: it called a soft client-side navigation (router.push to the home path),
+which is unreliable from the check-in page — the push was being swallowed, so
+nothing happened. The app already had this problem on the post-submit "thanks"
+screen and solved it there with a hard navigation (window.location). The Cancel
+dialog was still using the old soft version.
 
-Root cause: a React rules-of-hooks violation in app/[locale]/checkin/page.tsx.
-The `confirmLeave` useState (added with the check-in Cancel dialog) was declared
-BELOW the component's early returns (ThanksView / CheckinSkeleton / null). On the
-loading -> loaded transition the number of hooks called changed by one, which
-React forbids, so it threw and the whole app fell back to app/global-error.tsx.
-
-Why it looked specific to test patient 1: the crash only happens for a patient
-whose check-in actually loads content. test1 has a pending weekly prompt, so its
-check-in renders the steps and hits the transition. Patients with no pending
-prompt return null earlier and never reach the extra hook, so they don't crash.
-This was a pre-existing latent bug; the recent re-seed didn't cause it, it just
-made test1 the account you opened the check-in on. (The GAS goal was a red
-herring — the GAS check-in code itself is correct.)
-
-THE FIX
--------
-Moved `const [confirmLeave, setConfirmLeave] = useState(false);` up to sit with
-the other state hooks, ABOVE every early return, so the hook order is identical
-on every render. Also corrected a stale code comment that still said the cancel
-flow had "no confirmation dialog". Only file changed: app/[locale]/checkin/page.tsx.
+Fix: "Leave for now" now uses the same reliable hard navigation home as the
+thanks screen. The check-in draft is auto-saved on every change, so leaving this
+way keeps your answers and you can resume the check-in later this week.
+Only file changed: app/[locale]/checkin/page.tsx.
 
 DEPLOY STEPS
 ------------
-1. Unzip; push the contents to your GitHub repo (replacing the working tree).
-2. Vercel will build & deploy automatically on push.
-3. No migrations to run for this build. (Your DB should already have 0062-0066
-   from earlier builds; nothing new is required here.)
-4. No new environment variables.
-
-ENV VARS (unchanged from previous builds; listed for reference)
----------------------------------------------------------------
-- Standard Supabase vars (URL, anon key) as already configured.
-- SUPABASE_SERVICE_ROLE_KEY (server-only) — for admin + dev launcher routes.
-- Optional dev tools: NEXT_PUBLIC_ENABLE_DEV_TOOLS=1 and ENABLE_DEV_TOOLS=1.
-- Optional demo: NEXT_PUBLIC_ENABLE_DEMO=1.
+1. Unzip and push the contents to your GitHub repo (replace the working tree).
+2. Vercel builds & deploys automatically on push.
+3. No migrations to run, no new environment variables.
 
 HOW TO CONFIRM IT'S DEPLOYED
 ----------------------------
-1. Log in as test1@example.com and start a weekly check-in. It should now open
-   to the goal-rating steps instead of the "Something went wrong" screen, and you
-   can step through ratings -> training days -> comment and submit.
-2. The GAS goal ("Stand more steadily at the sink") should appear as a check-in
-   step with the −2..+2 descriptive options, and the optional video recorder
-   should appear on the "open my hand" goal (test1 is in the week 6–8 window).
-3. Sanity check the console (F12 -> Console) during the check-in: no React #310.
+1. Start a check-in, then tap Cancel (top-left) to open the dialog.
+2. "Keep going" closes the dialog (unchanged).
+3. "Leave for now" now returns you to the home screen.
+4. Re-open the check-in: your previous answers are still there (draft kept).

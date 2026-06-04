@@ -79,8 +79,9 @@ function CheckinPageInner() {
   const tFeedback = useTranslations('feedback');
 
   const homePath = locale === 'en' ? '/' : `/${locale}`;
-  const goHome = () => router.push(homePath);
-  // Hard navigation for the terminal thanks screen — see comment below.
+  // Leaving the check-in navigates home. A soft router.push proved unreliable
+  // from this page (the push was sometimes swallowed), so we do a hard
+  // navigation — the draft is already persisted, so a full reload is safe.
   const goHomeHard = () => {
     if (typeof window !== 'undefined') {
       window.location.href = homePath;
@@ -524,7 +525,7 @@ function CheckinPageInner() {
       </WizardLayout>
       {confirmLeave && (
         <CancelCheckinDialog
-          onLeave={goHome}
+          onLeave={goHomeHard}
           onKeep={() => setConfirmLeave(false)}
         />
       )}

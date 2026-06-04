@@ -41,6 +41,8 @@ export interface ClinicianPatientSuggestion {
 export interface ClinicianPatientCheckin {
   id: string;
   weekNumber: number;
+  /** When the patient submitted this check-in (weekly_checkin.submitted_at). */
+  submittedAt: string;
   comment: string | null;
   submitterLabel: 'self' | 'caregiver';
   /** ISO weekday numbers (1=Mon..7=Sun) trained at home that week, or
@@ -52,6 +54,8 @@ export interface ClinicianPatientCheckin {
     approvedGoalId: string;
     ratingValue: number | null;
     nrsValue: number | null;
+    /** Storage key of a video recorded for this goal at this check-in, if any. */
+    videoPath: string | null;
   }[];
 }
 
@@ -250,7 +254,7 @@ export function useClinicianPatientData(
           supabase
             .from('weekly_checkin')
             .select(
-              'id, week_number, comment, submitter_label, training_days, training_days_therapist, ratings:weekly_goal_rating (approved_goal_id, rating_value, nrs_value)'
+              'id, week_number, submitted_at, comment, submitter_label, training_days, training_days_therapist, ratings:weekly_goal_rating (approved_goal_id, rating_value, nrs_value, video_path)'
             )
             .eq('treatment_cycle_id', cycle.id)
             .order('week_number', { ascending: true }),
@@ -359,6 +363,7 @@ export function useClinicianPatientData(
         (c) => ({
           id: c.id as string,
           weekNumber: c.week_number as number,
+          submittedAt: c.submitted_at as string,
           comment: (c.comment as string | null) ?? null,
           submitterLabel: (c.submitter_label as 'self' | 'caregiver') ?? 'self',
           trainingDays: (c.training_days as number[] | null) ?? null,
@@ -368,10 +373,12 @@ export function useClinicianPatientData(
             approved_goal_id: string;
             rating_value: number | null;
             nrs_value: number | null;
+            video_path: string | null;
           }> | null ?? []).map((r) => ({
             approvedGoalId: r.approved_goal_id,
             ratingValue: r.rating_value,
-            nrsValue: r.nrs_value
+            nrsValue: r.nrs_value,
+            videoPath: (r.video_path as string | null) ?? null
           }))
         })
       );

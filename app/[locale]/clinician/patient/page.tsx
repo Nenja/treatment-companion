@@ -26,7 +26,7 @@ import { nrsToGas, injectionSideLabel, type GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { GoalGraphModal } from '@/components/clinician/GoalGraphModal';
 import { TrainingOverview } from '@/components/clinician/TrainingOverview';
-import { ClinicianVisitNote } from '@/components/clinician/ClinicianVisitNote';
+import { VisitChanges } from '@/components/clinician/VisitChanges';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
 import {
@@ -834,7 +834,12 @@ export default function ClinicianPatientPage() {
         </button>
         </div>
 
-        <ClinicianVisitNote cycleId={cycle.id} note={cycle.clinicianNote} />
+        <VisitChanges
+          lastTreatmentDate={treatment?.date ?? null}
+          cycleStartDate={cycle.startDate}
+          checkins={checkins}
+          goals={[...activeGoals, ...archivedGoals]}
+        />
 
         {/* Active goals with progress visualisation */}
         <section className="mt-10">

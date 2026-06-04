@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `checkin-hooks-order-fix`._
+> _Last updated for build tag: `checkin-leave-button-fix`._
 
 ---
 
@@ -339,13 +339,33 @@ Gated by `NEXT_PUBLIC_ENABLE_DEMO=1` (independent of the dev launcher’s flag,
 so the demo can be exposed without the auth launcher). No migration, no
 network — so this one is fully verifiable from the build.
 
-### 5.8 "Since last visit" clinician note
-`components/clinician/ClinicianVisitNote.tsx` — a free-text note card on the
-patient page (rendered just above the active-goals section). Read view shows
-the note (or an empty hint) + Edit/Add; edit view is a textarea + Save/Cancel.
-Stored per **active cycle** in `treatment_cycle.clinician_note` via
-`set_cycle_clinician_note` (`useSetCycleClinicianNote` hook), so it naturally
-resets each new cycle/visit. The page passes `cycle.id` + `cycle.clinicianNote`.
+### 5.8 "Since last visit" — auto-generated change list
+`components/clinician/VisitChanges.tsx` — a **read-only, computed** card on the
+patient page (just above the active-goals section). It summarises what changed
+since the patient was last seen; nothing is editable. **Anchor:** the most recent
+treatment for the cycle (`treatment.date`); if no treatment is recorded yet it
+falls back to the cycle start date and says so. It lists check-ins submitted
+since the anchor (filtered by `weekly_checkin.submitted_at`) with:
+- **Check-ins & goal movement** — the weeks checked in, plus per-goal first→last
+  movement across the window. NRS goals show the numbers (e.g. `5 → 7`); GAS goals
+  show the descriptive levels (e.g. *as expected → better than expected*). The
+  arrow/colour is **direction-aware** (NRS uses the goal's `nrs_direction`; GAS is
+  higher-is-better), green = improved, amber = declined. Archived goals that had
+  ratings in the window are still shown, tagged "· archived".
+- **Training** — aggregate home-exercise days and therapist sessions logged since
+  the anchor (ICU-pluralised), or "No training logged since then."
+- **Videos recorded** — any per-goal videos recorded at those check-ins (only
+  shown when present).
+
+Data: `useClinicianPatientData` now also selects `weekly_checkin.submitted_at` and
+each rating's `video_path` (added to `ClinicianPatientCheckin`). The page passes
+`treatment?.date`, `cycle.startDate`, `checkins`, and `[...activeGoals,
+...archivedGoals]`. i18n namespace **`visitChanges`** (en+da, 22 keys, incl. GAS
+level labels + ICU plurals). **This replaced the old free-text note** — the
+`treatment_cycle.clinician_note` column + `set_cycle_clinician_note` RPC /
+`useSetCycleClinicianNote` hook remain in place but are now **unused** (kept so the
+change is reversible / non-destructive; the old `visitNote` i18n namespace is also
+left in but unused).
 
 ---
 
@@ -363,35 +383,26 @@ resets each new cycle/visit. The page passes `cycle.id` + `cycle.clinicianNote`.
 `checkin-cancel-and-onboarding-audit` →
 `onboarding-content-fixes` → `dev-scenario-launcher` (0066) →
 `demo-sandbox` →
-**`checkin-hooks-order-fix`** (current, no new migration).
+`checkin-hooks-order-fix` →
+`since-last-visit-change-list` →
+**`checkin-leave-button-fix`** (current, no new migration).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-checkin-hooks-order-fix.zip`
-- **Tag:** `checkin-hooks-order-fix`
-- **Fixes:** a React rules-of-hooks crash in the patient check-in
-  (`app/[locale]/checkin/page.tsx`). The `confirmLeave` `useState` added with the
-  Cancel-dialog work was declared **below** the page's early returns
-  (`ThanksView` / `CheckinSkeleton` / `null`). On the loading→loaded transition
-  the hook count changed by one, so React threw **minified error #310**
-  ("Rendered more hooks than during the previous render"), which surfaced as the
-  global error screen (`app/global-error.tsx`). It only reproduced for a patient
-  whose check-in actually loads content (e.g. test1, which has a pending prompt);
-  patients with no pending prompt hit an early `return null` and never reached the
-  extra hook. **Fix:** moved that `useState` up with the other state hooks, above
-  all early returns; corrected the now-stale "no confirmation dialog" comment.
-  No other files changed. (Note: this was a pre-existing latent bug independent of
-  the GAS goal — the re-seed just made test1 the patient that opens the check-in.)
-- **Everything else** is unchanged from `demo-sandbox` (onboarding/help copy,
-  NRS+GAS graphs, training days, visit note, dev Scenarios launcher §5.9, no-auth
-  `/demo` sandbox §5.10).
-- **DB needed:** unchanged — migrations through **0066** (0066 is dev-only). No
-  new migration in this build. The auth launcher needs
-  `NEXT_PUBLIC_ENABLE_DEV_TOOLS=1` + `ENABLE_DEV_TOOLS=1` +
-  `SUPABASE_SERVICE_ROLE_KEY`; the `/demo` sandbox needs only
-  `NEXT_PUBLIC_ENABLE_DEMO=1` (no DB, no auth).
+- **Zip:** `treatment-companion-checkin-leave-button-fix.zip`
+- **Tag:** `checkin-leave-button-fix`
+- **Fixes:** "Leave for now" in the check-in Cancel dialog did nothing. It called
+  `goHome` (`router.push(homePath)`), which is unreliable from this page — the
+  same reason the thanks screen already used `goHomeHard` (a `window.location.href`
+  hard navigation). Pointed the dialog's `onLeave` at `goHomeHard` and removed the
+  now-unused `goHome`. The draft is auto-persisted, so the hard navigation home is
+  safe and resumable. One file: `app/[locale]/checkin/page.tsx`.
+- **Carried forward:** the auto-generated "Since last visit" change list
+  (§5.8) and the earlier React #310 check-in crash fix.
+- **DB needed:** unchanged — migrations through **0066**. **No new migration**, no
+  new env vars.
 
 ---
 
