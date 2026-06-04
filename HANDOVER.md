@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `dev-scenario-launcher`._
+> _Last updated for build tag: `demo-sandbox`._
 
 ---
 
@@ -58,9 +58,9 @@ blocks that host, so a real build **fails** unless you stub them first.
 3. **Assert `BrandBar` is still present** in the file after stubbing (a global
    `<BrandBar/>` lives in layout.tsx — see §5.3).
 4. `rm -rf .next && NEXT_TELEMETRY_DISABLED=1 npx next build`
-5. **Success = exit 0 and "✓ Generating static pages (58/58)".** (Was 55
-   before the dev Scenarios launcher added the `/dev/scenarios` page in two
-   locales + the API route.) The only
+5. **Success = exit 0 and "✓ Generating static pages (60/60)".** (55 before
+   the dev tools; +2 for `/dev/scenarios`, +2 for the no-auth `/demo` sandbox,
+   each in two locales, plus the API route.) The only
    expected warning is a Sentry/OpenTelemetry "critical dependency" message
    (unrelated, ignore).
 6. **Restore** `app/[locale]/layout.tsx` from `/tmp/layout.tsx.orig`, then verify:
@@ -326,6 +326,19 @@ route run; both 404/disable otherwise. Needs `SUPABASE_SERVICE_ROLE_KEY` (the
 admin features already use it). **Unverified by me** — I can’t exercise auth or
 a live Supabase; the sign-in/session/seed flow needs on-machine testing.
 
+### 5.10 No-auth demo sandbox
+**DELIVERED.** A `/demo` page that needs **no login and no Supabase** — it
+renders the real presentational components (`GoalProgressView`,
+`TrainingOverview`, the NRS/GAS rating pickers) from made-up fixtures so anyone
+can click through scenarios. Pieces: `lib/demo/fixtures.ts` (three scenarios:
+going well / struggling / missed check-ins, each with NRS + GAS goals, training,
+a visit note) and `app/[locale]/demo/page.tsx` (scenario picker + a "Clinician
+view" = graphs + training + read-only note, and an interactive "Patient
+check-in" view = the real rating pickers with local state, nothing saved).
+Gated by `NEXT_PUBLIC_ENABLE_DEMO=1` (independent of the dev launcher’s flag,
+so the demo can be exposed without the auth launcher). No migration, no
+network — so this one is fully verifiable from the build.
+
 ### 5.8 "Since last visit" clinician note
 `components/clinician/ClinicianVisitNote.tsx` — a free-text note card on the
 patient page (rendered just above the active-goals section). Read view shows
@@ -348,14 +361,15 @@ resets each new cycle/visit. The page passes `cycle.id` + `cycle.clinicianNote`.
 `clinician-training-overview` → `training-home-vs-therapist` (0064) →
 `visit-note-and-collapse-default` (0065) →
 `checkin-cancel-and-onboarding-audit` →
-`onboarding-content-fixes` → **`dev-scenario-launcher`** (0066, current).
+`onboarding-content-fixes` → `dev-scenario-launcher` (0066) →
+**`demo-sandbox`** (current, no new migration).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-dev-scenario-launcher.zip`
-- **Tag:** `dev-scenario-launcher`
+- **Zip:** `treatment-companion-demo-sandbox.zip`
+- **Tag:** `demo-sandbox`
 - **Contains:** everything above, plus the onboarding/help copy fixes from the
   audit — the graph step now renders both an NRS (0–10) and a GAS (banded)
   live chart (passing `kind` to `GoalProgressView`); the check-in tour and
@@ -363,10 +377,12 @@ resets each new cycle/visit. The page passes `cycle.id` + `cycle.clinicianNote`.
   new-goal/suggestion Help cover NRS-vs-GAS + GAS levels + the video toggle;
   clinician Help describes the Training panel and the visit note; new `intro`
   keys `graphNrsLabel`/`graphGasLabel`/`graphSampleGoalNrs` (en+da), plus the
-  **dev-only Scenarios launcher** (§5.9) with migration `0066`.
-- **DB needed:** migrations through **0066** applied (0066 is dev-only). Dev
-  launcher also needs `NEXT_PUBLIC_ENABLE_DEV_TOOLS=1` + `ENABLE_DEV_TOOLS=1`
-  + `SUPABASE_SERVICE_ROLE_KEY`.
+  **dev-only Scenarios launcher** (§5.9, migration `0066`) and the **no-auth
+  `/demo` sandbox** (§5.10, no migration).
+- **DB needed:** migrations through **0066** applied (0066 is dev-only). The
+  auth launcher needs `NEXT_PUBLIC_ENABLE_DEV_TOOLS=1` + `ENABLE_DEV_TOOLS=1`
+  + `SUPABASE_SERVICE_ROLE_KEY`; the `/demo` sandbox needs only
+  `NEXT_PUBLIC_ENABLE_DEMO=1` (no DB, no auth).
 
 ---
 
