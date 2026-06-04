@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `test1-video-on-current-checkin`._
+> _Last updated for build tag: `visit-changes-usability`._
 
 ---
 
@@ -346,25 +346,36 @@ since the patient was last seen; nothing is editable. **Anchor:** the most recen
 treatment for the cycle (`treatment.date`); if no treatment is recorded yet it
 falls back to the cycle start date and says so. It lists check-ins submitted
 since the anchor (filtered by `weekly_checkin.submitted_at`) with:
-- **Check-ins & goal movement** — the weeks checked in, plus per-goal first→last
-  movement across the window. NRS goals show the numbers (e.g. `5 → 7`); GAS goals
-  show the descriptive levels (e.g. *as expected → better than expected*). The
-  arrow/colour is **direction-aware** (NRS uses the goal's `nrs_direction`; GAS is
-  higher-is-better), green = improved, amber = declined. Archived goals that had
-  ratings in the window are still shown, tagged "· archived".
-- **Training** — aggregate home-exercise days and therapist sessions logged since
-  the anchor (ICU-pluralised), or "No training logged since then."
-- **Videos recorded** — any per-goal videos recorded at those check-ins (only
-  shown when present).
+- **Goal movement (the headline)** — one row per goal: the goal name, a compact
+  inline **trend line** (SVG sparkline of the goal's values across the window, with
+  a dot on the current point), the **current value emphasised** (NRS `7/10`; GAS the
+  descriptive level e.g. *As expected*), and a **change chip**. The chip shows an
+  arrow + magnitude — NRS `from {first}`, GAS `{n} level(s)`, or `no change` — and
+  is **direction-aware** (NRS uses the goal's `nrs_direction`; GAS is
+  higher-is-better): green/sage = improved (↑), amber = declined (↓), neutral = flat.
+  Colour is never the only cue (arrow glyph + sr-only "improved/declined/unchanged").
+  Archived goals with ratings in the window still appear, tagged "· archived".
+- **Header + adherence** — a check-in count top-right (`5 check-ins`) and an
+  adherence clause in the subline: `· checked in every week`, or `· missed week(s) N`
+  (gaps detected between the first and last week present, so the current pending
+  week is never flagged as missed).
+- **Compact stat strip** (bottom) — home-exercise days with a cadence (`Home 14 days
+  · ~3×/wk`), therapist sessions (`Therapist 2×`), and a video count when present.
+  Falls back to "No training logged".
 
-Data: `useClinicianPatientData` now also selects `weekly_checkin.submitted_at` and
-each rating's `video_path` (added to `ClinicianPatientCheckin`). The page passes
+Sparkline geometry is hand-computed (64×22, scaled NRS 0–10 / GAS −2..2); the line
+uses `currentColor` from a trend-coloured wrapper. Single-point series render just
+the dot.
+
+Data: `useClinicianPatientData` selects `weekly_checkin.submitted_at` and each
+rating's `video_path` (on `ClinicianPatientCheckin`). The page passes
 `treatment?.date`, `cycle.startDate`, `checkins`, and `[...activeGoals,
-...archivedGoals]`. i18n namespace **`visitChanges`** (en+da, 22 keys, incl. GAS
-level labels + ICU plurals). **This replaced the old free-text note** — the
-`treatment_cycle.clinician_note` column + `set_cycle_clinician_note` RPC /
-`useSetCycleClinicianNote` hook remain in place but are now **unused** (kept so the
-change is reversible / non-destructive; the old `visitNote` i18n namespace is also
+...archivedGoals]`. i18n namespace **`visitChanges`** (en+da, 25 keys, incl. GAS
+level labels + ICU plurals incl. a nested-arg `missedWeeks`). **This replaced the
+old free-text note** — the `treatment_cycle.clinician_note` column +
+`set_cycle_clinician_note` RPC / `useSetCycleClinicianNote` hook remain in place but
+are now **unused** (kept so the change is reversible / non-destructive; the old
+`visitNote` i18n namespace is also
 left in but unused).
 
 ---
@@ -386,34 +397,31 @@ left in but unused).
 `checkin-hooks-order-fix` →
 `since-last-visit-change-list` →
 `checkin-leave-button-fix` →
-**`test1-video-on-current-checkin`** (current, seed-data change; no new numbered migration).
+`test1-video-on-current-checkin` →
+**`visit-changes-usability`** (current, no new migration).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-test1-video-on-current-checkin.zip`
-- **Standalone:** `demo_seed_test_patients.sql` (re-run this to apply — it's the
-  artifact that reseeds the patients).
-- **Tag:** `test1-video-on-current-checkin`
-- **Change (seed data):** test1's optional check-in video now appears on the
-  **current** check-in instead of an overdue catch-up week. Root cause: test1's
-  cycle started 8 weeks ago and completed weeks 1–7, so the *current* week (by
-  date) was 8–9 — at/just past the 6–8 video window — while week 8 became an
-  overdue "catch-up". Fix: cycle now starts **5 weeks ago**, completes **weeks
-  1–5**, so the current pending check-in is **week 6** (well inside 6–8, ~3-week
-  buffer). Changed in seed block 1 and mirrored in `0066`'s `dev_seed_b1()`. Block
-  8 (the GAS add-on) made explicit `1..5`; its result is unchanged. Also updated
-  one dev-launcher description string (`lib/dev/scenarios.ts`) and stale HANDOVER
-  notes (incl. the §10 map entry that still listed the removed `ClinicianVisitNote`).
-- **To apply:** re-run `demo_seed_test_patients.sql` in the Supabase SQL editor.
-  If you reseed via the dev launcher (`dev_reseed_all`) instead, re-run the updated
-  `0066` first so `dev_seed_b1()` matches. No app redeploy is required for the seed
-  change (the `scenarios.ts` text is the only code change and is dev-only).
+- **Zip:** `treatment-companion-visit-changes-usability.zip`
+- **Tag:** `visit-changes-usability`
+- **Change:** usability rework of the "Since last visit" card (§5.8). It now
+  **leads with goal movement** — each goal as a row with a compact inline trend
+  line, the current value emphasised, and a direction-aware change chip
+  (green ↑ improved / amber ↓ declined). The bare "Weeks checked in: 1,2,3,4,5"
+  became a check-in count + adherence clause ("checked in every week" / "missed
+  week N"); training shows a cadence ("Home 14 days · ~3×/wk"); a compact stat
+  strip holds training + video. Only `components/clinician/VisitChanges.tsx` was
+  rewritten; the `visitChanges` i18n namespace was replaced (en+da, 25 keys). No
+  data-layer change beyond what the previous build already added.
+- **Design provenance:** built to match the compact mockup approved in chat (small
+  inline sparklines, not full-width). Mockup colours were neutral; the shipped
+  component uses the app's cream/sage/amber tokens and is bilingual.
+- **Known follow-ups it surfaces:** the listed video is still indicator-only until
+  clinician playback lands (§5.5, §8); native-Danish review of the new strings.
 - **DB needed:** unchanged — migrations through **0066**. No new migration, no env
   changes.
-- **Carried forward:** the auto "Since last visit" change list (§5.8), the
-  "Leave for now" fix, and the React #310 check-in crash fix.
 
 ---
 

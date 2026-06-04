@@ -1,44 +1,47 @@
-BUILD TAG: test1-video-on-current-checkin
+BUILD TAG: visit-changes-usability
 DATE: 2026-06-04
-NEW MIGRATION: none (seed-data change; no new numbered migration)
+NEW MIGRATION: none (no DB changes)
 
 WHAT CHANGED
 ------------
-Test patient 1's optional check-in video now appears on the CURRENT check-in,
-instead of you having to open an earlier ("previous"/catch-up) check-in to find it.
+Usability rework of the clinician "Since last visit" card.
 
-Why it was off: the app shows the optional video at weeks 6-8 of a cycle. test1's
-cycle started 8 weeks ago with weeks 1-7 already completed, so the *current* week
-(by date) was week 8-9 — at or just past the window — and week 8 showed up as an
-overdue catch-up. So the video landed on a previous/catch-up check-in, not the
-current one.
+Before: it led with a bare "Weeks checked in: 1, 2, 3, 4, 5" list, then showed each
+goal's movement as "5 -> 7" (which hid any dip in between).
 
-Fix: test1's cycle now starts 5 weeks ago and completes weeks 1-5, so the current
-pending check-in is week 6 — comfortably inside the 6-8 window. The current
-check-in stays in-window for about 3 weeks (the current week walks 6 -> 7 -> 8)
-before it drifts out again; re-running the seed resets it.
+Now:
+- Goal movement is the headline. Each goal is a row with a small inline trend line
+  (a dot on the current point), the current value emphasised (NRS "7/10"; GAS the
+  descriptive level like "As expected"), and a change chip: an arrow + magnitude
+  ("from 3" for NRS, "2 levels" for GAS, or "no change"). Green/up = improved,
+  amber/down = declined, and it's direction-aware (a lower-is-better goal going down
+  reads as improved). Colour is never the only signal (arrow + screen-reader text).
+- The check-in list became a count ("5 check-ins") plus an adherence note in the
+  subline ("checked in every week", or "missed week 3" when there's a gap).
+- Training shows a cadence ("Home 14 days - ~3x/wk") and therapist sessions, in a
+  compact strip along the bottom, with the video count when present.
 
-FILES
------
-- supabase/migrations/demo_seed_test_patients.sql  (block 1: cycle start -56 -> -35,
-  completes weeks 1-5, 5-element trend arrays; block 8 made explicit 1..5)
-- supabase/migrations/0066_dev_seed_functions.sql  (dev_seed_b1 mirrors the same)
-- lib/dev/scenarios.ts  (one dev-launcher description: "~week 8" -> "~week 6")
+Only components/clinician/VisitChanges.tsx changed; its translation namespace
+(visitChanges, en + da) was updated to match. No database or data-layer change.
 
-HOW TO APPLY
+DEPLOY STEPS
 ------------
-1. In the Supabase SQL editor, run the attached demo_seed_test_patients.sql
-   (idempotent — it wipes & rebuilds each patient). That reseeds test1 with the
-   week-6 current check-in. This is all you need.
-2. Optional: if you reseed using the dev launcher's "reset" (dev_reseed_all)
-   instead of the SQL file, run the updated 0066 first so dev_seed_b1 matches,
-   then use the launcher.
-3. No app redeploy needed for the data change. (The only code change is a dev-only
-   description string; push the zip if you want it, but it's not required.)
+1. Unzip and push the contents to your GitHub repo (replace the working tree).
+2. Vercel builds & deploys automatically on push.
+3. No migrations, no new environment variables.
 
 HOW TO CONFIRM
 --------------
-1. Sign in as test1@example.com.
-2. Open the current check-in from the home screen (it should be "week 6").
-3. On the hand goal's step ("...open my hand..."), the optional video recorder
-   appears right there — no need to open a previous/earlier week.
+1. Open a patient with check-ins this cycle (e.g. test1). The "Since last visit"
+   card now shows each goal on its own line with a small trend line, the current
+   value, and a coloured change chip.
+2. The hand goal (NRS) shows e.g. "7/10" with an up arrow and "from 3"; the standing
+   goal (GAS) shows its current level with "2 levels".
+3. Below the goals: a check-in count, an adherence note, and a compact strip for
+   training and any video.
+
+NOTES
+-----
+- The video is still listed as an indicator only; playback is a separate pending
+  piece.
+- The new Danish strings haven't been checked by a native speaker.
