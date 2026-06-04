@@ -64,7 +64,10 @@ begin
     return;
   end if;
 
-  v_start_date := current_date - 56;  -- 8 weeks ago
+  v_start_date := current_date - 35;  -- 5 weeks ago: current week ≈ 6, so the
+                                      -- current (pending) check-in sits inside
+                                      -- the 6–8 optional-video window with room
+                                      -- to spare as days pass.
 
   insert into treatment_cycle (patient_id, cycle_number, start_date, status)
     values (v_patient_id, 1, v_start_date, 'active')
@@ -136,14 +139,14 @@ begin
       patient_id, treatment_cycle_id, week_number, due_date, status
     ) values (
       v_patient_id, v_cycle_id, v_week, v_start_date + (v_week * 7),
-      case when v_week <= 7 then 'completed'::prompt_status
+      case when v_week <= 5 then 'completed'::prompt_status
            else 'pending'::prompt_status end
     ) returning id into v_prompt_id;
 
-    if v_week <= 7 then
+    if v_week <= 5 then
       -- Positive trend: hand rises 3→8, sleep falls 9→3.
-      v_nrs_hand := (array[3,5,6,8,7,7,6])[v_week];
-      v_nrs_sleep := (array[9,7,5,3,3,4,3])[v_week];
+      v_nrs_hand := (array[3,5,6,8,7])[v_week];
+      v_nrs_sleep := (array[9,7,5,3,3])[v_week];
       v_gas_hand := nrs_to_gas(v_nrs_hand, 'higherIsBetter', 2, 4, 5, 7);
       v_gas_sleep := nrs_to_gas(v_nrs_sleep, 'lowerIsBetter', 2, 4, 5, 7);
 

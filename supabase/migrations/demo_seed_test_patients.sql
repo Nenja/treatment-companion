@@ -35,7 +35,9 @@
 
 -- ---------------------------------------------------------------------------
 -- test1@example.com — MID-CYCLE, GOING WELL
--- Week ~8 of cycle 1. Two goals. 7 weeks of check-ins trending positive.
+-- Week ~6 of cycle 1. Two goals. 5 weeks of check-ins trending positive; the
+-- current (week 6) check-in is pending and falls in the 6–8 optional-video
+-- window, so the video recorder appears on it.
 -- ---------------------------------------------------------------------------
 do $$
 declare
@@ -89,7 +91,10 @@ begin
     return;
   end if;
 
-  v_start_date := current_date - 56;  -- 8 weeks ago
+  v_start_date := current_date - 35;  -- 5 weeks ago: current week ≈ 6, so the
+                                      -- current (pending) check-in sits inside
+                                      -- the 6–8 optional-video window with room
+                                      -- to spare as days pass.
 
   insert into treatment_cycle (patient_id, cycle_number, start_date, status)
     values (v_patient_id, 1, v_start_date, 'active')
@@ -161,14 +166,14 @@ begin
       patient_id, treatment_cycle_id, week_number, due_date, status
     ) values (
       v_patient_id, v_cycle_id, v_week, v_start_date + (v_week * 7),
-      case when v_week <= 7 then 'completed'::prompt_status
+      case when v_week <= 5 then 'completed'::prompt_status
            else 'pending'::prompt_status end
     ) returning id into v_prompt_id;
 
-    if v_week <= 7 then
+    if v_week <= 5 then
       -- Positive trend: hand rises 3→8, sleep falls 9→3.
-      v_nrs_hand := (array[3,5,6,8,7,7,6])[v_week];
-      v_nrs_sleep := (array[9,7,5,3,3,4,3])[v_week];
+      v_nrs_hand := (array[3,5,6,8,7])[v_week];
+      v_nrs_sleep := (array[9,7,5,3,3])[v_week];
       v_gas_hand := nrs_to_gas(v_nrs_hand, 'higherIsBetter', 2, 4, 5, 7);
       v_gas_sleep := nrs_to_gas(v_nrs_sleep, 'lowerIsBetter', 2, 4, 5, 7);
 
@@ -1196,14 +1201,14 @@ begin
   ) returning id into v_goal_gas;
 
   -- Add a GAS rating for this goal to each of test1's existing completed
-  -- check-ins (weeks 1–7), trending up: −2 → +1.
-  for v_week in 1..7 loop
+  -- check-ins (weeks 1–5), trending up: −2 → 0.
+  for v_week in 1..5 loop
     select id into v_checkin_id from weekly_checkin
      where patient_id = v_patient_id
        and treatment_cycle_id = v_cycle_id
        and week_number = v_week;
     if v_checkin_id is not null then
-      v_lvl := (array[-2,-1,-1,0,0,1,1])[v_week];
+      v_lvl := (array[-2,-1,-1,0,0])[v_week];
       insert into weekly_goal_rating (
         weekly_checkin_id, approved_goal_id, rating_label, rating_value, nrs_value
       ) values (
@@ -1215,9 +1220,9 @@ begin
     end if;
   end loop;
 
-  -- Turn on the optional check-in video for test1's NRS hand goal. test1
-  -- is mid-cycle (~week 8), so the recorder will appear at the week-6–8
-  -- check-in (once per cycle).
+  -- Turn on the optional check-in video for test1's NRS hand goal. test1's
+  -- current (pending) check-in is week 6, inside the 6–8 window, so the
+  -- recorder appears on the current check-in (once per cycle).
   update approved_goal
      set video_enabled = true
    where patient_id = v_patient_id
