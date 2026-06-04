@@ -1,34 +1,57 @@
-Build tag: demo-sandbox
+BUILD TAG: checkin-hooks-order-fix
+DATE: 2026-06-04
+NEW MIGRATION: none (no DB changes in this build)
 
-NEW: a no-login, no-Supabase demo sandbox at /demo
-Renders the real app components (goal graphs, training panel, rating pickers)
-from made-up data, so anyone can click through scenarios WITHOUT logging in or
-touching the database.
+WHAT THIS FIXES
+---------------
+The patient check-in crashed to the global error screen ("Something went wrong /
+The app ran into an unexpected problem...") with, in the browser console:
 
-- Scenario picker: "Going well", "Struggling", "Missed check-ins" (each has
-  both an NRS and a GAS goal, training data, and a visit note).
-- Two views per scenario:
-  * Clinician view — the progress graphs (NRS 0–10 line + GAS bands), the
-    Training panel, and a read-only "Since last visit" note.
-  * Patient check-in — the real rating pickers (interactive, local-only; the
-    demo never saves anything).
+    Error: Minified React error #310
+    (= "Rendered more hooks than during the previous render")
 
-ENABLE IT (off by default)
-- NEXT_PUBLIC_ENABLE_DEMO=1   (client-only flag)
-This is independent of the dev Scenarios launcher's flags, so you can expose
-the /demo sandbox (safe — fake data, no auth) WITHOUT enabling the auth
-launcher. With the flag unset, /demo shows "disabled".
+Root cause: a React rules-of-hooks violation in app/[locale]/checkin/page.tsx.
+The `confirmLeave` useState (added with the check-in Cancel dialog) was declared
+BELOW the component's early returns (ThanksView / CheckinSkeleton / null). On the
+loading -> loaded transition the number of hooks called changed by one, which
+React forbids, so it threw and the whole app fell back to app/global-error.tsx.
 
-MIGRATIONS / ENV
-- None. No database, no auth, no network. (This differs from the auth
-  launcher, which needs migration 0066 + the service role key.)
+Why it looked specific to test patient 1: the crash only happens for a patient
+whose check-in actually loads content. test1 has a pending weekly prompt, so its
+check-in renders the steps and hits the transition. Patients with no pending
+prompt return null earlier and never reach the extra hook, so they don't crash.
+This was a pre-existing latent bug; the recent re-seed didn't cause it, it just
+made test1 the account you opened the check-in on. (The GAS goal was a red
+herring — the GAS check-in code itself is correct.)
 
-DEPLOY
-- Upload this zip to GitHub -> Vercel. Set NEXT_PUBLIC_ENABLE_DEMO=1 wherever
-  you want the demo reachable (it's safe to enable in production if you want a
-  public demo, since it has no real data).
+THE FIX
+-------
+Moved `const [confirmLeave, setConfirmLeave] = useState(false);` up to sit with
+the other state hooks, ABOVE every early return, so the hook order is identical
+on every render. Also corrected a stale code comment that still said the cancel
+flow had "no confirmation dialog". Only file changed: app/[locale]/checkin/page.tsx.
 
-How to confirm THIS build is deployed:
-- BUILD.txt tag "demo-sandbox".
-- With NEXT_PUBLIC_ENABLE_DEMO=1, /demo shows the scenario picker and works
-  with no login.
+DEPLOY STEPS
+------------
+1. Unzip; push the contents to your GitHub repo (replacing the working tree).
+2. Vercel will build & deploy automatically on push.
+3. No migrations to run for this build. (Your DB should already have 0062-0066
+   from earlier builds; nothing new is required here.)
+4. No new environment variables.
+
+ENV VARS (unchanged from previous builds; listed for reference)
+---------------------------------------------------------------
+- Standard Supabase vars (URL, anon key) as already configured.
+- SUPABASE_SERVICE_ROLE_KEY (server-only) — for admin + dev launcher routes.
+- Optional dev tools: NEXT_PUBLIC_ENABLE_DEV_TOOLS=1 and ENABLE_DEV_TOOLS=1.
+- Optional demo: NEXT_PUBLIC_ENABLE_DEMO=1.
+
+HOW TO CONFIRM IT'S DEPLOYED
+----------------------------
+1. Log in as test1@example.com and start a weekly check-in. It should now open
+   to the goal-rating steps instead of the "Something went wrong" screen, and you
+   can step through ratings -> training days -> comment and submit.
+2. The GAS goal ("Stand more steadily at the sink") should appear as a check-in
+   step with the −2..+2 descriptive options, and the optional video recorder
+   should appear on the "open my hand" goal (test1 is in the week 6–8 window).
+3. Sanity check the console (F12 -> Console) during the check-in: no React #310.

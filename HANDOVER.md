@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `demo-sandbox`._
+> _Last updated for build tag: `checkin-hooks-order-fix`._
 
 ---
 
@@ -362,26 +362,35 @@ resets each new cycle/visit. The page passes `cycle.id` + `cycle.clinicianNote`.
 `visit-note-and-collapse-default` (0065) →
 `checkin-cancel-and-onboarding-audit` →
 `onboarding-content-fixes` → `dev-scenario-launcher` (0066) →
-**`demo-sandbox`** (current, no new migration).
+`demo-sandbox` →
+**`checkin-hooks-order-fix`** (current, no new migration).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-demo-sandbox.zip`
-- **Tag:** `demo-sandbox`
-- **Contains:** everything above, plus the onboarding/help copy fixes from the
-  audit — the graph step now renders both an NRS (0–10) and a GAS (banded)
-  live chart (passing `kind` to `GoalProgressView`); the check-in tour and
-  Help are kind-agnostic and mention training + the optional video;
-  new-goal/suggestion Help cover NRS-vs-GAS + GAS levels + the video toggle;
-  clinician Help describes the Training panel and the visit note; new `intro`
-  keys `graphNrsLabel`/`graphGasLabel`/`graphSampleGoalNrs` (en+da), plus the
-  **dev-only Scenarios launcher** (§5.9, migration `0066`) and the **no-auth
-  `/demo` sandbox** (§5.10, no migration).
-- **DB needed:** migrations through **0066** applied (0066 is dev-only). The
-  auth launcher needs `NEXT_PUBLIC_ENABLE_DEV_TOOLS=1` + `ENABLE_DEV_TOOLS=1`
-  + `SUPABASE_SERVICE_ROLE_KEY`; the `/demo` sandbox needs only
+- **Zip:** `treatment-companion-checkin-hooks-order-fix.zip`
+- **Tag:** `checkin-hooks-order-fix`
+- **Fixes:** a React rules-of-hooks crash in the patient check-in
+  (`app/[locale]/checkin/page.tsx`). The `confirmLeave` `useState` added with the
+  Cancel-dialog work was declared **below** the page's early returns
+  (`ThanksView` / `CheckinSkeleton` / `null`). On the loading→loaded transition
+  the hook count changed by one, so React threw **minified error #310**
+  ("Rendered more hooks than during the previous render"), which surfaced as the
+  global error screen (`app/global-error.tsx`). It only reproduced for a patient
+  whose check-in actually loads content (e.g. test1, which has a pending prompt);
+  patients with no pending prompt hit an early `return null` and never reached the
+  extra hook. **Fix:** moved that `useState` up with the other state hooks, above
+  all early returns; corrected the now-stale "no confirmation dialog" comment.
+  No other files changed. (Note: this was a pre-existing latent bug independent of
+  the GAS goal — the re-seed just made test1 the patient that opens the check-in.)
+- **Everything else** is unchanged from `demo-sandbox` (onboarding/help copy,
+  NRS+GAS graphs, training days, visit note, dev Scenarios launcher §5.9, no-auth
+  `/demo` sandbox §5.10).
+- **DB needed:** unchanged — migrations through **0066** (0066 is dev-only). No
+  new migration in this build. The auth launcher needs
+  `NEXT_PUBLIC_ENABLE_DEV_TOOLS=1` + `ENABLE_DEV_TOOLS=1` +
+  `SUPABASE_SERVICE_ROLE_KEY`; the `/demo` sandbox needs only
   `NEXT_PUBLIC_ENABLE_DEMO=1` (no DB, no auth).
 
 ---

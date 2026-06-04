@@ -111,6 +111,10 @@ function CheckinPageInner() {
   // persisted draft) because Blobs can't be serialised to storage and
   // are only relevant in this session, right before submit.
   const [videos, setVideos] = useState<Record<string, RecordedVideo>>({});
+  // Whether the "leave this check-in?" confirmation dialog is open. Must
+  // live here, above every early return below, so the hook order is stable
+  // across the loading → loaded transition (React rules of hooks).
+  const [confirmLeave, setConfirmLeave] = useState(false);
 
   // Redirect home if there's nothing to check in on. Skip during submit
   // (the thanks view takes over) and skip while data is still loading.
@@ -195,11 +199,9 @@ function CheckinPageInner() {
     return typeof draft.ratings[goal.id] === 'number';
   })();
 
-  // Forgiving exit: the draft is persisted on every change, so leaving
-  // is always safe. "Save & finish later" just navigates home — no
-  // discard, no confirmation dialog. The patient resumes exactly where
-  // they left off next time they open the check-in.
-  const [confirmLeave, setConfirmLeave] = useState(false);
+  // Cancelling opens a confirmation dialog (Leave for now / Keep going).
+  // The draft is persisted on every change, so leaving never loses input —
+  // the patient resumes exactly where they left off next time.
   const onCancel = () => {
     setConfirmLeave(true);
   };
