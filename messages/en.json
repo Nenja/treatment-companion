@@ -395,7 +395,7 @@
       "marksCount": "Marks",
       "emptyHint": "Tap the face to add a mark.",
       "download": "Download image (PNG)",
-      "downloadHelper": "Download a PNG to paste into the patient\u2019s record.",
+      "downloadHelper": "Download a PNG to paste into the patient’s record.",
       "exportTitle": "Face — botulinum toxin",
       "exportDose": "Dose:"
     }
@@ -1048,5 +1048,29 @@
     "errSameAsCurrent": "Please choose a password different from your current one.",
     "errWeak": "Please choose a stronger password.",
     "errGeneric": "Could not update your password. Please try again."
+  },
+  "visitChanges": {
+    "title": "Since last visit",
+    "subTreatment": "What's changed since the last treatment, {date}.",
+    "subCycle": "What's changed since this cycle began, {date}.",
+    "empty": "No new check-ins since the last visit.",
+    "checkinsLabel": "Check-ins & goal movement",
+    "weeks": "Weeks checked in: {weeks}",
+    "noGoalMovement": "No goal ratings recorded yet.",
+    "trainingLabel": "Training",
+    "trainingHome": "{days, plural, one {Home exercises on # day} other {Home exercises on # days}}",
+    "trainingTherapist": "{count, plural, one {# session with a therapist} other {# sessions with a therapist}}",
+    "trainingNone": "No training logged since then.",
+    "videosLabel": "Videos recorded",
+    "videoItem": "{goal} — week {week}",
+    "archived": "archived",
+    "improved": "improved",
+    "declined": "declined",
+    "unchanged": "unchanged",
+    "gasM2": "much worse than expected",
+    "gasM1": "a little worse than expected",
+    "gas0": "as expected",
+    "gasP1": "better than expected",
+    "gasP2": "much better than expected"
   }
 }
