@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `treatment-modality-seam`._
+> _Last updated for build tag: `video-playback`._
 
 ---
 
@@ -531,54 +531,64 @@ GAS option, `/demo` deleted, `clinician/patient` forced dynamic) →
 `observation` table + `import_observations` RPC + clinician import tool) →
 **`treatment-modality-seam`** (0070; WP4 futureproofing — `treatment_modality`
 enum + `treatment_cycle.modality` column defaulting to botulinum toxin; additive,
-BoNT flow unchanged; current).
+BoNT flow unchanged) →
+**`video-playback`** (no migration; clinicians can play back patient check-in
+videos via signed URLs — reuses the 0062 `goal-videos` bucket; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-treatment-modality-seam.zip`
-- **Tag:** `treatment-modality-seam`
-- **Change:** a **futureproofing seam for WP4 (baclofen pumps & surgery)** —
-  the model, types, and UI stop *assuming* every treatment is botulinum
-  toxin. Strictly additive and backward-compatible: everything defaults to
-  `botulinum_toxin` and the existing BoNT flow is byte-for-byte unchanged. No
-  pump/surgery capture is built — this is readiness only.
-  - **Schema (migration 0070):** new `treatment_modality` enum
-    (`botulinum_toxin` / `baclofen_pump` / `surgery` / `other`) + a
-    `treatment_cycle.modality` column, `not null default 'botulinum_toxin'`
-    so existing rows backfill to BoNT. No clinical logic branches on it yet.
-    The column comment documents the extension plan: each future modality
-    attaches its OWN detail table keyed on the cycle; concurrent pathways are
-    parallel cycles (the active index is already non-unique).
-  - **Types + data layer:** `TreatmentModality` in `lib/types.ts`; threaded
-    through `ClinicianPatientData.cycle` (select + map in
-    `useClinicianPatientData`). Reads elsewhere (patient home, history) were
-    left untouched — they don't need it yet.
-  - **UI:** a quiet modality pill under the cycle date on the clinician
-    patient view (reads "Botulinum toxin" for every current cycle — the point
-    is to make modality a first-class, visible concept). i18n
-    `treatment.modality.*` (en/da).
-  - **Interop:** the EHR export gained an optional `modality` on its cycle
-    input; it prints a "Treatment modality: …" line **only** when the
-    modality is non-default, so today's BoNT exports are unchanged.
-  - **Parity:** 1065 == 1065. Page count unchanged (60).
-- **DB needed:** **run migration 0070** (`0070_treatment_modality.sql`) —
-  adds the enum + column. Additive, safe to re-run (guarded type,
-  `add column if not exists`). A standalone copy is attached.
-- **What this does NOT do (deferred to when WP4 is scheduled):** no
-  pump/surgery detail tables, no modality picker in the new-cycle flow (so
-  only BoNT cycles can be created today), no modality-specific capture or
-  views, no concurrency-of-active-cycles UI. See §8.
-- **⚠ QA (can't render/test here):** confirm existing patients still load
-  and every current cycle shows a "Botulinum toxin" pill; confirm the EHR
-  export is unchanged for BoNT patients (the modality line must NOT appear);
-  confirm new cycles still create normally (they inherit the default).
+- **Zip:** `treatment-companion-video-playback.zip`
+- **Tag:** `video-playback`
+- **Change:** clinicians can now **play back** the short videos patients
+  record at check-in. Previously the clinician view only showed a *count* of
+  videos (indicator-only); now each is playable. **Frontend only — no
+  migration**; it reuses the `goal-videos` bucket + policies from 0062.
+  - **Access was already in place:** migration 0062 created the private
+    `goal-videos` bucket with a "clinician reads patient goal videos" policy
+    (read granted when `clinician_can_access_patient(folder)` — i.e. an active
+    session). So `createSignedUrl` works from the clinician's own session; no
+    service role needed.
+  - **Signed-URL hook:** `lib/supabase/goalVideo.ts` → `useGoalVideoUrl(path)`
+    creates a 1-hour signed URL for a `goal-videos` object (refetches before
+    expiry).
+  - **Player:** `components/clinician/VideoPlayerModal.tsx` — a11y modal
+    (`useModalA11y`: Esc / backdrop / button to close) rendering a native
+    `<video controls playsInline>` from the signed URL, with loading / error
+    / unsupported states.
+  - **Launch point:** `VisitChanges` (the "since last visit" summary, which
+    already had the video count) now lists each clip as a play button labelled
+    by goal + week. `videoPath` was already threaded into the clinician data
+    per rating, so no data-layer change was needed.
+  - **i18n:** `visitChanges.videosHeading/videoLabel/videoTitle` +
+    `clinician.video.{close,loading,error,unsupported}` (en/da). Parity
+    1072 == 1072. (The old `visitChanges.statVideo` count key is now unused
+    but left in place.)
+- **DB needed:** **none** — migration count stays at **0070**. (0062's bucket
+  + policies must already be applied, which they are on any current deploy.)
+- **Scope note:** playback is surfaced in the visit-review window (videos
+  since the last treatment). Videos recorded earlier in the cycle aren't
+  listed there yet — a per-goal playback entry point is a small follow-up.
+- **⚠ QA (can't test Storage / playback / devices here):** with a patient
+  who has recorded a video this visit window, open the clinician patient view,
+  confirm a **play button per clip** appears under the visit summary, and that
+  tapping it streams the video in the modal. Verify a clinician **without** an
+  active session for that patient cannot load it (signed-URL creation should
+  fail — the policy denies it). Check playback on real iOS Safari / Android
+  Chrome (codecs/orientation).
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`treatment-modality-seam`** — zip
+  `treatment-companion-treatment-modality-seam.zip` (migration **0070**). WP4
+  futureproofing: a `treatment_modality` enum + `treatment_cycle.modality`
+  column (default `botulinum_toxin`), threaded into the clinician cycle type +
+  a quiet modality pill, plus an optional (non-default-only) modality line in
+  the EHR export. Strictly additive; the BoNT flow is unchanged and nothing
+  branches on the column yet. **Run migration 0070.**
 - **`wearable-scaffold`** — zip `treatment-companion-wearable-scaffold.zip`
   (migration **0069**). Vendor-neutral wearable / PGHD ingestion layer: a
   FHIR-`Observation`-aligned, metric-agnostic `observation` table + the
@@ -647,7 +657,11 @@ BoNT flow unchanged; current).
 
 ## 8. Pending / next slices
 
-1. **Clinician video playback** (signed-URL `<video>`) — §5.5. Next after device test.
+1. **(DONE in `video-playback`)** Clinician video playback (signed-URL
+   `<video>` via `useGoalVideoUrl` + `VideoPlayerModal`, launched from
+   `VisitChanges`). Remaining: real-device playback QA (iOS/Android codecs),
+   and an optional per-goal playback entry point for videos recorded earlier
+   in the cycle (today's list covers the since-last-visit window).
 2. **On-device video testing** — capture/upload/codecs/Storage — by the user.
 3. **Training overview follow-ups** — tap-a-week caption, history (past cycles),
    prescribed-frequency target — §5.6.
