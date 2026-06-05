@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `unified-header`._
+> _Last updated for build tag: `batch-a`._
 
 ---
 
@@ -60,9 +60,10 @@ blocks that host, so a real build **fails** unless you stub them first.
    the brand now lives in each page header via `AppHeader` / `BrandMark` (§5.3).
    layout.tsx still contains only the two font calls to stub + `{children}`.
 4. `rm -rf .next && NEXT_TELEMETRY_DISABLED=1 npx next build`
-5. **Success = exit 0 and "✓ Generating static pages (60/60)".** (55 before
-   the dev tools; +2 for `/dev/scenarios`, +2 for the no-auth `/demo` sandbox,
-   each in two locales, plus the API route.) The only
+5. **Success = exit 0 and "✓ Generating static pages (58/58)".** (55 before
+   the dev tools; +2 for `/dev/scenarios` in two locales, plus the API route.
+   The no-auth `/demo` sandbox was removed in `batch-a`, dropping the count
+   from 60 to 58.) The only
    expected warning is a Sentry/OpenTelemetry "critical dependency" message
    (unrelated, ignore).
 6. **Restore** `app/[locale]/layout.tsx` from `/tmp/layout.tsx.orig`, then verify:
@@ -171,10 +172,22 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 - `create_goal_for_patient(p_patient_id, p_patient_facing_text, p_smart_text,
   p_nrs_question, p_nrs_direction, p_nrs_cut_low_low, p_nrs_cut_low,
-  p_nrs_cut_zero, p_nrs_cut_high)` → uuid (NRS goal).
+  p_nrs_cut_zero, p_nrs_cut_high)` → uuid (NRS goal). Signature unchanged, but
+  since `batch-a` the clinician no longer sets cut-offs — the hook sends fixed
+  defaults `1/3/5/7` (option B; see §7).
 - `create_gas_goal_for_patient(p_patient_id, p_patient_facing_text,
   p_smart_text, p_anchor_minus2 … p_anchor_plus2)` → uuid (GAS goal).
   Both return the new goal id.
+- `approve_suggestion(p_suggestion_id, p_patient_facing_text, p_smart_text,
+  p_nrs_question, p_nrs_direction, 4 cuts)` → uuid. Approves a patient
+  suggestion as an **NRS** goal (sends default cuts since `batch-a`). Marks the
+  suggestion `'active'` (the only sanctioned path to that status —
+  `set_suggestion_status` forbids `'active'`).
+- `approve_suggestion_gas(p_suggestion_id, p_patient_facing_text, p_smart_text,
+  p_anchor_minus2 … p_anchor_plus2)` → uuid (**0067**, `batch-a`). Approves a
+  suggestion as a **GAS** goal; mirrors `approve_suggestion` (same lookup /
+  access check / status flip / audit) but inserts a GAS goal. Additive; does
+  not touch the check-in path.
 - `set_approved_goal_video_enabled(p_goal_id, p_enabled)` (0062, SECURITY
   DEFINER, checks `clinician_can_access_patient`). New-goal flow calls this
   after creating the goal, so the create RPCs didn't need changing.
@@ -203,7 +216,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0063**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0067**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -218,8 +231,11 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
   `set_cycle_clinician_note`.
 - `0066_dev_seed_functions.sql` — DEV-ONLY. Wraps the seed blocks into
   `dev_seed_b1..b8()` + `dev_reseed_all()` for one-click reseed.
+- `0067_approve_suggestion_gas.sql` — **`batch-a`, RUN THIS.** Additive RPC
+  `approve_suggestion_gas` so a clinician can approve a suggestion as a GAS
+  goal. `create or replace`, no schema change, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0066 are applied (0066 is dev-only).
+> If unsure whether the user's DB is current, confirm 0062–0067 are applied (0066 is dev-only; **0067 is required for the new GAS suggestion-approval**).
 
 ---
 
@@ -290,6 +306,23 @@ missing-marker position, and tap-caption all switch on `kind`. The data
 page, and `GoalGraphModal` (the tap-to-expand view). `OnboardingWizard` stays
 GAS (the default). Physio patient query now also selects `goal_kind`.
 
+**NRS direction cue (`nrs-graph-direction`):** the NRS chart now shows which way
+is clinically better — previously it always put 10 at the top with no colour or
+label, so a *lower-is-better* goal (pain, spasm counts) read upside-down (an
+improving downward line looked like a decline — the same trap fixed on the
+"Since last visit" chip). `GoalProgressView`/`GoalGraphModal` take an optional
+`nrsDirection?: 'higherIsBetter' | 'lowerIsBetter'`; when set, the chart tints the
+**good half** with a soft sage gradient (fading from the good extreme to the
+midline, so it implies direction, not a pass mark) and prints a small
+`↑ better` / `↓ better` cue at the good end of the y-axis (string
+`treatment.axisBetter`), plus appends the direction to the SVG `aria-label`. The
+direction is threaded from existing goal data: `g.nrs?.direction` (clinician),
+`g.nrsDirection` (physio), `g.direction` (demo), and a newly-selected
+`nrs_direction` on the patient-home goal (`patientHome.ts`); the onboarding NRS
+sample passes `higherIsBetter`. GAS charts ignore the prop (their sage/amber bands
+already encode direction). Gradient uses a `useId()`-suffixed id so multiple charts
+on a page don't collide. Display-only; no DB/RPC/migration change.
+
 ### 5.5 Goal video (optional patient video)
 - **Capture pipeline DELIVERED.** Clinician enables video per goal (toggle on
   the new-goal form → `set_approved_goal_video_enabled`). At check-in, for a
@@ -355,18 +388,13 @@ route run; both 404/disable otherwise. Needs `SUPABASE_SERVICE_ROLE_KEY` (the
 admin features already use it). **Unverified by me** — I can’t exercise auth or
 a live Supabase; the sign-in/session/seed flow needs on-machine testing.
 
-### 5.10 No-auth demo sandbox
-**DELIVERED.** A `/demo` page that needs **no login and no Supabase** — it
-renders the real presentational components (`GoalProgressView`,
-`TrainingOverview`, the NRS/GAS rating pickers) from made-up fixtures so anyone
-can click through scenarios. Pieces: `lib/demo/fixtures.ts` (three scenarios:
-going well / struggling / missed check-ins, each with NRS + GAS goals, training,
-a visit note) and `app/[locale]/demo/page.tsx` (scenario picker + a "Clinician
-view" = graphs + training + read-only note, and an interactive "Patient
-check-in" view = the real rating pickers with local state, nothing saved).
-Gated by `NEXT_PUBLIC_ENABLE_DEMO=1` (independent of the dev launcher’s flag,
-so the demo can be exposed without the auth launcher). No migration, no
-network — so this one is fully verifiable from the build.
+### 5.10 No-auth demo sandbox — REMOVED (`batch-a`)
+**DELETED** per request. The `/demo` page (`app/[locale]/demo/`) and its
+fixtures were removed in `batch-a`. It was a no-login sandbox rendering the real
+presentational components from made-up fixtures; it's gone now, dropping the
+build page count 60 → 58. (Historical note: it was gated by
+`NEXT_PUBLIC_ENABLE_DEMO=1` and used `lib/demo/fixtures.ts`.) If a public demo
+is ever wanted again, recreate from git history.
 
 ### 5.8 "Since last visit" — auto-generated change list
 `components/clinician/VisitChanges.tsx` — a **read-only, computed** card on the
@@ -481,39 +509,87 @@ medication columns must be verified before surfacing them on the patient side
 `visit-changes-direction-fix` →
 `patient-home-goal-graph` →
 `patient-home-treated-muscles` →
-**`unified-header`** (current, no new migration).
+`unified-header` →
+`nrs-graph-direction` →
+**`batch-a`** (0067; NRS cut-off UI dropped, suggestion-approval gained a
+GAS option, `/demo` deleted, `clinician/patient` forced dynamic — current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-unified-header.zip`
-- **Tag:** `unified-header`
-- **Change:** unified every page header into one shared `AppHeader` (brand left;
-  optional back / title / patient-name; help + account always right) and **removed
-  the global `BrandBar` strip + the `TopBar` bar** (both deleted). Fixes the two
-  reported issues: the account menu drifting **left** (custom headers used
-  `justify-between` with the controls as the lone child → pinned left) and the
-  brand/menus sitting on **separate lines** with an empty-looking second strip
-  (brand was its own global bar). New `components/layout/AppHeader.tsx` +
-  `BrandMark.tsx`; `AppShell` now renders `AppHeader`; nine single-row pages
-  converted; the two two-row patient headers (`clinician/patient`,
-  `physio/patient`) get a chevron `BrandMark` prepended; the check-in wizard
-  (`WizardLayout`) gained a brand + help/account row above its cancel/step row.
-  The brand aligns to the content column purely via the header width class — the old
-  BrandBar `ResizeObserver` alignment hack is gone. **No new i18n keys** (page-title
-  eyebrows reuse existing keys; the physio-landing eyebrow moved into the body).
-  **No DB / RPC / migration change.** layout.tsx restore sha is now
-  `6b5bb2fd…` (§2.1).
-- **⚠ Visual QA (can't render here):** check the busy clinician working pages on
-  **mobile** — `clinician/{patient,treatment,history,new-goal,suggestion}`,
-  `physio/{patient,progress}` — where the header now packs brand + back + end-session
-  + help + account; confirm no overflow/clipping and that the account menu is now
-  right everywhere and the brand shares the line.
+- **Zip:** `treatment-companion-batch-a.zip`
+- **Tag:** `batch-a`
+- **Change:** three things, all from the page-by-page review.
+  1. **NRS goals no longer show GAS cut-offs** in setup. The clinician now
+     configures an NRS goal with just the 0–10 question + direction; there is
+     no cut-off UI. Done as **option B (UI-only)**: the schema still requires
+     four cut-offs and the check-in RPC still derives an (unused) GAS bucket
+     from them, so rather than rewrite the critical check-in path, the hooks
+     now send fixed default cut-offs (`1/3/5/7`) behind the scenes. The graph
+     and the "since last visit" verdict already read the raw 0–10 + direction,
+     so the derived GAS stays the unused byproduct it already was. Cut-off
+     columns retain default data; **no schema/check-in change.**
+  2. **Suggestion-approval can now create a GAS goal**, not only NRS. The
+     approve form gained a measurement-model toggle + five anchor inputs
+     (reusing new-goal's GAS strings; 3 new toggle keys, parity verified).
+     Backed by a new **additive RPC `approve_suggestion_gas` (migration 0067)**
+     mirroring `approve_suggestion` but inserting a GAS goal — needed because
+     `set_suggestion_status` forbids setting `'active'`. Does not touch the
+     check-in path.
+  3. **`/demo` deleted** (no-auth sandbox, per request); orphaned
+     `components/clinician/GasCutPoints.tsx` removed.
+- **Build-blocker fixed (pre-existing, unrelated to the above):** statically
+  prerendering `clinician/patient` tripped a Next 15 RSC client-manifest
+  bundler error (`page.tsx#default` not in manifest). Confirmed Batch A is
+  innocent — that page imports nothing this batch changed, and the build is
+  clean 58/58 with the page stubbed. Fixed by adding
+  `app/[locale]/clinician/patient/layout.tsx` with `export const dynamic =
+  'force-dynamic'`, which skips SSG for this one auth-gated, session-only
+  route (its prerendered shell was empty anyway) and matches its real
+  runtime behaviour. No other route affected.
+- **Files:** `lib/supabase/clinicianPatient.ts`,
+  `app/[locale]/clinician/{new-goal,suggestion}/page.tsx`,
+  `app/[locale]/clinician/patient/layout.tsx` (new),
+  `supabase/migrations/0067_approve_suggestion_gas.sql` (new),
+  `messages/{en,da}.json`; deleted `app/[locale]/demo/` +
+  `components/clinician/GasCutPoints.tsx`.
+- **DB needed:** run **migration 0067** (additive function; safe, idempotent
+  via `create or replace`). Nothing else; no env changes. Migrations now
+  through **0067**.
+- **⚠ QA (can't test here):** (a) approve a suggestion as a **GAS** goal
+  end-to-end after running 0067; (b) create an **NRS** goal from both
+  new-goal and suggestion now that the cut-off UI is gone — confirm it saves
+  and the patient check-in + graph work; (c) confirm `clinician/patient`
+  loads on Vercel with the new `force-dynamic` segment.
+
+---
+
+## 7b. Previous delivered build
+
+- **Zip:** `treatment-companion-nrs-graph-direction.zip` · **Tag:** `nrs-graph-direction`
+- **Change:** made the **NRS progress graph show which way is positive** (§5.4).
+  The chart always drew 0 at the bottom / 10 at the top with no colour or label, so
+  *lower-is-better* goals (pain, spasm frequency) read upside-down. Now, given the
+  goal's direction, the chart tints the **good half** with a soft sage gradient and
+  shows a small `↑ better` / `↓ better` cue at the good end of the y-axis (and in the
+  SVG `aria-label`). `GoalProgressView` + `GoalGraphModal` gained an optional
+  `nrsDirection` prop, threaded from existing goal data on the clinician, physio,
+  demo, and onboarding charts, plus a newly-selected `nrs_direction` on the
+  patient-home goal. GAS charts are unchanged (their bands already encode direction).
+  One new string `treatment.axisBetter` (en "better" / da "bedre"); en/da parity
+  verified. Files: `components/clinician/{GoalProgressView,GoalGraphModal}.tsx`,
+  `lib/supabase/patientHome.ts`, `app/[locale]/{page,clinician/patient,physio/patient,
+  demo}/page.tsx`, `components/feedback/OnboardingWizard.tsx`, `messages/{en,da}.json`.
+  **No DB / RPC / migration change.**
+- **⚠ Visual QA (can't render here):** open an NRS goal graph for a **lower-is-better**
+  goal (clinician view, the enlarged modal, and the patient-home pop-up) and confirm
+  the sage tint sits on the bottom half with `↓ better` at the bottom; for a
+  higher-is-better goal the tint/label sit at the top. Check the small label doesn't
+  collide with a week-1 data point at the extreme.
 - **Still on the original request (NOT built):** patient-home button for **medication /
-  assistive devices**. Data exists but isn't loaded on the home page, and patient RLS
-  read access to medication must be confirmed first (originally clinician/therapist
-  scoped) — see §8. Awaiting go-ahead.
+  assistive devices** — data exists but isn't loaded on the home page, and patient RLS
+  read access to medication must be confirmed first — see §8.
 - **DB needed:** unchanged — migrations through **0066**. No new migration, no env
   changes.
 

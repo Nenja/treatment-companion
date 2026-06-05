@@ -476,16 +476,40 @@ export function useClinicianPatientData(
 // Mutations called from the clinician patient view + suggestion review.
 // ---------------------------------------------------------------------------
 
+/**
+ * NRS goals are tracked purely as a 0–10 score — the graph plots the
+ * raw value and the "since last visit" verdict reads it plus the
+ * direction. The server still derives an (unused) GAS bucket from cut
+ * points and the schema still requires them, so the clinician no longer
+ * sets cut-offs; we send these fixed, valid defaults instead. (The
+ * "drop GAS cut-offs" change kept this server-side rather than reworking
+ * the check-in RPC.)
+ */
+const DEFAULT_NRS_CUTS = {
+  cutLowLow: 1,
+  cutLow: 3,
+  cutZero: 5,
+  cutHigh: 7
+} as const;
+
 export interface ApproveSuggestionInput {
   suggestionId: string;
   patientFacingText: string;
   smartText: string;
   nrsQuestion: string;
   nrsDirection: NrsDirection;
-  cutLowLow: number;
-  cutLow: number;
-  cutZero: number;
-  cutHigh: number;
+}
+
+/**
+ * Approve a patient's suggestion as a GAS goal (five descriptive
+ * anchors) rather than an NRS goal. Backed by the approve_suggestion_gas
+ * RPC, which mirrors approve_suggestion but inserts a GAS goal.
+ */
+export interface ApproveSuggestionGasInput {
+  suggestionId: string;
+  patientFacingText: string;
+  smartText: string;
+  anchors: GasAnchors;
 }
 
 /**
@@ -603,10 +627,6 @@ export interface CreateGoalForPatientInput {
   smartText: string;
   nrsQuestion: string;
   nrsDirection: NrsDirection;
-  cutLowLow: number;
-  cutLow: number;
-  cutZero: number;
-  cutHigh: number;
 }
 
 /**
@@ -630,10 +650,10 @@ export function useCreateGoalForPatient() {
           p_smart_text: input.smartText,
           p_nrs_question: input.nrsQuestion,
           p_nrs_direction: input.nrsDirection,
-          p_nrs_cut_low_low: input.cutLowLow,
-          p_nrs_cut_low: input.cutLow,
-          p_nrs_cut_zero: input.cutZero,
-          p_nrs_cut_high: input.cutHigh
+          p_nrs_cut_low_low: DEFAULT_NRS_CUTS.cutLowLow,
+          p_nrs_cut_low: DEFAULT_NRS_CUTS.cutLow,
+          p_nrs_cut_zero: DEFAULT_NRS_CUTS.cutZero,
+          p_nrs_cut_high: DEFAULT_NRS_CUTS.cutHigh
         }
       );
       if (error) throw error;
@@ -753,10 +773,40 @@ export function useApproveSuggestion() {
         p_smart_text: input.smartText,
         p_nrs_question: input.nrsQuestion,
         p_nrs_direction: input.nrsDirection,
-        p_nrs_cut_low_low: input.cutLowLow,
-        p_nrs_cut_low: input.cutLow,
-        p_nrs_cut_zero: input.cutZero,
-        p_nrs_cut_high: input.cutHigh
+        p_nrs_cut_low_low: DEFAULT_NRS_CUTS.cutLowLow,
+        p_nrs_cut_low: DEFAULT_NRS_CUTS.cutLow,
+        p_nrs_cut_zero: DEFAULT_NRS_CUTS.cutZero,
+        p_nrs_cut_high: DEFAULT_NRS_CUTS.cutHigh
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
+/**
+ * Approve a suggestion as a GAS goal (five anchors). Mirrors
+ * useApproveSuggestion but calls approve_suggestion_gas.
+ */
+export function useApproveSuggestionGas() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (
+      input: ApproveSuggestionGasInput
+    ): Promise<string> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc('approve_suggestion_gas', {
+        p_suggestion_id: input.suggestionId,
+        p_patient_facing_text: input.patientFacingText,
+        p_smart_text: input.smartText,
+        p_anchor_minus2: input.anchors.minus2,
+        p_anchor_minus1: input.anchors.minus1,
+        p_anchor_zero: input.anchors.zero,
+        p_anchor_plus1: input.anchors.plus1,
+        p_anchor_plus2: input.anchors.plus2
       });
       if (error) throw error;
       return data as string;

@@ -39,6 +39,9 @@ export interface PatientHomeData {
     id: string;
     patientFacingText: string;
     kind: 'nrs' | 'gas';
+    /** NRS goals only: which way is clinically better (drives the graph's
+     *  direction cue). 'higherIsBetter' for GAS / when unknown. */
+    nrsDirection: 'higherIsBetter' | 'lowerIsBetter';
     ratings: GoalRatingPoint[];
   }[];
   /**
@@ -156,7 +159,7 @@ export function usePatientHomeData(
       // 3. Active approved goals for this cycle
       const { data: goalsRows, error: gErr } = await supabase
         .from('approved_goal')
-        .select('id, patient_facing_text, goal_kind')
+        .select('id, patient_facing_text, goal_kind, nrs_direction')
         .eq('treatment_cycle_id', cycle.id)
         .eq('status', 'active')
         .order('approved_at', { ascending: true });
@@ -206,6 +209,9 @@ export function usePatientHomeData(
         id: g.id as string,
         patientFacingText: g.patient_facing_text as string,
         kind: (g.goal_kind as 'nrs' | 'gas') ?? 'gas',
+        nrsDirection:
+          (g.nrs_direction as 'higherIsBetter' | 'lowerIsBetter') ??
+          'higherIsBetter',
         ratings: (ratingsByGoal.get(g.id as string) ?? []).sort(
           (a, b) => a.weekNumber - b.weekNumber
         )

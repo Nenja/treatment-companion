@@ -1,61 +1,87 @@
-Treatment Companion — build tag: unified-header
-================================================
+BUILD TAG: batch-a
+=====================================================================
 
-WHAT CHANGED
-------------
-One unified page header everywhere. The brand ("Treatment Companion" + sage
-chevron) and the menus now share a single line on every page, and the account
-menu is always hard right.
+WHAT CHANGED (three things, all from the page-by-page review)
+---------------------------------------------------------------------
+1. NRS goals no longer show GAS cut-offs in setup.
+   - The clinician now configures an NRS goal with just the 0-10
+     question + direction. The four cut-off inputs are gone from both
+     "Record a goal" (new-goal) and "Approve a suggestion".
+   - Done as OPTION B (UI-only): the database still requires four
+     cut-offs per NRS goal and the check-in RPC still derives an
+     (unused) GAS level from them, so instead of rewriting the critical
+     weekly check-in path, the app now sends fixed default cut-offs
+     (1/3/5/7) behind the scenes. The graph and the "since last visit"
+     verdict already use the raw 0-10 score + direction, so the derived
+     GAS stays the unused byproduct it already was.
+   - NO schema change, NO check-in change. Cut-off columns keep getting
+     default data.
 
-Two reported issues fixed:
-  1. Account menu drifted LEFT on some pages. Cause: those headers used
-     `justify-between` with the controls as the only child, which pins a lone
-     child to the left. Now every header has a left (brand) and a right
-     (controls) group, so the account menu can never drift left.
-  2. Brand and menus were on SEPARATE lines (and the second strip looked empty
-     when a page header was sparse). Cause: the brand was a separate global
-     "BrandBar" strip rendered above each page's own header. That strip is now
-     removed; the brand lives inside each page header.
+2. A suggestion can now be approved as a GAS goal (not only NRS).
+   - The approve form has a measurement-model toggle (0-10 scale /
+     Descriptive levels) + five anchor inputs.
+   - Backed by ONE new additive RPC: approve_suggestion_gas
+     (migration 0067). Needed because set_suggestion_status forbids
+     setting 'active', so GAS approval needed its own approve path.
 
-DETAILS
--------
-- NEW  components/layout/AppHeader.tsx  — shared header: brand left; optional
-       back / title / patient-name (middle) / actions slots; help + account
-       always right. Width matches the page content column (no JS alignment).
-- NEW  components/layout/BrandMark.tsx  — chevron mark + optional wordmark.
-- DEL  components/layout/BrandBar.tsx    (global brand strip — superseded)
-- DEL  components/layout/TopBar.tsx      (account/help-only bar — superseded)
-- AppShell now renders AppHeader (patient home + patient-info fixed automatically).
-- Converted to AppHeader: clinician landing/admin/history/treatment/new-goal/
-  suggestion, physio landing/progress, visit-code.
-- Two-row patient headers (clinician/patient, physio/patient) keep their
-  name + clinical-summary layout and just gain a chevron BrandMark on the left.
-- Check-in wizard (WizardLayout) gained a brand + help/account row above its
-  cancel/save + "step X of Y" row (progress bars unchanged).
+3. /demo deleted (no-auth sandbox, as requested). Orphaned helpers
+   removed too (components/clinician/GasCutPoints.tsx, lib/demo/).
 
-- No database / RPC / migration change. Migrations still through 0066.
-- No new translation keys (page-title eyebrows reuse existing keys; the
-  physio-landing eyebrow moved into the page body). en/da parity verified.
+Also fixed a PRE-EXISTING build blocker (not caused by the above):
+statically prerendering /clinician/patient hit a Next 15 React Server
+Components client-manifest bug. Added a tiny segment layout that forces
+that one auth-gated route dynamic (export const dynamic =
+'force-dynamic'). It's the correct behaviour for a session-only page
+anyway, and no other route is affected.
 
-BUILD / VERIFY
---------------
-- `npx tsc --noEmit` -> exit 0.
-- Production build -> exit 0, "Generating static pages (60/60)".
-- Only warnings are the known benign Sentry/OpenTelemetry "critical dependency"
-  messages from app/global-error.tsx.
 
-DEPLOY
-------
-1. Unzip, replace your repo contents (node_modules / .next are not included).
-2. Push to GitHub -> Vercel builds & deploys. No SQL to run, no env changes.
+DEPLOY STEPS
+---------------------------------------------------------------------
+1. RUN THE MIGRATION (required for the GAS suggestion-approval option):
+   In the Supabase SQL editor, run:
+       supabase/migrations/0067_approve_suggestion_gas.sql
+   It is additive (create or replace), changes no tables, and is safe
+   to re-run. If you skip it, approving a suggestion as GAS will error;
+   NRS approval and everything else still works.
 
-PLEASE VISUALLY QA (I can't render the app here)
-------------------------------------------------
-On a PHONE / narrow window, check the busy clinician working pages where the
-header now packs brand + back + end-session + help + account:
-  clinician/patient, clinician/treatment, clinician/history,
-  clinician/new-goal, clinician/suggestion, physio/patient, physio/progress
-Confirm: no overflow/clipping in the header row; the account menu is on the
-RIGHT everywhere; and the brand shares the line with the menus. On wider
-screens the full "Treatment Companion" wordmark should appear; on the sparse
-landing pages (patient home, clinician/physio landing) it shows at all widths.
+2. Deploy the code: push the repo to GitHub -> Vercel as usual.
+   No environment-variable changes. (NEXT_PUBLIC_ENABLE_DEMO is no
+   longer used by anything.)
+
+
+HOW TO CONFIRM
+---------------------------------------------------------------------
+- Record a goal (clinician -> patient -> "Record a goal"): the NRS
+  path should ask only for the 0-10 question + direction (no cut-off
+  fields) and save. The GAS path is unchanged.
+- Approve a suggestion (clinician -> patient -> a suggestion ->
+  "Approve"): you should see a model toggle. NRS = question + direction.
+  GAS = five anchor lines. Both should save and mark the suggestion
+  active.
+- /demo should now 404.
+- /clinician/patient should load normally after a visit-code unlock.
+
+
+VISUAL / FUNCTIONAL QA FLAGS (could not be tested in the build sandbox -
+no running app, no Supabase, no auth)
+---------------------------------------------------------------------
+[ ] GAS suggestion-approval end-to-end AFTER running 0067: approve a
+    suggestion as GAS, confirm a GAS goal appears for the patient and
+    the patient can check in against it.
+[ ] NRS goal creation with no cut-off UI, from BOTH new-goal and
+    suggestion: confirm it saves, the patient can check in, and the
+    0-10 progress graph renders.
+[ ] /clinician/patient loads correctly on Vercel with the new
+    force-dynamic segment (it builds clean here, but Vercel is the real
+    target).
+[ ] da/en wording of the new model toggle ("0-10 scale" / "Descriptive
+    levels"; "0-10-skala" / "Beskrivende niveauer").
+
+
+BUILD VERIFICATION
+---------------------------------------------------------------------
+- next build: exit 0, "Generating static pages (58/58)" (was 60 before
+  /demo was deleted).
+- npx tsc --noEmit: exit 0.
+- en/da translation parity: 988 == 988 keys, no diffs.
+- Migrations now through 0067.
