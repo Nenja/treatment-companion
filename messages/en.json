@@ -467,6 +467,12 @@
         "withings": "Withings",
         "other": "Other"
       }
+    },
+    "video": {
+      "close": "Close",
+      "loading": "Loading video…",
+      "error": "Couldn't load this video. The link may have expired — close and reopen it.",
+      "unsupported": "Your browser can't play this video."
     }
   },
   "intro": {
@@ -1168,6 +1174,9 @@
     "gasM1": "a little worse than expected",
     "gas0": "as expected",
     "gasP1": "better than expected",
-    "gasP2": "much better than expected"
+    "gasP2": "much better than expected",
+    "videosHeading": "Videos",
+    "videoLabel": "{goal} · Week {week}",
+    "videoTitle": "{goal} — Week {week}"
   }
 }

@@ -471,6 +471,12 @@
         "withings": "Withings",
         "other": "Andet"
       }
+    },
+    "video": {
+      "close": "Luk",
+      "loading": "Indlæser video…",
+      "error": "Kunne ikke indlæse videoen. Linket kan være udløbet — luk og åbn igen.",
+      "unsupported": "Din browser kan ikke afspille denne video."
     }
   },
   "intro": {
@@ -1172,6 +1178,9 @@
     "gasM1": "lidt værre end forventet",
     "gas0": "som forventet",
     "gasP1": "bedre end forventet",
-    "gasP2": "meget bedre end forventet"
+    "gasP2": "meget bedre end forventet",
+    "videosHeading": "Videoer",
+    "videoLabel": "{goal} · Uge {week}",
+    "videoTitle": "{goal} — Uge {week}"
   }
 }
