@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `read-aloud`._
+> _Last updated for build tag: `mandatory-setup`._
 
 ---
 
@@ -518,52 +518,68 @@ medication columns must be verified before surfacing them on the patient side
 GAS option, `/demo` deleted, `clinician/patient` forced dynamic) →
 **`batch-b`** (localization sweep — no new migration) →
 **`batch-c`** (minor polish — no new migration) →
-**`read-aloud`** (0068; read-aloud / text-to-speech accessibility opt-in; current).
+**`read-aloud`** (0068; read-aloud / text-to-speech accessibility opt-in) →
+**`mandatory-setup`** (no new migration; first-run setup made mandatory via
+`SetupGate`, read-aloud added to the wizard's accessibility step; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-read-aloud.zip`
-- **Tag:** `read-aloud`
-- **Change:** new **read-aloud (text-to-speech) accessibility option** for
-  patients. (Note: the *visual* accessibility options the request also
-  mentioned — text size, colour/contrast palettes, night mode, layout,
-  reduced motion — already existed in the app's appearance system, so this
-  build only adds the genuinely missing piece. Voice input / speech-to-text
-  was explicitly deferred.)
-  - **Opt-in pref:** `profile.read_aloud` (migration **0068**), loaded in
-    `useAuth` and written by `useSetReadAloud` (`lib/supabase/readAloud.ts`)
-    via the existing profile self-update path — same pattern as text scale /
-    palette. Off by default.
-  - **Toggle:** added to the existing `AppearanceSettings` (next to night
-    mode), so it appears everywhere that panel already shows, including the
-    profile page.
-  - **Mechanism:** `useSpeak` (`lib/useSpeak.ts`) wraps the browser's
-    on-device `speechSynthesis` (language from the current locale, da-DK /
-    en); **no audio leaves the device.** `ReadAloudButton`
-    (`components/feedback/ReadAloudButton.tsx`) is a self-gating speaker
-    button — it renders only when the user has the pref on AND the device
-    supports speech synthesis AND there is text — so callers drop it in with
-    no extra conditionals.
-  - **Placed on:** patient-home goal text (`GoalCard`), the weekly check-in
-    goal/question in both rating pickers (`GoalRatingPicker`,
-    `GasGoalRatingPicker`), and the `SafetyNotice`.
-  - **i18n:** `appearance.readAloud` / `appearance.readAloudHint`,
-    `a11y.readAloud` (en/da). Parity 1023 == 1023.
-- **DB needed:** run **migration 0068** (adds `profile.read_aloud`; additive,
-  safe to re-run). Also 0067 if not yet applied.
-- **⚠ Device QA (can't test audio here):** on real devices (especially iOS
-  Safari and Android Chrome), turn the toggle on in Appearance settings, then
-  confirm the speaker button appears on a goal / check-in / safety notice and
-  reads the text in the right language. Danish read-aloud depends on the
-  device having a da-DK voice installed. The button is correctly absent when
-  the pref is off or the device lacks speech synthesis.
+- **Zip:** `treatment-companion-mandatory-setup.zip`
+- **Tag:** `mandatory-setup`
+- **Change:** the first-run setup is now **mandatory** and its accessibility
+  step now includes read-aloud. Background-info scope is unchanged (patients
+  still give sex + date of birth; nothing new is collected from staff).
+  - **What already existed:** a per-role first-run wizard
+    (`OnboardingWizard`, gated on `profile.has_seen_intro`) that orients the
+    user and, for patients, collects sex + DOB (the `details` step), ending in
+    a `comfort` step that sets the *visual* accessibility prefs (text size,
+    day/night brightness, and layout for pros). It was a **skippable** panel
+    at the top of the role's home screen.
+  - **Now mandatory:** new `SetupGate` (`components/feedback/SetupGate.tsx`),
+    mounted once in `app/[locale]/layout.tsx` right after
+    `PasswordChangeGuard`. While `has_seen_intro` is false it covers the whole
+    app (`fixed inset-0 z-50`) with the role's wizard and **no skip button**,
+    so setup must be finished before the app is reachable. Ordering:
+    password-change wins (the gate defers while `mustChangePassword` is true);
+    auth pages (`/login`, `/signup`, `/forgot-password`, `/reset-password`)
+    and `admin` accounts are exempt. On finish it reveals the app instantly
+    (wizard `onComplete`) and `has_seen_intro` flips true, so it never recurs.
+  - **Read-aloud in setup:** the `comfort` step gained a read-aloud On/Off
+    control (mirrors the brightness toggle; writes `profile.read_aloud` via
+    `useSetReadAloud`), so the accessibility step now covers text size,
+    brightness, layout (pros), **and** read-aloud.
+  - **Wizard props added:** `mandatory` (hides the global skip → spacer),
+    `replayOnly` (the three per-page home mounts now pass this, so they only
+    show an explicitly-requested tutorial replay; first-run is owned solely by
+    `SetupGate`), and `onComplete`. The patient `details` step keeps its own
+    internal skip — DOB stays optional; mandatory only removes skipping the
+    whole wizard.
+  - **i18n:** `intro.comfortReadAloud` / `comfortReadAloudOn` /
+    `comfortReadAloudOff` (en/da). Parity 1026 == 1026.
+- **DB needed:** **none new** — migration count stays at **0068**. (A fresh
+  environment still needs 0067 + 0068 for GAS suggestion-approval + the
+  read-aloud pref.)
+- **⚠ Flow QA (can't test auth / devices here):** with a freshly-created
+  account, confirm the first login is forced through setup before the app is
+  reachable, that finishing reveals the app, and that it does **not** reappear
+  on the next login. Confirm a `must_change_password` account is sent to
+  set-password **first**, then setup. Confirm auth pages and `admin` accounts
+  skip the gate entirely. Confirm the read-aloud On/Off in the comfort step
+  sticks (then the speaker buttons follow the read-aloud build's device QA).
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`read-aloud`** — zip `treatment-companion-read-aloud.zip` (migration
+  **0068**). New read-aloud / text-to-speech accessibility opt-in:
+  `profile.read_aloud` pref + `useSetReadAloud`, on-device `speechSynthesis`
+  via `lib/useSpeak.ts`, and a self-gating `ReadAloudButton` placed on the
+  patient-home goal, both check-in rating pickers, and the safety notice;
+  toggle in `AppearanceSettings`. (The *visual* a11y options already existed;
+  only read-aloud was new. Voice input deferred.) **Run migration 0068.**
 - **`batch-c`** — zip `treatment-companion-batch-c.zip`. Minor polish:
   hide patient-home "View graph" until a goal has data; clinician-entry
   field label no longer duplicates the heading; three stale code comments
