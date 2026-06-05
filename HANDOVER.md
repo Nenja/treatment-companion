@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `mandatory-setup`._
+> _Last updated for build tag: `wearable-scaffold`._
 
 ---
 
@@ -216,7 +216,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0068**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0069**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -234,11 +234,15 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 - `0067_approve_suggestion_gas.sql` — **`batch-a`, RUN THIS.** Additive RPC
   `approve_suggestion_gas` so a clinician can approve a suggestion as a GAS
   goal. `create or replace`, no schema change, safe to re-run.
-- `0068_read_aloud_pref.sql` — **`read-aloud`, RUN THIS.** Adds
-  `profile.read_aloud boolean default false` (the read-aloud opt-in).
+- `0068_read_aloud_pref.sql` — Adds `profile.read_aloud boolean default false`
+  (the read-aloud opt-in).
+- `0069_wearable_observations.sql` — **`wearable-scaffold`, RUN THIS.** Adds the
+  vendor-neutral `observation` table (FHIR-aligned PGHD store) + the
+  `import_observations(patient, jsonb[])` security-definer RPC + RLS. No
+  clinical logic is attached to this data yet — storage + import only.
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0068 are applied (0066 is dev-only; **0067** is required for GAS suggestion-approval, **0068** for the read-aloud toggle).
+> If unsure whether the user's DB is current, confirm 0062–0069 are applied (0066 is dev-only; **0067** is required for GAS suggestion-approval, **0068** for the read-aloud toggle, **0069** for the wearable/PGHD ingestion layer).
 
 ---
 
@@ -520,59 +524,70 @@ GAS option, `/demo` deleted, `clinician/patient` forced dynamic) →
 **`batch-c`** (minor polish — no new migration) →
 **`read-aloud`** (0068; read-aloud / text-to-speech accessibility opt-in) →
 **`mandatory-setup`** (no new migration; first-run setup made mandatory via
-`SetupGate`, read-aloud added to the wizard's accessibility step; current).
+`SetupGate`, read-aloud added to the wizard's accessibility step) →
+**`wearable-scaffold`** (0069; vendor-neutral wearable/PGHD ingestion layer —
+`observation` table + `import_observations` RPC + clinician import tool; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-mandatory-setup.zip`
-- **Tag:** `mandatory-setup`
-- **Change:** the first-run setup is now **mandatory** and its accessibility
-  step now includes read-aloud. Background-info scope is unchanged (patients
-  still give sex + date of birth; nothing new is collected from staff).
-  - **What already existed:** a per-role first-run wizard
-    (`OnboardingWizard`, gated on `profile.has_seen_intro`) that orients the
-    user and, for patients, collects sex + DOB (the `details` step), ending in
-    a `comfort` step that sets the *visual* accessibility prefs (text size,
-    day/night brightness, and layout for pros). It was a **skippable** panel
-    at the top of the role's home screen.
-  - **Now mandatory:** new `SetupGate` (`components/feedback/SetupGate.tsx`),
-    mounted once in `app/[locale]/layout.tsx` right after
-    `PasswordChangeGuard`. While `has_seen_intro` is false it covers the whole
-    app (`fixed inset-0 z-50`) with the role's wizard and **no skip button**,
-    so setup must be finished before the app is reachable. Ordering:
-    password-change wins (the gate defers while `mustChangePassword` is true);
-    auth pages (`/login`, `/signup`, `/forgot-password`, `/reset-password`)
-    and `admin` accounts are exempt. On finish it reveals the app instantly
-    (wizard `onComplete`) and `has_seen_intro` flips true, so it never recurs.
-  - **Read-aloud in setup:** the `comfort` step gained a read-aloud On/Off
-    control (mirrors the brightness toggle; writes `profile.read_aloud` via
-    `useSetReadAloud`), so the accessibility step now covers text size,
-    brightness, layout (pros), **and** read-aloud.
-  - **Wizard props added:** `mandatory` (hides the global skip → spacer),
-    `replayOnly` (the three per-page home mounts now pass this, so they only
-    show an explicitly-requested tutorial replay; first-run is owned solely by
-    `SetupGate`), and `onComplete`. The patient `details` step keeps its own
-    internal skip — DOB stays optional; mandatory only removes skipping the
-    whole wizard.
-  - **i18n:** `intro.comfortReadAloud` / `comfortReadAloudOn` /
-    `comfortReadAloudOff` (en/da). Parity 1026 == 1026.
-- **DB needed:** **none new** — migration count stays at **0068**. (A fresh
-  environment still needs 0067 + 0068 for GAS suggestion-approval + the
-  read-aloud pref.)
-- **⚠ Flow QA (can't test auth / devices here):** with a freshly-created
-  account, confirm the first login is forced through setup before the app is
-  reachable, that finishing reveals the app, and that it does **not** reappear
-  on the next login. Confirm a `must_change_password` account is sent to
-  set-password **first**, then setup. Confirm auth pages and `admin` accounts
-  skip the gate entirely. Confirm the read-aloud On/Off in the comfort step
-  sticks (then the speaker buttons follow the read-aloud build's device QA).
+- **Zip:** `treatment-companion-wearable-scaffold.zip`
+- **Tag:** `wearable-scaffold`
+- **Change:** a **vendor-neutral ingestion layer** so the app is ready to
+  import third-party / wearable patient data without committing to any device
+  or vendor. This is a foundation + a working import tool, **not** a finished
+  wearable feature — no clinical logic is wired to the data yet.
+  - **Data model (migration 0069):** one `observation` table, FHIR
+    `Observation`-aligned and metric-agnostic — a coded `code` (LOINC by
+    default) + a value (`value_numeric` + `unit`, or `value_text`) +
+    `effective_time`, with `source`, `device_label`, `external_id`, and a
+    `raw` jsonb for provenance. No per-metric columns, so new metrics need no
+    migration. `observation_source` enum: manual / csv / apple_health /
+    health_connect / garmin / fitbit / oura / withings / other.
+  - **Ingestion boundary:** writes go through one security-definer RPC,
+    `import_observations(patient, jsonb[])`, which authorizes the caller (the
+    patient themselves, a clinician with an active session, or admin),
+    normalizes, and **dedups** on (patient, source, code, time, external_id)
+    so re-imports are idempotent. RLS governs reads (patient sees own;
+    clinician sees patients they can access; admin all).
+  - **Client + UI:** `lib/supabase/observations.ts` (typed
+    `useImportObservations` / `usePatientObservations` + a dependency-free CSV
+    parser). New clinician route `app/[locale]/clinician/observations` (reads
+    the patient from the active session, like the history page) with CSV
+    paste/upload, a manual single-measurement form, and a recent list. Reached
+    from a new **Wearable** entry in the patient `PatientActionRow`.
+  - **Why this shape:** manual + CSV need no vendor approval, so they validate
+    the model and clinical usefulness end-to-end now; each future vendor
+    becomes an *adapter* that normalizes into the same RPC. (See §8 for the
+    adapter list + the platform gotcha: a web app **can't** read Apple Health
+    directly — that needs a native iOS layer; Android needs Health Connect via
+    a native layer; Garmin/Fitbit/Oura are server-side OAuth/webhooks that work
+    from the backend.)
+  - **i18n:** new `clinician.wearable` namespace + `clinician.patient`
+    `actionWearable` / `actionShortWearable` (en/da). Parity 1061 == 1061.
+- **DB needed:** **run migration 0069** (`0069_wearable_observations.sql`) —
+  adds the `observation` table + `import_observations` RPC. Additive and safe
+  to re-run (guarded type, `create table if not exists`, drop/create policies).
+  Page count 58 → 60 (+2 for the en/da route shells).
+- **⚠ QA (can't test auth / DB here):** with a patient unlocked, open the
+  **Wearable** action on the patient page, import a small CSV and add a manual
+  measurement, and confirm both appear in the recent list and respect RLS (only
+  clinicians with access / the patient themselves can read). Verify re-importing
+  the same rows inserts nothing (dedup), and that an unparseable CSV reports
+  per-line errors rather than failing silently.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`mandatory-setup`** — zip `treatment-companion-mandatory-setup.zip` (no
+  new migration). First-run setup made **mandatory** via `SetupGate`
+  (full-screen, non-skippable, mounted after `PasswordChangeGuard`; defers to
+  password-change; auth pages + admin exempt), and the wizard's `comfort`
+  accessibility step gained the read-aloud On/Off toggle. Wizard props
+  `mandatory` / `replayOnly` / `onComplete`; per-page mounts are now
+  replay-only. No DB change.
 - **`read-aloud`** — zip `treatment-companion-read-aloud.zip` (migration
   **0068**). New read-aloud / text-to-speech accessibility opt-in:
   `profile.read_aloud` pref + `useSetReadAloud`, on-device `speechSynthesis`
@@ -636,6 +651,30 @@ GAS option, `/demo` deleted, `clinician/patient` forced dynamic) →
    The **dev-only scenario/test launcher** is now built (§5.9) — remaining:
    verify its auth/session/seed flow on a real machine (I couldn’t test it).
 6. **Confirm migrations 0062–0065 are applied** in the user's Supabase.
+7. **Wearable / third-party data — next slices** (scaffold shipped in
+   `wearable-scaffold`; storage + manual/CSV import only):
+   - **Per-vendor adapters** that normalize into `import_observations`:
+     server-side are easiest (Garmin webhooks, Fitbit/Oura OAuth REST). Apple
+     Health has **no backend API** — it needs a native iOS layer; Android
+     needs Health Connect via a native layer. Patients use both platforms, so
+     a thin native companion (or a unified-wearable-API aggregator) is
+     unavoidable for phone-collected data. An aggregator adds a GDPR
+     sub-processor (DPA needed).
+   - **Decide which metrics are clinically meaningful** before surfacing any
+     (for spasticity/dystonia likely activity, tremor/accelerometry, ROM) —
+     none chosen yet; the model is deliberately metric-agnostic.
+   - **GDPR / EHDS:** granular per-metric consent + opt-out, data
+     minimization, residency; wearable data is special-category health data.
+   - **MDR flag:** if wearable data starts *driving clinical decisions*, it
+     may push the app toward CE-marked medical-device software — confirm the
+     passive-display vs clinical-input line with a regulatory advisor.
+   - **Clinical validity:** consumer-grade accuracy varies; vendor
+     sleep/stress algorithms differ — don't treat sources as interchangeable.
+   - **Scope gaps in the scaffold:** `observation` reads + the import route
+     are **clinician-scoped** (add physio RLS/route if needed); automated /
+     service-role ingestion for adapters and optional `treatment_cycle_id`
+     backfill are not built; a richer clinician view/graph (beyond the raw
+     recent list) is open.
 
 ---
 
