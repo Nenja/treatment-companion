@@ -24,7 +24,7 @@ import { useTranslations } from 'next-intl';
  * icon library is bundled).
  */
 
-export type PatientActionId = 'medication' | 'physio' | 'history' | 'export';
+export type PatientActionId = 'medication' | 'physio' | 'history' | 'export' | 'wearable';
 
 function Badge({ count }: { count: number }) {
   if (count <= 0) return null;
@@ -84,6 +84,15 @@ function iconFor(id: PatientActionId) {
           <path d="M12 15V3" />
         </svg>
       );
+    case 'wearable':
+      // smartwatch / wearable device
+      return (
+        <svg {...common}>
+          <rect x="6" y="6" width="12" height="12" rx="3" />
+          <path d="M9 6l.5-3h5l.5 3M9 18l.5 3h5l.5-3" />
+          <path d="M12 10v2.5l1.5 1" />
+        </svg>
+      );
   }
 }
 
@@ -110,7 +119,8 @@ export function PatientActionRow({
     { id: 'medication' },
     { id: 'physio', count: physioCount },
     { id: 'history' },
-    { id: 'export' }
+    { id: 'export' },
+    { id: 'wearable' }
   ];
 
   return (

@@ -548,13 +548,15 @@ export default function ClinicianPatientPage() {
             medication: t('actionMedication'),
             physio: t('actionPhysio'),
             history: t('actionHistory'),
-            export: t('actionExport')
+            export: t('actionExport'),
+            wearable: t('actionWearable')
           }}
           shortLabels={{
             medication: t('actionShortMedication'),
             physio: t('actionShortPhysio'),
             history: t('actionShortHistory'),
-            export: t('actionShortExport')
+            export: t('actionShortExport'),
+            wearable: t('actionShortWearable')
           }}
           onSelect={(id: PatientActionId) => {
             touch();
@@ -563,6 +565,12 @@ export default function ClinicianPatientPage() {
                 locale === 'en'
                   ? '/clinician/history'
                   : `/${locale}/clinician/history`
+              );
+            } else if (id === 'wearable') {
+              router.push(
+                locale === 'en'
+                  ? '/clinician/observations'
+                  : `/${locale}/clinician/observations`
               );
             } else if (id === 'export') {
               setShowExport(true);
