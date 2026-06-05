@@ -338,7 +338,9 @@
       "outcomeUnknown": "Afsluttet",
       "reactivateGoal": "Genaktivér",
       "reactivateToast": "Mål genaktiveret",
-      "reactivateError": "Kunne ikke genaktivere målet. Prøv venligst igen."
+      "reactivateError": "Kunne ikke genaktivere målet. Prøv venligst igen.",
+      "actionWearable": "Wearable-data",
+      "actionShortWearable": "Wearable"
     },
     "review": {
       "title": "Gennemgå forslag",
@@ -432,6 +434,43 @@
       "downloadHelper": "Hent et PNG til at indsætte i patientens journal.",
       "exportTitle": "Ansigt — botulinumtoksin",
       "exportDose": "Dosis:"
+    },
+    "wearable": {
+      "back": "Patient",
+      "title": "Wearable- og tredjepartsdata",
+      "intro": "Importér målinger fra wearables eller andre apps for denne patient. Data gemmes i et neutralt format, så enhver kilde — et ur, en sundhedsapp på telefonen eller en eksporteret fil — havner samme sted.",
+      "consentNote": "Importér kun data, som patienten har accepteret at dele. Det gemmes sammen med patientens journal og er synligt for klinikere med adgang.",
+      "resultImported": "Importerede {count} måling(er). Eventuelle dubletter blev sprunget over.",
+      "importError": "Noget gik galt under import. Tjek data, og prøv igen.",
+      "csvHeading": "Importér en CSV",
+      "csvHint": "Kolonner: effective_time, code, display, value, unit, value_text, source, device_label, external_id, effective_end. Påkrævet: effective_time, code og en value (eller value_text).",
+      "csvPlaceholder": "effective_time,code,display,value,unit,source\n2026-06-01T08:00:00Z,55423-8,Steps,8423,steps,fitbit",
+      "importButton": "Importér",
+      "importing": "Importerer…",
+      "skippedHeading": "Nogle rækker blev sprunget over:",
+      "manualHeading": "Tilføj én måling",
+      "fieldCode": "Kode (LOINC eller din egen)",
+      "fieldDisplay": "Etiket",
+      "fieldDisplayPlaceholder": "f.eks. Skridt",
+      "fieldValue": "Værdi",
+      "fieldUnit": "Enhed",
+      "fieldTime": "Hvornår",
+      "fieldSource": "Kilde",
+      "fieldDevice": "Apparat (valgfri)",
+      "addButton": "Tilføj måling",
+      "recentHeading": "Seneste målinger",
+      "empty": "Ingen målinger importeret endnu.",
+      "sources": {
+        "manual": "Manuel indtastning",
+        "csv": "CSV-import",
+        "apple_health": "Apple Health",
+        "health_connect": "Health Connect",
+        "garmin": "Garmin",
+        "fitbit": "Fitbit",
+        "oura": "Oura",
+        "withings": "Withings",
+        "other": "Andet"
+      }
     }
   },
   "intro": {

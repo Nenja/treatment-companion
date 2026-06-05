@@ -334,7 +334,9 @@
       "outcomeUnknown": "Retired",
       "reactivateGoal": "Reactivate",
       "reactivateToast": "Goal reactivated",
-      "reactivateError": "Could not reactivate the goal. Please try again."
+      "reactivateError": "Could not reactivate the goal. Please try again.",
+      "actionWearable": "Wearable data",
+      "actionShortWearable": "Wearable"
     },
     "review": {
       "title": "Review suggestion",
@@ -428,6 +430,43 @@
       "downloadHelper": "Download a PNG to paste into the patient’s record.",
       "exportTitle": "Face — botulinum toxin",
       "exportDose": "Dose:"
+    },
+    "wearable": {
+      "back": "Patient",
+      "title": "Wearable & third-party data",
+      "intro": "Import measurements from wearables or other apps for this patient. Data is stored in a neutral format, so any source — a watch, a phone health app, or an exported file — lands in the same place.",
+      "consentNote": "Only import data the patient has agreed to share. It is stored with their record and visible to clinicians with access.",
+      "resultImported": "Imported {count} measurement(s). Any duplicates were skipped.",
+      "importError": "Something went wrong importing. Please check the data and try again.",
+      "csvHeading": "Import a CSV",
+      "csvHint": "Columns: effective_time, code, display, value, unit, value_text, source, device_label, external_id, effective_end. Required: effective_time, code, and a value (or value_text).",
+      "csvPlaceholder": "effective_time,code,display,value,unit,source\n2026-06-01T08:00:00Z,55423-8,Steps,8423,steps,fitbit",
+      "importButton": "Import",
+      "importing": "Importing…",
+      "skippedHeading": "Some rows were skipped:",
+      "manualHeading": "Add one measurement",
+      "fieldCode": "Code (LOINC or your own)",
+      "fieldDisplay": "Label",
+      "fieldDisplayPlaceholder": "e.g. Steps",
+      "fieldValue": "Value",
+      "fieldUnit": "Unit",
+      "fieldTime": "When",
+      "fieldSource": "Source",
+      "fieldDevice": "Device (optional)",
+      "addButton": "Add measurement",
+      "recentHeading": "Recent measurements",
+      "empty": "No measurements imported yet.",
+      "sources": {
+        "manual": "Manual entry",
+        "csv": "CSV import",
+        "apple_health": "Apple Health",
+        "health_connect": "Health Connect",
+        "garmin": "Garmin",
+        "fitbit": "Fitbit",
+        "oura": "Oura",
+        "withings": "Withings",
+        "other": "Other"
+      }
     }
   },
   "intro": {
