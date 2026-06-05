@@ -208,7 +208,8 @@
       "placeholder": "ABC-DEF",
       "submit": "Unlock",
       "errorInvalid": "That code isn't valid. Ask the patient to generate a new one.",
-      "adminLink": "Admin: create or list accounts"
+      "adminLink": "Admin: create or list accounts",
+      "codeLabel": "Visit code"
     },
     "session": {
       "endSession": "End session",

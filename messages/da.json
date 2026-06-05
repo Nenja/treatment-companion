@@ -212,7 +212,8 @@
       "placeholder": "ABC-DEF",
       "submit": "Lås op",
       "errorInvalid": "Den kode er ikke gyldig. Bed patienten generere en ny.",
-      "adminLink": "Admin: opret eller vis konti"
+      "adminLink": "Admin: opret eller vis konti",
+      "codeLabel": "Besøgskode"
     },
     "session": {
       "endSession": "Afslut session",
