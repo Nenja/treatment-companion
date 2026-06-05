@@ -357,9 +357,7 @@ export default function ClinicianPatientPage() {
             nrs: r.nrsValue,
             // NRS goals derive GAS from the goal's cut points. GAS goals
             // are rated as a level directly, so the recorded value is
-            // already the GAS level. (GAS rating capture itself ships in
-            // the check-in slice; this guard keeps the view correct and
-            // the build sound in the meantime.)
+            // already the GAS level.
             value:
               goal.kind === 'nrs' && goal.nrs
                 ? nrsToGas(r.nrsValue, {

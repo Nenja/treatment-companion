@@ -137,7 +137,7 @@ export default function ClinicianUnlockPage() {
             htmlFor="visitCode"
             className="block text-[14px] font-semibold text-ink"
           >
-            {t('title')}
+            {t('codeLabel')}
           </label>
           <input
             id="visitCode"

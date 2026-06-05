@@ -215,8 +215,12 @@ export default function PatientHomePage() {
               <li key={g.id}>
                 <GoalCard
                   patientFacingText={g.patientFacingText}
-                  viewGraphLabel={t('viewGraph')}
-                  onViewGraph={() => setGraphGoal(g)}
+                  viewGraphLabel={
+                    g.ratings.length > 0 ? t('viewGraph') : undefined
+                  }
+                  onViewGraph={
+                    g.ratings.length > 0 ? () => setGraphGoal(g) : undefined
+                  }
                 />
               </li>
             ))}

@@ -30,12 +30,12 @@ import { TrainingDaysPicker } from '@/components/wizard/TrainingDaysPicker';
  * (used when the patient taps a catch-up week from the home page).
  * Without the param, the oldest pending prompt is used.
  *
- * Step plan:
- *   1..N — one step per active goal, rating with the 5 goal-specific
- *          GAS anchors. Middle option is visually highlighted but not
- *          labelled as "expected" — the goal-specific text carries the
- *          meaning.
- *   N+1  — optional comment field with safety nudge + summary review.
+ * Steps (built dynamically from the patient's active goals):
+ *   - One rating step per active goal: NRS goals use the 0–10 picker,
+ *     GAS goals use the five descriptive levels. A video-enabled goal
+ *     also offers an optional short video on its step.
+ *   - Training days — at home, and with the therapist where relevant.
+ *   - A final comment field with a safety nudge + summary review.
  */
 export default function CheckinPage() {
   return (

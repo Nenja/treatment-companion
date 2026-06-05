@@ -34,14 +34,13 @@ import {
 import { groupTreatedMuscles } from '@/lib/types';
 
 /**
- * Physiotherapist patient view.
+ * Physiotherapist patient view (read + suggest).
  *
- * SLICE 1 — placeholder. Shows the unlocked patient's name and their
- * active goals, read-only. This proves the unlock works end-to-end and
- * gives later slices a surface to build on:
- *   - Slice 2: progress reporting (NRS, parallel to patient self-report)
- *   - Slice 3: goal suggestions
- *   - Slice 4: muscle suggestions
+ * Shows the unlocked patient's name, their goals with progress graphs,
+ * recent check-in comments, and — if the patient shares them — treated
+ * muscles. Inline panels let the physio report progress, suggest a goal
+ * or a muscle, and view assessment history. Read-only on clinical data;
+ * the physio never records goals or treatments.
  *
  * If the session has expired or there is none, redirect to /physio.
  */
