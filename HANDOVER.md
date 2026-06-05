@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `visit-changes-usability`._
+> _Last updated for build tag: `patient-home-treated-muscles`._
 
 ---
 
@@ -346,15 +346,19 @@ since the patient was last seen; nothing is editable. **Anchor:** the most recen
 treatment for the cycle (`treatment.date`); if no treatment is recorded yet it
 falls back to the cycle start date and says so. It lists check-ins submitted
 since the anchor (filtered by `weekly_checkin.submitted_at`) with:
-- **Goal movement (the headline)** — one row per goal: the goal name, a compact
-  inline **trend line** (SVG sparkline of the goal's values across the window, with
-  a dot on the current point), the **current value emphasised** (NRS `7/10`; GAS the
-  descriptive level e.g. *As expected*), and a **change chip**. The chip shows an
-  arrow + magnitude — NRS `from {first}`, GAS `{n} level(s)`, or `no change` — and
-  is **direction-aware** (NRS uses the goal's `nrs_direction`; GAS is
-  higher-is-better): green/sage = improved (↑), amber = declined (↓), neutral = flat.
-  Colour is never the only cue (arrow glyph + sr-only "improved/declined/unchanged").
-  Archived goals with ratings in the window still appear, tagged "· archived".
+- **Goal verdict (the headline)** — one row per goal: the goal name, the **current
+  value** (NRS `7/10`; GAS the descriptive level e.g. *As expected*), and a
+  plain-language **verdict chip**: `↑ improved` / `↓ declined` / `→ no change`,
+  where **up + green always means clinically better** regardless of whether the
+  goal is higher- or lower-is-better (NRS uses the goal's `nrs_direction`; GAS is
+  higher-is-better). Colours: sage = improved, amber = declined, neutral = flat;
+  the arrow is decorative (the word carries the meaning). **No trend line and no
+  raw "from N"** — both were removed because, for a lower-is-better goal (e.g.
+  "fewer night-time leg spasms", 9→3), a raw sparkline slopes *down* and "from 9"
+  reads like a decline even though the patient improved, which clinicians found
+  confusing. Now only the current value (one number) and the verdict word are
+  shown, so direction can't be misread. Archived goals with ratings in the window
+  still appear, tagged "· archived".
 - **Header + adherence** — a check-in count top-right (`5 check-ins`) and an
   adherence clause in the subline: `· checked in every week`, or `· missed week(s) N`
   (gaps detected between the first and last week present, so the current pending
@@ -363,20 +367,66 @@ since the anchor (filtered by `weekly_checkin.submitted_at`) with:
   · ~3×/wk`), therapist sessions (`Therapist 2×`), and a video count when present.
   Falls back to "No training logged".
 
-Sparkline geometry is hand-computed (64×22, scaled NRS 0–10 / GAS −2..2); the line
-uses `currentColor` from a trend-coloured wrapper. Single-point series render just
-the dot.
-
 Data: `useClinicianPatientData` selects `weekly_checkin.submitted_at` and each
 rating's `video_path` (on `ClinicianPatientCheckin`). The page passes
 `treatment?.date`, `cycle.startDate`, `checkins`, and `[...activeGoals,
-...archivedGoals]`. i18n namespace **`visitChanges`** (en+da, 25 keys, incl. GAS
+...archivedGoals]`. i18n namespace **`visitChanges`** (en+da, 22 keys, incl. GAS
 level labels + ICU plurals incl. a nested-arg `missedWeeks`). **This replaced the
 old free-text note** — the `treatment_cycle.clinician_note` column +
 `set_cycle_clinician_note` RPC / `useSetCycleClinicianNote` hook remain in place but
 are now **unused** (kept so the change is reversible / non-destructive; the old
 `visitNote` i18n namespace is also
 left in but unused).
+
+---
+
+### 5.11 Patient home — read-only goal graph pop-up — `app/[locale]/page.tsx`
+
+The patient home (`app/[locale]/page.tsx`, namespace `patient.home`) lists active
+goals as text-only `GoalCard`s. Each card now shows a small **graph button on the
+right** (chart glyph; label "View graph"/"Se graf" shown from the `sm` breakpoint
+up, icon-only with `aria-label`/`title` on mobile). Tapping it opens the goal's
+progress graph in a **read-only pop-up** — the existing `GoalGraphModal`
+(`components/clinician/GoalGraphModal.tsx`) reused as-is, with `physioRatings={[]}`
+so the patient sees **only their own self-report** (no physiotherapist overlay) and
+no edit affordances. Nothing is shown until the patient actively taps the button.
+
+Data: `usePatientHomeData` (`lib/supabase/patientHome.ts`) was extended to (a) select
+`approved_goal.goal_kind`, and (b) load the patient's own check-in history for the
+active cycle (`weekly_checkin` + `weekly_goal_rating`, scoped by RLS
+`weekly_checkin_patient_read` / `weekly_goal_rating_patient_read`) and group it into
+a per-goal `GoalRatingPoint[]` (a new exported type, structurally identical to
+`GoalProgressView`'s `ratings` prop: `weekNumber`, `value` −2..2|null, `nrs` 0–10|null,
+`reported`, optional `comment`/`submitterLabel`). Each `PatientHomeData.goals[]` entry
+now carries `kind` + `ratings`; the graph's x-axis uses `data.currentWeek`. No DB or
+RPC change. i18n: `patient.home.viewGraph` + `patient.home.graphClose` (en+da).
+`GoalCard` gained optional `onViewGraph` + `viewGraphLabel` props (omitted → text-only
+as before, so other callers are unaffected).
+
+**Treated-muscles pop-up (same page).** Below the goals' quiet action row (show visit
+code / suggest a goal), a full-width **"See which muscles were treated"** button
+appears **only when a treatment is on record** (`data.latestTreatment`). It opens
+`components/cards/TreatedMusclesModal.tsx` — a read-only pop-up listing the muscles
+injected at the patient's most recent treatment, grouped per muscle with sides
+combined (reuses the shared `groupTreatedMuscles` from `lib/types.ts`, same helper as
+the clinician/physio views) and headed by the treatment date. **Dosing and product
+detail are deliberately omitted** — just muscle + side. `usePatientHomeData` now also
+loads `latestTreatment: { date, muscles: { muscle, side }[] } | null` (most recent
+`treatment_session` for the patient + its `muscle_injection` rows, ordered by
+`position`; RLS `treatment_session_patient_read` / `muscle_injection_select` already
+permit the patient to read their own rows). **Unlike the physiotherapist view there is
+no `share_muscles_with_physio` gate** — the patient may always see their own treatment.
+i18n added under `patient.home`: `viewTreatedMuscles`, `treatedMusclesTitle`,
+`treatedMusclesFrom` ({date}), `treatedMusclesNone`, and side labels
+`treatedSide{Left,Right,LeftRight,Both}` (close reuses `graphClose`); Danish reuses the
+physio view's existing wording.
+
+**Still requested for the patient home (NOT yet built):** the original ask also wanted
+a button showing **medication / assistive devices**. That data exists
+(`current/previous_antispastic_medication` + `physio_assistive_devices`) but is **not
+loaded by `usePatientHomeData`**, and — importantly — patient RLS read access to the
+medication columns must be verified before surfacing them on the patient side
+(medication was originally scoped clinician-to-therapist). See §8.
 
 ---
 
@@ -398,28 +448,34 @@ left in but unused).
 `since-last-visit-change-list` →
 `checkin-leave-button-fix` →
 `test1-video-on-current-checkin` →
-**`visit-changes-usability`** (current, no new migration).
+`visit-changes-usability` →
+`visit-changes-direction-fix` →
+`patient-home-goal-graph` →
+**`patient-home-treated-muscles`** (current, no new migration).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-visit-changes-usability.zip`
-- **Tag:** `visit-changes-usability`
-- **Change:** usability rework of the "Since last visit" card (§5.8). It now
-  **leads with goal movement** — each goal as a row with a compact inline trend
-  line, the current value emphasised, and a direction-aware change chip
-  (green ↑ improved / amber ↓ declined). The bare "Weeks checked in: 1,2,3,4,5"
-  became a check-in count + adherence clause ("checked in every week" / "missed
-  week N"); training shows a cadence ("Home 14 days · ~3×/wk"); a compact stat
-  strip holds training + video. Only `components/clinician/VisitChanges.tsx` was
-  rewritten; the `visitChanges` i18n namespace was replaced (en+da, 25 keys). No
-  data-layer change beyond what the previous build already added.
-- **Design provenance:** built to match the compact mockup approved in chat (small
-  inline sparklines, not full-width). Mockup colours were neutral; the shipped
-  component uses the app's cream/sage/amber tokens and is bilingual.
-- **Known follow-ups it surfaces:** the listed video is still indicator-only until
-  clinician playback lands (§5.5, §8); native-Danish review of the new strings.
+- **Zip:** `treatment-companion-patient-home-treated-muscles.zip`
+- **Tag:** `patient-home-treated-muscles`
+- **Change:** second patient-home slice (§5.11). Added a quiet full-width **"See which
+  muscles were treated"** button below the goals' action row (shown only when a
+  treatment is on record) that opens a **read-only pop-up** listing the muscles injected
+  at the patient's most recent treatment — grouped per muscle with sides combined
+  (reuses `groupTreatedMuscles` from `lib/types.ts`), headed by the treatment date, **no
+  dosing/product detail**. `usePatientHomeData` now also loads `latestTreatment`
+  (most recent `treatment_session` + its `muscle_injection` rows, RLS-scoped to the
+  patient; no share-with-physio gate). New component
+  `components/cards/TreatedMusclesModal.tsx`; new `patient.home` keys
+  (`viewTreatedMuscles`, `treatedMusclesTitle/From/None`, `treatedSide*`), Danish reusing
+  the physio view's wording. Files: `app/[locale]/page.tsx`,
+  `components/cards/TreatedMusclesModal.tsx`, `lib/supabase/patientHome.ts`,
+  `messages/{en,da}.json`. No DB / RPC / migration change.
+- **Still on the original request (NOT built):** patient-home button for **medication /
+  assistive devices**. Data exists but isn't loaded on the home page, and patient RLS
+  read access to medication must be confirmed first (originally clinician/therapist
+  scoped) — see §8. Awaiting go-ahead.
 - **DB needed:** unchanged — migrations through **0066**. No new migration, no env
   changes.
 

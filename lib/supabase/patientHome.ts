@@ -4,6 +4,21 @@ import { useQuery } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from './browser';
 
 /**
+ * One point on a goal's progress graph — a single week's self-reported
+ * rating. Structurally matches the `ratings` prop GoalProgressView
+ * expects, so it can be passed straight to the graph modal.
+ */
+export interface GoalRatingPoint {
+  weekNumber: number;
+  value: -2 | -1 | 0 | 1 | 2 | null;
+  /** Raw NRS value (0-10) for NRS goals; null for GAS goals. */
+  nrs: number | null;
+  reported: boolean;
+  comment?: string;
+  submitterLabel?: 'self' | 'caregiver';
+}
+
+/**
  * Shape of the data the patient home page needs. Mirrors what the
  * prototype's `useStore()` exposed, but populated from the database.
  */
@@ -17,11 +32,25 @@ export interface PatientHomeData {
     cycleNumber: number;
     startDate: string;
   } | null;
-  /** Approved, currently-active goals. */
+  /** Approved, currently-active goals, each with the patient's own
+   *  self-report history so the home page can show a read-only progress
+   *  graph on demand. */
   goals: {
     id: string;
     patientFacingText: string;
+    kind: 'nrs' | 'gas';
+    ratings: GoalRatingPoint[];
   }[];
+  /**
+   * The patient's most recent treatment session — date plus the muscles
+   * injected (name + side) — so the home page can show, on demand, which
+   * muscles were treated last time. Dosing detail is intentionally
+   * omitted. Null when no treatment is recorded.
+   */
+  latestTreatment: {
+    date: string;
+    muscles: { muscle: string; side: 'left' | 'right' | 'bilateral' }[];
+  } | null;
   /**
    * The pending prompt for the patient's current week, if any. This is
    * what the "Your check-in is ready" card highlights. Null when the
@@ -116,6 +145,7 @@ export function usePatientHomeData(
           patient,
           cycle: null,
           goals: [],
+          latestTreatment: null,
           currentPrompt: null,
           catchUpPrompts: [],
           currentWeek: 0,
@@ -126,16 +156,91 @@ export function usePatientHomeData(
       // 3. Active approved goals for this cycle
       const { data: goalsRows, error: gErr } = await supabase
         .from('approved_goal')
-        .select('id, patient_facing_text')
+        .select('id, patient_facing_text, goal_kind')
         .eq('treatment_cycle_id', cycle.id)
         .eq('status', 'active')
         .order('approved_at', { ascending: true });
       if (gErr) throw gErr;
 
+      // 3b. The patient's own check-in history for this cycle, so each
+      //     goal can show a read-only progress graph. RLS scopes these to
+      //     the patient's own rows (weekly_checkin_patient_read /
+      //     weekly_goal_rating_patient_read).
+      const { data: checkinRows, error: ckErr } = await supabase
+        .from('weekly_checkin')
+        .select(
+          'week_number, comment, submitter_label, ratings:weekly_goal_rating (approved_goal_id, rating_value, nrs_value)'
+        )
+        .eq('patient_id', patient.id)
+        .eq('treatment_cycle_id', cycle.id)
+        .order('week_number', { ascending: true });
+      if (ckErr) throw ckErr;
+
+      const ratingsByGoal = new Map<string, GoalRatingPoint[]>();
+      for (const c of checkinRows ?? []) {
+        const wk = c.week_number as number;
+        const comment = (c.comment as string | null) ?? undefined;
+        const submitterLabel =
+          (c.submitter_label as 'self' | 'caregiver' | null) ?? undefined;
+        const rs =
+          (c.ratings as Array<{
+            approved_goal_id: string;
+            rating_value: number | null;
+            nrs_value: number | null;
+          }> | null) ?? [];
+        for (const r of rs) {
+          const arr = ratingsByGoal.get(r.approved_goal_id) ?? [];
+          arr.push({
+            weekNumber: wk,
+            value: (r.rating_value as -2 | -1 | 0 | 1 | 2 | null) ?? null,
+            nrs: r.nrs_value as number | null,
+            reported: true,
+            comment,
+            submitterLabel
+          });
+          ratingsByGoal.set(r.approved_goal_id, arr);
+        }
+      }
+
       const goals = (goalsRows ?? []).map((g) => ({
         id: g.id as string,
-        patientFacingText: g.patient_facing_text as string
+        patientFacingText: g.patient_facing_text as string,
+        kind: (g.goal_kind as 'nrs' | 'gas') ?? 'gas',
+        ratings: (ratingsByGoal.get(g.id as string) ?? []).sort(
+          (a, b) => a.weekNumber - b.weekNumber
+        )
       }));
+
+      // 3c. Most recent treatment session + the muscles injected, so the
+      //     patient can see "which muscles were treated last time". RLS
+      //     scopes treatment_session / muscle_injection to the patient's
+      //     own rows. Dosing detail is deliberately left out. Unlike the
+      //     physiotherapist view, there is no share-with-physio gate — the
+      //     patient is always allowed to see their own treatment.
+      let latestTreatment: PatientHomeData['latestTreatment'] = null;
+      const { data: tsRow, error: tsErr } = await supabase
+        .from('treatment_session')
+        .select('id, date, injections:muscle_injection (muscle, side, position)')
+        .eq('patient_id', patient.id)
+        .order('date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (tsErr) throw tsErr;
+      if (tsRow) {
+        const injections =
+          (tsRow.injections as Array<{
+            muscle: string;
+            side: 'left' | 'right' | 'bilateral';
+            position: number;
+          }> | null) ?? [];
+        latestTreatment = {
+          date: tsRow.date as string,
+          muscles: injections
+            .slice()
+            .sort((a, b) => a.position - b.position)
+            .map((m) => ({ muscle: m.muscle, side: m.side }))
+        };
+      }
 
       // 4. Weekly prompts for this cycle
       const { data: promptRows, error: prErr } = await supabase
@@ -193,6 +298,7 @@ export function usePatientHomeData(
         patient,
         cycle,
         goals,
+        latestTreatment,
         currentPrompt,
         catchUpPrompts,
         currentWeek,

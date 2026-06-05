@@ -1,28 +1,30 @@
-BUILD TAG: visit-changes-usability
+BUILD TAG: patient-home-treated-muscles
 DATE: 2026-06-04
 NEW MIGRATION: none (no DB changes)
 
+WHAT THIS ADDS
+--------------
+On the PATIENT's own home page, a quiet "See which muscles were treated" button now
+appears (below the goals, only when a treatment is on record). Tapping it opens a
+read-only pop-up listing the muscles injected at the patient's most recent treatment,
+with the side (left / right / both) and the treatment date.
+
+It shows only the muscles - no doses, drug, or other clinical detail - matching the
+"just the muscles for now" scope. Nothing is shown until the patient taps the button.
+
+This builds on the previous slice (the per-goal "View graph" button).
+
 WHAT CHANGED
 ------------
-Usability rework of the clinician "Since last visit" card.
+- app/[locale]/page.tsx                      - the button + the read-only pop-up
+- components/cards/TreatedMusclesModal.tsx   - NEW read-only muscles pop-up
+- lib/supabase/patientHome.ts                - also loads the last treatment's muscles
+- messages/en.json, messages/da.json         - new patient.home strings (en + da)
 
-Before: it led with a bare "Weeks checked in: 1, 2, 3, 4, 5" list, then showed each
-goal's movement as "5 -> 7" (which hid any dip in between).
-
-Now:
-- Goal movement is the headline. Each goal is a row with a small inline trend line
-  (a dot on the current point), the current value emphasised (NRS "7/10"; GAS the
-  descriptive level like "As expected"), and a change chip: an arrow + magnitude
-  ("from 3" for NRS, "2 levels" for GAS, or "no change"). Green/up = improved,
-  amber/down = declined, and it's direction-aware (a lower-is-better goal going down
-  reads as improved). Colour is never the only signal (arrow + screen-reader text).
-- The check-in list became a count ("5 check-ins") plus an adherence note in the
-  subline ("checked in every week", or "missed week 3" when there's a gap).
-- Training shows a cadence ("Home 14 days - ~3x/wk") and therapist sessions, in a
-  compact strip along the bottom, with the video count when present.
-
-Only components/clinician/VisitChanges.tsx changed; its translation namespace
-(visitChanges, en + da) was updated to match. No database or data-layer change.
+No database, RPC, or migration changes. Reads use existing RLS policies
+(treatment_session_patient_read / muscle_injection_select), which already let a patient
+read their own treatment. Muscle grouping reuses the same helper as the clinician and
+physiotherapist views.
 
 DEPLOY STEPS
 ------------
@@ -32,16 +34,14 @@ DEPLOY STEPS
 
 HOW TO CONFIRM
 --------------
-1. Open a patient with check-ins this cycle (e.g. test1). The "Since last visit"
-   card now shows each goal on its own line with a small trend line, the current
-   value, and a coloured change chip.
-2. The hand goal (NRS) shows e.g. "7/10" with an up arrow and "from 3"; the standing
-   goal (GAS) shows its current level with "2 levels".
-3. Below the goals: a check-in count, an adherence note, and a compact strip for
-   training and any video.
+1. Sign in as a patient who has a treatment on record (e.g. test1).
+2. On the home screen, below the goals, you'll see "See which muscles were treated".
+3. Tap it: a pop-up lists the treated muscles + side, with the treatment date. Close
+   returns to the home screen. (If a patient has no treatment recorded, the button is
+   hidden.)
 
-NOTES
------
-- The video is still listed as an indicator only; playback is a separate pending
-  piece.
-- The new Danish strings haven't been checked by a native speaker.
+NOT INCLUDED YET (from the original request)
+--------------------------------------------
+A patient-home button for "medication / assistive devices" is still not built. That
+data isn't loaded on the home page yet, and patient read-access to medication needs
+confirming first (it was originally clinician/therapist-scoped). Happy to add it next.

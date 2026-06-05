@@ -1,15 +1,20 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { addDaysIso } from '@/lib/dates';
 import { useAuth } from '@/lib/supabase/auth';
-import { usePatientHomeData } from '@/lib/supabase/patientHome';
+import {
+  usePatientHomeData,
+  type PatientHomeData
+} from '@/lib/supabase/patientHome';
 import { AppShell } from '@/components/layout/AppShell';
 import { PatientHomeSkeleton } from '@/components/layout/PatientHomeSkeleton';
 import { SafetyNotice } from '@/components/layout/SafetyNotice';
 import { GoalCard } from '@/components/cards/GoalCard';
+import { GoalGraphModal } from '@/components/clinician/GoalGraphModal';
+import { TreatedMusclesModal } from '@/components/cards/TreatedMusclesModal';
 import { CheckinPromptCard } from '@/components/cards/CheckinPromptCard';
 import { CatchUpCard } from '@/components/cards/CatchUpCard';
 import { CheckinDots } from '@/components/cards/CheckinDots';
@@ -24,6 +29,13 @@ export default function PatientHomePage() {
 
   const { user, profile, loading: authLoading } = useAuth();
   const homeQuery = usePatientHomeData(profile?.id ?? null, profile?.role);
+
+  // Which goal's read-only progress graph is open in a pop-up (null = none).
+  const [graphGoal, setGraphGoal] = useState<
+    PatientHomeData['goals'][number] | null
+  >(null);
+  // Whether the read-only "treated muscles" pop-up is open.
+  const [showMuscles, setShowMuscles] = useState(false);
 
   // Auth redirects: not signed in → /login; clinician → /clinician.
   useEffect(() => {
@@ -202,7 +214,11 @@ export default function PatientHomePage() {
           <ul className="mt-4 space-y-3">
             {data.goals.map((g) => (
               <li key={g.id}>
-                <GoalCard patientFacingText={g.patientFacingText} />
+                <GoalCard
+                  patientFacingText={g.patientFacingText}
+                  viewGraphLabel={t('viewGraph')}
+                  onViewGraph={() => setGraphGoal(g)}
+                />
               </li>
             ))}
           </ul>
@@ -254,12 +270,64 @@ export default function PatientHomePage() {
             {t('suggestGoal')}
           </button>
         </div>
+
+        {/* Quiet, patient-initiated: see which muscles were treated at the
+            last treatment, in a read-only pop-up. Only shown when a
+            treatment is on record. */}
+        {data.latestTreatment && (
+          <button
+            type="button"
+            onClick={() => setShowMuscles(true)}
+            className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-button)] border border-sage/40 bg-cream-soft px-3 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+            {t('viewTreatedMuscles')}
+          </button>
+        )}
       </section>
 
       {/* Safety notice */}
       <div className="mt-10">
         <SafetyNotice />
       </div>
+
+      {/* Read-only progress graph for one goal, opened from a goal card's
+          graph button. Reuses the clinician graph (no edit affordances);
+          physio assessments are omitted — the patient sees only their own
+          self-report. */}
+      {graphGoal && (
+        <GoalGraphModal
+          goalText={graphGoal.patientFacingText}
+          kind={graphGoal.kind}
+          currentWeek={data.currentWeek}
+          ratings={graphGoal.ratings}
+          physioRatings={[]}
+          closeLabel={t('graphClose')}
+          onClose={() => setGraphGoal(null)}
+        />
+      )}
+
+      {/* Read-only list of muscles treated at the last treatment. */}
+      {showMuscles && data.latestTreatment && (
+        <TreatedMusclesModal
+          date={data.latestTreatment.date}
+          muscles={data.latestTreatment.muscles}
+          locale={locale}
+          onClose={() => setShowMuscles(false)}
+        />
+      )}
     </AppShell>
   );
 }
