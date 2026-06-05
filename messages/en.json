@@ -920,7 +920,13 @@
     "withCaregiver": "with caregiver",
     "patientNote": "Patient note:",
     "tapPointForDetails": "Tap a point for details.",
-    "axisBetter": "better"
+    "axisBetter": "better",
+    "modality": {
+      "botulinum_toxin": "Botulinum toxin",
+      "baclofen_pump": "Baclofen pump",
+      "surgery": "Surgery",
+      "other": "Other"
+    }
   },
   "goalVideo": {
     "introTitle": "Record a short video (optional)",

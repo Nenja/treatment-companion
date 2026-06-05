@@ -924,7 +924,13 @@
     "withCaregiver": "med hjælper",
     "patientNote": "Patientnote:",
     "tapPointForDetails": "Tryk på et punkt for detaljer.",
-    "axisBetter": "bedre"
+    "axisBetter": "bedre",
+    "modality": {
+      "botulinum_toxin": "Botulinumtoksin",
+      "baclofen_pump": "Baklofenpumpe",
+      "surgery": "Kirurgi",
+      "other": "Andet"
+    }
   },
   "goalVideo": {
     "introTitle": "Optag en kort video (valgfrit)",
