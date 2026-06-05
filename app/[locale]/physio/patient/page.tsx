@@ -571,6 +571,7 @@ export default function PhysioPatientPage() {
                         currentWeek={weekNumber}
                         ratings={ratingsByGoal.get(g.id) ?? []}
                         physioRatings={physioRatingsByGoal.get(g.id) ?? []}
+                        nrsDirection={g.nrsDirection}
                       />
                     </li>
                   ))}

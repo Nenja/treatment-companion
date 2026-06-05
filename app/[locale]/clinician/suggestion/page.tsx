@@ -13,13 +13,13 @@ import {
 } from '@/lib/supabase/clinicianSession';
 import {
   useApproveSuggestion,
+  useApproveSuggestionGas,
   useSetSuggestionStatus
 } from '@/lib/supabase/clinicianPatient';
 import { formatLongDate } from '@/lib/dates';
 import type { NrsDirection } from '@/lib/types';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
-import { GasCutPoints } from '@/components/clinician/GasCutPoints';
 import { useToast } from '@/components/feedback/Toast';
 import {
   SkeletonBlock,
@@ -43,6 +43,7 @@ function Inner() {
   const t = useTranslations('clinician.review');
   const tA11y = useTranslations('a11y');
   const tApprove = useTranslations('clinician.approve');
+  const tNewGoal = useTranslations('newGoal');
   const tDomain = useTranslations('domain');
   const tImportance = useTranslations('importance');
 
@@ -55,6 +56,7 @@ function Inner() {
   );
   const touchSession = useTouchClinicianSession();
   const approve = useApproveSuggestion();
+  const approveGas = useApproveSuggestionGas();
   const setStatus = useSetSuggestionStatus();
   const toast = useToast();
   const tFeedback = useTranslations('feedback');
@@ -112,11 +114,14 @@ function Inner() {
   const [smartText, setSmartText] = useState('');
   const [nrsQuestion, setNrsQuestion] = useState('');
   const [nrsDirection, setNrsDirection] = useState<NrsDirection>('higherIsBetter');
-  // Default cut points for the higherIsBetter case. Clinician can edit.
-  const [cutLowLow, setCutLowLow] = useState<string>('2');
-  const [cutLow, setCutLow] = useState<string>('4');
-  const [cutZero, setCutZero] = useState<string>('5');
-  const [cutHigh, setCutHigh] = useState<string>('7');
+  // NRS goals are tracked as a raw 0–10 score (no clinician-set
+  // cut-offs). A suggestion can also be approved as a GAS goal.
+  const [goalKind, setGoalKind] = useState<'nrs' | 'gas'>('nrs');
+  const [anchorMinus2, setAnchorMinus2] = useState('');
+  const [anchorMinus1, setAnchorMinus1] = useState('');
+  const [anchorZero, setAnchorZero] = useState('');
+  const [anchorPlus1, setAnchorPlus1] = useState('');
+  const [anchorPlus2, setAnchorPlus2] = useState('');
 
   if (
     authLoading ||
@@ -204,42 +209,47 @@ function Inner() {
     setShowApproveForm(true);
   };
 
-  // Parse cut points to numbers; require monotonic increasing and in range.
-  const cutLowLowN = parseInt(cutLowLow, 10);
-  const cutLowN = parseInt(cutLow, 10);
-  const cutZeroN = parseInt(cutZero, 10);
-  const cutHighN = parseInt(cutHigh, 10);
-  const cutsValid =
-    Number.isInteger(cutLowLowN) &&
-    Number.isInteger(cutLowN) &&
-    Number.isInteger(cutZeroN) &&
-    Number.isInteger(cutHighN) &&
-    cutLowLowN >= 0 &&
-    cutHighN <= 9 &&
-    cutLowLowN < cutLowN &&
-    cutLowN < cutZeroN &&
-    cutZeroN < cutHighN;
+  const anchorsValid = Boolean(
+    anchorMinus2.trim() &&
+      anchorMinus1.trim() &&
+      anchorZero.trim() &&
+      anchorPlus1.trim() &&
+      anchorPlus2.trim()
+  );
 
-  const canSubmitApprove =
+  const canSubmitApprove = Boolean(
     patientText.trim() &&
-    smartText.trim() &&
-    nrsQuestion.trim() &&
-    cutsValid;
+      smartText.trim() &&
+      (goalKind === 'nrs' ? nrsQuestion.trim() : anchorsValid) &&
+      !approve.isPending &&
+      !approveGas.isPending
+  );
 
   const submitApprove = async () => {
-    if (!canSubmitApprove || approve.isPending) return;
+    if (!canSubmitApprove || approve.isPending || approveGas.isPending) return;
     try {
-      await approve.mutateAsync({
-        suggestionId: suggestion.id,
-        patientFacingText: patientText,
-        smartText,
-        nrsQuestion,
-        nrsDirection,
-        cutLowLow: cutLowLowN,
-        cutLow: cutLowN,
-        cutZero: cutZeroN,
-        cutHigh: cutHighN
-      });
+      if (goalKind === 'nrs') {
+        await approve.mutateAsync({
+          suggestionId: suggestion.id,
+          patientFacingText: patientText,
+          smartText,
+          nrsQuestion,
+          nrsDirection
+        });
+      } else {
+        await approveGas.mutateAsync({
+          suggestionId: suggestion.id,
+          patientFacingText: patientText,
+          smartText,
+          anchors: {
+            minus2: anchorMinus2.trim(),
+            minus1: anchorMinus1.trim(),
+            zero: anchorZero.trim(),
+            plus1: anchorPlus1.trim(),
+            plus2: anchorPlus2.trim()
+          }
+        });
+      }
       touchSession.mutate();
       toast.success(tFeedback('successApproved'));
       back();
@@ -354,81 +364,124 @@ function Inner() {
               />
             </Field>
 
-            <h3 className="mt-8 font-display text-[17px] text-ink">
-              NRS rating setup
-            </h3>
-            <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
-              The patient will rate this goal on a 0-10 scale each week.
-              {tApprove('gasIntro')}
-            </p>
-
-            <Field
-              label={tApprove('nrsQuestionLabel')}
-              helper={tApprove('nrsQuestionHelper')}
-            >
-              <textarea
-                value={nrsQuestion}
-                onChange={(e) => setNrsQuestion(e.target.value)}
-                rows={3}
-                placeholder={tApprove('nrsQuestionPlaceholder')}
-                className={inputClasses}
-                maxLength={300}
-              />
-            </Field>
-
-            <Field
-              label={tApprove('directionLabel')}
-              helper={tApprove('directionHelper')}
-            >
+            <Field label={tApprove('modelLabel')}>
               <div className="mt-2 flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setNrsDirection('higherIsBetter')}
+                  onClick={() => setGoalKind('nrs')}
                   className={`flex-1 rounded-[var(--radius-button)] border px-3 py-2.5 text-[14px] font-semibold ${
-                    nrsDirection === 'higherIsBetter'
+                    goalKind === 'nrs'
                       ? 'border-sage bg-sage-soft text-sage-deep'
                       : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
                   }`}
                 >
-                  {tApprove('higherIsBetter')}
+                  {tApprove('modelNrs')}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setNrsDirection('lowerIsBetter')}
+                  onClick={() => setGoalKind('gas')}
                   className={`flex-1 rounded-[var(--radius-button)] border px-3 py-2.5 text-[14px] font-semibold ${
-                    nrsDirection === 'lowerIsBetter'
+                    goalKind === 'gas'
                       ? 'border-sage bg-sage-soft text-sage-deep'
                       : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
                   }`}
                 >
-                  {tApprove('lowerIsBetter')}
+                  {tApprove('modelGas')}
                 </button>
               </div>
             </Field>
 
-            <Field
-              label={tApprove('gasLevelsLabel')}
-              helper="Set the highest NRS answer that counts as each outcome. The patient's weekly 0-10 answer falls into the matching level."
-            >
-              <GasCutPoints
-                direction={nrsDirection}
-                cutLowLow={cutLowLow}
-                cutLow={cutLow}
-                cutZero={cutZero}
-                cutHigh={cutHigh}
-                onChange={(which, v) => {
-                  if (which === 'lowLow') setCutLowLow(v);
-                  else if (which === 'low') setCutLow(v);
-                  else if (which === 'zero') setCutZero(v);
-                  else setCutHigh(v);
-                }}
-              />
-              {!cutsValid && (cutLowLow || cutLow || cutZero || cutHigh) && (
-                <p className="mt-2 text-[14px] text-amber-deep">
-                  {tApprove('cutoffError')}
+            {goalKind === 'nrs' && (
+              <>
+                <h3 className="mt-8 font-display text-[17px] text-ink">
+                  NRS rating setup
+                </h3>
+                <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
+                  The patient will rate this goal on a 0-10 scale each week.
+                  {tApprove('gasIntro')}
                 </p>
-              )}
-            </Field>
+
+                <Field
+                  label={tApprove('nrsQuestionLabel')}
+                  helper={tApprove('nrsQuestionHelper')}
+                >
+                  <textarea
+                    value={nrsQuestion}
+                    onChange={(e) => setNrsQuestion(e.target.value)}
+                    rows={3}
+                    placeholder={tApprove('nrsQuestionPlaceholder')}
+                    className={inputClasses}
+                    maxLength={300}
+                  />
+                </Field>
+
+                <Field
+                  label={tApprove('directionLabel')}
+                  helper={tApprove('directionHelper')}
+                >
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNrsDirection('higherIsBetter')}
+                      className={`flex-1 rounded-[var(--radius-button)] border px-3 py-2.5 text-[14px] font-semibold ${
+                        nrsDirection === 'higherIsBetter'
+                          ? 'border-sage bg-sage-soft text-sage-deep'
+                          : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
+                      }`}
+                    >
+                      {tApprove('higherIsBetter')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNrsDirection('lowerIsBetter')}
+                      className={`flex-1 rounded-[var(--radius-button)] border px-3 py-2.5 text-[14px] font-semibold ${
+                        nrsDirection === 'lowerIsBetter'
+                          ? 'border-sage bg-sage-soft text-sage-deep'
+                          : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
+                      }`}
+                    >
+                      {tApprove('lowerIsBetter')}
+                    </button>
+                  </div>
+                </Field>
+              </>
+            )}
+
+            {goalKind === 'gas' && (
+              <Field
+                label={tNewGoal('gasLevelsLabel')}
+                helper={tNewGoal('gasLevelsHelp')}
+              >
+                <div className="mt-2 space-y-2">
+                  {(
+                    [
+                      ['levelMuchMore', anchorPlus2, setAnchorPlus2],
+                      ['levelMore', anchorPlus1, setAnchorPlus1],
+                      ['levelExpected', anchorZero, setAnchorZero],
+                      ['levelLess', anchorMinus1, setAnchorMinus1],
+                      ['levelMuchLess', anchorMinus2, setAnchorMinus2]
+                    ] as const
+                  ).map(([key, val, setVal]) => (
+                    <div key={key}>
+                      <label className="block text-[13px] font-semibold text-ink-soft">
+                        {tNewGoal(key)}
+                      </label>
+                      <input
+                        type="text"
+                        value={val}
+                        onChange={(e) => setVal(e.target.value)}
+                        placeholder={tNewGoal(`${key}Placeholder`)}
+                        className={inputClasses}
+                        maxLength={200}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-2 text-[13px] text-ink-muted">
+                  {tNewGoal('gasTip')}
+                </p>
+              </Field>
+            )}
 
             <div className="mt-8 flex gap-3">
               <button
@@ -441,10 +494,12 @@ function Inner() {
               <button
                 type="button"
                 onClick={submitApprove}
-                disabled={!canSubmitApprove || approve.isPending}
+                disabled={!canSubmitApprove}
                 className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-soft"
               >
-                {approve.isPending ? '…' : tApprove('submit')}
+                {approve.isPending || approveGas.isPending
+                  ? '…'
+                  : tApprove('submit')}
               </button>
             </div>
           </section>

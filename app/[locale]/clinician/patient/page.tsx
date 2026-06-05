@@ -971,6 +971,7 @@ export default function ClinicianPatientPage() {
                     currentWeek={weekNumber}
                     ratings={ratingsByGoal.get(g.id) ?? []}
                     physioRatings={physioRatingsByGoal.get(g.id) ?? []}
+                    nrsDirection={g.nrs?.direction}
                     onExpand={() => setEnlargedGoalId(g.id)}
                   />
                   {/* Retire action — retires a goal (achieved /
@@ -1159,6 +1160,7 @@ export default function ClinicianPatientPage() {
               currentWeek={weekNumber}
               ratings={ratingsByGoal.get(g.id) ?? []}
               physioRatings={physioRatingsByGoal.get(g.id) ?? []}
+              nrsDirection={g.nrs?.direction}
               closeLabel={tSession('done')}
               onClose={() => setEnlargedGoalId(null)}
             />

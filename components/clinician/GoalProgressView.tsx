@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 interface WeekRating {
@@ -38,6 +38,12 @@ interface GoalProgressViewProps {
    *  the page opens the same chart larger in a modal. Omitted inside
    *  the modal itself (no nested expand). */
   onExpand?: () => void;
+  /** NRS goals only: which way is clinically better. When set, the chart
+   *  tints the "good" half sage and shows a "↑/↓ better" cue on the
+   *  y-axis, so a downward (improving) line on a lower-is-better goal
+   *  can't be misread as a decline. GAS goals already encode this via
+   *  their sage/amber bands and ignore this prop. */
+  nrsDirection?: 'higherIsBetter' | 'lowerIsBetter';
 }
 
 /**
@@ -68,10 +74,13 @@ export function GoalProgressView({
   currentWeek,
   ratings,
   physioRatings = [],
-  onExpand
+  onExpand,
+  nrsDirection
 }: GoalProgressViewProps) {
   const t = useTranslations('treatment');
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+  // Unique id so multiple charts on one page don't share a <linearGradient>.
+  const gradId = `nrs-good-${useId().replace(/:/g, '')}`;
 
   // NRS goals plot the raw 0–10 value on a 0–10 axis; GAS goals plot the
   // −2..+2 level on the banded axis. plotVal picks the right field.
@@ -79,6 +88,9 @@ export function GoalProgressView({
   const yMin = isNrs ? 0 : -2;
   const yMax = isNrs ? 10 : 2;
   const neutralVal = isNrs ? 5 : 0;
+  // NRS direction cue: tint the good half + label the good end of the axis.
+  const showNrsDir = isNrs && nrsDirection != null;
+  const higherBetter = nrsDirection === 'higherIsBetter';
   const plotVal = (
     r: { value: number | null; nrs: number | null } | null
   ): number | null => (r == null ? null : isNrs ? r.nrs : r.value);
@@ -243,23 +255,65 @@ export function GoalProgressView({
         viewBox={`0 0 ${width} ${height}`}
         className="mt-3 block w-full"
         role="img"
-        aria-label={`Weekly ratings chart for: ${goalText}`}
+        aria-label={
+          showNrsDir
+            ? `Weekly ratings chart for: ${goalText} (${
+                higherBetter ? 'higher is better' : 'lower is better'
+              })`
+            : `Weekly ratings chart for: ${goalText}`
+        }
       >
         {/* Background. GAS: five muted directional bands. NRS: faint
             gridlines at 0 / 5 / 10 on the plain card. */}
         {isNrs ? (
-          [0, 5, 10].map((v) => (
-            <line
-              key={`grid-${v}`}
-              x1={padLeft}
-              x2={padLeft + innerWidth}
-              y1={yFor(v)}
-              y2={yFor(v)}
-              stroke="var(--color-stone)"
-              strokeWidth={1}
-              opacity={0.6}
-            />
-          ))
+          <>
+            {showNrsDir && (
+              <>
+                <defs>
+                  <linearGradient
+                    id={gradId}
+                    gradientUnits="userSpaceOnUse"
+                    x1={padLeft}
+                    x2={padLeft}
+                    y1={higherBetter ? yFor(yMax) : yFor(yMin)}
+                    y2={yFor(neutralVal)}
+                  >
+                    <stop
+                      offset="0%"
+                      stopColor="var(--color-sage-soft)"
+                      stopOpacity={0.55}
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor="var(--color-sage-soft)"
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+                </defs>
+                <rect
+                  x={padLeft}
+                  y={higherBetter ? yFor(yMax) : yFor(neutralVal)}
+                  width={innerWidth}
+                  height={Math.abs(
+                    yFor(neutralVal) - yFor(higherBetter ? yMax : yMin)
+                  )}
+                  fill={`url(#${gradId})`}
+                />
+              </>
+            )}
+            {[0, 5, 10].map((v) => (
+              <line
+                key={`grid-${v}`}
+                x1={padLeft}
+                x2={padLeft + innerWidth}
+                y1={yFor(v)}
+                y2={yFor(v)}
+                stroke="var(--color-stone)"
+                strokeWidth={1}
+                opacity={0.6}
+              />
+            ))}
+          </>
         ) : (
           <>
             <rect
@@ -318,6 +372,21 @@ export function GoalProgressView({
             {isNrs ? `${v}` : v > 0 ? `+${v}` : `${v}`}
           </text>
         ))}
+
+        {/* NRS direction cue: marks the good end of the axis so a
+            lower-is-better goal isn't read upside-down. */}
+        {showNrsDir && (
+          <text
+            x={padLeft + 4}
+            y={higherBetter ? padTop + 9 : padTop + innerHeight - 5}
+            textAnchor="start"
+            dominantBaseline="middle"
+            className="fill-sage-deep"
+            fontSize={9}
+          >
+            {higherBetter ? '↑' : '↓'} {t('axisBetter')}
+          </text>
+        )}
 
         {/* X-axis labels */}
         {xTickArray.map((w) => (

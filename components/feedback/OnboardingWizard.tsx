@@ -214,6 +214,7 @@ export function OnboardingWizard({
             currentWeek={8}
             ratings={SAMPLE_RATINGS}
             physioRatings={SAMPLE_PHYSIO}
+            nrsDirection="higherIsBetter"
           />
         </div>
 

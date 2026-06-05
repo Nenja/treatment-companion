@@ -19,6 +19,7 @@ export function GoalGraphModal({
   currentWeek,
   ratings,
   physioRatings,
+  nrsDirection,
   closeLabel,
   onClose
 }: {
@@ -29,6 +30,7 @@ export function GoalGraphModal({
   // the page passes exactly what GoalProgressView expects.
   ratings: React.ComponentProps<typeof GoalProgressView>['ratings'];
   physioRatings: React.ComponentProps<typeof GoalProgressView>['physioRatings'];
+  nrsDirection?: 'higherIsBetter' | 'lowerIsBetter';
   closeLabel: string;
   onClose: () => void;
 }) {
@@ -58,6 +60,7 @@ export function GoalGraphModal({
           currentWeek={currentWeek}
           ratings={ratings}
           physioRatings={physioRatings}
+          nrsDirection={nrsDirection}
         />
       </div>
     </div>

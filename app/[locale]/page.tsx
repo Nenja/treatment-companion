@@ -314,6 +314,7 @@ export default function PatientHomePage() {
           currentWeek={data.currentWeek}
           ratings={graphGoal.ratings}
           physioRatings={[]}
+          nrsDirection={graphGoal.nrsDirection}
           closeLabel={t('graphClose')}
           onClose={() => setGraphGoal(null)}
         />

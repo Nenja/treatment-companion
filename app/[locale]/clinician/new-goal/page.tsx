@@ -10,7 +10,6 @@ import {
   useCreateGasGoalForPatient,
   useSetGoalVideoEnabled
 } from '@/lib/supabase/clinicianPatient';
-import { GasCutPoints } from '@/components/clinician/GasCutPoints';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
@@ -71,10 +70,6 @@ function NewGoalInner() {
   const [nrsQuestion, setNrsQuestion] = useState('');
   const [nrsDirection, setNrsDirection] =
     useState<NrsDirection>('higherIsBetter');
-  const [cutLowLow, setCutLowLow] = useState('');
-  const [cutLow, setCutLow] = useState('');
-  const [cutZero, setCutZero] = useState('');
-  const [cutHigh, setCutHigh] = useState('');
 
   // GAS anchors — one sentence per outcome level. Required only when
   // goalKind === 'gas'.
@@ -84,32 +79,21 @@ function NewGoalInner() {
   const [anchorPlus1, setAnchorPlus1] = useState('');
   const [anchorPlus2, setAnchorPlus2] = useState('');
 
-  const cutLowLowN = Number(cutLowLow);
-  const cutLowN = Number(cutLow);
-  const cutZeroN = Number(cutZero);
-  const cutHighN = Number(cutHigh);
-  const cutsValid =
-    Number.isInteger(cutLowLowN) &&
-    Number.isInteger(cutLowN) &&
-    Number.isInteger(cutZeroN) &&
-    Number.isInteger(cutHighN) &&
-    cutLowLowN >= 0 &&
-    cutHighN <= 9 &&
-    cutLowLowN < cutLowN &&
-    cutLowN < cutZeroN &&
-    cutZeroN < cutHighN;
-
-  // GAS anchors are optional — a GAS goal needs only the goal text and
-  // clinical description. Any anchors the clinician does write are kept;
-  // blank ones simply show the patient the generic level meaning.
+  // GAS anchors are required for a GAS goal (the create RPC enforces all
+  // five). NRS goals need only the 0–10 question — they're tracked as a
+  // raw 0–10 score now, with no clinician-set cut-offs.
   const commonValid =
     patientText.trim().length > 0 && smartText.trim().length > 0;
+  const anchorsValid =
+    anchorMinus2.trim().length > 0 &&
+    anchorMinus1.trim().length > 0 &&
+    anchorZero.trim().length > 0 &&
+    anchorPlus1.trim().length > 0 &&
+    anchorPlus2.trim().length > 0;
 
   const canSubmit =
     commonValid &&
-    (goalKind === 'nrs'
-      ? nrsQuestion.trim().length > 0 && cutsValid
-      : true) &&
+    (goalKind === 'nrs' ? nrsQuestion.trim().length > 0 : anchorsValid) &&
     !create.isPending &&
     !createGas.isPending;
 
@@ -128,11 +112,7 @@ function NewGoalInner() {
           patientFacingText: patientText.trim(),
           smartText: smartText.trim(),
           nrsQuestion: nrsQuestion.trim(),
-          nrsDirection,
-          cutLowLow: cutLowLowN,
-          cutLow: cutLowN,
-          cutZero: cutZeroN,
-          cutHigh: cutHighN
+          nrsDirection
         });
       } else {
         goalId = await createGas.mutateAsync({
@@ -335,34 +315,6 @@ function NewGoalInner() {
               {t('lowerIsBetter')}
             </button>
           </div>
-        </div>
-
-        <div className="mt-7">
-          <label className="block text-[14px] font-semibold text-ink">
-            {t('gasLevelsLabel')}
-          </label>
-          <p className="mt-1 text-[14px] text-ink-muted">
-            Set the highest NRS answer that counts as each outcome.
-          </p>
-          <GasCutPoints
-            direction={nrsDirection}
-            cutLowLow={cutLowLow}
-            cutLow={cutLow}
-            cutZero={cutZero}
-            cutHigh={cutHigh}
-            onChange={(which, v) => {
-              if (which === 'lowLow') setCutLowLow(v);
-              else if (which === 'low') setCutLow(v);
-              else if (which === 'zero') setCutZero(v);
-              else setCutHigh(v);
-            }}
-          />
-          {!cutsValid && (cutLowLow || cutLow || cutZero || cutHigh) && (
-            <p className="mt-2 text-[14px] text-amber-deep">
-              Each NRS cut-off must be a whole number from 0 to 9, and
-              each one higher than the one above it.
-            </p>
-          )}
         </div>
           </>
         )}
