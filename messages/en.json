@@ -57,7 +57,11 @@
       "treatedSideLeft": "Left",
       "treatedSideRight": "Right",
       "treatedSideLeftRight": "Left & right",
-      "treatedSideBoth": "Both sides"
+      "treatedSideBoth": "Both sides",
+      "errorBody": "Could not load your information right now. Please try again in a moment. If it keeps happening, contact your clinic.",
+      "errorHint": "Check your internet connection and try refreshing.",
+      "noCycleTitle": "No treatment cycle yet.",
+      "noCycleBody": "Your clinic will set up your first cycle at your next visit."
     },
     "visitCode": {
       "pageTitle": "Visit code",
@@ -69,7 +73,10 @@
       "regenerate": "Generate a new code",
       "copy": "Copy code",
       "copied": "Copied",
-      "back": "Back to home"
+      "back": "Back to home",
+      "generating": "Generating…",
+      "noActiveCode": "No active code",
+      "generateError": "Could not generate a code. Please try again. If it keeps happening, contact your clinic."
     },
     "suggestGoal": {
       "pageTitle": "Suggest a goal",
@@ -167,7 +174,13 @@
       "thanksBody": "Your check-in is saved. Keeping your care team updated like this really helps them support you.",
       "thanksBackHome": "Back to home",
       "weekBanner": "Week {week} check-in",
-      "rateGoalHelperGas": "Choose the option that best fits how this week went."
+      "rateGoalHelperGas": "Choose the option that best fits how this week went.",
+      "gasPrompt": "Which of these best describes how things are now?",
+      "gasMeaningMuchBetter": "Much better than expected",
+      "gasMeaningBetter": "Better than expected",
+      "gasMeaningAsExpected": "As expected",
+      "gasMeaningLess": "Less than expected",
+      "gasMeaningMuchLess": "Much less than expected"
     }
   },
   "domain": {
@@ -194,7 +207,8 @@
       "body": "Ask your patient to generate a code in their app, then type it here.",
       "placeholder": "ABC-DEF",
       "submit": "Unlock",
-      "errorInvalid": "That code isn't valid. Ask the patient to generate a new one."
+      "errorInvalid": "That code isn't valid. Ask the patient to generate a new one.",
+      "adminLink": "Admin: create or list accounts"
     },
     "session": {
       "endSession": "End session",
@@ -364,7 +378,9 @@
       "gasIntro": "You decide the question they see and how to map their answer to a GAS bucket.",
       "modelLabel": "Measurement model",
       "modelNrs": "0–10 scale",
-      "modelGas": "Descriptive levels"
+      "modelGas": "Descriptive levels",
+      "nrsSetupHeading": "NRS rating setup",
+      "nrsScaleIntro": "The patient rates this goal on a 0–10 scale each week."
     },
     "faceMap": {
       "marksLabel": "Marks:",
@@ -591,7 +607,11 @@
     "accessColSince": "Active since",
     "accessError": "Could not load active access.",
     "accessLoading": "Loading active access…",
-    "accountsLoadError": "Could not load accounts: {error}"
+    "accountsLoadError": "Could not load accounts: {error}",
+    "accountCreated": "Account created: {email}",
+    "accountCreatedRole": "Role: {role}. Share the temporary password with them; they should change it at first sign-in.",
+    "copyPassword": "Copy",
+    "dismiss": "Dismiss"
   },
   "patientInfo": {
     "subtitle": "Clinical background",
@@ -679,7 +699,11 @@
     "sideLeftRight": "Left & Right",
     "sideBoth": "Both sides",
     "eyebrow": "Therapist",
-    "endSession": "End session"
+    "endSession": "End session",
+    "unlockTitle": "Unlock a patient",
+    "unlockBody": "Ask the patient to open their app and read you the 6-character visit code. Entering it gives you access for one hour.",
+    "unlockCodeLabel": "Visit code",
+    "unlockSubmit": "Unlock"
   },
   "profile": {
     "title": "Your profile",
@@ -925,7 +949,7 @@
     "intro": "Use this for a goal the patient told you about in clinic. Write it in the patient’s own words — it becomes one of their active goals straight away.",
     "goalLabel": "Goal in the patient’s words",
     "goalPlaceholder": "e.g. I want to be able to hold a cup of tea steady.",
-    "ratingSectionIntro": "The patient rates this goal 0–10 each week. You set the question they see and how their answer maps to a GAS level.",
+    "ratingSectionIntro": "The patient rates this goal 0–10 each week. You set the question they see.",
     "nrsQuestionLabel": "NRS question (patient-facing)",
     "nrsQuestionPlaceholder": "e.g. On a scale of 0-10, how steady is your hand when holding a cup?",
     "directionLabel": "Direction",
@@ -949,7 +973,14 @@
     "recording": "Recording…",
     "toastRecorded": "Goal recorded",
     "errorRecord": "Could not record the goal. Please try again.",
-    "errorRecordShort": "Could not record the goal."
+    "errorRecordShort": "Could not record the goal.",
+    "modelQuestion": "How will the patient rate this goal?",
+    "modelHelp": "Choose the measurement model for this goal.",
+    "modelNrsLabel": "0–10 scale (NRS)",
+    "modelNrsDesc": "Patient answers a 0–10 question each week.",
+    "modelGasLabel": "Descriptive levels (GAS)",
+    "modelGasDesc": "You describe each outcome level in words; the patient picks the one that matches.",
+    "nrsSetupHeading": "NRS rating setup"
   },
   "physioForms": {
     "loading": "Loading…",

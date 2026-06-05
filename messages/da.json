@@ -61,7 +61,11 @@
       "treatedSideLeft": "Venstre",
       "treatedSideRight": "Højre",
       "treatedSideLeftRight": "Venstre & højre",
-      "treatedSideBoth": "Begge sider"
+      "treatedSideBoth": "Begge sider",
+      "errorBody": "Dine oplysninger kunne ikke indlæses lige nu. Prøv igen om et øjeblik. Hvis det bliver ved, så kontakt din klinik.",
+      "errorHint": "Tjek din internetforbindelse, og prøv at opdatere siden.",
+      "noCycleTitle": "Intet behandlingsforløb endnu.",
+      "noCycleBody": "Din klinik opretter dit første forløb ved dit næste besøg."
     },
     "visitCode": {
       "pageTitle": "Besøgskode",
@@ -73,7 +77,10 @@
       "regenerate": "Generér en ny kode",
       "copy": "Kopiér kode",
       "copied": "Kopieret",
-      "back": "Tilbage til forsiden"
+      "back": "Tilbage til forsiden",
+      "generating": "Genererer…",
+      "noActiveCode": "Ingen aktiv kode",
+      "generateError": "Koden kunne ikke genereres. Prøv igen. Hvis det bliver ved, så kontakt din klinik."
     },
     "suggestGoal": {
       "pageTitle": "Foreslå et mål",
@@ -171,7 +178,13 @@
       "thanksBody": "Din status er gemt. At holde dit behandlingsteam opdateret på denne måde hjælper dem virkelig med at støtte dig.",
       "thanksBackHome": "Tilbage til forsiden",
       "weekBanner": "Uge {week}-tjek",
-      "rateGoalHelperGas": "Vælg den mulighed, der bedst passer til, hvordan ugen gik."
+      "rateGoalHelperGas": "Vælg den mulighed, der bedst passer til, hvordan ugen gik.",
+      "gasPrompt": "Hvilken af disse beskriver bedst, hvordan det går nu?",
+      "gasMeaningMuchBetter": "Meget bedre end forventet",
+      "gasMeaningBetter": "Bedre end forventet",
+      "gasMeaningAsExpected": "Som forventet",
+      "gasMeaningLess": "Mindre end forventet",
+      "gasMeaningMuchLess": "Meget mindre end forventet"
     }
   },
   "domain": {
@@ -198,7 +211,8 @@
       "body": "Bed patienten generere en kode i deres app, og indtast den her.",
       "placeholder": "ABC-DEF",
       "submit": "Lås op",
-      "errorInvalid": "Den kode er ikke gyldig. Bed patienten generere en ny."
+      "errorInvalid": "Den kode er ikke gyldig. Bed patienten generere en ny.",
+      "adminLink": "Admin: opret eller vis konti"
     },
     "session": {
       "endSession": "Afslut session",
@@ -368,7 +382,9 @@
       "gasIntro": "Du bestemmer det spørgsmål, de ser, og hvordan deres svar omsættes til en GAS-kategori.",
       "modelLabel": "Målemetode",
       "modelNrs": "0–10-skala",
-      "modelGas": "Beskrivende niveauer"
+      "modelGas": "Beskrivende niveauer",
+      "nrsSetupHeading": "NRS-vurdering",
+      "nrsScaleIntro": "Patienten vurderer dette mål på en 0–10-skala hver uge."
     },
     "faceMap": {
       "marksLabel": "Markeringer:",
@@ -595,7 +611,11 @@
     "accessColSince": "Aktiv siden",
     "accessError": "Aktiv adgang kunne ikke indlæses.",
     "accessLoading": "Indlæser aktiv adgang…",
-    "accountsLoadError": "Konti kunne ikke indlæses: {error}"
+    "accountsLoadError": "Konti kunne ikke indlæses: {error}",
+    "accountCreated": "Konto oprettet: {email}",
+    "accountCreatedRole": "Rolle: {role}. Del den midlertidige adgangskode med dem; de bør ændre den ved første login.",
+    "copyPassword": "Kopiér",
+    "dismiss": "Afvis"
   },
   "patientInfo": {
     "subtitle": "Klinisk baggrund",
@@ -683,7 +703,11 @@
     "sideLeftRight": "Venstre & højre",
     "sideBoth": "Begge sider",
     "eyebrow": "Terapeut",
-    "endSession": "Afslut session"
+    "endSession": "Afslut session",
+    "unlockTitle": "Lås en patient op",
+    "unlockBody": "Bed patienten om at åbne deres app og læse den 6-tegns besøgskode op. Når du indtaster den, får du adgang i én time.",
+    "unlockCodeLabel": "Besøgskode",
+    "unlockSubmit": "Lås op"
   },
   "profile": {
     "title": "Din profil",
@@ -929,7 +953,7 @@
     "intro": "Brug dette til et mål, som patienten har fortalt dig om i klinikken. Skriv det med patientens egne ord — det bliver straks et af deres aktive mål.",
     "goalLabel": "Mål med patientens egne ord",
     "goalPlaceholder": "f.eks. Jeg vil gerne kunne holde en kop te roligt.",
-    "ratingSectionIntro": "Patienten vurderer dette mål 0–10 hver uge. Du fastsætter det spørgsmål, de ser, og hvordan deres svar omsættes til et GAS-niveau.",
+    "ratingSectionIntro": "Patienten vurderer dette mål 0–10 hver uge. Du fastlægger det spørgsmål, de ser.",
     "nrsQuestionLabel": "NRS-spørgsmål (patientrettet)",
     "nrsQuestionPlaceholder": "f.eks. På en skala fra 0-10, hvor roligt er din hånd, når du holder en kop?",
     "directionLabel": "Retning",
@@ -953,7 +977,14 @@
     "recording": "Registrerer…",
     "toastRecorded": "Mål registreret",
     "errorRecord": "Målet kunne ikke registreres. Prøv venligst igen.",
-    "errorRecordShort": "Målet kunne ikke registreres."
+    "errorRecordShort": "Målet kunne ikke registreres.",
+    "modelQuestion": "Hvordan skal patienten vurdere dette mål?",
+    "modelHelp": "Vælg målemetode for dette mål.",
+    "modelNrsLabel": "0–10-skala (NRS)",
+    "modelNrsDesc": "Patienten besvarer et 0–10-spørgsmål hver uge.",
+    "modelGasLabel": "Beskrivende niveauer (GAS)",
+    "modelGasDesc": "Du beskriver hvert udfaldsniveau med ord; patienten vælger det, der passer.",
+    "nrsSetupHeading": "NRS-vurdering"
   },
   "physioForms": {
     "loading": "Indlæser…",
