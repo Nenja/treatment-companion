@@ -59,6 +59,7 @@ export default function ClinicianPatientPage() {
   const tAmb = useTranslations('ambulation');
   const tDomain = useTranslations('domain');
   const tImportance = useTranslations('importance');
+  const tModality = useTranslations('treatment.modality');
 
   const { user, profile, loading: authLoading } = useAuth();
   const sessionQuery = useCurrentClinicianSession(
@@ -535,6 +536,9 @@ export default function ClinicianPatientPage() {
             date: formatLongDate(cycle.startDate, locale)
           })}
         </p>
+        <span className="mt-2 inline-flex items-center rounded-full border border-stone bg-stone-soft px-2.5 py-1 text-[12px] font-semibold text-ink-soft">
+          {tModality(cycle.modality)}
+        </span>
 
         {/* Action row — always-visible entry points with live counts.
             Suggestions and therapist input open inline panels below;
@@ -1092,7 +1096,8 @@ export default function ClinicianPatientPage() {
             patient: { displayName: patient.displayName },
             cycle: {
               cycleNumber: cycle.cycleNumber,
-              startDate: cycle.startDate
+              startDate: cycle.startDate,
+              modality: cycle.modality
             },
             treatment: treatment
               ? {
