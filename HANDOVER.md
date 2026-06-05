@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `batch-a`._
+> _Last updated for build tag: `batch-b`._
 
 ---
 
@@ -512,61 +512,59 @@ medication columns must be verified before surfacing them on the patient side
 `unified-header` →
 `nrs-graph-direction` →
 **`batch-a`** (0067; NRS cut-off UI dropped, suggestion-approval gained a
-GAS option, `/demo` deleted, `clinician/patient` forced dynamic — current).
+GAS option, `/demo` deleted, `clinician/patient` forced dynamic) →
+**`batch-b`** (localization sweep — no new migration; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-batch-a.zip`
-- **Tag:** `batch-a`
-- **Change:** three things, all from the page-by-page review.
-  1. **NRS goals no longer show GAS cut-offs** in setup. The clinician now
-     configures an NRS goal with just the 0–10 question + direction; there is
-     no cut-off UI. Done as **option B (UI-only)**: the schema still requires
-     four cut-offs and the check-in RPC still derives an (unused) GAS bucket
-     from them, so rather than rewrite the critical check-in path, the hooks
-     now send fixed default cut-offs (`1/3/5/7`) behind the scenes. The graph
-     and the "since last visit" verdict already read the raw 0–10 + direction,
-     so the derived GAS stays the unused byproduct it already was. Cut-off
-     columns retain default data; **no schema/check-in change.**
-  2. **Suggestion-approval can now create a GAS goal**, not only NRS. The
-     approve form gained a measurement-model toggle + five anchor inputs
-     (reusing new-goal's GAS strings; 3 new toggle keys, parity verified).
-     Backed by a new **additive RPC `approve_suggestion_gas` (migration 0067)**
-     mirroring `approve_suggestion` but inserting a GAS goal — needed because
-     `set_suggestion_status` forbids setting `'active'`. Does not touch the
-     check-in path.
-  3. **`/demo` deleted** (no-auth sandbox, per request); orphaned
-     `components/clinician/GasCutPoints.tsx` removed.
-- **Build-blocker fixed (pre-existing, unrelated to the above):** statically
-  prerendering `clinician/patient` tripped a Next 15 RSC client-manifest
-  bundler error (`page.tsx#default` not in manifest). Confirmed Batch A is
-  innocent — that page imports nothing this batch changed, and the build is
-  clean 58/58 with the page stubbed. Fixed by adding
-  `app/[locale]/clinician/patient/layout.tsx` with `export const dynamic =
-  'force-dynamic'`, which skips SSG for this one auth-gated, session-only
-  route (its prerendered shell was empty anyway) and matches its real
-  runtime behaviour. No other route affected.
-- **Files:** `lib/supabase/clinicianPatient.ts`,
-  `app/[locale]/clinician/{new-goal,suggestion}/page.tsx`,
-  `app/[locale]/clinician/patient/layout.tsx` (new),
-  `supabase/migrations/0067_approve_suggestion_gas.sql` (new),
-  `messages/{en,da}.json`; deleted `app/[locale]/demo/` +
-  `components/clinician/GasCutPoints.tsx`.
-- **DB needed:** run **migration 0067** (additive function; safe, idempotent
-  via `create or replace`). Nothing else; no env changes. Migrations now
-  through **0067**.
-- **⚠ QA (can't test here):** (a) approve a suggestion as a **GAS** goal
-  end-to-end after running 0067; (b) create an **NRS** goal from both
-  new-goal and suggestion now that the cut-off UI is gone — confirm it saves
-  and the patient check-in + graph work; (c) confirm `clinician/patient`
-  loads on Vercel with the new `force-dynamic` segment.
+- **Zip:** `treatment-companion-batch-b.zip`
+- **Tag:** `batch-b`
+- **Change:** localization sweep from the page-by-page review — closed the
+  remaining hardcoded-English gaps so en/da is consistent for patients and
+  staff. No DB / RPC / migration change; no behaviour change.
+  - **Patient-facing:** home error card + no-cycle card
+    (`patient.home.errorBody/errorHint/noCycleTitle/noCycleBody`); visit-code
+    "Generating…/No active code" + generate-error
+    (`patient.visitCode.generating/noActiveCode/generateError`); the **GAS
+    level meanings** in both `GasGoalRatingPicker` (now uses
+    `useTranslations('patient.checkin')`, `meaning`→`meaningKey`) and the
+    check-in summary's `gasLevelMeaning(v, t)` — shared keys
+    `patient.checkin.gasMeaning{MuchBetter,Better,AsExpected,Less,MuchLess}`
+    + `gasPrompt`.
+  - **Clinician/physio-facing:** the **whole physio unlock screen** (title,
+    body, code label, button — `physio.unlock{Title,Body,CodeLabel,Submit}`);
+    new-goal's measurement-model toggle + "NRS rating setup" heading
+    (`newGoal.model* / nrsSetupHeading`); suggestion's "NRS rating setup" +
+    0–10 sentence (`clinician.approve.nrsSetupHeading/nrsScaleIntro`);
+    clinician-entry admin link (`clinician.unlock.adminLink`); admin
+    created-account block (`admin.accountCreated/accountCreatedRole/
+    copyPassword/dismiss`).
+  - **Reworded two now-stale strings** that still described setting cut-offs
+    (removed in `batch-a`): `newGoal.ratingSectionIntro` and the suggestion
+    NRS intro no longer mention mapping a 0–10 answer to a GAS level.
+  - **Deferred (intentional):** `/privacy` stays English — it's an
+    acknowledged pilot-stage placeholder pending real GDPR/Danish legal copy;
+    translating throwaway text is wasted until the real policy exists.
+- **Parity:** en == da, 1019 keys, no diffs.
+- **DB needed:** none. Migrations still through **0067** (run that one if you
+  haven't — it's from `batch-a`, for the GAS suggestion-approval).
+- **⚠ Visual QA (can't render here):** switch the app to Danish and eyeball
+  the newly-translated screens — patient home error/no-cycle states, the
+  visit-code screen, the check-in **GAS** rating buttons + summary, the
+  **physio** unlock screen, and new-goal's model toggle. Confirm nothing
+  overflows its button/card and the Danish reads naturally.
 
 ---
 
-## 7b. Previous delivered build
+## 7b. Previous delivered builds
 
+- **`batch-a`** — zip `treatment-companion-batch-a.zip`. NRS cut-off UI
+  dropped (option B — app sends default cuts, no schema/check-in change),
+  suggestion-approval gained a GAS option (additive RPC **0067**), `/demo`
+  deleted, and `clinician/patient` forced dynamic to dodge a pre-existing
+  Next 15 RSC-manifest prerender bug. **Run migration 0067.**
 - **Zip:** `treatment-companion-nrs-graph-direction.zip` · **Tag:** `nrs-graph-direction`
 - **Change:** made the **NRS progress graph show which way is positive** (§5.4).
   The chart always drew 0 at the bottom / 10 at the top with no colour or label, so
