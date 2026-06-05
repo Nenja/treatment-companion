@@ -43,6 +43,9 @@ export interface AppProfile {
   colorScheme: string | null;
   /** Day/night toggle. Every palette has a day and a night form. */
   nightMode: boolean;
+  /** Accessibility opt-in: when true, show read-aloud (text-to-speech)
+   *  controls on key patient-facing text. */
+  readAloud: boolean;
   /** Profession code for non-physician professional accounts — a
    *  display label only, not a permission. Null for patients,
    *  physicians, and accounts where it was never set. */
@@ -104,7 +107,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data, error } = await supabase
         .from('profile')
         .select(
-          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin, color_scheme, night_mode, profession, profession_other, layout_preference'
+          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin, color_scheme, night_mode, read_aloud, profession, profession_other, layout_preference'
         )
         .eq('id', userId)
         .maybeSingle();
@@ -121,6 +124,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isAdmin: Boolean(data.is_admin),
         colorScheme: (data.color_scheme as string | null) ?? null,
         nightMode: Boolean(data.night_mode),
+        readAloud: Boolean(data.read_aloud),
         profession: (data.profession as string | null) ?? null,
         professionOther: (data.profession_other as string | null) ?? null,
         layoutPreference:

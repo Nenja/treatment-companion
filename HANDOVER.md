@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `batch-c`._
+> _Last updated for build tag: `read-aloud`._
 
 ---
 
@@ -216,7 +216,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0067**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0068**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -234,8 +234,11 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 - `0067_approve_suggestion_gas.sql` — **`batch-a`, RUN THIS.** Additive RPC
   `approve_suggestion_gas` so a clinician can approve a suggestion as a GAS
   goal. `create or replace`, no schema change, safe to re-run.
+- `0068_read_aloud_pref.sql` — **`read-aloud`, RUN THIS.** Adds
+  `profile.read_aloud boolean default false` (the read-aloud opt-in).
+  `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0067 are applied (0066 is dev-only; **0067 is required for the new GAS suggestion-approval**).
+> If unsure whether the user's DB is current, confirm 0062–0068 are applied (0066 is dev-only; **0067** is required for GAS suggestion-approval, **0068** for the read-aloud toggle).
 
 ---
 
@@ -514,46 +517,57 @@ medication columns must be verified before surfacing them on the patient side
 **`batch-a`** (0067; NRS cut-off UI dropped, suggestion-approval gained a
 GAS option, `/demo` deleted, `clinician/patient` forced dynamic) →
 **`batch-b`** (localization sweep — no new migration) →
-**`batch-c`** (minor polish — no new migration; current).
+**`batch-c`** (minor polish — no new migration) →
+**`read-aloud`** (0068; read-aloud / text-to-speech accessibility opt-in; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-batch-c.zip`
-- **Tag:** `batch-c`
-- **Change:** minor polish from the page-by-page review. No DB / RPC /
-  migration change.
-  - **Patient home — "View graph" only when there's data.** The graph
-    button on a `GoalCard` was always shown; for a goal with no check-ins
-    yet it opened an empty chart. The home page now passes `onViewGraph` /
-    `viewGraphLabel` only when `goal.ratings.length > 0`, so the button is
-    simply absent until the first check-in (cleaner than an empty graph).
-  - **Clinician-entry duplicate label.** The visit-code input's `<label>`
-    repeated the page `<h1>` (both `clinician.unlock.title`,
-    "Enter visit code"). The field now uses its own
-    `clinician.unlock.codeLabel` ("Visit code" / "Besøgskode").
-  - **Stale code comments corrected (no behaviour change):** the check-in
-    "step plan" doc (now describes per-goal NRS/GAS steps + video + training
-    days + comment, not "5 GAS anchors for every goal"); `physio/patient`'s
-    "SLICE 1 — placeholder" header (the page is a full read+suggest view
-    now); and the `clinician/patient` comment that referenced GAS capture
-    "shipping in the check-in slice" (long shipped).
-  - The new-goal `createGas.isPending` submit-label bug from the catalogue
-    was already fixed in `batch-a`.
-- **Parity:** en == da, 1020 keys.
-- **DB needed:** none. Migrations still through **0067** (run that one if
-  you haven't — it's from `batch-a`).
-- **⚠ Visual QA (can't render here):** confirm a brand-new goal (no
-  check-ins) shows no "View graph" button on the patient home, and that the
-  button reappears after the first check-in. Glance at the clinician-entry
-  screen — the field label now reads "Visit code" under the "Enter visit
-  code" heading.
+- **Zip:** `treatment-companion-read-aloud.zip`
+- **Tag:** `read-aloud`
+- **Change:** new **read-aloud (text-to-speech) accessibility option** for
+  patients. (Note: the *visual* accessibility options the request also
+  mentioned — text size, colour/contrast palettes, night mode, layout,
+  reduced motion — already existed in the app's appearance system, so this
+  build only adds the genuinely missing piece. Voice input / speech-to-text
+  was explicitly deferred.)
+  - **Opt-in pref:** `profile.read_aloud` (migration **0068**), loaded in
+    `useAuth` and written by `useSetReadAloud` (`lib/supabase/readAloud.ts`)
+    via the existing profile self-update path — same pattern as text scale /
+    palette. Off by default.
+  - **Toggle:** added to the existing `AppearanceSettings` (next to night
+    mode), so it appears everywhere that panel already shows, including the
+    profile page.
+  - **Mechanism:** `useSpeak` (`lib/useSpeak.ts`) wraps the browser's
+    on-device `speechSynthesis` (language from the current locale, da-DK /
+    en); **no audio leaves the device.** `ReadAloudButton`
+    (`components/feedback/ReadAloudButton.tsx`) is a self-gating speaker
+    button — it renders only when the user has the pref on AND the device
+    supports speech synthesis AND there is text — so callers drop it in with
+    no extra conditionals.
+  - **Placed on:** patient-home goal text (`GoalCard`), the weekly check-in
+    goal/question in both rating pickers (`GoalRatingPicker`,
+    `GasGoalRatingPicker`), and the `SafetyNotice`.
+  - **i18n:** `appearance.readAloud` / `appearance.readAloudHint`,
+    `a11y.readAloud` (en/da). Parity 1023 == 1023.
+- **DB needed:** run **migration 0068** (adds `profile.read_aloud`; additive,
+  safe to re-run). Also 0067 if not yet applied.
+- **⚠ Device QA (can't test audio here):** on real devices (especially iOS
+  Safari and Android Chrome), turn the toggle on in Appearance settings, then
+  confirm the speaker button appears on a goal / check-in / safety notice and
+  reads the text in the right language. Danish read-aloud depends on the
+  device having a da-DK voice installed. The button is correctly absent when
+  the pref is off or the device lacks speech synthesis.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`batch-c`** — zip `treatment-companion-batch-c.zip`. Minor polish:
+  hide patient-home "View graph" until a goal has data; clinician-entry
+  field label no longer duplicates the heading; three stale code comments
+  corrected. No DB change.
 - **`batch-b`** — zip `treatment-companion-batch-b.zip`. Localization sweep:
   patient home error/no-cycle, visit-code states, check-in GAS level
   meanings (picker + summary), the whole physio unlock screen, new-goal
