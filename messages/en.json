@@ -520,7 +520,10 @@
     "m9": "September",
     "m10": "October",
     "m11": "November",
-    "m12": "December"
+    "m12": "December",
+    "comfortReadAloud": "Read aloud",
+    "comfortReadAloudOn": "On",
+    "comfortReadAloudOff": "Off"
   },
   "appearance": {
     "heading": "Appearance",

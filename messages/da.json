@@ -524,7 +524,10 @@
     "m9": "september",
     "m10": "oktober",
     "m11": "november",
-    "m12": "december"
+    "m12": "december",
+    "comfortReadAloud": "Læs højt",
+    "comfortReadAloudOn": "Til",
+    "comfortReadAloudOff": "Fra"
   },
   "appearance": {
     "heading": "Udseende",
