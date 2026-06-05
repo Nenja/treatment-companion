@@ -216,11 +216,10 @@ function CreateAccountSection() {
       {createdInfo && (
         <div className="mt-4 rounded-[var(--radius-button)] border border-sage/30 bg-sage-soft/40 p-4">
           <p className="font-display text-[15px] text-ink">
-            Account created: {createdInfo.email}
+            {tAdmin('accountCreated', { email: createdInfo.email })}
           </p>
           <p className="mt-1 text-[14px] text-ink-soft">
-            Role: {createdInfo.role}. Share the temporary password with
-            them; they should change it at first sign-in.
+            {tAdmin('accountCreatedRole', { role: createdInfo.role })}
           </p>
           <div className="mt-3 flex items-center gap-2">
             <code className="block flex-1 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 font-mono text-[14px] text-ink">
@@ -233,7 +232,7 @@ function CreateAccountSection() {
               }}
               className="flex h-10 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream px-3 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
             >
-              Copy
+              {tAdmin('copyPassword')}
             </button>
           </div>
           <button
@@ -241,7 +240,7 @@ function CreateAccountSection() {
             onClick={() => setCreatedInfo(null)}
             className="mt-3 text-[14px] font-semibold text-ink-muted hover:text-ink-soft"
           >
-            Dismiss
+            {tAdmin('dismiss')}
           </button>
         </div>
       )}

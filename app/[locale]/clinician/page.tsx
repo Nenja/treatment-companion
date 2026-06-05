@@ -181,7 +181,7 @@ export default function ClinicianUnlockPage() {
               }
               className="flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
             >
-              Admin: create or list accounts
+              {t('adminLink')}
             </button>
           </div>
         )}

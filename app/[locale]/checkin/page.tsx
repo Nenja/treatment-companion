@@ -46,18 +46,21 @@ export default function CheckinPage() {
 }
 
 /** Plain-language meaning of a GAS level, for the summary review. */
-function gasLevelMeaning(v: number): string {
+function gasLevelMeaning(
+  v: number,
+  t: (key: string) => string
+): string {
   switch (v) {
     case 2:
-      return 'Much better than expected';
+      return t('gasMeaningMuchBetter');
     case 1:
-      return 'Better than expected';
+      return t('gasMeaningBetter');
     case 0:
-      return 'As expected';
+      return t('gasMeaningAsExpected');
     case -1:
-      return 'Less than expected';
+      return t('gasMeaningLess');
     case -2:
-      return 'Much less than expected';
+      return t('gasMeaningMuchLess');
     default:
       return '—';
   }
@@ -456,7 +459,7 @@ function CheckinPageInner() {
               if (typeof rating === 'number') {
                 answer =
                   g.kind === 'gas'
-                    ? gasLevelMeaning(rating)
+                    ? gasLevelMeaning(rating, t)
                     : `${rating} / 10`;
               }
               return (

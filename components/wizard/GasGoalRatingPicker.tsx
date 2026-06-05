@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 /**
  * Patient-facing rating control for a GAS goal.
  *
@@ -32,17 +34,17 @@ type Anchors = {
 
 interface Level {
   value: 2 | 1 | 0 | -1 | -2;
-  meaning: string;
+  meaningKey: string;
   anchorKey: keyof NonNullable<Anchors>;
   tone: 'better' | 'expected' | 'below';
 }
 
 const LEVELS: Level[] = [
-  { value: 2, meaning: 'Much better than expected', anchorKey: 'plus2', tone: 'better' },
-  { value: 1, meaning: 'Better than expected', anchorKey: 'plus1', tone: 'better' },
-  { value: 0, meaning: 'As expected', anchorKey: 'zero', tone: 'expected' },
-  { value: -1, meaning: 'Less than expected', anchorKey: 'minus1', tone: 'below' },
-  { value: -2, meaning: 'Much less than expected', anchorKey: 'minus2', tone: 'below' }
+  { value: 2, meaningKey: 'gasMeaningMuchBetter', anchorKey: 'plus2', tone: 'better' },
+  { value: 1, meaningKey: 'gasMeaningBetter', anchorKey: 'plus1', tone: 'better' },
+  { value: 0, meaningKey: 'gasMeaningAsExpected', anchorKey: 'zero', tone: 'expected' },
+  { value: -1, meaningKey: 'gasMeaningLess', anchorKey: 'minus1', tone: 'below' },
+  { value: -2, meaningKey: 'gasMeaningMuchLess', anchorKey: 'minus2', tone: 'below' }
 ];
 
 export function GasGoalRatingPicker({
@@ -58,6 +60,7 @@ export function GasGoalRatingPicker({
   value: number | undefined;
   onChange: (value: number) => void;
 }) {
+  const t = useTranslations('patient.checkin');
   const interacted = typeof value === 'number';
 
   return (
@@ -68,7 +71,7 @@ export function GasGoalRatingPicker({
         </p>
       )}
       <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
-        Which of these best describes how things are now?
+        {t('gasPrompt')}
       </p>
 
       <div
@@ -79,6 +82,7 @@ export function GasGoalRatingPicker({
         {LEVELS.map((lvl) => {
           const selected = interacted && value === lvl.value;
           const anchor = anchors ? anchors[lvl.anchorKey] : null;
+          const meaning = t(lvl.meaningKey);
 
           // Colour by tone. Selected = solid fill; unselected = a tinted
           // outline in the same hue so the column reads as a gradient.
@@ -111,7 +115,7 @@ export function GasGoalRatingPicker({
               type="button"
               role="radio"
               aria-checked={selected}
-              aria-label={`${lvl.meaning}${anchor ? `: ${anchor}` : ''}`}
+              aria-label={`${meaning}${anchor ? `: ${anchor}` : ''}`}
               onClick={() => onChange(lvl.value)}
               className={`flex w-full items-start gap-3 rounded-[var(--radius-card)] border-2 px-4 py-3.5 text-left transition-colors ${
                 selected ? selectedClass : idleClass
@@ -126,7 +130,7 @@ export function GasGoalRatingPicker({
               </span>
               <span className="min-w-0">
                 <span className="block text-[16px] font-semibold leading-snug">
-                  {lvl.meaning}
+                  {meaning}
                 </span>
                 {anchor && (
                   <span

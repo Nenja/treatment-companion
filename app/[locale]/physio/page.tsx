@@ -101,11 +101,10 @@ export default function PhysioUnlockPage() {
         <OnboardingWizard role="physiotherapist" />
         <p className="eyebrow mb-2">{tPhysio('eyebrow')}</p>
         <h1 className="font-display text-[26px] leading-tight text-ink">
-          Unlock a patient
+          {tPhysio('unlockTitle')}
         </h1>
         <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
-          Ask the patient to open their app and read you the 6-character
-          visit code. Entering it gives you access for one hour.
+          {tPhysio('unlockBody')}
         </p>
 
         <form onSubmit={onSubmit} className="mt-8">
@@ -113,7 +112,7 @@ export default function PhysioUnlockPage() {
             htmlFor="visit-code"
             className="block text-[14px] font-semibold text-ink"
           >
-            Visit code
+            {tPhysio('unlockCodeLabel')}
           </label>
           <input
             id="visit-code"
@@ -134,7 +133,7 @@ export default function PhysioUnlockPage() {
             disabled={unlock.isPending}
             className="mt-6 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone"
           >
-            {unlock.isPending ? '…' : 'Unlock'}
+            {unlock.isPending ? '…' : tPhysio('unlockSubmit')}
           </button>
         </form>
       </main>

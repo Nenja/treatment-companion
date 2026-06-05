@@ -166,7 +166,7 @@ export default function VisitCodePage() {
         ) : (
           <div className="mt-10 flex justify-center">
             <p className="text-[14px] text-ink-muted">
-              {generate.isPending ? 'Generating…' : 'No active code'}
+              {generate.isPending ? t('generating') : t('noActiveCode')}
             </p>
           </div>
         )}
@@ -184,8 +184,7 @@ export default function VisitCodePage() {
 
         {generate.isError && (
           <p className="mt-3 text-[14px] text-amber-deep" role="alert">
-            Could not generate a code. Please try again. If it keeps
-            happening, contact your clinic.
+            {t('generateError')}
           </p>
         )}
       </main>

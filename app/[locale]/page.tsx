@@ -86,11 +86,10 @@ export default function PatientHomePage() {
       <AppShell>
         <Card tone="muted">
           <p className="font-display text-[18px] text-ink">
-            Could not load your information right now. Please try again
-            in a moment. If it keeps happening, contact your clinic.
+            {t('errorBody')}
           </p>
           <p className="mt-1.5 text-[14px] text-ink-soft">
-            Check your internet connection and try refreshing.
+            {t('errorHint')}
           </p>
         </Card>
         <div className="mt-10">
@@ -114,10 +113,10 @@ export default function PatientHomePage() {
         <div className="mt-6">
           <Card tone="muted">
             <p className="font-display text-[18px] text-ink">
-              No treatment cycle yet.
+              {t('noCycleTitle')}
             </p>
             <p className="mt-1.5 text-[14px] text-ink-soft">
-              Your clinic will set up your first cycle at your next visit.
+              {t('noCycleBody')}
             </p>
           </Card>
         </div>

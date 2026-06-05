@@ -210,10 +210,10 @@ function NewGoalInner() {
 
         <div className="mt-8">
           <label className="block text-[14px] font-semibold text-ink">
-            How will the patient rate this goal?
+            {t('modelQuestion')}
           </label>
           <p className="mt-1 text-[14px] text-ink-muted">
-            Choose the measurement model for this goal.
+            {t('modelHelp')}
           </p>
           <div className="mt-2 flex flex-col gap-2 sm:flex-row">
             <button
@@ -230,11 +230,10 @@ function NewGoalInner() {
                   goalKind === 'nrs' ? 'text-sage-deep' : 'text-ink'
                 }`}
               >
-                0–10 scale (NRS)
+                {t('modelNrsLabel')}
               </span>
               <span className="mt-0.5 block text-[12px] leading-snug text-ink-muted">
-                Patient answers a 0–10 question each week; you set how
-                the answer maps to outcome levels.
+                {t('modelNrsDesc')}
               </span>
             </button>
             <button
@@ -251,11 +250,10 @@ function NewGoalInner() {
                   goalKind === 'gas' ? 'text-sage-deep' : 'text-ink'
                 }`}
               >
-                Descriptive levels (GAS)
+                {t('modelGasLabel')}
               </span>
               <span className="mt-0.5 block text-[12px] leading-snug text-ink-muted">
-                You describe each outcome level in words; the patient
-                picks the one that matches.
+                {t('modelGasDesc')}
               </span>
             </button>
           </div>
@@ -264,7 +262,7 @@ function NewGoalInner() {
         {goalKind === 'nrs' && (
           <>
         <h2 className="mt-8 font-display text-[17px] text-ink">
-          NRS rating setup
+          {t('nrsSetupHeading')}
         </h2>
         <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
           {t('ratingSectionIntro')}

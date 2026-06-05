@@ -394,11 +394,10 @@ function Inner() {
             {goalKind === 'nrs' && (
               <>
                 <h3 className="mt-8 font-display text-[17px] text-ink">
-                  NRS rating setup
+                  {tApprove('nrsSetupHeading')}
                 </h3>
                 <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
-                  The patient will rate this goal on a 0-10 scale each week.
-                  {tApprove('gasIntro')}
+                  {tApprove('nrsScaleIntro')}
                 </p>
 
                 <Field
