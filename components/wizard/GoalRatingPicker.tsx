@@ -1,6 +1,7 @@
 'use client';
 
 import type { NrsDirection } from '@/lib/types';
+import { ReadAloudButton } from '@/components/feedback/ReadAloudButton';
 
 interface GoalRatingPickerProps {
   ariaLabel: string;
@@ -75,9 +76,12 @@ export function GoalRatingPicker({
   return (
     <div>
       {goalText && (
-        <p className="font-display text-[20px] leading-snug text-ink">
-          {goalText}
-        </p>
+        <div className="flex items-start justify-between gap-2">
+          <p className="font-display text-[20px] leading-snug text-ink">
+            {goalText}
+          </p>
+          <ReadAloudButton text={`${goalText}. ${question}`} />
+        </div>
       )}
       <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
         {question}

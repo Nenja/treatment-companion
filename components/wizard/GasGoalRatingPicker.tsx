@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { ReadAloudButton } from '@/components/feedback/ReadAloudButton';
 
 /**
  * Patient-facing rating control for a GAS goal.
@@ -66,9 +67,12 @@ export function GasGoalRatingPicker({
   return (
     <div>
       {goalText && (
-        <p className="font-display text-[20px] leading-snug text-ink">
-          {goalText}
-        </p>
+        <div className="flex items-start justify-between gap-2">
+          <p className="font-display text-[20px] leading-snug text-ink">
+            {goalText}
+          </p>
+          <ReadAloudButton text={`${goalText}. ${t('gasPrompt')}`} />
+        </div>
       )}
       <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
         {t('gasPrompt')}

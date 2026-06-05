@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { ReadAloudButton } from '@/components/feedback/ReadAloudButton';
 
 /**
  * Static safety notice. Wording is fixed by the regulatory brief and must
@@ -22,8 +23,11 @@ export function SafetyNotice() {
           {/* Plain "i" — no alarming colour, no pictogram */}
           <span className="font-display text-[14px] leading-none">i</span>
         </span>
-        <div>
-          <p className="font-semibold text-ink">{t('title')}</p>
+        <div className="flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="font-semibold text-ink">{t('title')}</p>
+            <ReadAloudButton text={`${t('title')}. ${t('body')}`} />
+          </div>
           <p className="mt-1">{t('body')}</p>
         </div>
       </div>

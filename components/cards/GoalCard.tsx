@@ -1,3 +1,5 @@
+import { ReadAloudButton } from '@/components/feedback/ReadAloudButton';
+
 interface GoalCardProps {
   patientFacingText: string;
   /** When provided, a small graph button appears on the right that calls
@@ -34,32 +36,35 @@ export function GoalCard({
       <h3 className="min-w-0 flex-1 font-display text-[20px] leading-snug text-ink">
         {patientFacingText}
       </h3>
-      {onViewGraph && (
-        <button
-          type="button"
-          onClick={onViewGraph}
-          aria-label={viewGraphLabel}
-          title={viewGraphLabel}
-          className="flex h-10 shrink-0 items-center gap-1.5 rounded-[var(--radius-button)] border border-sage/40 bg-cream px-3 text-[13px] font-semibold text-sage-deep hover:bg-sage-soft"
-        >
-          {/* line-chart glyph */}
-          <svg
-            width="17"
-            height="17"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
+      <div className="flex shrink-0 items-center gap-1.5">
+        <ReadAloudButton text={patientFacingText} />
+        {onViewGraph && (
+          <button
+            type="button"
+            onClick={onViewGraph}
+            aria-label={viewGraphLabel}
+            title={viewGraphLabel}
+            className="flex h-10 shrink-0 items-center gap-1.5 rounded-[var(--radius-button)] border border-sage/40 bg-cream px-3 text-[13px] font-semibold text-sage-deep hover:bg-sage-soft"
           >
-            <path d="M3 3v18h18" />
-            <path d="M7 13l3-3 3 2 4-5" />
-          </svg>
-          {viewGraphLabel && <span className="hidden sm:inline">{viewGraphLabel}</span>}
-        </button>
-      )}
+            {/* line-chart glyph */}
+            <svg
+              width="17"
+              height="17"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M3 3v18h18" />
+              <path d="M7 13l3-3 3 2 4-5" />
+            </svg>
+            {viewGraphLabel && <span className="hidden sm:inline">{viewGraphLabel}</span>}
+          </button>
+        )}
+      </div>
     </article>
   );
 }

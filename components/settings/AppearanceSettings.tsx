@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useSetPalette, useSetNightMode } from '@/lib/supabase/colorScheme';
+import { useSetReadAloud } from '@/lib/supabase/readAloud';
 import { PALETTES, resolvePaletteId, type Palette } from '@/lib/palettes';
 
 /**
@@ -18,12 +19,52 @@ export function AppearanceSettings() {
   return (
     <div>
       <NightModeToggle />
+      <div className="mt-2">
+        <ReadAloudToggle />
+      </div>
       <div className="mt-2 grid grid-cols-2 gap-1.5">
         {PALETTES.map((p) => (
           <PaletteButton key={p.id} palette={p} />
         ))}
       </div>
     </div>
+  );
+}
+
+function ReadAloudToggle() {
+  const { profile } = useAuth();
+  const setReadAloud = useSetReadAloud();
+  const tAppearance = useTranslations('appearance');
+  const on = profile?.readAloud ?? false;
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={on}
+      onClick={() => setReadAloud.mutate(!on)}
+      className="flex min-h-11 w-full items-center justify-between gap-3 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-left hover:bg-stone-soft"
+    >
+      <span className="flex flex-col">
+        <span className="text-[13px] font-semibold text-ink-soft">
+          {tAppearance('readAloud')}
+        </span>
+        <span className="text-[12px] text-ink-muted">
+          {tAppearance('readAloudHint')}
+        </span>
+      </span>
+      <span
+        aria-hidden
+        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+          on ? 'bg-sage-deep' : 'bg-stone'
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 h-6 w-6 rounded-full bg-cream-soft transition-transform ${
+            on ? 'translate-x-[22px]' : 'translate-x-0.5'
+          }`}
+        />
+      </span>
+    </button>
   );
 }
 
