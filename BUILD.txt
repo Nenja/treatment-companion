@@ -1,47 +1,61 @@
-BUILD TAG: patient-home-treated-muscles
-DATE: 2026-06-04
-NEW MIGRATION: none (no DB changes)
-
-WHAT THIS ADDS
---------------
-On the PATIENT's own home page, a quiet "See which muscles were treated" button now
-appears (below the goals, only when a treatment is on record). Tapping it opens a
-read-only pop-up listing the muscles injected at the patient's most recent treatment,
-with the side (left / right / both) and the treatment date.
-
-It shows only the muscles - no doses, drug, or other clinical detail - matching the
-"just the muscles for now" scope. Nothing is shown until the patient taps the button.
-
-This builds on the previous slice (the per-goal "View graph" button).
+Treatment Companion — build tag: unified-header
+================================================
 
 WHAT CHANGED
 ------------
-- app/[locale]/page.tsx                      - the button + the read-only pop-up
-- components/cards/TreatedMusclesModal.tsx   - NEW read-only muscles pop-up
-- lib/supabase/patientHome.ts                - also loads the last treatment's muscles
-- messages/en.json, messages/da.json         - new patient.home strings (en + da)
+One unified page header everywhere. The brand ("Treatment Companion" + sage
+chevron) and the menus now share a single line on every page, and the account
+menu is always hard right.
 
-No database, RPC, or migration changes. Reads use existing RLS policies
-(treatment_session_patient_read / muscle_injection_select), which already let a patient
-read their own treatment. Muscle grouping reuses the same helper as the clinician and
-physiotherapist views.
+Two reported issues fixed:
+  1. Account menu drifted LEFT on some pages. Cause: those headers used
+     `justify-between` with the controls as the only child, which pins a lone
+     child to the left. Now every header has a left (brand) and a right
+     (controls) group, so the account menu can never drift left.
+  2. Brand and menus were on SEPARATE lines (and the second strip looked empty
+     when a page header was sparse). Cause: the brand was a separate global
+     "BrandBar" strip rendered above each page's own header. That strip is now
+     removed; the brand lives inside each page header.
 
-DEPLOY STEPS
-------------
-1. Unzip and push the contents to your GitHub repo (replace the working tree).
-2. Vercel builds & deploys automatically on push.
-3. No migrations, no new environment variables.
+DETAILS
+-------
+- NEW  components/layout/AppHeader.tsx  — shared header: brand left; optional
+       back / title / patient-name (middle) / actions slots; help + account
+       always right. Width matches the page content column (no JS alignment).
+- NEW  components/layout/BrandMark.tsx  — chevron mark + optional wordmark.
+- DEL  components/layout/BrandBar.tsx    (global brand strip — superseded)
+- DEL  components/layout/TopBar.tsx      (account/help-only bar — superseded)
+- AppShell now renders AppHeader (patient home + patient-info fixed automatically).
+- Converted to AppHeader: clinician landing/admin/history/treatment/new-goal/
+  suggestion, physio landing/progress, visit-code.
+- Two-row patient headers (clinician/patient, physio/patient) keep their
+  name + clinical-summary layout and just gain a chevron BrandMark on the left.
+- Check-in wizard (WizardLayout) gained a brand + help/account row above its
+  cancel/save + "step X of Y" row (progress bars unchanged).
 
-HOW TO CONFIRM
+- No database / RPC / migration change. Migrations still through 0066.
+- No new translation keys (page-title eyebrows reuse existing keys; the
+  physio-landing eyebrow moved into the page body). en/da parity verified.
+
+BUILD / VERIFY
 --------------
-1. Sign in as a patient who has a treatment on record (e.g. test1).
-2. On the home screen, below the goals, you'll see "See which muscles were treated".
-3. Tap it: a pop-up lists the treated muscles + side, with the treatment date. Close
-   returns to the home screen. (If a patient has no treatment recorded, the button is
-   hidden.)
+- `npx tsc --noEmit` -> exit 0.
+- Production build -> exit 0, "Generating static pages (60/60)".
+- Only warnings are the known benign Sentry/OpenTelemetry "critical dependency"
+  messages from app/global-error.tsx.
 
-NOT INCLUDED YET (from the original request)
---------------------------------------------
-A patient-home button for "medication / assistive devices" is still not built. That
-data isn't loaded on the home page yet, and patient read-access to medication needs
-confirming first (it was originally clinician/therapist-scoped). Happy to add it next.
+DEPLOY
+------
+1. Unzip, replace your repo contents (node_modules / .next are not included).
+2. Push to GitHub -> Vercel builds & deploys. No SQL to run, no env changes.
+
+PLEASE VISUALLY QA (I can't render the app here)
+------------------------------------------------
+On a PHONE / narrow window, check the busy clinician working pages where the
+header now packs brand + back + end-session + help + account:
+  clinician/patient, clinician/treatment, clinician/history,
+  clinician/new-goal, clinician/suggestion, physio/patient, physio/progress
+Confirm: no overflow/clipping in the header row; the account menu is on the
+RIGHT everywhere; and the brand shares the line with the menus. On wider
+screens the full "Treatment Companion" wordmark should appear; on the sparse
+landing pages (patient home, clinician/physio landing) it shows at all widths.

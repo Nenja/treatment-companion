@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `patient-home-treated-muscles`._
+> _Last updated for build tag: `unified-header`._
 
 ---
 
@@ -50,13 +50,15 @@ blocks that host, so a real build **fails** unless you stub them first.
 **Procedure for every build:**
 
 1. Back up `app/[locale]/layout.tsx` to `/tmp/layout.tsx.orig` (already there in
-   an ongoing session; recreate if starting fresh).
+   an ongoing session; **recreate from the current file if starting fresh** — the
+   old `cfaf492…` snapshot that still contained `<BrandBar/>` is stale).
 2. Stub: replace the `import { Newsreader, Atkinson_Hyperlegible } …` line with a
    comment, and replace each `Newsreader({…})` / `Atkinson_Hyperlegible({…})`
    call with `{ variable: '--font-newsreader' }` / `{ variable: '--font-atkinson' }`.
    Mark edits with `[BUILD-STUB]`.
-3. **Assert `BrandBar` is still present** in the file after stubbing (a global
-   `<BrandBar/>` lives in layout.tsx — see §5.3).
+3. The layout **no longer renders a global brand bar** (removed in `unified-header`);
+   the brand now lives in each page header via `AppHeader` / `BrandMark` (§5.3).
+   layout.tsx still contains only the two font calls to stub + `{children}`.
 4. `rm -rf .next && NEXT_TELEMETRY_DISABLED=1 npx next build`
 5. **Success = exit 0 and "✓ Generating static pages (60/60)".** (55 before
    the dev tools; +2 for `/dev/scenarios`, +2 for the no-auth `/demo` sandbox,
@@ -65,7 +67,8 @@ blocks that host, so a real build **fails** unless you stub them first.
    (unrelated, ignore).
 6. **Restore** `app/[locale]/layout.tsx` from `/tmp/layout.tsx.orig`, then verify:
    - `sha256sum` of the restored file ==
-     `cfaf492f684168d26840fbf289806574642cce19486916ba675f8c2244b7dbe3`
+     `6b5bb2fd1a13bd15c7b3f11f998450a80315c917f2c56eb776937be6f4714d67`
+     (the post-`unified-header` layout, BrandBar removed; **was** `cfaf492…`).
    - **zero** `BUILD-STUB` remnants anywhere in `app components lib`.
 
 `npx tsc --noEmit` is a fast pre-check before the full build.
@@ -238,17 +241,43 @@ Single column capped at **mid (720px)**. "Treatment areas" selector and "Last
 treatment" card sit side by side above the form. Area labels: "Body and
 neck"/"Krop og nakke" and "Face"/"Ansigt".
 
-### 5.3 Brand header — `components/layout/BrandBar.tsx`
-A single global brand strip ("Treatment Companion" + sage chevron) rendered in
-`app/[locale]/layout.tsx` inside the intl provider, before `{children}`. It's a
-non-interactive `<div>` that **measures the page's `<main>`** and aligns its
-inner row to match (pixel-aligned across 480/720/1080/custom widths). It uses a
-**`ResizeObserver`** on the live `<main>` (re-attaching if the element is
-swapped) plus rAF + delayed re-measures + window resize — this is what makes it
-re-align when the layout flips **wide↔compact** after the profile loads (the
-compact-mode fix). `TopBar.tsx` is account/help only (no brand). Every page
-renders a `<main>` (custom pages directly; root/patient-info via
-`components/layout/AppShell.tsx`).
+### 5.3 Page header — `components/layout/AppHeader.tsx` + `BrandMark.tsx`
+**One unified header per page** (the `unified-header` build). A single row:
+brand on the **left**, optional `back` / `middle` (title or patient name) /
+`actions` slots, and **help + account always hard right**. Because the row always
+has a left (brand) and a right (controls) group, the account menu can never drift
+left and the brand always shares the line with the controls — fixing both prior
+complaints (account-on-left; "Treatment Companion" on a separate strip that looked
+empty when the page header was sparse).
+
+- `BrandMark.tsx` — the sage double-chevron mark + optional "Treatment Companion"
+  wordmark (`useTranslations('app').t('name')`, same key the old BrandBar used, so
+  the displayed text is unchanged — note `app.name` is localized: da =
+  "Behandlingsledsager"). Props: `showName` (default true) + `nameClassName`.
+- `AppHeader.tsx` — props: `width` (`narrow|mid|wide|narrowToMid|narrowToWide`) or
+  `maxWidthClass` override (e.g. admin's `max-w-[640px]`); `back?:{label,onClick}`
+  (renders `← label`, label hidden on the smallest screens); `middle?` (flex-1
+  truncating slot — page titles get `eyebrow block truncate text-center`, the
+  patient-name link stays left-aligned); `actions?` (e.g. `<EndSessionButton/>`);
+  `helpPageKey?` (renders `PageHelpButton`); `showAccount` (default true);
+  `brandName` (`auto` default → wordmark shown only when the row is otherwise empty,
+  else mark-only with the wordmark returning on `lg`). The inner row width **matches
+  the page `<main>`**, so the brand lines up with the content column with no JS — the
+  old BrandBar's `ResizeObserver` measuring hack is **gone**.
+
+**Removed:** the global `<BrandBar/>` (was rendered once in layout.tsx) and
+`TopBar.tsx` (account/help-only bar) — both deleted, fully superseded by AppHeader.
+
+**Rollout:** `AppShell` renders `<AppHeader>` (so patient home + patient-info get it
+automatically). Nine single-row pages use `<AppHeader>` directly (clinician
+landing/admin/history/treatment/new-goal/suggestion, physio landing/progress,
+visit-code). The two **two-row** patient headers (`clinician/patient`,
+`physio/patient`) keep their name + clinical-summary layout and just get
+`<BrandMark showName={false}/>` (chevron) prepended on the left. The **check-in
+wizard** (`WizardLayout.tsx`) gained a top brand + help/account row, with the
+cancel/save + "step X of Y" row beneath it and the progress bars unchanged.
+**Visual QA still needed** (can't render here): the busy clinician working pages on
+**mobile** (brand + back + end-session + help + account in one row).
 
 ### 5.4 Goals & graphs — `components/clinician/GoalProgressView.tsx`
 **NRS goals render on a 0–10 NRS chart; GAS goals on the −2..+2 banded chart.**
@@ -451,27 +480,36 @@ medication columns must be verified before surfacing them on the patient side
 `visit-changes-usability` →
 `visit-changes-direction-fix` →
 `patient-home-goal-graph` →
-**`patient-home-treated-muscles`** (current, no new migration).
+`patient-home-treated-muscles` →
+**`unified-header`** (current, no new migration).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-patient-home-treated-muscles.zip`
-- **Tag:** `patient-home-treated-muscles`
-- **Change:** second patient-home slice (§5.11). Added a quiet full-width **"See which
-  muscles were treated"** button below the goals' action row (shown only when a
-  treatment is on record) that opens a **read-only pop-up** listing the muscles injected
-  at the patient's most recent treatment — grouped per muscle with sides combined
-  (reuses `groupTreatedMuscles` from `lib/types.ts`), headed by the treatment date, **no
-  dosing/product detail**. `usePatientHomeData` now also loads `latestTreatment`
-  (most recent `treatment_session` + its `muscle_injection` rows, RLS-scoped to the
-  patient; no share-with-physio gate). New component
-  `components/cards/TreatedMusclesModal.tsx`; new `patient.home` keys
-  (`viewTreatedMuscles`, `treatedMusclesTitle/From/None`, `treatedSide*`), Danish reusing
-  the physio view's wording. Files: `app/[locale]/page.tsx`,
-  `components/cards/TreatedMusclesModal.tsx`, `lib/supabase/patientHome.ts`,
-  `messages/{en,da}.json`. No DB / RPC / migration change.
+- **Zip:** `treatment-companion-unified-header.zip`
+- **Tag:** `unified-header`
+- **Change:** unified every page header into one shared `AppHeader` (brand left;
+  optional back / title / patient-name; help + account always right) and **removed
+  the global `BrandBar` strip + the `TopBar` bar** (both deleted). Fixes the two
+  reported issues: the account menu drifting **left** (custom headers used
+  `justify-between` with the controls as the lone child → pinned left) and the
+  brand/menus sitting on **separate lines** with an empty-looking second strip
+  (brand was its own global bar). New `components/layout/AppHeader.tsx` +
+  `BrandMark.tsx`; `AppShell` now renders `AppHeader`; nine single-row pages
+  converted; the two two-row patient headers (`clinician/patient`,
+  `physio/patient`) get a chevron `BrandMark` prepended; the check-in wizard
+  (`WizardLayout`) gained a brand + help/account row above its cancel/step row.
+  The brand aligns to the content column purely via the header width class — the old
+  BrandBar `ResizeObserver` alignment hack is gone. **No new i18n keys** (page-title
+  eyebrows reuse existing keys; the physio-landing eyebrow moved into the body).
+  **No DB / RPC / migration change.** layout.tsx restore sha is now
+  `6b5bb2fd…` (§2.1).
+- **⚠ Visual QA (can't render here):** check the busy clinician working pages on
+  **mobile** — `clinician/{patient,treatment,history,new-goal,suggestion}`,
+  `physio/{patient,progress}` — where the header now packs brand + back + end-session
+  + help + account; confirm no overflow/clipping and that the account menu is now
+  right everywhere and the brand shares the line.
 - **Still on the original request (NOT built):** patient-home button for **medication /
   assistive devices**. Data exists but isn't loaded on the home page, and patient RLS
   read access to medication must be confirmed first (originally clinician/therapist
@@ -523,7 +561,7 @@ valid values are in §4.3._
 ## 10. Key files map
 
 ```
-app/[locale]/layout.tsx                      root layout + <BrandBar/> (FONT STUB target)
+app/[locale]/layout.tsx                      root layout (FONT STUB target; no brand bar — brand is per-header now)
 app/[locale]/checkin/page.tsx                patient check-in wizard (ratings, video, training step)
 app/[locale]/clinician/patient/page.tsx      clinician patient view (graphs, training overview, suggestions)
 app/[locale]/clinician/new-goal/page.tsx     create NRS/GAS goal + video toggle
@@ -539,9 +577,9 @@ components/wizard/GoalRatingPicker.tsx       NRS 0–10 picker
 components/wizard/GasGoalRatingPicker.tsx    GAS level picker
 components/wizard/GoalVideoRecorder.tsx      consent + camera + 30s record + preview
 components/wizard/TrainingDaysPicker.tsx     Mon–Sun multi-select (used for home + therapist)
-components/layout/BrandBar.tsx               global brand strip (ResizeObserver-aligned)
-components/layout/TopBar.tsx                 account/help bar
-components/layout/AppShell.tsx               wraps pages that don't render their own <main>
+components/layout/AppHeader.tsx              unified page header (brand left; back/title/actions; help+account right)
+components/layout/BrandMark.tsx              sage chevron mark + optional "Treatment Companion" wordmark
+components/layout/AppShell.tsx               wraps pages that don't render their own <main> (renders AppHeader)
 
 lib/supabase/checkin.ts                      check-in data + submit v4 + uploadGoalVideo + training write
 lib/supabase/clinicianPatient.ts            clinician patient data + goal-create/video hooks
