@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `wearable-scaffold`._
+> _Last updated for build tag: `treatment-modality-seam`._
 
 ---
 
@@ -216,7 +216,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0069**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0070**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -236,13 +236,15 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
   goal. `create or replace`, no schema change, safe to re-run.
 - `0068_read_aloud_pref.sql` — Adds `profile.read_aloud boolean default false`
   (the read-aloud opt-in).
-- `0069_wearable_observations.sql` — **`wearable-scaffold`, RUN THIS.** Adds the
-  vendor-neutral `observation` table (FHIR-aligned PGHD store) + the
-  `import_observations(patient, jsonb[])` security-definer RPC + RLS. No
-  clinical logic is attached to this data yet — storage + import only.
+- `0069_wearable_observations.sql` — Adds the vendor-neutral `observation`
+  table (FHIR-aligned PGHD store) + the `import_observations(patient, jsonb[])`
+  security-definer RPC + RLS. Storage + import only.
+- `0070_treatment_modality.sql` — **`treatment-modality-seam`, RUN THIS.** Adds
+  the `treatment_modality` enum + `treatment_cycle.modality` column (default
+  `botulinum_toxin`). WP4 readiness seam; no clinical logic branches on it yet.
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0069 are applied (0066 is dev-only; **0067** is required for GAS suggestion-approval, **0068** for the read-aloud toggle, **0069** for the wearable/PGHD ingestion layer).
+> If unsure whether the user's DB is current, confirm 0062–0070 are applied (0066 is dev-only; **0067** is required for GAS suggestion-approval, **0068** for the read-aloud toggle, **0069** for the wearable/PGHD ingestion layer, **0070** for the treatment-modality column).
 
 ---
 
@@ -526,61 +528,66 @@ GAS option, `/demo` deleted, `clinician/patient` forced dynamic) →
 **`mandatory-setup`** (no new migration; first-run setup made mandatory via
 `SetupGate`, read-aloud added to the wizard's accessibility step) →
 **`wearable-scaffold`** (0069; vendor-neutral wearable/PGHD ingestion layer —
-`observation` table + `import_observations` RPC + clinician import tool; current).
+`observation` table + `import_observations` RPC + clinician import tool) →
+**`treatment-modality-seam`** (0070; WP4 futureproofing — `treatment_modality`
+enum + `treatment_cycle.modality` column defaulting to botulinum toxin; additive,
+BoNT flow unchanged; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-wearable-scaffold.zip`
-- **Tag:** `wearable-scaffold`
-- **Change:** a **vendor-neutral ingestion layer** so the app is ready to
-  import third-party / wearable patient data without committing to any device
-  or vendor. This is a foundation + a working import tool, **not** a finished
-  wearable feature — no clinical logic is wired to the data yet.
-  - **Data model (migration 0069):** one `observation` table, FHIR
-    `Observation`-aligned and metric-agnostic — a coded `code` (LOINC by
-    default) + a value (`value_numeric` + `unit`, or `value_text`) +
-    `effective_time`, with `source`, `device_label`, `external_id`, and a
-    `raw` jsonb for provenance. No per-metric columns, so new metrics need no
-    migration. `observation_source` enum: manual / csv / apple_health /
-    health_connect / garmin / fitbit / oura / withings / other.
-  - **Ingestion boundary:** writes go through one security-definer RPC,
-    `import_observations(patient, jsonb[])`, which authorizes the caller (the
-    patient themselves, a clinician with an active session, or admin),
-    normalizes, and **dedups** on (patient, source, code, time, external_id)
-    so re-imports are idempotent. RLS governs reads (patient sees own;
-    clinician sees patients they can access; admin all).
-  - **Client + UI:** `lib/supabase/observations.ts` (typed
-    `useImportObservations` / `usePatientObservations` + a dependency-free CSV
-    parser). New clinician route `app/[locale]/clinician/observations` (reads
-    the patient from the active session, like the history page) with CSV
-    paste/upload, a manual single-measurement form, and a recent list. Reached
-    from a new **Wearable** entry in the patient `PatientActionRow`.
-  - **Why this shape:** manual + CSV need no vendor approval, so they validate
-    the model and clinical usefulness end-to-end now; each future vendor
-    becomes an *adapter* that normalizes into the same RPC. (See §8 for the
-    adapter list + the platform gotcha: a web app **can't** read Apple Health
-    directly — that needs a native iOS layer; Android needs Health Connect via
-    a native layer; Garmin/Fitbit/Oura are server-side OAuth/webhooks that work
-    from the backend.)
-  - **i18n:** new `clinician.wearable` namespace + `clinician.patient`
-    `actionWearable` / `actionShortWearable` (en/da). Parity 1061 == 1061.
-- **DB needed:** **run migration 0069** (`0069_wearable_observations.sql`) —
-  adds the `observation` table + `import_observations` RPC. Additive and safe
-  to re-run (guarded type, `create table if not exists`, drop/create policies).
-  Page count 58 → 60 (+2 for the en/da route shells).
-- **⚠ QA (can't test auth / DB here):** with a patient unlocked, open the
-  **Wearable** action on the patient page, import a small CSV and add a manual
-  measurement, and confirm both appear in the recent list and respect RLS (only
-  clinicians with access / the patient themselves can read). Verify re-importing
-  the same rows inserts nothing (dedup), and that an unparseable CSV reports
-  per-line errors rather than failing silently.
+- **Zip:** `treatment-companion-treatment-modality-seam.zip`
+- **Tag:** `treatment-modality-seam`
+- **Change:** a **futureproofing seam for WP4 (baclofen pumps & surgery)** —
+  the model, types, and UI stop *assuming* every treatment is botulinum
+  toxin. Strictly additive and backward-compatible: everything defaults to
+  `botulinum_toxin` and the existing BoNT flow is byte-for-byte unchanged. No
+  pump/surgery capture is built — this is readiness only.
+  - **Schema (migration 0070):** new `treatment_modality` enum
+    (`botulinum_toxin` / `baclofen_pump` / `surgery` / `other`) + a
+    `treatment_cycle.modality` column, `not null default 'botulinum_toxin'`
+    so existing rows backfill to BoNT. No clinical logic branches on it yet.
+    The column comment documents the extension plan: each future modality
+    attaches its OWN detail table keyed on the cycle; concurrent pathways are
+    parallel cycles (the active index is already non-unique).
+  - **Types + data layer:** `TreatmentModality` in `lib/types.ts`; threaded
+    through `ClinicianPatientData.cycle` (select + map in
+    `useClinicianPatientData`). Reads elsewhere (patient home, history) were
+    left untouched — they don't need it yet.
+  - **UI:** a quiet modality pill under the cycle date on the clinician
+    patient view (reads "Botulinum toxin" for every current cycle — the point
+    is to make modality a first-class, visible concept). i18n
+    `treatment.modality.*` (en/da).
+  - **Interop:** the EHR export gained an optional `modality` on its cycle
+    input; it prints a "Treatment modality: …" line **only** when the
+    modality is non-default, so today's BoNT exports are unchanged.
+  - **Parity:** 1065 == 1065. Page count unchanged (60).
+- **DB needed:** **run migration 0070** (`0070_treatment_modality.sql`) —
+  adds the enum + column. Additive, safe to re-run (guarded type,
+  `add column if not exists`). A standalone copy is attached.
+- **What this does NOT do (deferred to when WP4 is scheduled):** no
+  pump/surgery detail tables, no modality picker in the new-cycle flow (so
+  only BoNT cycles can be created today), no modality-specific capture or
+  views, no concurrency-of-active-cycles UI. See §8.
+- **⚠ QA (can't render/test here):** confirm existing patients still load
+  and every current cycle shows a "Botulinum toxin" pill; confirm the EHR
+  export is unchanged for BoNT patients (the modality line must NOT appear);
+  confirm new cycles still create normally (they inherit the default).
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`wearable-scaffold`** — zip `treatment-companion-wearable-scaffold.zip`
+  (migration **0069**). Vendor-neutral wearable / PGHD ingestion layer: a
+  FHIR-`Observation`-aligned, metric-agnostic `observation` table + the
+  `import_observations(patient, jsonb[])` security-definer RPC (authorizes +
+  dedups) + RLS, plus `lib/supabase/observations.ts` (typed hooks + CSV
+  parser) and a clinician `/clinician/observations` route (CSV + manual import
+  + recent list), reached from a new **Wearable** action on the patient page.
+  Storage + import only — no clinical logic, no vendor adapters. **Run
+  migration 0069.**
 - **`mandatory-setup`** — zip `treatment-companion-mandatory-setup.zip` (no
   new migration). First-run setup made **mandatory** via `SetupGate`
   (full-screen, non-skippable, mounted after `PasswordChangeGuard`; defers to
@@ -675,6 +682,23 @@ GAS option, `/demo` deleted, `clinician/patient` forced dynamic) →
      service-role ingestion for adapters and optional `treatment_cycle_id`
      backfill are not built; a richer clinician view/graph (beyond the raw
      recent list) is open.
+8. **Treatment-modality backbone — finish WP4 when scheduled** (seam shipped
+   in `treatment-modality-seam`; `treatment_cycle.modality` exists, defaults to
+   BoNT, nothing branches on it yet):
+   - **Detail tables per modality** keyed on the cycle (e.g. `baclofen_course`:
+     test-dose response, implant date, titration; `surgical_episode`: preop
+     status, procedure, postop recovery, complications).
+   - **Modality picker in the new-cycle flow** (NewCycleDialog /
+     useStartNewCycle / useStartCycleWithTreatment) — today only BoNT cycles
+     can be created; the picker + modality-specific capture come together.
+   - **Modality-specific views** on the clinician patient page (the BoNT
+     injection/muscle/dose UI is BoNT-only; branch on `cycle.modality`).
+   - **Concurrency:** a patient on BoNT who also has a pump = parallel active
+     cycles of different modalities. The active index is already non-unique,
+     but `useClinicianPatientData` loads a single active cycle (highest
+     cycle_number) — multi-active needs a selector / per-modality loading.
+   - **Check-ins / goals** are modality-neutral already (goal + rating), so
+     they should carry across modalities largely as-is.
 
 ---
 

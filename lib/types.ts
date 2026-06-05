@@ -240,3 +240,16 @@ export const GUIDANCE_METHODS = [
   'other'
 ] as const;
 export type GuidanceMethod = (typeof GUIDANCE_METHODS)[number];
+
+/**
+ * Treatment modality for a cycle/course. Botulinum toxin is the only one
+ * with capture + views today; the rest are the readiness seam for WP4
+ * (baclofen pumps, surgery). See migration 0070.
+ */
+export const TREATMENT_MODALITIES = [
+  'botulinum_toxin',
+  'baclofen_pump',
+  'surgery',
+  'other'
+] as const;
+export type TreatmentModality = (typeof TREATMENT_MODALITIES)[number];

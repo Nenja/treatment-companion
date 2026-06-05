@@ -1,4 +1,4 @@
-import type { GuidanceMethod, InjectionSide } from './types';
+import type { GuidanceMethod, InjectionSide, TreatmentModality } from './types';
 import { formatLongDate } from './dates';
 
 // ---------------------------------------------------------------------------
@@ -22,6 +22,10 @@ export interface ExportPatient {
 export interface ExportCycle {
   cycleNumber: number;
   startDate: string;
+  /** Treatment modality. Omitted / botulinum_toxin renders nothing extra,
+   *  so existing BoNT exports are unchanged; a non-default modality adds a
+   *  short label line (WP4 readiness). */
+  modality?: TreatmentModality;
 }
 
 export interface ExportInjection {
@@ -83,6 +87,15 @@ export function buildEhrExport({
   lines.push(
     `Cycle ${cycle.cycleNumber} · Treatment date ${formatLongDate(cycle.startDate, locale)}`
   );
+  if (cycle.modality && cycle.modality !== 'botulinum_toxin') {
+    const modalityLabel: Record<TreatmentModality, string> = {
+      botulinum_toxin: 'Botulinum toxin',
+      baclofen_pump: 'Baclofen pump',
+      surgery: 'Surgery',
+      other: 'Other'
+    };
+    lines.push(`Treatment modality: ${modalityLabel[cycle.modality]}`);
+  }
   lines.push('');
 
   // Treatment session -----------------------------------------------------

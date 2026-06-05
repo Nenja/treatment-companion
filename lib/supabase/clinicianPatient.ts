@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from './browser';
-import type { NrsConfig, NrsDirection } from '../types';
+import type { NrsConfig, NrsDirection, TreatmentModality } from '../types';
 
 export interface GasAnchors {
   minus2: string;
@@ -138,6 +138,9 @@ export interface ClinicianPatientData {
     includesStandard: boolean;
     includesFace: boolean;
     faceDisplayMode: FaceDisplayMode;
+    /** Treatment modality for this cycle. Botulinum toxin today; the
+     *  readiness seam for baclofen pumps / surgery (WP4, migration 0070). */
+    modality: TreatmentModality;
     /** Free-text clinician note for this cycle ("since last visit"). */
     clinicianNote: string | null;
   };
@@ -205,7 +208,7 @@ export function useClinicianPatientData(
       const { data: cycleRow, error: cErr } = await supabase
         .from('treatment_cycle')
         .select(
-          'id, cycle_number, start_date, includes_standard, includes_face, face_display_mode, clinician_note'
+          'id, cycle_number, start_date, includes_standard, includes_face, face_display_mode, modality, clinician_note'
         )
         .eq('patient_id', patient.id)
         .eq('status', 'active')
@@ -223,6 +226,8 @@ export function useClinicianPatientData(
         includesFace: (cycleRow.includes_face as boolean) ?? false,
         faceDisplayMode:
           (cycleRow.face_display_mode as FaceDisplayMode) ?? 'color',
+        modality:
+          (cycleRow.modality as TreatmentModality) ?? 'botulinum_toxin',
         clinicianNote: (cycleRow.clinician_note as string | null) ?? null
       };
 
