@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { formatLongDate } from '@/lib/dates';
+import { VideoPlayerModal } from '@/components/clinician/VideoPlayerModal';
 import type {
   ClinicianPatientCheckin,
   ClinicianPatientGoal
@@ -47,6 +49,9 @@ export function VisitChanges({
 }: VisitChangesProps) {
   const t = useTranslations('visitChanges');
   const locale = useLocale();
+  const [video, setVideo] = useState<{ path: string; title: string } | null>(
+    null
+  );
 
   const anchoredToTreatment = !!lastTreatmentDate;
   const anchorIso = lastTreatmentDate ?? cycleStartDate;
@@ -134,9 +139,23 @@ export function VisitChanges({
   const hasTraining = homeWeeks > 0 || therapistSessions > 0;
 
   // --- Videos --------------------------------------------------------------
-  let videoCount = 0;
+  // Patient-recorded clips since the anchor, labelled by goal + week so the
+  // clinician can play each back. (Storage read is granted to clinicians with
+  // an active session by the goal-videos bucket policy; see migration 0062.)
+  const goalTextById = new Map(goals.map((g) => [g.id, g.patientFacingText]));
+  const videos: { key: string; goalText: string; week: number; path: string }[] =
+    [];
   for (const c of since) {
-    for (const r of c.ratings) if (r.videoPath) videoCount += 1;
+    for (const r of c.ratings) {
+      if (r.videoPath) {
+        videos.push({
+          key: `${c.id}:${r.approvedGoalId}`,
+          goalText: goalTextById.get(r.approvedGoalId) ?? '',
+          week: c.weekNumber,
+          path: r.videoPath
+        });
+      }
+    }
   }
 
   const anchorPhrase = anchoredToTreatment
@@ -246,9 +265,51 @@ export function VisitChanges({
             ) : (
               <Stat>{t('trainingNone')}</Stat>
             )}
-            {videoCount > 0 && <Stat>{t('statVideo', { count: videoCount })}</Stat>}
           </div>
+          {videos.length > 0 && (
+            <div className="mt-3">
+              <p className="text-[12px] font-semibold text-ink-soft">
+                {t('videosHeading')}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {videos.map((v) => (
+                  <button
+                    key={v.key}
+                    type="button"
+                    onClick={() =>
+                      setVideo({
+                        path: v.path,
+                        title: t('videoTitle', {
+                          goal: v.goalText,
+                          week: v.week
+                        })
+                      })
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-stone-soft"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                    {t('videoLabel', { goal: v.goalText, week: v.week })}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </>
+      )}
+      {video && (
+        <VideoPlayerModal
+          path={video.path}
+          title={video.title}
+          onClose={() => setVideo(null)}
+        />
       )}
     </section>
   );
