@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
@@ -18,9 +19,7 @@ import {
 } from '@/components/clinician/CycleAnalysisViews';
 import { SkeletonScreen, SkeletonBlock } from '@/components/feedback/Skeleton';
 import { useWideLayout } from '@/lib/useWideLayout';
-import { AccountMenu } from '@/components/layout/AccountMenu';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
-import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
 
 /**
@@ -123,22 +122,12 @@ export default function ClinicianHistoryPage() {
 
   return (
     <div className="min-h-dvh bg-cream">
-      <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className={headerWidthClass}>
-          <button
-            type="button"
-            onClick={() => router.push(patientPath)}
-            className="text-[14px] font-semibold text-ink-soft hover:text-ink"
-          >
-            {t('back')}
-          </button>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <EndSessionButton role="clinician" />
-            <PageHelpButton pageKey="history" />
-            <AccountMenu />
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        width="narrowToWide"
+        back={{ label: t('back'), onClick: () => router.push(patientPath) }}
+        actions={<EndSessionButton role="clinician" />}
+        helpPageKey="history"
+      />
 
       <main className={mainWidthClass}>
         <h1 className="font-display text-[24px] leading-tight text-ink">

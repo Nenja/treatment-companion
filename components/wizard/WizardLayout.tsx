@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { BrandMark } from '@/components/layout/BrandMark';
 import { useTranslations } from 'next-intl';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import { PageHelpButton } from '@/components/feedback/PageHelpButton';
@@ -58,7 +59,14 @@ export function WizardLayout({
     <div className="min-h-dvh bg-cream">
       {/* Header */}
       <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
+        <div className="mx-auto flex max-w-[480px] items-center justify-between gap-3 px-5 pb-2 pt-3">
+          <BrandMark />
+          <div className="flex items-center gap-2">
+            {helpPageKey && <PageHelpButton pageKey={helpPageKey} />}
+            <AccountMenu />
+          </div>
+        </div>
+        <div className="mx-auto flex max-w-[480px] items-center justify-between gap-3 px-5 pb-4">
           <button
             type="button"
             onClick={onCancel}
@@ -69,10 +77,6 @@ export function WizardLayout({
           <span className="eyebrow">
             {t('stepOf', { current: currentStep, total: totalSteps })}
           </span>
-          <div className="flex items-center gap-2">
-            {helpPageKey && <PageHelpButton pageKey={helpPageKey} />}
-            <AccountMenu />
-          </div>
         </div>
 
         {/* Progress — named list when stepLabels given, else dots. */}

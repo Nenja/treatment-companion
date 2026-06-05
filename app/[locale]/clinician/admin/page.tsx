@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
@@ -17,7 +18,6 @@ import {
   type AdminAccount,
   type ActiveAccessSession
 } from '@/lib/supabase/admin';
-import { AccountMenu } from '@/components/layout/AccountMenu';
 import { useToast } from '@/components/feedback/Toast';
 import { SkeletonBlock } from '@/components/feedback/Skeleton';
 import { classifyError } from '@/lib/feedback';
@@ -66,23 +66,19 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-dvh bg-cream">
-      <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[640px] items-center justify-between px-5 py-4">
-          <button
-            type="button"
-            onClick={() =>
-              router.push(
-                locale === 'en' ? '/clinician' : `/${locale}/clinician`
-              )
-            }
-            className="text-[14px] font-semibold text-ink-soft hover:text-ink"
-          >
-            ← Back
-          </button>
-          <span className="eyebrow">{tAdmin('eyebrow')}</span>
-          <AccountMenu />
-        </div>
-      </header>
+      <AppHeader
+        maxWidthClass="max-w-[640px]"
+        back={{
+          label: 'Back',
+          onClick: () =>
+            router.push(locale === 'en' ? '/clinician' : `/${locale}/clinician`)
+        }}
+        middle={
+          <span className="eyebrow block truncate text-center">
+            {tAdmin('eyebrow')}
+          </span>
+        }
+      />
 
       <main className="mx-auto max-w-[640px] px-5 pb-16 pt-6">
         <h1 className="font-display text-[24px] leading-tight text-ink">

@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useState } from 'react';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
@@ -10,9 +11,7 @@ import {
   useSetGoalVideoEnabled
 } from '@/lib/supabase/clinicianPatient';
 import { GasCutPoints } from '@/components/clinician/GasCutPoints';
-import { AccountMenu } from '@/components/layout/AccountMenu';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
-import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
 import type { NrsDirection } from '@/lib/types';
@@ -176,23 +175,17 @@ function NewGoalInner() {
 
   return (
     <div className="min-h-dvh bg-cream">
-      <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[var(--max-w-page-mid)] items-center justify-between px-5 py-4">
-          <button
-            type="button"
-            onClick={() => router.push(patientPath)}
-            className="text-[14px] font-semibold text-ink-soft hover:text-ink"
-          >
-            {t('cancel')}
-          </button>
-          <span className="eyebrow min-w-0 truncate px-2 text-center">{t('eyebrow')}</span>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <EndSessionButton role="clinician" />
-            <PageHelpButton pageKey="newGoal" />
-            <AccountMenu />
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        width="mid"
+        back={{ label: t('cancel'), onClick: () => router.push(patientPath) }}
+        middle={
+          <span className="eyebrow block truncate text-center">
+            {t('eyebrow')}
+          </span>
+        }
+        actions={<EndSessionButton role="clinician" />}
+        helpPageKey="newGoal"
+      />
 
       <main className="mx-auto max-w-[var(--max-w-page-mid)] px-5 py-8">
         <h1 className="font-display text-[24px] leading-tight text-ink">

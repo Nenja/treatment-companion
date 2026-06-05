@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
@@ -25,13 +26,11 @@ import {
   type GuidanceMethod,
   type InjectionSide
 } from '@/lib/types';
-import { AccountMenu } from '@/components/layout/AccountMenu';
 import { useToast } from '@/components/feedback/Toast';
 import { useModalA11y } from '@/lib/useModalA11y';
 import { useWideLayout } from '@/lib/useWideLayout';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
 import { FaceMap } from '@/components/clinician/FaceMap';
-import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
 import { classifyError } from '@/lib/feedback';
 
@@ -587,24 +586,12 @@ function TreatmentRecordInner() {
 
   return (
     <div className="min-h-dvh bg-cream">
-      <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className={headerWidthClass}>
-          <button
-            type="button"
-            onClick={back}
-            className="shrink-0 text-[14px] font-semibold text-ink-soft hover:text-ink"
-          >
-            ← Back
-          </button>
-          {/* Title moved into the body (below) so it can't be clipped
-              between Back and the right-hand controls on narrow widths. */}
-          <div className="flex shrink-0 items-center gap-1.5">
-            <EndSessionButton role="clinician" />
-            <PageHelpButton pageKey="treatment" />
-            <AccountMenu />
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        width="mid"
+        back={{ label: 'Back', onClick: back }}
+        actions={<EndSessionButton role="clinician" />}
+        helpPageKey="treatment"
+      />
 
       <main
         className={mainWidthClass}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
@@ -8,7 +9,6 @@ import {
   useCurrentClinicianSession,
   useUnlockWithCode
 } from '@/lib/supabase/clinicianSession';
-import { AccountMenu } from '@/components/layout/AccountMenu';
 import { OnboardingWizard } from '@/components/feedback/OnboardingWizard';
 import { clearSessionEndingFlag } from '@/lib/sessionEndSignal';
 import { isTutorialReplayRequested } from '@/lib/tutorialReplay';
@@ -95,15 +95,11 @@ export default function PhysioUnlockPage() {
 
   return (
     <div className="min-h-dvh bg-cream">
-      <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
-          <span className="eyebrow">{tPhysio('eyebrow')}</span>
-          <AccountMenu />
-        </div>
-      </header>
+      <AppHeader width="narrow" />
 
       <main className="mx-auto max-w-[480px] px-5 pb-16 pt-10">
         <OnboardingWizard role="physiotherapist" />
+        <p className="eyebrow mb-2">{tPhysio('eyebrow')}</p>
         <h1 className="font-display text-[26px] leading-tight text-ink">
           Unlock a patient
         </h1>

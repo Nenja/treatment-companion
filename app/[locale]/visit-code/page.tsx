@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
@@ -9,7 +10,6 @@ import {
   useGenerateVisitCode
 } from '@/lib/supabase/visitCode';
 import { formatVisitCode } from '@/lib/visitCode';
-import { AccountMenu } from '@/components/layout/AccountMenu';
 
 /**
  * Patient's visit-code screen. Shows the current active code (if any)
@@ -109,19 +109,15 @@ export default function VisitCodePage() {
 
   return (
     <div className="min-h-dvh bg-cream">
-      <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
-          <button
-            type="button"
-            onClick={goHome}
-            className="text-[14px] font-semibold text-ink-soft hover:text-ink"
-          >
-            ← {t('back')}
-          </button>
-          <span className="eyebrow">{t('pageTitle')}</span>
-          <AccountMenu />
-        </div>
-      </header>
+      <AppHeader
+        width="narrow"
+        back={{ label: t('back'), onClick: goHome }}
+        middle={
+          <span className="eyebrow block truncate text-center">
+            {t('pageTitle')}
+          </span>
+        }
+      />
 
       <main className="mx-auto max-w-[480px] px-5 py-10">
         <p className="text-[15px] leading-relaxed text-ink-soft">

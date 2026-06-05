@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations, useLocale } from 'next-intl';
@@ -16,9 +17,7 @@ import {
 } from '@/lib/supabase/clinicianPatient';
 import { formatLongDate } from '@/lib/dates';
 import type { NrsDirection } from '@/lib/types';
-import { AccountMenu } from '@/components/layout/AccountMenu';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
-import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
 import { GasCutPoints } from '@/components/clinician/GasCutPoints';
 import { useToast } from '@/components/feedback/Toast';
@@ -132,12 +131,7 @@ function Inner() {
   if (suggestionQuery.isLoading) {
     return (
       <div className="min-h-dvh bg-cream">
-        <header className="border-b border-stone/70 bg-cream-soft/50">
-          <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
-            <SkeletonBlock width="w-16" height="h-4" />
-            <SkeletonBlock width="w-8" height="h-8" shape="rounded-full" />
-          </div>
-        </header>
+        <AppHeader width="narrow" />
         <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
           <SkeletonScreen label={tA11y('loading')}>
             <SkeletonBlock width="w-3/4" height="h-7" />
@@ -264,23 +258,15 @@ function Inner() {
 
   return (
     <div className="min-h-dvh bg-cream">
-      <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
-          <button
-            type="button"
-            onClick={back}
-            className="text-[14px] font-semibold text-ink-soft hover:text-ink"
-          >
-            ← {t('back')}
-          </button>
-          <span className="eyebrow min-w-0 truncate px-2 text-center">{t('title')}</span>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <EndSessionButton role="clinician" />
-            <PageHelpButton pageKey="suggestion" />
-            <AccountMenu />
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        width="narrow"
+        back={{ label: t('back'), onClick: back }}
+        middle={
+          <span className="eyebrow block truncate text-center">{t('title')}</span>
+        }
+        actions={<EndSessionButton role="clinician" />}
+        helpPageKey="suggestion"
+      />
 
       <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
         <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5">

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { BrandMark } from '@/components/layout/BrandMark';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
@@ -211,6 +212,7 @@ export default function ClinicianPatientPage() {
         {/* Header bar — matches real header height */}
         <header className="border-b border-stone/70 bg-cream-soft/50">
           <div className={flexHeaderWidthClass}>
+            <BrandMark showName={false} />
             <SkeletonBlock width="w-16" height="h-4" />
             <SkeletonBlock width="w-8" height="h-8" shape="rounded-full" />
           </div>
@@ -443,6 +445,7 @@ export default function ClinicianPatientPage() {
               session is an icon on mobile to keep the row compact. The
               clinical summary sits on its own line beneath the name. */}
           <div className="flex items-center gap-2">
+            <BrandMark showName={false} />
             <button
               type="button"
               onClick={() =>

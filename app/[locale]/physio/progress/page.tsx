@@ -1,15 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useCurrentClinicianSession } from '@/lib/supabase/clinicianSession';
 import { usePhysioPatientData } from '@/lib/supabase/physioPatient';
 import { PhysioProgressForm } from '@/components/physio/PhysioProgressForm';
-import { AccountMenu } from '@/components/layout/AccountMenu';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
-import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
 import {
   SkeletonBlock,
@@ -111,22 +110,12 @@ export default function PhysioProgressPage() {
 
   return (
     <div className="min-h-dvh bg-cream">
-      <header className="border-b border-stone/70 bg-cream-soft/50">
-        <div className="mx-auto flex max-w-[480px] items-center justify-between px-5 py-4">
-          <button
-            type="button"
-            onClick={back}
-            className="text-[14px] font-semibold text-ink-soft hover:text-ink"
-          >
-            ← {t('back')}
-          </button>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <EndSessionButton role="physiotherapist" />
-            <PageHelpButton pageKey="physioProgress" />
-            <AccountMenu />
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        width="narrow"
+        back={{ label: t('back'), onClick: back }}
+        actions={<EndSessionButton role="physiotherapist" />}
+        helpPageKey="physioProgress"
+      />
 
       <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
         <div className="eyebrow">{t('reportProgress')}</div>

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { TopBar } from './TopBar';
+import { AppHeader } from './AppHeader';
 
 interface AppShellProps {
   children: ReactNode;
@@ -45,7 +45,7 @@ export function AppShell({ children, wide = false, helpPageKey }: AppShellProps)
       >
         Skip to main content
       </a>
-      <TopBar wide={wide} helpPageKey={helpPageKey} />
+      <AppHeader width={wide ? 'narrowToWide' : 'narrow'} helpPageKey={helpPageKey} />
       <main
         id="main-content"
         className={`mx-auto px-5 pb-16 pt-6 ${mainWidthClass}`}

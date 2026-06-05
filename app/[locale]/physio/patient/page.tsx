@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { BrandMark } from '@/components/layout/BrandMark';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
@@ -269,6 +270,7 @@ export default function PhysioPatientPage() {
               the controls right-aligned. End session is an icon on
               mobile. The clinical summary sits on its own line below. */}
           <div className="flex items-center gap-2">
+            <BrandMark showName={false} />
             {patientNameForHeader ? (
               <button
                 type="button"
