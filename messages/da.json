@@ -365,7 +365,10 @@
       "lowerIsBetter": "Lavere er bedre",
       "gasLevelsLabel": "GAS-udfaldsniveauer",
       "cutoffError": "Hver NRS-grænse skal være et helt tal fra 0 til 9, og hver enkelt højere end den ovenover.",
-      "gasIntro": "Du bestemmer det spørgsmål, de ser, og hvordan deres svar omsættes til en GAS-kategori."
+      "gasIntro": "Du bestemmer det spørgsmål, de ser, og hvordan deres svar omsættes til en GAS-kategori.",
+      "modelLabel": "Målemetode",
+      "modelNrs": "0–10-skala",
+      "modelGas": "Beskrivende niveauer"
     },
     "faceMap": {
       "marksLabel": "Markeringer:",
@@ -851,7 +854,8 @@
     "enlargeChart": "Forstør diagram",
     "withCaregiver": "med hjælper",
     "patientNote": "Patientnote:",
-    "tapPointForDetails": "Tryk på et punkt for detaljer."
+    "tapPointForDetails": "Tryk på et punkt for detaljer.",
+    "axisBetter": "bedre"
   },
   "goalVideo": {
     "introTitle": "Optag en kort video (valgfrit)",

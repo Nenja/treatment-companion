@@ -361,7 +361,10 @@
       "lowerIsBetter": "Lower is better",
       "gasLevelsLabel": "GAS outcome levels",
       "cutoffError": "Each NRS cut-off must be a whole number from 0 to 9, and each one higher than the one above it.",
-      "gasIntro": "You decide the question they see and how to map their answer to a GAS bucket."
+      "gasIntro": "You decide the question they see and how to map their answer to a GAS bucket.",
+      "modelLabel": "Measurement model",
+      "modelNrs": "0–10 scale",
+      "modelGas": "Descriptive levels"
     },
     "faceMap": {
       "marksLabel": "Marks:",
@@ -847,7 +850,8 @@
     "enlargeChart": "Enlarge chart",
     "withCaregiver": "with caregiver",
     "patientNote": "Patient note:",
-    "tapPointForDetails": "Tap a point for details."
+    "tapPointForDetails": "Tap a point for details.",
+    "axisBetter": "better"
   },
   "goalVideo": {
     "introTitle": "Record a short video (optional)",
