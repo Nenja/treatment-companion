@@ -538,7 +538,9 @@
     "paletteSlate": "Slate",
     "paletteClay": "Clay",
     "paletteHighContrast": "High contrast",
-    "showTutorialAgain": "Show tutorial again"
+    "showTutorialAgain": "Show tutorial again",
+    "readAloud": "Read aloud",
+    "readAloudHint": "Show a button to read goals and questions aloud."
   },
   "admin": {
     "roleTherapist": "Therapist",
@@ -1042,7 +1044,8 @@
     "close": "Close",
     "accountMenu": "Account menu",
     "patientActions": "Patient actions",
-    "dosePerMuscle": "Dose per muscle across cycles"
+    "dosePerMuscle": "Dose per muscle across cycles",
+    "readAloud": "Read aloud"
   },
   "accountMenu": {
     "adminLink": "Admin",

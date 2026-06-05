@@ -542,7 +542,9 @@
     "paletteSlate": "Skifer",
     "paletteClay": "Ler",
     "paletteHighContrast": "Høj kontrast",
-    "showTutorialAgain": "Vis vejledning igen"
+    "showTutorialAgain": "Vis vejledning igen",
+    "readAloud": "Læs højt",
+    "readAloudHint": "Vis en knap, der kan læse mål og spørgsmål højt."
   },
   "admin": {
     "roleTherapist": "Terapeut",
@@ -1046,7 +1048,8 @@
     "close": "Luk",
     "accountMenu": "Kontomenu",
     "patientActions": "Patienthandlinger",
-    "dosePerMuscle": "Dosis pr. muskel på tværs af forløb"
+    "dosePerMuscle": "Dosis pr. muskel på tværs af forløb",
+    "readAloud": "Læs højt"
   },
   "accountMenu": {
     "adminLink": "Administration",
