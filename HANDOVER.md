@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `batch-b`._
+> _Last updated for build tag: `batch-c`._
 
 ---
 
@@ -513,53 +513,53 @@ medication columns must be verified before surfacing them on the patient side
 `nrs-graph-direction` →
 **`batch-a`** (0067; NRS cut-off UI dropped, suggestion-approval gained a
 GAS option, `/demo` deleted, `clinician/patient` forced dynamic) →
-**`batch-b`** (localization sweep — no new migration; current).
+**`batch-b`** (localization sweep — no new migration) →
+**`batch-c`** (minor polish — no new migration; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-batch-b.zip`
-- **Tag:** `batch-b`
-- **Change:** localization sweep from the page-by-page review — closed the
-  remaining hardcoded-English gaps so en/da is consistent for patients and
-  staff. No DB / RPC / migration change; no behaviour change.
-  - **Patient-facing:** home error card + no-cycle card
-    (`patient.home.errorBody/errorHint/noCycleTitle/noCycleBody`); visit-code
-    "Generating…/No active code" + generate-error
-    (`patient.visitCode.generating/noActiveCode/generateError`); the **GAS
-    level meanings** in both `GasGoalRatingPicker` (now uses
-    `useTranslations('patient.checkin')`, `meaning`→`meaningKey`) and the
-    check-in summary's `gasLevelMeaning(v, t)` — shared keys
-    `patient.checkin.gasMeaning{MuchBetter,Better,AsExpected,Less,MuchLess}`
-    + `gasPrompt`.
-  - **Clinician/physio-facing:** the **whole physio unlock screen** (title,
-    body, code label, button — `physio.unlock{Title,Body,CodeLabel,Submit}`);
-    new-goal's measurement-model toggle + "NRS rating setup" heading
-    (`newGoal.model* / nrsSetupHeading`); suggestion's "NRS rating setup" +
-    0–10 sentence (`clinician.approve.nrsSetupHeading/nrsScaleIntro`);
-    clinician-entry admin link (`clinician.unlock.adminLink`); admin
-    created-account block (`admin.accountCreated/accountCreatedRole/
-    copyPassword/dismiss`).
-  - **Reworded two now-stale strings** that still described setting cut-offs
-    (removed in `batch-a`): `newGoal.ratingSectionIntro` and the suggestion
-    NRS intro no longer mention mapping a 0–10 answer to a GAS level.
-  - **Deferred (intentional):** `/privacy` stays English — it's an
-    acknowledged pilot-stage placeholder pending real GDPR/Danish legal copy;
-    translating throwaway text is wasted until the real policy exists.
-- **Parity:** en == da, 1019 keys, no diffs.
-- **DB needed:** none. Migrations still through **0067** (run that one if you
-  haven't — it's from `batch-a`, for the GAS suggestion-approval).
-- **⚠ Visual QA (can't render here):** switch the app to Danish and eyeball
-  the newly-translated screens — patient home error/no-cycle states, the
-  visit-code screen, the check-in **GAS** rating buttons + summary, the
-  **physio** unlock screen, and new-goal's model toggle. Confirm nothing
-  overflows its button/card and the Danish reads naturally.
+- **Zip:** `treatment-companion-batch-c.zip`
+- **Tag:** `batch-c`
+- **Change:** minor polish from the page-by-page review. No DB / RPC /
+  migration change.
+  - **Patient home — "View graph" only when there's data.** The graph
+    button on a `GoalCard` was always shown; for a goal with no check-ins
+    yet it opened an empty chart. The home page now passes `onViewGraph` /
+    `viewGraphLabel` only when `goal.ratings.length > 0`, so the button is
+    simply absent until the first check-in (cleaner than an empty graph).
+  - **Clinician-entry duplicate label.** The visit-code input's `<label>`
+    repeated the page `<h1>` (both `clinician.unlock.title`,
+    "Enter visit code"). The field now uses its own
+    `clinician.unlock.codeLabel` ("Visit code" / "Besøgskode").
+  - **Stale code comments corrected (no behaviour change):** the check-in
+    "step plan" doc (now describes per-goal NRS/GAS steps + video + training
+    days + comment, not "5 GAS anchors for every goal"); `physio/patient`'s
+    "SLICE 1 — placeholder" header (the page is a full read+suggest view
+    now); and the `clinician/patient` comment that referenced GAS capture
+    "shipping in the check-in slice" (long shipped).
+  - The new-goal `createGas.isPending` submit-label bug from the catalogue
+    was already fixed in `batch-a`.
+- **Parity:** en == da, 1020 keys.
+- **DB needed:** none. Migrations still through **0067** (run that one if
+  you haven't — it's from `batch-a`).
+- **⚠ Visual QA (can't render here):** confirm a brand-new goal (no
+  check-ins) shows no "View graph" button on the patient home, and that the
+  button reappears after the first check-in. Glance at the clinician-entry
+  screen — the field label now reads "Visit code" under the "Enter visit
+  code" heading.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`batch-b`** — zip `treatment-companion-batch-b.zip`. Localization sweep:
+  patient home error/no-cycle, visit-code states, check-in GAS level
+  meanings (picker + summary), the whole physio unlock screen, new-goal
+  model toggle + headings, suggestion NRS heading/intro, clinician admin
+  link, admin created-account block; reworded two now-stale cut-off
+  strings. `/privacy` deferred. No DB change.
 - **`batch-a`** — zip `treatment-companion-batch-a.zip`. NRS cut-off UI
   dropped (option B — app sends default cuts, no schema/check-in change),
   suggestion-approval gained a GAS option (additive RPC **0067**), `/demo`

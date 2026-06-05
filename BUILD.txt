@@ -1,69 +1,60 @@
-BUILD TAG: batch-b
+BUILD TAG: batch-c
 =====================================================================
 
-WHAT CHANGED — localization sweep (from the page-by-page review)
+WHAT CHANGED — minor polish (from the page-by-page review)
 ---------------------------------------------------------------------
-Closed the remaining hardcoded-English gaps so the app is consistently
-bilingual (en/da) for patients and staff. NO database / RPC / migration
-change, and NO behaviour change — text only (plus two reworded strings,
-see below).
+Small, low-risk fixes. NO database / RPC / migration change.
 
-Patient-facing:
-- Home: the "could not load" error card and the "no treatment cycle yet"
-  empty state.
-- Visit code: "Generating..." / "No active code" and the generate-error
-  message.
-- Check-in GAS goals: the five level meanings ("Much better than
-  expected" ... "Much less than expected") + the picker prompt, now
-  localized in BOTH the rating buttons and the summary review. (Shared
-  keys under patient.checkin.)
+1. Patient home — "View graph" only appears when there's data.
+   Previously the graph button showed on every goal card, including a
+   brand-new goal with no check-ins yet, where it opened an empty chart.
+   Now the button is hidden until the goal has at least one check-in
+   rating, then it appears.
 
-Clinician / physiotherapist-facing:
-- The entire PHYSIO unlock screen (heading, instructions, "Visit code"
-  label, "Unlock" button) — it was fully hardcoded English.
-- New-goal: the measurement-model toggle (question, help, both option
-  labels + descriptions) and the "NRS rating setup" heading.
-- Suggestion approval: the "NRS rating setup" heading + 0-10 intro line.
-- Clinician home: the "Admin: create or list accounts" link.
-- Admin: the created-account confirmation block (account created / role /
-  copy / dismiss).
+2. Clinician entry screen — fixed a duplicated label. The visit-code
+   input's field label repeated the page heading (both "Enter visit
+   code"). The field now has its own label, "Visit code"
+   (da "Besøgskode").
 
-Two now-stale strings reworded (they still described setting GAS
-cut-offs, which batch-a removed): the new-goal rating intro and the
-suggestion NRS intro no longer mention "mapping" a 0-10 answer to a GAS
-level.
+3. Stale code comments corrected (comments only, no behaviour change):
+   - the check-in "step plan" doc block now accurately describes the
+     wizard (per-goal NRS/GAS rating steps, optional video, training
+     days, then comment + summary) instead of the old "5 GAS anchors
+     for every goal";
+   - physio/patient's "SLICE 1 - placeholder" header replaced with a
+     description of the real read+suggest view it is now;
+   - the clinician/patient comment that said GAS capture "ships in the
+     check-in slice" (it shipped long ago) trimmed.
 
-Intentionally NOT translated: /privacy. It is an acknowledged
-pilot-stage placeholder pending real GDPR / Danish legal copy; it should
-be written/translated properly when the real policy exists, not now.
+(The new-goal createGas.isPending submit-label bug noted in the review
+was already fixed in batch-a.)
 
 
 DEPLOY STEPS
 ---------------------------------------------------------------------
 1. Push the repo to GitHub -> Vercel as usual. No env changes.
-2. DB: nothing new. Migrations are still through 0067. If you have not
-   yet run 0067 (from batch-a, for GAS suggestion-approval), run it now:
+2. DB: nothing new. Migrations still through 0067. If you have not yet
+   run 0067 (from batch-a, for GAS suggestion-approval), run it now:
        supabase/migrations/0067_approve_suggestion_gas.sql
 
 
 HOW TO CONFIRM
 ---------------------------------------------------------------------
-- Switch the app to Danish and spot-check the screens above; switch back
-  to English and confirm wording is unchanged from before.
+- Patient home: a goal with no check-ins yet shows NO "View graph"
+  button; after the first check-in it appears.
+- Clinician entry screen: under the "Enter visit code" heading, the
+  field label reads "Visit code" (not a repeat of the heading).
 
 
 VISUAL QA FLAGS (could not be rendered in the build sandbox)
 ---------------------------------------------------------------------
-[ ] In Danish, eyeball: patient home error + no-cycle states; the
-    visit-code screen; the check-in GAS rating buttons + the summary
-    line; the physiotherapist unlock screen; new-goal's model toggle.
-[ ] Confirm no Danish string overflows its button/card (Danish runs a
-    bit longer than English in a few of these).
+[ ] Confirm the View-graph button hides/reappears as described, in both
+    en and da.
 
 
 BUILD VERIFICATION
 ---------------------------------------------------------------------
 - next build: exit 0, "Generating static pages (58/58)".
 - npx tsc --noEmit: exit 0.
-- en/da translation parity: 1019 == 1019 keys, no diffs.
+- en/da translation parity: 1020 == 1020 keys, no diffs.
 - Migrations unchanged (through 0067).
