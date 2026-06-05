@@ -140,7 +140,7 @@ export default function PatientHomePage() {
   return (
     <AppShell helpPageKey="patientHome">
       {/* One-time orientation — shown only on a new patient's first visit. */}
-      <OnboardingWizard role="patient" />
+      <OnboardingWizard role="patient" replayOnly />
 
       {/* Cycle context eyebrow — plain language, just "weeks since
           treatment" so the patient doesn't have to think in cycles. */}

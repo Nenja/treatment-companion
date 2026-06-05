@@ -113,7 +113,7 @@ export default function ClinicianUnlockPage() {
     <div className="min-h-dvh bg-cream">
       <AppHeader width="narrow" />
       <main className="mx-auto max-w-[480px] px-5 py-10">
-        <OnboardingWizard role="clinician" />
+        <OnboardingWizard role="clinician" replayOnly />
         <h1 className="font-display text-[28px] leading-tight text-ink">
           {t('title')}
         </h1>

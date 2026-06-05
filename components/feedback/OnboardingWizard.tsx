@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useDismissIntro } from '@/lib/supabase/intro';
 import { useSetTextScale } from '@/lib/supabase/textScale';
+import { useSetReadAloud } from '@/lib/supabase/readAloud';
 import { useSetNightMode } from '@/lib/supabase/colorScheme';
 import { useSetLayoutPreference } from '@/lib/supabase/layoutPreference';
 import {
@@ -94,9 +95,21 @@ const SAMPLE_PHYSIO = [
 ];
 
 export function OnboardingWizard({
-  role
+  role,
+  mandatory = false,
+  replayOnly = false,
+  onComplete
 }: {
   role: 'patient' | 'physiotherapist' | 'clinician';
+  /** Hide the "skip" affordance so the only way out is finishing.
+   *  Used by SetupGate for the mandatory first-run. */
+  mandatory?: boolean;
+  /** Per-page mounts pass this so they only show an explicitly
+   *  requested replay — the mandatory first-run is owned by SetupGate. */
+  replayOnly?: boolean;
+  /** Called when the wizard is finished, so a host (SetupGate) can
+   *  reveal the app immediately without waiting on the profile refetch. */
+  onComplete?: () => void;
 }) {
   const { profile } = useAuth();
   const dismiss = useDismissIntro();
@@ -114,6 +127,9 @@ export function OnboardingWizard({
   if (!profile || hidden) return null;
   // Only show for the role whose screen this is.
   if (profile.role !== role) return null;
+  // Per-page mounts only handle an explicitly requested replay; the
+  // mandatory first-run is shown full-screen by SetupGate.
+  if (replayOnly && !replay) return null;
   // Show when the account hasn't seen it yet, OR a replay was asked
   // for. (Replay wins over the persistent flag.)
   if (profile.hasSeenIntro && !replay) return null;
@@ -134,6 +150,7 @@ export function OnboardingWizard({
     setHidden(true); // instant — don't wait on the network
     clearTutorialReplay();
     dismiss.mutate();
+    onComplete?.();
   };
 
   const goNext = () => {
@@ -324,6 +341,11 @@ export function OnboardingWizard({
             dayLabel={t('comfortDay')}
             nightLabel={t('comfortNight')}
           />
+          <ComfortReadAloud
+            label={t('comfortReadAloud')}
+            onLabel={t('comfortReadAloudOn')}
+            offLabel={t('comfortReadAloudOff')}
+          />
           {/* Layout preference only matters on large screens, and only
               for professionals (patients never get a wide layout). */}
           {isProfessional && (
@@ -372,6 +394,8 @@ export function OnboardingWizard({
           >
             {t('back')}
           </button>
+        ) : mandatory ? (
+          <span aria-hidden />
         ) : (
           <button
             type="button"
@@ -607,6 +631,49 @@ function ComfortBrightness({
                   currentPalette: profile?.colorScheme ?? null
                 })
               }
+              className={`flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border text-[14px] font-semibold ${
+                isCurrent
+                  ? 'border-sage bg-sage-soft text-sage-deep'
+                  : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
+              }`}
+            >
+              {o.text}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ComfortReadAloud({
+  label,
+  onLabel,
+  offLabel
+}: {
+  label: string;
+  onLabel: string;
+  offLabel: string;
+}) {
+  const { profile } = useAuth();
+  const setReadAloud = useSetReadAloud();
+  const on = Boolean(profile?.readAloud);
+  const opts: Array<{ value: boolean; text: string }> = [
+    { value: false, text: offLabel },
+    { value: true, text: onLabel }
+  ];
+  return (
+    <div>
+      <p className="text-[13px] font-semibold text-ink-soft">{label}</p>
+      <div className="mt-2 flex gap-1.5">
+        {opts.map((o) => {
+          const isCurrent = on === o.value;
+          return (
+            <button
+              key={o.text}
+              type="button"
+              aria-pressed={isCurrent}
+              onClick={() => setReadAloud.mutate(o.value)}
               className={`flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border text-[14px] font-semibold ${
                 isCurrent
                   ? 'border-sage bg-sage-soft text-sage-deep'

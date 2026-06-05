@@ -98,7 +98,7 @@ export default function PhysioUnlockPage() {
       <AppHeader width="narrow" />
 
       <main className="mx-auto max-w-[480px] px-5 pb-16 pt-10">
-        <OnboardingWizard role="physiotherapist" />
+        <OnboardingWizard role="physiotherapist" replayOnly />
         <p className="eyebrow mb-2">{tPhysio('eyebrow')}</p>
         <h1 className="font-display text-[26px] leading-tight text-ink">
           {tPhysio('unlockTitle')}
