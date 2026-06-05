@@ -51,7 +51,17 @@
       "suggestedGoalsCount": "{count, plural, one {# mål foreslået} other {# mål foreslået}}",
       "suggestGoal": "Foreslå et nyt mål",
       "generateVisitCode": "Besøgskode",
-      "visitCodeExplainer": "Vis dette til din klinik eller terapeut ved en aftale"
+      "visitCodeExplainer": "Vis dette til din klinik eller terapeut ved en aftale",
+      "viewGraph": "Se graf",
+      "graphClose": "Luk",
+      "viewTreatedMuscles": "Se hvilke muskler der blev behandlet",
+      "treatedMusclesTitle": "Behandlede muskler",
+      "treatedMusclesFrom": "Fra din seneste behandling den {date}.",
+      "treatedMusclesNone": "Der blev ikke registreret nogen muskler for den behandling.",
+      "treatedSideLeft": "Venstre",
+      "treatedSideRight": "Højre",
+      "treatedSideLeftRight": "Venstre & højre",
+      "treatedSideBoth": "Begge sider"
     },
     "visitCode": {
       "pageTitle": "Besøgskode",
@@ -1065,9 +1075,6 @@
     "archived": "arkiveret",
     "improved": "forbedret",
     "declined": "forværret",
-    "unchanged": "uændret",
-    "chipFrom": "fra {value}",
-    "chipLevels": "{count, plural, one {# niveau} other {# niveauer}}",
     "chipNoChange": "ingen ændring",
     "statHome": "{days, plural, one {Hjemme # dag} other {Hjemme # dage}}",
     "statCadence": "~{n}×/uge",

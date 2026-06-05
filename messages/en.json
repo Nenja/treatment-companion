@@ -47,7 +47,17 @@
       "suggestedGoalsCount": "{count, plural, one {# goal suggested} other {# goals suggested}}",
       "suggestGoal": "Suggest a new goal",
       "generateVisitCode": "Visit code",
-      "visitCodeExplainer": "Show this to your clinic or therapist at an appointment"
+      "visitCodeExplainer": "Show this to your clinic or therapist at an appointment",
+      "viewGraph": "View graph",
+      "graphClose": "Close",
+      "viewTreatedMuscles": "See which muscles were treated",
+      "treatedMusclesTitle": "Muscles treated",
+      "treatedMusclesFrom": "From your most recent treatment on {date}.",
+      "treatedMusclesNone": "No muscles were recorded for that treatment.",
+      "treatedSideLeft": "Left",
+      "treatedSideRight": "Right",
+      "treatedSideLeftRight": "Left & right",
+      "treatedSideBoth": "Both sides"
     },
     "visitCode": {
       "pageTitle": "Visit code",
@@ -1061,9 +1071,6 @@
     "archived": "archived",
     "improved": "improved",
     "declined": "declined",
-    "unchanged": "unchanged",
-    "chipFrom": "from {value}",
-    "chipLevels": "{count, plural, one {# level} other {# levels}}",
     "chipNoChange": "no change",
     "statHome": "{days, plural, one {Home # day} other {Home # days}}",
     "statCadence": "~{n}×/wk",
