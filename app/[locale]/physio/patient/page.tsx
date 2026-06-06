@@ -199,26 +199,37 @@ export default function PhysioPatientPage() {
     }[]
   >();
   for (const goal of goals) {
+    const isGas = goal.kind === 'gas';
     const points = assessments
       .flatMap((a) => {
         const r = a.ratings.find((x) => x.approvedGoalId === goal.id);
         if (!r) return [];
+        // Pick the value for this goal's kind; skip flag-only rows that
+        // carry no score for it.
+        if (isGas) {
+          if (r.gasValue == null) return [];
+        } else if (r.nrsValue == null) {
+          return [];
+        }
         const days =
           (new Date(a.assessmentDate).getTime() - cycleStartMs) /
           (24 * 60 * 60 * 1000);
         const snappedWeek = Math.max(1, Math.round(days / 7));
-        return [
-          {
-            weekNumber: snappedWeek,
-            nrs: r.nrsValue,
-            value: nrsToGas(r.nrsValue, {
+        const value = isGas
+          ? (r.gasValue as -2 | -1 | 0 | 1 | 2)
+          : nrsToGas(r.nrsValue as number, {
               question: goal.nrsQuestion,
               direction: goal.nrsDirection,
               cutLowLow: goal.cutLowLow,
               cutLow: goal.cutLow,
               cutZero: goal.cutZero,
               cutHigh: goal.cutHigh
-            }),
+            });
+        return [
+          {
+            weekNumber: snappedWeek,
+            nrs: r.nrsValue ?? 0,
+            value,
             note: a.note
           }
         ];
@@ -677,7 +688,7 @@ function AssessmentHistoryPanel({
     id: string;
     assessmentDate: string;
     note: string | null;
-    ratings: { approvedGoalId: string; nrsValue: number }[];
+    ratings: { approvedGoalId: string; nrsValue: number | null }[];
   }[];
   goals: { id: string; patientFacingText: string }[];
   locale: string;

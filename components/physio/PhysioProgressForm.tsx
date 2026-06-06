@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { GoalRatingPicker } from '@/components/wizard/GoalRatingPicker';
+import { GasGoalRatingPicker } from '@/components/wizard/GasGoalRatingPicker';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
 import { todayIso, formatLongDate } from '@/lib/dates';
@@ -50,39 +51,59 @@ export function PhysioProgressForm({
 
   const [date, setDate] = useState<string>(todayIso());
   const [note, setNote] = useState('');
-  // Per-goal rating state. A goal is "included" once the physio opens
-  // its picker; the value is the NRS number. Goals not in this map are
-  // skipped.
+  // Per-goal state. A goal is "included" in the visit if it has a rating,
+  // is marked working-on, or is flagged for adjustment — any one signal.
   const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [gasRatings, setGasRatings] = useState<Record<string, number>>({});
   const [openGoals, setOpenGoals] = useState<Record<string, boolean>>({});
+  const [workingOn, setWorkingOn] = useState<Record<string, boolean>>({});
+  const [needsAdj, setNeedsAdj] = useState<Record<string, boolean>>({});
+  const [adjNote, setAdjNote] = useState<Record<string, string>>({});
 
   const toggleGoal = (goalId: string) => {
-    setOpenGoals((prev) => {
-      const next = { ...prev, [goalId]: !prev[goalId] };
-      return next;
-    });
+    setOpenGoals((prev) => ({ ...prev, [goalId]: !prev[goalId] }));
     // If collapsing, drop any rating for that goal — collapsed = skipped.
-    setRatings((prev) => {
-      if (openGoals[goalId]) {
+    if (openGoals[goalId]) {
+      setRatings((prev) => {
         const next = { ...prev };
         delete next[goalId];
         return next;
-      }
-      return prev;
-    });
+      });
+      setGasRatings((prev) => {
+        const next = { ...prev };
+        delete next[goalId];
+        return next;
+      });
+    }
   };
 
-  const ratedCount = Object.keys(ratings).length;
-  const canSubmit = ratedCount > 0 && !!date && !submit.isPending;
+  const isRated = (id: string) =>
+    typeof ratings[id] === 'number' || typeof gasRatings[id] === 'number';
+  const isIncluded = (id: string) =>
+    isRated(id) || !!workingOn[id] || !!needsAdj[id];
+  const includedCount = goals.filter((g) => isIncluded(g.id)).length;
+  const canSubmit = includedCount > 0 && !!date && !submit.isPending;
 
   const doSubmit = async () => {
     if (!canSubmit) return;
-    const ratingInputs: PhysioGoalRatingInput[] = Object.entries(
-      ratings
-    ).map(([approvedGoalId, nrsValue]) => ({
-      approvedGoalId,
-      nrsValue
-    }));
+    const ratingInputs: PhysioGoalRatingInput[] = goals
+      .filter((g) => isIncluded(g.id))
+      .map((g) => ({
+        approvedGoalId: g.id,
+        nrsValue:
+          g.kind === 'gas'
+            ? null
+            : typeof ratings[g.id] === 'number'
+              ? ratings[g.id]
+              : null,
+        gasValue:
+          g.kind === 'gas' && typeof gasRatings[g.id] === 'number'
+            ? gasRatings[g.id]
+            : null,
+        workingOn: !!workingOn[g.id],
+        needsAdjustment: !!needsAdj[g.id],
+        adjustmentNote: needsAdj[g.id] ? adjNote[g.id]?.trim() || null : null
+      }));
     try {
       await submit.mutateAsync({
         patientId,
@@ -91,12 +112,14 @@ export function PhysioProgressForm({
         ratings: ratingInputs
       });
       toast.success(t('progressToast'));
-      // Reset for the next assessment.
       setRatings({});
+      setGasRatings({});
       setOpenGoals({});
+      setWorkingOn({});
+      setNeedsAdj({});
+      setAdjNote({});
       setNote('');
       setDate(todayIso());
-      // Notify the caller (e.g. so a wrapping page can navigate back).
       onSaved?.();
     } catch (err) {
       toast.error(
@@ -111,11 +134,10 @@ export function PhysioProgressForm({
     <div>
       <section className="mt-6">
         <h2 className="font-display text-[20px] text-ink">
-          Record an assessment
+          {t('sectionTitle')}
         </h2>
         <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
-          Rate the goals you assessed today. Leave a goal closed to skip
-          it.
+          {t('sectionHint')}
         </p>
 
         {/* Visit date */}
@@ -124,7 +146,7 @@ export function PhysioProgressForm({
             htmlFor="physio-date"
             className="block text-[14px] font-semibold text-ink"
           >
-            Date of visit
+            {t('dateLabel')}
           </label>
           <input
             id="physio-date"
@@ -136,25 +158,45 @@ export function PhysioProgressForm({
           />
         </div>
 
-        {/* Per-goal rating cards */}
+        {/* Per-goal cards */}
         <div className="mt-6 space-y-3">
           {goals.map((g) => {
             const isOpen = !!openGoals[g.id];
-            const rated = typeof ratings[g.id] === 'number';
+            const rated =
+              typeof ratings[g.id] === 'number' ||
+              typeof gasRatings[g.id] === 'number';
+            const isWorking = !!workingOn[g.id];
+            const isAdj = !!needsAdj[g.id];
             return (
               <div
                 key={g.id}
                 className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <p className="font-display text-[16px] leading-snug text-ink">
-                    {g.patientFacingText}
-                  </p>
+                <p className="font-display text-[16px] leading-snug text-ink">
+                  {g.patientFacingText}
+                </p>
+
+                {/* Signal toggles — taps, no typing. */}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setWorkingOn((p) => ({ ...p, [g.id]: !p[g.id] }))
+                    }
+                    aria-pressed={isWorking}
+                    className={`rounded-[var(--radius-button)] border px-3 py-1.5 text-[13px] font-semibold ${
+                      isWorking
+                        ? 'border-sage-deep bg-sage-deep text-on-accent'
+                        : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
+                    }`}
+                  >
+                    {t('workingOn')}
+                  </button>
                   <button
                     type="button"
                     onClick={() => toggleGoal(g.id)}
                     aria-expanded={isOpen}
-                    className={`shrink-0 rounded-[var(--radius-button)] border px-3 py-1.5 text-[14px] font-semibold ${
+                    className={`rounded-[var(--radius-button)] border px-3 py-1.5 text-[13px] font-semibold ${
                       isOpen
                         ? 'border-sage bg-sage-soft text-sage-deep'
                         : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
@@ -162,31 +204,75 @@ export function PhysioProgressForm({
                   >
                     {isOpen ? t('progressRating') : t('progressRate')}
                   </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setNeedsAdj((p) => ({ ...p, [g.id]: !p[g.id] }))
+                    }
+                    aria-pressed={isAdj}
+                    className={`rounded-[var(--radius-button)] border px-3 py-1.5 text-[13px] font-semibold ${
+                      isAdj
+                        ? 'border-amber-deep bg-amber-soft text-ink'
+                        : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
+                    }`}
+                  >
+                    {t('needsAdjustment')}
+                  </button>
                 </div>
 
                 {isOpen && (
                   <div className="mt-5">
-                    <GoalRatingPicker
-                      ariaLabel={`NRS rating for ${g.patientFacingText}`}
-                      goalText=""
-                      question={g.nrsQuestion}
-                      direction={g.nrsDirection}
-                      value={ratings[g.id]}
-                      onChange={(v) =>
-                        setRatings((prev) => ({ ...prev, [g.id]: v }))
+                    {g.kind === 'gas' ? (
+                      <GasGoalRatingPicker
+                        ariaLabel={`GAS rating for ${g.patientFacingText}`}
+                        goalText=""
+                        anchors={g.gas}
+                        value={gasRatings[g.id]}
+                        onChange={(v) =>
+                          setGasRatings((prev) => ({ ...prev, [g.id]: v }))
+                        }
+                      />
+                    ) : (
+                      <GoalRatingPicker
+                        ariaLabel={`NRS rating for ${g.patientFacingText}`}
+                        goalText=""
+                        question={g.nrsQuestion}
+                        direction={g.nrsDirection}
+                        value={ratings[g.id]}
+                        onChange={(v) =>
+                          setRatings((prev) => ({ ...prev, [g.id]: v }))
+                        }
+                      />
+                    )}
+                    {!rated && (
+                      <p className="mt-2 text-[13px] text-ink-muted">
+                        {t('setValueHint')}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {isAdj && (
+                  <div className="mt-3">
+                    <label className="block text-[13px] font-semibold text-ink-soft">
+                      {t('adjustmentNoteLabel')}
+                    </label>
+                    <textarea
+                      value={adjNote[g.id] ?? ''}
+                      onChange={(e) =>
+                        setAdjNote((p) => ({ ...p, [g.id]: e.target.value }))
                       }
+                      rows={2}
+                      maxLength={2000}
+                      placeholder={t('adjustmentNotePlaceholder')}
+                      className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
                     />
                   </div>
                 )}
 
-                {!isOpen && (
+                {!isOpen && !isWorking && !isAdj && (
                   <p className="mt-2 text-[13px] text-ink-muted">
-                    Not assessed — tap Rate to include this goal.
-                  </p>
-                )}
-                {isOpen && !rated && (
-                  <p className="mt-2 text-[13px] text-ink-muted">
-                    Move the slider or use the buttons to set a value.
+                    {t('notAssessedHint')}
                   </p>
                 )}
               </div>
@@ -200,12 +286,10 @@ export function PhysioProgressForm({
             htmlFor="physio-note"
             className="block text-[14px] font-semibold text-ink"
           >
-            Note for next visit <span className="text-ink-muted">(optional)</span>
+            {t('noteLabel')}{' '}
+            <span className="text-ink-muted">{t('noteOptional')}</span>
           </label>
-          <p className="mt-0.5 text-[14px] text-ink-muted">
-            A short message the physician sees at the next visit. Your
-            own clinical notes belong in your usual record system.
-          </p>
+          <p className="mt-0.5 text-[14px] text-ink-muted">{t('noteHint')}</p>
           <textarea
             id="physio-note"
             value={note}
@@ -225,8 +309,8 @@ export function PhysioProgressForm({
         >
           {submit.isPending
             ? t('progressSaving')
-            : ratedCount > 0
-              ? `Save assessment (${ratedCount} goal${ratedCount === 1 ? '' : 's'})`
+            : includedCount > 0
+              ? t('saveAssessment', { count: includedCount })
               : t('progressRateAtLeastOne')}
         </button>
       </section>
@@ -234,14 +318,12 @@ export function PhysioProgressForm({
       {/* Recent assessments */}
       <section className="mt-12">
         <h2 className="font-display text-[20px] text-ink">
-          Recent assessments
+          {t('recentTitle')}
         </h2>
         {recent.isLoading ? (
           <p className="mt-3 text-[14px] text-ink-muted">{t('loading')}</p>
         ) : !recent.data || recent.data.length === 0 ? (
-          <p className="mt-3 text-[14px] text-ink-muted">
-            No assessments recorded yet this cycle.
-          </p>
+          <p className="mt-3 text-[14px] text-ink-muted">{t('recentEmpty')}</p>
         ) : (
           <ul className="mt-3 space-y-3">
             {recent.data.map((a) => (
@@ -253,8 +335,11 @@ export function PhysioProgressForm({
                   {formatLongDate(a.assessmentDate, locale)}
                 </p>
                 <p className="mt-0.5 text-[13px] text-ink-muted">
-                  {a.ratings.length} goal
-                  {a.ratings.length === 1 ? '' : 's'} rated
+                  {t('recentGoalsRated', {
+                    count: a.ratings.filter(
+                      (r) => r.nrsValue != null || r.gasValue != null
+                    ).length
+                  })}
                 </p>
                 {a.note && (
                   <p className="mt-2 rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1.5 text-[14px] leading-relaxed text-ink">

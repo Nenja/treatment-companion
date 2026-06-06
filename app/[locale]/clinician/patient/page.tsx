@@ -71,6 +71,7 @@ export default function ClinicianPatientPage() {
   const tAmb = useTranslations('ambulation');
   const tDomain = useTranslations('domain');
   const tImportance = useTranslations('importance');
+  const tTraining = useTranslations('training');
   const tModality = useTranslations('treatment.modality');
   const tVideoProtocol = useTranslations('clinician.videoProtocol');
   const tVideoQueue = useTranslations('clinician.videoQueue');
@@ -489,10 +490,17 @@ export default function ClinicianPatientPage() {
     }[]
   >();
   for (const goal of activeGoals) {
+    const isGas = goal.kind !== 'nrs';
     const points = physioAssessments
       .flatMap((a) => {
         const r = a.ratings.find((x) => x.approvedGoalId === goal.id);
         if (!r) return [];
+        // Skip flag-only rows that carry no score for this goal's kind.
+        if (isGas) {
+          if (r.gasValue == null) return [];
+        } else if (r.nrsValue == null) {
+          return [];
+        }
         const days =
           (new Date(a.assessmentDate).getTime() - cycleStartMs) /
           (24 * 60 * 60 * 1000);
@@ -500,13 +508,12 @@ export default function ClinicianPatientPage() {
         return [
           {
             weekNumber: snappedWeek,
-            nrs: r.nrsValue,
+            nrs: r.nrsValue ?? 0,
             // NRS goals derive GAS from the goal's cut points. GAS goals
-            // are rated as a level directly, so the recorded value is
-            // already the GAS level.
+            // are rated as a level directly (gas_value).
             value:
-              goal.kind === 'nrs' && goal.nrs
-                ? nrsToGas(r.nrsValue, {
+              !isGas && goal.nrs
+                ? nrsToGas(r.nrsValue as number, {
                     question: goal.nrs.question,
                     direction: goal.nrs.direction,
                     cutLowLow: goal.nrs.cutLowLow,
@@ -514,7 +521,7 @@ export default function ClinicianPatientPage() {
                     cutZero: goal.nrs.cutZero,
                     cutHigh: goal.nrs.cutHigh
                   })
-                : ((r.nrsValue as unknown) as -2 | -1 | 0 | 1 | 2),
+                : (r.gasValue as -2 | -1 | 0 | 1 | 2),
             note: a.note
           }
         ];
@@ -522,6 +529,55 @@ export default function ClinicianPatientPage() {
       .sort((a, b) => a.weekNumber - b.weekNumber);
     physioRatingsByGoal.set(goal.id, points);
   }
+
+  // ── Therapist activity signals (surfaced to the physician) ──────────
+  // How many days they train: distinct dated assessments are the visits.
+  const therapyVisitDates = Array.from(
+    new Set(physioAssessments.map((a) => a.assessmentDate))
+  ).sort();
+  const therapyVisitCount = therapyVisitDates.length;
+  // Which weekdays those visits fall on (ISO 1=Mon..7=Sun).
+  const therapyWeekdaysIso = new Set(
+    therapyVisitDates.map((d) => {
+      const day = new Date(d + 'T00:00:00').getDay(); // 0=Sun..6=Sat
+      return day === 0 ? 7 : day;
+    })
+  );
+  // What functions they're working on: a goal is "working on" if the most
+  // recent assessment that mentions it has the flag set (assessments are
+  // ascending, so the last match wins).
+  const workingOnGoalIds = new Set<string>();
+  for (const g of activeGoals) {
+    let flag = false;
+    for (const a of physioAssessments) {
+      const r = a.ratings.find((x) => x.approvedGoalId === g.id);
+      if (r) flag = r.workingOn;
+    }
+    if (flag) workingOnGoalIds.add(g.id);
+  }
+  // Feasibility help: adjustment requests, newest first.
+  const adjustmentRequests = physioAssessments
+    .flatMap((a) =>
+      a.ratings
+        .filter((r) => r.needsAdjustment)
+        .map((r) => ({
+          goalId: r.approvedGoalId,
+          note: r.adjustmentNote,
+          date: a.assessmentDate
+        }))
+    )
+    .reverse();
+  const hasTherapistActivity =
+    therapyVisitCount > 0 || adjustmentRequests.length > 0;
+  const dayShortKeys = [
+    'monShort',
+    'tueShort',
+    'wedShort',
+    'thuShort',
+    'friShort',
+    'satShort',
+    'sunShort'
+  ] as const;
 
   const onEndSession = async () => {
     // Mark the deliberate end FIRST, so the patient-page timeout guard
@@ -938,11 +994,79 @@ export default function ClinicianPatientPage() {
               {t('physioInputSubtitle')}
             </p>
             <div className="mt-2.5">
+          {/* Therapist activity — visit days + adjustment requests. */}
+          {hasTherapistActivity && (
+            <div className="mb-4 space-y-3">
+              {therapyVisitCount > 0 && (
+                <div className="rounded-[var(--radius-button)] border border-stone/70 bg-cream p-2.5">
+                  <h3 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
+                    {t('physioVisitsHeading')}
+                  </h3>
+                  <p className="mt-1 text-[14px] text-ink">
+                    {t('physioVisitsCount', { count: therapyVisitCount })}
+                  </p>
+                  <div
+                    className="mt-2 flex gap-1"
+                    aria-label={t('physioWeekdaysAria')}
+                  >
+                    {dayShortKeys.map((key, i) => {
+                      const iso = i + 1;
+                      const on = therapyWeekdaysIso.has(iso);
+                      return (
+                        <span
+                          key={key}
+                          className={`flex h-7 w-9 items-center justify-center rounded-md text-[12px] font-semibold ${
+                            on
+                              ? 'bg-sage-deep text-on-accent'
+                              : 'bg-stone-soft text-ink-muted'
+                          }`}
+                        >
+                          {tTraining(key)}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {adjustmentRequests.length > 0 && (
+                <div>
+                  <h3 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
+                    {t('physioAdjustmentsHeading')}
+                  </h3>
+                  <ul className="mt-2 space-y-2">
+                    {adjustmentRequests.map((req, idx) => {
+                      const g = activeGoals.find((x) => x.id === req.goalId);
+                      return (
+                        <li
+                          key={`${req.goalId}-${idx}`}
+                          className="rounded-[var(--radius-button)] border border-amber-deep/40 bg-amber-soft p-2.5"
+                        >
+                          <p className="text-[14px] font-semibold leading-snug text-ink">
+                            {g ? g.patientFacingText : t('physioAdjustmentGoalGone')}
+                          </p>
+                          {req.note && (
+                            <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">
+                              {req.note}
+                            </p>
+                          )}
+                          <p className="mt-1 text-[12px] text-ink-muted">
+                            {formatLongDate(req.date, locale)}
+                          </p>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
           {physioGoalSuggestions.length === 0 &&
           physioMuscleSuggestions.length === 0 ? (
-            <p className="text-[13px] text-ink-muted">
-              {t('physioInputNone')}
-            </p>
+            hasTherapistActivity ? null : (
+              <p className="text-[13px] text-ink-muted">
+                {t('physioInputNone')}
+              </p>
+            )
           ) : (
             <>
               {/* Goal suggestions from the therapist. */}
@@ -1284,6 +1408,11 @@ export default function ClinicianPatientPage() {
                     clinicPoints={clinicPointsByGoal.get(g.id) ?? []}
                     onExpand={() => setEnlargedGoalId(g.id)}
                   />
+                  {workingOnGoalIds.has(g.id) && (
+                    <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep">
+                      {t('physioWorkingOnTag')}
+                    </p>
+                  )}
                   {(clinicVideoByGoal.get(g.id) ?? []).length > 0 && (
                     <div className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3">
                       <p className="text-[12px] font-semibold text-ink-soft">
@@ -1453,6 +1582,11 @@ export default function ClinicianPatientPage() {
                       doseMarkers={itbDoseMarkers}
                       onExpand={() => setEnlargedGoalId(g.id)}
                     />
+                    {workingOnGoalIds.has(g.id) && (
+                      <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep">
+                        {t('physioWorkingOnTag')}
+                      </p>
+                    )}
                     <div className="mt-1.5 flex justify-end">
                       <button
                         type="button"
