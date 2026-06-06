@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `record-goal-inline`._
+> _Last updated for build tag: `video-score-queue`._
 
 ---
 
@@ -242,7 +242,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0073**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0076**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -281,9 +281,20 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
   today's without a new code. Consent gate unchanged; relaxes the
   one-active-session index to per-(clinician,patient), adds patient-scoped
   touch/end + `reopen_session` + `list_my_sessions`.
+- `0074_nrs_baseline_target.sql` — **`nrs-baseline-target`, RUN THIS.** Adds
+  `approved_goal.nrs_baseline_value` + `nrs_target_value` (0–10, nullable) and
+  extends `create_goal_for_patient` with the two values (old 9-arg signature
+  dropped).
+- `0075_baseline_video.sql` — **`baseline-video`, RUN THIS.** Adds
+  `approved_goal.baseline_video_path` + `set_goal_baseline_video` RPC + two
+  storage policies letting a clinician write `<patient_id>/baseline/...` clips
+  for a patient they can access.
+- `0076_clinic_video_nrs.sql` — **`video-score-queue`, RUN THIS.** Adds
+  `weekly_goal_rating.clinic_video_nrs` (0–10) + `set_clinic_video_nrs` RPC
+  (NRS clips scored on the patient's 0–10 axis; GAS stays on −2..+2).
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0073 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching).
+> If unsure whether the user's DB is current, confirm 0062–0076 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS).
 
 ---
 
@@ -590,50 +601,75 @@ re-coding + same-day reopen; consent gate unchanged) →
 context left / goals right, look-up tools in a header toolbar; banner week
 eyebrow removed) →
 **`record-goal-inline`** (no migration; record a goal in a slide-over over the
-chart instead of a separate route; form factored into RecordGoalForm; current).
+chart instead of a separate route; form factored into RecordGoalForm) →
+**`nrs-baseline-target`** (0074; NRS goals get a baseline + target 0–10 set
+with the patient; direction derived; start/target lines on the graph) →
+**`baseline-video`** (0075; clinician records an in-clinic baseline clip per
+video goal; patient sees it as a reference at the weeks-6–8 check-in) →
+**`video-score-queue`** (0076; per-visit quick-score queue over unscored peak
+clips, baseline shown beside each, GAS anchors or NRS 0–10; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-record-goal-inline.zip`
-- **Tag:** `record-goal-inline`
-- **Change:** recording a goal no longer leaves the patient view. **No
-  migration.** The goal form was factored out and is now also reachable as a
-  slide-over over the chart.
-  - **New `components/clinician/RecordGoalForm.tsx`** — the entire goal form
-    (goal text, SMART line, NRS-vs-GAS model choice + each one's config, the
-    optional weekly-video protocol, Cancel / Record) lifted verbatim out of the
-    new-goal route, including the `GasAnchorField`. Props: `patientId`,
-    `onCancel`, `onRecorded`. Uses the same `useCreateGoalForPatient` /
-    `useCreateGasGoalForPatient` (+ video) mutations; on success it shows the
-    existing toast and calls `onRecorded()`. Those mutations already invalidate
-    `['clinicianPatient']`, so the goal list refreshes with no navigation.
-  - **New `components/clinician/RecordGoalDrawer.tsx`** — right-side slide-over
-    (`fixed inset-0 flex justify-end bg-ink/40`, panel `max-w-[560px]`,
-    scrollable, full-height sheet on mobile) using `useModalA11y` for focus
-    trap + Escape, matching `ExportModal`. Hosts `RecordGoalForm` with
-    `onCancel`/`onRecorded` both = close.
-  - **Patient page:** the "Record goal" button (by the goals heading) now opens
-    the drawer (`setShowRecordGoal(true)` + touch) instead of routing to
-    `/clinician/new-goal`. New `showRecordGoal` state + `<RecordGoalDrawer>`
-    rendered with the other modals.
-  - **`/clinician/new-goal` route kept** as a thin wrapper (chrome +
-    `RecordGoalForm`) for deep links / the narrow fallback — same behaviour,
-    no duplicated form.
-  - No new i18n (reuses `newGoal.*` + `a11y.close`). Parity 1122 == 1122.
-- **DB needed:** **none** — migration count stays at **0073**.
-- **⚠ QA (can't render/run here):** open Record goal from a patient — the
-  slide-over appears over the chart, the goal list stays behind it; record an
-  NRS goal and a GAS goal and confirm the new goal appears in the list with the
-  drawer closed and **no navigation**; Cancel and Escape close without saving;
-  focus is trapped and returns to the button on close; on mobile it's a
-  full-height sheet; the old `/clinician/new-goal` deep link still works.
+- **Zip:** `treatment-companion-video-score-queue.zip`
+- **Tag:** `video-score-queue`
+- **Change:** **Pass C of the video/baseline work — the clinician quick-score
+  queue.** Clears the unscored peak-effect clips in one pass: each clip is
+  shown beside the goal's baseline, scored, and auto-advances. Migration 0076.
+  - **Migration 0076:** `weekly_goal_rating.clinic_video_nrs` (int 0–10) +
+    `set_clinic_video_nrs(p_rating_id, p_nrs, p_unusable)` RPC (same access
+    check as `set_clinic_video_score`; unusable wins and clears the score;
+    shares the existing `clinic_video_unusable` / `clinic_video_scored_by/at`).
+    GAS clips keep using the −2..+2 `clinic_video_rating` (0072); NRS clips get
+    a 0–10 score on the SAME axis the patient uses, for a clinician-vs-patient
+    comparison.
+  - **Queue:** new `components/clinician/VideoScoreQueue.tsx` — walks the
+    unscored clips one at a time; inner `ClipPair` shows the peak clip beside
+    the goal's baseline (or a "no baseline" placeholder). GAS → the five anchor
+    buttons (reuses `clinician.video.score.level.*`); NRS → 0–10 grid under the
+    goal's question. Shared unusable toggle; Skip / Save & next / Save & done;
+    auto-advance. Uses `useSetClinicVideoScore` (GAS) + `useSetClinicVideoNrs`
+    (NRS) + `useGoalVideoUrl` (×2) + `useModalA11y` + toast.
+  - **Entry point:** a **"Score videos (N)"** button in the active-goals header
+    (shown only when N>0), opening the queue. Items assembled on the patient
+    page from check-in ratings with a `videoPath` that aren't yet scored
+    (`clinicVideoRating == null && clinicVideoNrs == null && !unusable`), joined
+    to the active goal for kind/anchors/question/baseline/week.
+  - **Data:** `clinicVideoNrs` added to the ratings select + shape + mapping;
+    new `useSetClinicVideoNrs` hook.
+  - **i18n:** `clinician.videoQueue.*` (en/da). Parity balanced.
+- **DB needed:** **run migration 0076** (`0076_clinic_video_nrs.sql`).
+  Standalone copy attached.
+- **⚠ QA (can't test here):** the queue lists exactly the unscored clips;
+  scoring GAS writes −2..+2 and NRS writes 0–10; unusable removes the clip
+  from the series; auto-advance + Save & done close correctly; the baseline
+  shows beside the peak clip (or the placeholder when none). Video playback /
+  signed URLs / RLS for the NRS write all need a real device + Supabase.
+- **NOT in this build / next candidates:** the **file-upload fallback** for the
+  recorder (desktop without a webcam — `<input type="file" accept="video/*"
+  capture>`, benefits baseline + check-in capture); surfacing the clinic-vs-
+  patient 0–10 comparison on the NRS trend chart.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`baseline-video`** — zip `treatment-companion-baseline-video.zip`
+  (migration 0075). Clinician records an in-clinic baseline clip per
+  video-enabled goal (`<patient_id>/baseline/<goal_id>`; new clinician-write
+  storage policy scoped to the baseline subfolder); the patient sees it as a
+  reference at the weeks-6–8 check-in.
+- **`nrs-baseline-target`** — zip `treatment-companion-nrs-baseline-target.zip`
+  (migration 0074). NRS goals gain a baseline + target (0–10) set with the
+  patient; direction derived from them (the higher/lower question is gone);
+  start + target reference lines on the NRS graph.
+- **`record-goal-inline`** — zip `treatment-companion-record-goal-inline.zip`
+  (no migration). Goal form factored into `RecordGoalForm` + `RecordGoalDrawer`;
+  "Record goal" opens a slide-over over the chart instead of routing to
+  `/clinician/new-goal` (route kept as a thin wrapper). Goal list refreshes in
+  place via the existing query invalidation.
 - **`wide-layout`** — zip `treatment-companion-wide-layout.zip` (no migration).
   Clinician patient page goes two-column at `lg` (context left / goals right),
   look-up tools moved into a header toolbar (`PatientActionRow variant="toolbar"`),
@@ -765,12 +801,21 @@ chart instead of a separate route; form factored into RecordGoalForm; current).
   toolbar, and goals lifted above the context. Needs a visual verification pass
   (see §7 QA). Remaining patient-view friction, in the user's ranked order:
   **review → record without leaving the view — DONE** in `record-goal-inline`:
-  the goal form opens as a slide-over over the chart (`RecordGoalForm` +
-  `RecordGoalDrawer`); the goal list refreshes in place. New-cycle is already a
-  modal (`NewCycleDialog`). (next) **faster clinic video scoring** — a lighter
-  quick-score so a clinician can clear a queue of clips quickly. Optional
-  follow-up floated to the user: show a patient's existing GAS levels as a
-  reference while writing new ones (not yet built).
+  the goal form opens as a slide-over over the chart. New-cycle is already a
+  modal.
+- **Video / baseline work — in progress.** Pass A (`nrs-baseline-target`, 0074)
+  shipped NRS baseline + target. **Decisions locked with the user:** baseline
+  video recorded IN CLINIC, stored on the goal, doubling as the patient's
+  reference when they record the weeks-6–8 peak clip; video available on both
+  GAS and NRS goals; peak-video clinician score = GAS −2…+2 vs anchors, NRS on
+  the same 0–10 as the patient. **Pass B — DONE** (`baseline-video`, 0075): in-clinic
+  baseline capture + patient reference at check-in; the new access path turned
+  out to be the CLINICIAN write (patient read was already covered by 0062).
+  **Pass C — DONE** (`video-score-queue`, 0076): per-visit
+  quick-score queue, baseline beside each peak clip, anchors for GAS / 0–10 for
+  NRS, auto-advance. **Next candidate:** file-upload fallback for the recorder
+  so a webcam-less clinic desktop can capture (phone capture already works via
+  the session switcher — recommended primary path).
 
 0. **Informant-independent capture (lever 3).** Slice 1 (`guided-capture`,
    0071) standardized the capture; slice 2 (`clinic-video-scoring`, 0072) added

@@ -126,6 +126,11 @@ export interface NrsConfig {
   cutLow: number;
   cutZero: number;
   cutHigh: number;
+  /** Agreed-with-patient starting 0–10 value; absent/null on goals
+   *  created before this existed or in contexts that don't load it. */
+  baselineValue?: number | null;
+  /** Agreed-with-patient 0–10 aim; absent/null likewise. */
+  targetValue?: number | null;
 }
 
 /**
