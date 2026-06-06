@@ -869,7 +869,15 @@
     "unlockTitle": "Lås en patient op",
     "unlockBody": "Bed patienten om at åbne deres app og læse den 6-tegns besøgskode op. Når du indtaster den, får du adgang i én time.",
     "unlockCodeLabel": "Besøgskode",
-    "unlockSubmit": "Lås op"
+    "unlockSubmit": "Lås op",
+    "sentGoalsHeading": "Mål du har foreslået",
+    "sentMusclesHeading": "Muskler du har markeret",
+    "statusPending": "Afventer lægen",
+    "statusAccepted": "Lægen tager dette videre",
+    "statusReviewed": "Indgår i injektionsplanlægningen",
+    "statusDismissed": "Ikke denne gang",
+    "preCycleSuggestTitle": "Foreslå et mål til lægen",
+    "preCycleSuggestHint": "Du kan foreslå et mål allerede nu, inden den første behandlingscyklus. Det når lægen, som kan tage det med ved det første injektionsbesøg."
   },
   "profile": {
     "title": "Din profil",

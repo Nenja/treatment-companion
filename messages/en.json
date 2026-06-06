@@ -865,7 +865,15 @@
     "unlockTitle": "Unlock a patient",
     "unlockBody": "Ask the patient to open their app and read you the 6-character visit code. Entering it gives you access for one hour.",
     "unlockCodeLabel": "Visit code",
-    "unlockSubmit": "Unlock"
+    "unlockSubmit": "Unlock",
+    "sentGoalsHeading": "Goals you've suggested",
+    "sentMusclesHeading": "Muscles you've flagged",
+    "statusPending": "Awaiting the physician",
+    "statusAccepted": "Physician will take this forward",
+    "statusReviewed": "Considered for injection planning",
+    "statusDismissed": "Not this time",
+    "preCycleSuggestTitle": "Suggest a goal for the physician",
+    "preCycleSuggestHint": "You can suggest a goal now, before the first treatment cycle. It reaches the physician to weigh at the first injection visit."
   },
   "profile": {
     "title": "Your profile",
