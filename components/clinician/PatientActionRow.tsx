@@ -101,7 +101,9 @@ export function PatientActionRow({
   openPanel,
   onSelect,
   labels,
-  shortLabels
+  shortLabels,
+  variant = 'row',
+  className = ''
 }: {
   physioCount: number;
   /** Which inline panel is currently open, if any. */
@@ -113,6 +115,12 @@ export function PatientActionRow({
    *  falls back to the full labels if not provided, so the row can
    *  never fail to compile on a brief page/component mismatch. */
   shortLabels?: Record<PatientActionId, string>;
+  /** 'row' (default) = full-width stacked icon buttons under the name;
+   *  'toolbar' = compact inline icon+label buttons for the wide-layout
+   *  header. Both report taps the same way. */
+  variant?: 'row' | 'toolbar';
+  /** Extra classes appended to the root (e.g. responsive show/hide). */
+  className?: string;
 }) {
   const tA11y = useTranslations('a11y');
   const items: { id: PatientActionId; count?: number }[] = [
@@ -123,8 +131,48 @@ export function PatientActionRow({
     { id: 'wearable' }
   ];
 
+  if (variant === 'toolbar') {
+    return (
+      <div
+        className={`flex flex-wrap items-center gap-1.5 ${className}`}
+        role="group"
+        aria-label={tA11y('patientActions')}
+      >
+        {items.map(({ id, count }) => {
+          const isActive = openPanel === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onSelect(id)}
+              aria-label={
+                count && count > 0 ? `${labels[id]} (${count})` : labels[id]
+              }
+              aria-pressed={isActive}
+              className={`relative flex items-center gap-1.5 rounded-[var(--radius-button)] border px-2.5 py-1.5 text-[13px] font-semibold transition-colors [&_svg]:h-[17px] [&_svg]:w-[17px] ${
+                isActive
+                  ? 'border-sage-deep bg-sage-deep text-on-accent'
+                  : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
+              }`}
+            >
+              {iconFor(id)}
+              <span className="leading-tight">
+                {(shortLabels ?? labels)[id]}
+              </span>
+              {typeof count === 'number' && <Badge count={count} />}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
-    <div className="mt-5 flex gap-2" role="group" aria-label={tA11y('patientActions')}>
+    <div
+      className={`mt-5 flex gap-2 ${className}`}
+      role="group"
+      aria-label={tA11y('patientActions')}
+    >
       {items.map(({ id, count }) => {
         const isActive = openPanel === id;
         return (

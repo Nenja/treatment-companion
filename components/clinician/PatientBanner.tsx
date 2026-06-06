@@ -6,8 +6,6 @@ interface PatientBannerProps {
   openInfoAria: string;
   /** Formatted demographics line (age / sex / etiology / side / ambulation). */
   summary: string | null;
-  /** Prebuilt "week N" context string. */
-  cycleContextText: string;
   /** Prebuilt "treated on <date>" string. */
   treatmentDateText: string;
   modalityLabel: string;
@@ -28,7 +26,6 @@ export function PatientBanner({
   onOpenInfo,
   openInfoAria,
   summary,
-  cycleContextText,
   treatmentDateText,
   modalityLabel,
   medication,
@@ -75,7 +72,6 @@ export function PatientBanner({
           )}
         </div>
         <div className="flex flex-col items-start gap-1 sm:items-end">
-          <span className="eyebrow">{cycleContextText}</span>
           <span className="inline-flex items-center rounded-full border border-stone bg-stone-soft px-2.5 py-1 text-[12px] font-semibold text-ink-soft">
             {modalityLabel}
           </span>

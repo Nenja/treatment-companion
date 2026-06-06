@@ -93,25 +93,27 @@ export default function ClinicianPatientPage() {
   // review (goals, check-ins), so it uses the mid width (720px), not
   // the full wide spread — that's reserved for the treatment page.
   const headerWidthClass = wide
-    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-3 lg:max-w-[var(--max-w-page-mid)]'
+    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-3 lg:max-w-[var(--max-w-page-wide)]'
     : 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-3';
   // Flex variant of the header width, for the skeleton header which
   // lays its placeholders out in a row.
   const flexHeaderWidthClass = wide
-    ? 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4 lg:max-w-[var(--max-w-page-mid)]'
+    ? 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4 lg:max-w-[var(--max-w-page-wide)]'
     : 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4';
   const mainWidthClass = wide
-    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-16 pt-6 lg:max-w-[var(--max-w-page-mid)]'
+    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-16 pt-6 lg:max-w-[var(--max-w-page-wide)]'
     : 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-16 pt-6';
-  // The whole page is now capped at the mid width, so pre-goals
-  // content and the plan section no longer need their own inner
-  // width caps — the page width handles it.
   const preGoalsWidthClass = '';
-  // Goals list: 2-column grid at lg when wide (two cards within the
-  // 720px page, ~350px each); plain stacked list when compact.
-  const goalsListClass = wide
-    ? 'mt-3 space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0'
-    : 'mt-3 space-y-3';
+  // Wide layout: two columns at lg — context (banner, since-last-visit,
+  // look-up panels) on the left, goals on the right, so goals are visible
+  // at the top rather than pushed below the context. Single column
+  // (stacked) on narrow and in compact mode.
+  const gridClass = wide
+    ? 'lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8'
+    : '';
+  // Goals now stack in a single column within their own column; the
+  // page-level two-column split provides the horizontal use of space.
+  const goalsListClass = 'mt-3 space-y-3';
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [enlargedGoalId, setEnlargedGoalId] = useState<string | null>(null);
   const [videoEditorGoal, setVideoEditorGoal] = useState<{
@@ -476,6 +478,42 @@ export default function ClinicianPatientPage() {
   // — the RPC silently no-ops for non-clinicians.
   const touch = () => touchSession.mutate(sessionQuery.data?.patientId ?? undefined);
 
+  const physioActionCount =
+    physioGoalSuggestions.length + physioMuscleSuggestions.length;
+  const actionLabels = {
+    medication: t('actionMedication'),
+    physio: t('actionPhysio'),
+    history: t('actionHistory'),
+    export: t('actionExport'),
+    wearable: t('actionWearable')
+  };
+  const actionShortLabels = {
+    medication: t('actionShortMedication'),
+    physio: t('actionShortPhysio'),
+    history: t('actionShortHistory'),
+    export: t('actionShortExport'),
+    wearable: t('actionShortWearable')
+  };
+  const onActionSelect = (id: PatientActionId) => {
+    touch();
+    if (id === 'history') {
+      router.push(
+        locale === 'en' ? '/clinician/history' : `/${locale}/clinician/history`
+      );
+    } else if (id === 'wearable') {
+      router.push(
+        locale === 'en'
+          ? '/clinician/observations'
+          : `/${locale}/clinician/observations`
+      );
+    } else if (id === 'export') {
+      setShowExport(true);
+    } else {
+      // Toggle the inline panel (medication | physio).
+      setOpenPanel((cur) => (cur === id ? null : id));
+    }
+  };
+
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
@@ -584,14 +622,30 @@ export default function ClinicianPatientPage() {
               <AccountMenu />
             </div>
           </div>
+          {/* Wide layout: the look-up tools move out of the body and into
+              a toolbar under the title row, so the goals column starts at
+              the top instead of being pushed down. Hidden on narrow, where
+              the body action row is used instead. */}
+          {wide && (
+            <div className="mt-3 hidden border-t border-stone/60 pt-3 lg:block">
+              <PatientActionRow
+                variant="toolbar"
+                physioCount={physioActionCount}
+                openPanel={openPanel}
+                labels={actionLabels}
+                shortLabels={actionShortLabels}
+                onSelect={onActionSelect}
+              />
+            </div>
+          )}
         </div>
       </header>
 
       <main className={mainWidthClass}>
-        {/* Pre-goals content (cycle context, action row, panels,
-            primary action) constrained to readable form width on
-            desktop. Otherwise the action row buttons + panels would
-            sparse-stretch across the full 1080px page width. */}
+        <div className={gridClass}>
+        {/* Left column: patient context — banner, since-last-visit,
+            the look-up panels, and the new-cycle action. The narrower
+            of the two columns on the wide layout. */}
         <div className={preGoalsWidthClass}>
         <PatientBanner
           name={patient.displayName}
@@ -602,7 +656,6 @@ export default function ClinicianPatientPage() {
           }
           openInfoAria={tInfo('openInfo', { name: patient.displayName })}
           summary={patientSummary}
-          cycleContextText={t('cycleContext', { week: weekNumber })}
           treatmentDateText={t('treatmentDate', {
             date: formatLongDate(cycle.startDate, locale)
           })}
@@ -629,48 +682,16 @@ export default function ClinicianPatientPage() {
         </div>
 
         {/* Action row — always-visible entry points with live counts.
-            Suggestions and therapist input open inline panels below;
-            history navigates; export opens the modal. */}
+            On the wide layout this is replaced at lg by the header
+            toolbar (below the patient name); on narrow/compact it stays
+            here in the body flow. */}
         <PatientActionRow
-          physioCount={
-            physioGoalSuggestions.length + physioMuscleSuggestions.length
-          }
+          physioCount={physioActionCount}
           openPanel={openPanel}
-          labels={{
-            medication: t('actionMedication'),
-            physio: t('actionPhysio'),
-            history: t('actionHistory'),
-            export: t('actionExport'),
-            wearable: t('actionWearable')
-          }}
-          shortLabels={{
-            medication: t('actionShortMedication'),
-            physio: t('actionShortPhysio'),
-            history: t('actionShortHistory'),
-            export: t('actionShortExport'),
-            wearable: t('actionShortWearable')
-          }}
-          onSelect={(id: PatientActionId) => {
-            touch();
-            if (id === 'history') {
-              router.push(
-                locale === 'en'
-                  ? '/clinician/history'
-                  : `/${locale}/clinician/history`
-              );
-            } else if (id === 'wearable') {
-              router.push(
-                locale === 'en'
-                  ? '/clinician/observations'
-                  : `/${locale}/clinician/observations`
-              );
-            } else if (id === 'export') {
-              setShowExport(true);
-            } else {
-              // Toggle the inline panel (medication | physio).
-              setOpenPanel((cur) => (cur === id ? null : id));
-            }
-          }}
+          labels={actionLabels}
+          shortLabels={actionShortLabels}
+          onSelect={onActionSelect}
+          className={wide ? 'lg:hidden' : ''}
         />
 
         {/* Medication panel — opens from the action row.
@@ -935,8 +956,12 @@ export default function ClinicianPatientPage() {
         </button>
         </div>
 
+        {/* Right column: the goals — the primary work surface. On the
+            wide layout it sits beside the context column so goals are
+            visible at the top rather than below the banner. */}
+        <div>
         {/* Active goals with progress visualisation */}
-        <section className="mt-10">
+        <section className={wide ? 'mt-10 lg:mt-0' : 'mt-10'}>
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-display text-[20px] leading-tight text-ink">
               {t('activeGoalsTitle')}
@@ -1214,6 +1239,8 @@ export default function ClinicianPatientPage() {
             </ul>
           </section>
         )}
+        </div>
+        </div>
 
         {/* Patient comments are now reachable from the chart — tap any
             dot showing a speech-bubble icon to see the comment in the
