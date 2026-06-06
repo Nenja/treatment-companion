@@ -8,6 +8,7 @@ import { useSetTextScale } from '@/lib/supabase/textScale';
 import { useSetReadAloud } from '@/lib/supabase/readAloud';
 import { useSetNightMode } from '@/lib/supabase/colorScheme';
 import { useSetLayoutPreference } from '@/lib/supabase/layoutPreference';
+import { NavStyleChooser } from '@/components/clinician/NavStyleChooser';
 import {
   useOwnSex,
   useSetOwnSex,
@@ -355,6 +356,11 @@ export function OnboardingWizard({
                 wideLabel={t('comfortWide')}
                 compactLabel={t('comfortCompact')}
               />
+            </div>
+          )}
+          {isProfessional && (
+            <div className="hidden lg:block">
+              <NavStyleChooser />
             </div>
           )}
         </div>

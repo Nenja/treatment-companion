@@ -34,6 +34,7 @@ import {
 } from '@/components/clinician/VideoScoreQueue';
 import { TrainingOverview } from '@/components/clinician/TrainingOverview';
 import { usePatientObservations } from '@/lib/supabase/observations';
+import { ItbTrack } from '@/components/clinician/ItbTrack';
 import { VisitChanges } from '@/components/clinician/VisitChanges';
 import { PatientBanner } from '@/components/clinician/PatientBanner';
 import { ExportModal } from '@/components/clinician/ExportModal';
@@ -50,6 +51,7 @@ import {
 } from '@/components/feedback/Skeleton';
 import { useModalA11y } from '@/lib/useModalA11y';
 import { useWideLayout } from '@/lib/useWideLayout';
+import { useNavStyle } from '@/lib/useNavStyle';
 import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { buildEhrExport } from '@/lib/ehrExport';
 import { useToast } from '@/components/feedback/Toast';
@@ -97,6 +99,10 @@ export default function ClinicianPatientPage() {
   const reactivateGoal = useReactivateGoal();
   const toast = useToast();
   const wide = useWideLayout();
+  const navStyle = useNavStyle();
+  // 'side' nav puts the action menu in a left rail beside the content;
+  // only applies when the wide layout is active (a rail needs the width).
+  const sideMenu = wide && navStyle === 'side';
   // Width / layout classes gated on the user's layout preference.
   // When wide, the header + main expand at lg and the goals render
   // in a 2-column grid; when compact, everything stays single-column
@@ -120,7 +126,9 @@ export default function ClinicianPatientPage() {
   // at the top rather than pushed below the context. Single column
   // (stacked) on narrow and in compact mode.
   const gridClass = wide
-    ? 'lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8'
+    ? sideMenu
+      ? 'lg:grid lg:grid-cols-[auto_minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-6'
+      : 'lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8'
     : '';
   // Goals now stack in a single column within their own column; the
   // page-level two-column split provides the horizontal use of space.
@@ -695,7 +703,7 @@ export default function ClinicianPatientPage() {
               a toolbar under the title row, so the goals column starts at
               the top instead of being pushed down. Hidden on narrow, where
               the body action row is used instead. */}
-          {wide && (
+          {wide && navStyle === 'top' && (
             <div className="mt-3 hidden border-t border-stone/60 pt-3 lg:block">
               <PatientActionRow
                 variant="toolbar"
@@ -712,6 +720,17 @@ export default function ClinicianPatientPage() {
 
       <main className={mainWidthClass}>
         <div className={gridClass}>
+        {sideMenu && (
+          <PatientActionRow
+            variant="sidebar"
+            physioCount={physioActionCount}
+            openPanel={openPanel}
+            labels={actionLabels}
+            shortLabels={actionShortLabels}
+            onSelect={onActionSelect}
+            className="hidden lg:flex lg:sticky lg:top-4"
+          />
+        )}
         {/* Left column: patient context — banner, since-last-visit,
             the look-up panels, and the new-cycle action. The narrower
             of the two columns on the wide layout. */}
@@ -811,6 +830,11 @@ export default function ClinicianPatientPage() {
             </p>
           </section>
         )}
+
+        {/* Intrathecal baclofen track — continuous, titrated therapy running
+            in parallel with the BoNT cycle. Shows the dose-titration log, or
+            a compact start affordance when there's no active ITB therapy. */}
+        <ItbTrack patientId={patient.id} onActivity={() => touch()} />
 
         {/* Action row — always-visible entry points with live counts.
             On the wide layout this is replaced at lg by the header

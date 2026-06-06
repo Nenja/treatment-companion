@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/supabase/auth';
 import { useSetTextScale } from '@/lib/supabase/textScale';
 import { useSetNightMode } from '@/lib/supabase/colorScheme';
 import { useSetLayoutPreference } from '@/lib/supabase/layoutPreference';
+import { NavStyleChooser } from '@/components/clinician/NavStyleChooser';
 import { requestTutorialReplay } from '@/lib/tutorialReplay';
 import { professionLabel } from '@/lib/professionLabel';
 
@@ -190,6 +191,9 @@ export function AccountMenu() {
                   preference="compact"
                   label={tAppearance('layoutCompact')}
                 />
+              </div>
+              <div className="mt-3">
+                <NavStyleChooser compact />
               </div>
             </div>
           )}

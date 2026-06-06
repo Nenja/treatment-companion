@@ -116,8 +116,9 @@ export function PatientActionRow({
   shortLabels?: Record<PatientActionId, string>;
   /** 'row' (default) = full-width stacked icon buttons under the name;
    *  'toolbar' = compact inline icon+label buttons for the wide-layout
-   *  header. Both report taps the same way. */
-  variant?: 'row' | 'toolbar';
+   *  header; 'sidebar' = a vertical icon+label rail down the left edge.
+   *  All report taps the same way. */
+  variant?: 'row' | 'toolbar' | 'sidebar';
   /** Extra classes appended to the root (e.g. responsive show/hide). */
   className?: string;
 }) {
@@ -163,6 +164,41 @@ export function PatientActionRow({
           );
         })}
       </div>
+    );
+  }
+
+  if (variant === 'sidebar') {
+    return (
+      <nav
+        className={`flex flex-col gap-1.5 ${className}`}
+        aria-label={tA11y('patientActions')}
+      >
+        {items.map(({ id, count }) => {
+          const isActive = openPanel === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onSelect(id)}
+              aria-label={
+                count && count > 0 ? `${labels[id]} (${count})` : labels[id]
+              }
+              aria-pressed={isActive}
+              className={`relative flex w-[68px] flex-col items-center justify-center gap-1 rounded-[var(--radius-button)] border px-1 py-2.5 transition-colors [&_svg]:h-5 [&_svg]:w-5 ${
+                isActive
+                  ? 'border-sage-deep bg-sage-deep text-on-accent'
+                  : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
+              }`}
+            >
+              {iconFor(id)}
+              <span className="text-[11px] leading-tight">
+                {(shortLabels ?? labels)[id]}
+              </span>
+              {typeof count === 'number' && <Badge count={count} />}
+            </button>
+          );
+        })}
+      </nav>
     );
   }
 
