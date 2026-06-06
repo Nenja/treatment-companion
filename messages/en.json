@@ -336,7 +336,9 @@
       "reactivateToast": "Goal reactivated",
       "reactivateError": "Could not reactivate the goal. Please try again.",
       "actionWearable": "Wearable data",
-      "actionShortWearable": "Wearable"
+      "actionShortWearable": "Wearable",
+      "clinicSeriesHeading": "Clinic video assessment",
+      "clinicSeriesHint": "The clinic's GAS score of the standardized clips — one consistent rater, so the trend holds even when the person filming changes."
     },
     "review": {
       "title": "Review suggestion",
@@ -491,6 +493,21 @@
         "badgeUnusable": "Unusable",
         "badgePending": "Not scored"
       }
+    },
+    "videoProtocol": {
+      "open": "Video task",
+      "title": "Video task",
+      "enable": "Ask for a check-in video",
+      "enableHint": "Offered to the patient/caregiver in the peak-effect window.",
+      "hint": "Shown to whoever films the video, so it's the same task every week — important when the person filming changes.",
+      "instructionLabel": "What should they film? (task)",
+      "instructionPlaceholder": "Seated at a table, reach for the cup, bring it to the mouth, then set it down. 3 times.",
+      "setupLabel": "Setup / framing (optional)",
+      "setupPlaceholder": "Side-on, whole arm in frame, affected side toward the camera.",
+      "secondsLabel": "Target length (seconds)",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel"
     }
   },
   "intro": {

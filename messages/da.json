@@ -340,7 +340,9 @@
       "reactivateToast": "Mål genaktiveret",
       "reactivateError": "Kunne ikke genaktivere målet. Prøv venligst igen.",
       "actionWearable": "Wearable-data",
-      "actionShortWearable": "Wearable"
+      "actionShortWearable": "Wearable",
+      "clinicSeriesHeading": "Klinikkens videovurdering",
+      "clinicSeriesHint": "Klinikkens GAS-score af de standardiserede klip — én konsistent bedømmer, så tendensen holder, selv når den, der filmer, skifter."
     },
     "review": {
       "title": "Gennemgå forslag",
@@ -495,6 +497,21 @@
         "badgeUnusable": "Ubrugelig",
         "badgePending": "Ikke bedømt"
       }
+    },
+    "videoProtocol": {
+      "open": "Videoopgave",
+      "title": "Videoopgave",
+      "enable": "Bed om en video ved check-in",
+      "enableHint": "Tilbydes patienten/omsorgspersonen i perioden med maksimal effekt.",
+      "hint": "Vises til den, der optager videoen, så det er den samme opgave hver uge — vigtigt, når den, der filmer, skifter.",
+      "instructionLabel": "Hvad skal de filme? (opgave)",
+      "instructionPlaceholder": "Siddende ved et bord: ræk ud efter koppen, før den op til munden, og sæt den ned igen. 3 gange.",
+      "setupLabel": "Opstilling / billedudsnit (valgfrit)",
+      "setupPlaceholder": "Set fra siden, hele armen i billedet, den berørte side mod kameraet.",
+      "secondsLabel": "Mållængde (sekunder)",
+      "save": "Gem",
+      "saving": "Gemmer…",
+      "cancel": "Annullér"
     }
   },
   "intro": {
