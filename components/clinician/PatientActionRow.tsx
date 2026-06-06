@@ -24,7 +24,7 @@ import { useTranslations } from 'next-intl';
  * icon library is bundled).
  */
 
-export type PatientActionId = 'medication' | 'physio' | 'history' | 'export' | 'wearable';
+export type PatientActionId = 'medication' | 'physio' | 'history' | 'export' | 'training';
 
 function Badge({ count }: { count: number }) {
   if (count <= 0) return null;
@@ -84,13 +84,12 @@ function iconFor(id: PatientActionId) {
           <path d="M12 15V3" />
         </svg>
       );
-    case 'wearable':
-      // smartwatch / wearable device
+    case 'training':
+      // dumbbell / training
       return (
         <svg {...common}>
-          <rect x="6" y="6" width="12" height="12" rx="3" />
-          <path d="M9 6l.5-3h5l.5 3M9 18l.5 3h5l.5-3" />
-          <path d="M12 10v2.5l1.5 1" />
+          <path d="M6 7v10M18 7v10M3 10v4M21 10v4" />
+          <path d="M6 12h12" />
         </svg>
       );
   }
@@ -107,7 +106,7 @@ export function PatientActionRow({
 }: {
   physioCount: number;
   /** Which inline panel is currently open, if any. */
-  openPanel: 'medication' | 'physio' | null;
+  openPanel: 'medication' | 'physio' | 'training' | null;
   onSelect: (id: PatientActionId) => void;
   /** Full labels — used for the accessible name (with count). */
   labels: Record<PatientActionId, string>;
@@ -128,7 +127,7 @@ export function PatientActionRow({
     { id: 'physio', count: physioCount },
     { id: 'history' },
     { id: 'export' },
-    { id: 'wearable' }
+    { id: 'training' }
   ];
 
   if (variant === 'toolbar') {

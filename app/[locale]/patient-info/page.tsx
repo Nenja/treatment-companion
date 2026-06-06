@@ -8,6 +8,7 @@ import { useCurrentClinicianSession } from '@/lib/supabase/clinicianSession';
 import {
   usePatientInfo,
   useSetPatientInfo,
+  useSetPatientWearableEnabled,
   ageFromDob,
   yearsSince,
   type AffectedSide,
@@ -74,6 +75,7 @@ export default function PatientInfoPage() {
   const patientId = sessionQuery.data?.patientId ?? null;
   const info = usePatientInfo(patientId);
   const save = useSetPatientInfo();
+  const setWearableEnabled = useSetPatientWearableEnabled();
 
   // Auth + role gating: clinician or therapist only.
   useEffect(() => {
@@ -106,6 +108,7 @@ export default function PatientInfoPage() {
   const [notes, setNotes] = useState('');
   const [sex, setSex] = useState<Sex | ''>('');
   const [devices, setDevices] = useState('');
+  const [wearable, setWearable] = useState(false);
 
   // Hydrate the form from server data once the query resolves; do this
   // each time editing is entered so the form reflects current values.
@@ -120,10 +123,12 @@ export default function PatientInfoPage() {
     setNotes(info.data.backgroundNotes ?? '');
     setSex(info.data.sex ?? '');
     setDevices(info.data.assistiveDevices ?? '');
+    setWearable(info.data.wearableEnabled);
   }, [info.data, editing]);
 
   const onSave = () => {
     if (!patientId) return;
+    setWearableEnabled.mutate({ patientId, enabled: wearable });
     const onsetNum = onsetYear.trim() ? parseInt(onsetYear, 10) : NaN;
     save.mutate(
       {
@@ -257,6 +262,11 @@ export default function PatientInfoPage() {
                 t('notRecorded')
               )}
             </Row>
+            <Row label={t('wearableLabel')}>
+              {info.data.wearableEnabled
+                ? t('wearableOn')
+                : t('wearableOff')}
+            </Row>
           </section>
 
           <button
@@ -383,6 +393,36 @@ export default function PatientInfoPage() {
               placeholder={t('notesPlaceholder')}
               className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
             />
+          </Field>
+          <Field label={t('wearableLabel')}>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={wearable}
+              onClick={() => setWearable((w) => !w)}
+              className={`flex w-full items-center justify-between rounded-[var(--radius-button)] border px-3 py-2.5 text-[14px] font-semibold ${
+                wearable
+                  ? 'border-sage-deep bg-sage-soft text-sage-deep'
+                  : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
+              }`}
+            >
+              <span>{wearable ? t('wearableOn') : t('wearableOff')}</span>
+              <span
+                aria-hidden
+                className={`relative h-6 w-10 rounded-full transition-colors ${
+                  wearable ? 'bg-sage-deep' : 'bg-stone'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-cream-soft transition-all ${
+                    wearable ? 'left-[18px]' : 'left-0.5'
+                  }`}
+                />
+              </span>
+            </button>
+            <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
+              {t('wearableHelper')}
+            </p>
           </Field>
 
           <div className="mt-4 flex gap-2">

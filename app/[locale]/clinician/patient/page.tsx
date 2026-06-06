@@ -33,6 +33,7 @@ import {
   type ScoreQueueItem
 } from '@/components/clinician/VideoScoreQueue';
 import { TrainingOverview } from '@/components/clinician/TrainingOverview';
+import { usePatientObservations } from '@/lib/supabase/observations';
 import { VisitChanges } from '@/components/clinician/VisitChanges';
 import { PatientBanner } from '@/components/clinician/PatientBanner';
 import { ExportModal } from '@/components/clinician/ExportModal';
@@ -85,6 +86,9 @@ export default function ClinicianPatientPage() {
   // loading-branch early return) to keep hook ordering stable across
   // renders. Hook itself is `enabled` only when patientId is known.
   const patientInfo = usePatientInfo(sessionQuery.data?.patientId ?? null);
+  const observationsQuery = usePatientObservations(
+    sessionQuery.data?.patientId ?? null
+  );
 
   const endSession = useEndClinicianSession();
   const touchSession = useTouchClinicianSession();
@@ -145,7 +149,7 @@ export default function ClinicianPatientPage() {
   const [showRecordGoal, setShowRecordGoal] = useState(false);
   // Which inline action panel is open under the action row, if any.
   // History and export are not panels — they navigate / open a modal.
-  const [openPanel, setOpenPanel] = useState<'medication' | 'physio' | null>(
+  const [openPanel, setOpenPanel] = useState<'medication' | 'physio' | 'training' | null>(
     null
   );
   // Patient suggestions moved out of the action row to sit beside
@@ -556,14 +560,14 @@ export default function ClinicianPatientPage() {
     physio: t('actionPhysio'),
     history: t('actionHistory'),
     export: t('actionExport'),
-    wearable: t('actionWearable')
+    training: t('actionTraining')
   };
   const actionShortLabels = {
     medication: t('actionShortMedication'),
     physio: t('actionShortPhysio'),
     history: t('actionShortHistory'),
     export: t('actionShortExport'),
-    wearable: t('actionShortWearable')
+    training: t('actionShortTraining')
   };
   const onActionSelect = (id: PatientActionId) => {
     touch();
@@ -571,16 +575,10 @@ export default function ClinicianPatientPage() {
       router.push(
         locale === 'en' ? '/clinician/history' : `/${locale}/clinician/history`
       );
-    } else if (id === 'wearable') {
-      router.push(
-        locale === 'en'
-          ? '/clinician/observations'
-          : `/${locale}/clinician/observations`
-      );
     } else if (id === 'export') {
       setShowExport(true);
     } else {
-      // Toggle the inline panel (medication | physio).
+      // Toggle the inline panel (medication | physio | training).
       setOpenPanel((cur) => (cur === id ? null : id));
     }
   };
@@ -718,6 +716,34 @@ export default function ClinicianPatientPage() {
             the look-up panels, and the new-cycle action. The narrower
             of the two columns on the wide layout. */}
         <div className={preGoalsWidthClass}>
+        {/* Start a new treatment cycle — the first action of an injection
+            visit, so it sits at the top of the context column rather than
+            buried below it. Kept to a normal-size primary button (not a
+            full-width block) so it leads without shouting over the patient
+            name. NewCycleDialog still confirms before anything happens. */}
+        <button
+          type="button"
+          onClick={() => {
+            touch();
+            setShowNewCycle(true);
+          }}
+          className="mb-3 inline-flex items-center gap-2 rounded-[var(--radius-button)] bg-sage-deep px-4 py-2.5 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          {t('startNewCycle')}
+        </button>
         <PatientBanner
           name={patient.displayName}
           onOpenInfo={() =>
@@ -751,6 +777,40 @@ export default function ClinicianPatientPage() {
             patientId={patient.id}
           />
         </div>
+
+        {/* Wearable module — its own surface, shown only when a clinician
+            has enabled it for this patient OR the patient already has
+            wearable observations. (The "or has data" half means automated
+            pairing will surface it with no further change.) */}
+        {(patientInfo.data?.wearableEnabled ||
+          (observationsQuery.data?.length ?? 0) > 0) && (
+          <section className="mt-4 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="font-display text-[18px] leading-tight text-ink">
+                {t('wearableModuleTitle')}
+              </h2>
+              <button
+                type="button"
+                onClick={() => {
+                  touch();
+                  router.push(
+                    locale === 'en'
+                      ? '/clinician/observations'
+                      : `/${locale}/clinician/observations`
+                  );
+                }}
+                className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-stone-soft"
+              >
+                {t('wearableModuleOpen')}
+              </button>
+            </div>
+            <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">
+              {(observationsQuery.data?.length ?? 0) > 0
+                ? t('wearableModuleHasData')
+                : t('wearableModuleNoData')}
+            </p>
+          </section>
+        )}
 
         {/* Action row — always-visible entry points with live counts.
             On the wide layout this is replaced at lg by the header
@@ -1006,25 +1066,27 @@ export default function ClinicianPatientPage() {
           </section>
         )}
 
-
-        {/* Start a new treatment cycle — the primary action of a
-            physician's visit: every injection appointment begins by
-            opening a new cycle. So it sits front and centre, directly
-            under the cycle context, not buried. The NewCycleDialog
-            still confirms before doing anything, which is the
-            safeguard against an accidental tap. */}
-        <button
-          type="button"
-          onClick={() => {
-            touch();
-            setShowNewCycle(true);
-          }}
-          className="mt-5 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 hover:bg-ink-soft"
-        >
-          <span className="text-[15px] font-semibold text-on-accent">
-            {t('startNewCycle')}
-          </span>
-        </button>
+        {/* Training panel — opens from the action row. Shows the weekly
+            training-days overview (moved here from an always-on section). */}
+        {openPanel === 'training' && (
+          <section className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+            <h2 className="font-display text-[18px] leading-tight text-ink">
+              {t('trainingPanelTitle')}
+            </h2>
+            {checkins.length > 0 ? (
+              <div className="mt-3">
+                <TrainingOverview
+                  currentWeek={weekNumber}
+                  daysByWeek={trainingByWeek}
+                />
+              </div>
+            ) : (
+              <p className="mt-3 text-[14px] text-ink-muted">
+                {t('trainingPanelEmpty')}
+              </p>
+            )}
+          </section>
+        )}
         </div>
 
         {/* Right column: the goals — the primary work surface. On the
@@ -1160,12 +1222,6 @@ export default function ClinicianPatientPage() {
                 )}
               </div>
             </section>
-          )}
-          {checkins.length > 0 && (
-            <TrainingOverview
-              currentWeek={weekNumber}
-              daysByWeek={trainingByWeek}
-            />
           )}
           {activeGoals.length === 0 ? (
             <p className="mt-3 text-[14px] text-ink-muted">
