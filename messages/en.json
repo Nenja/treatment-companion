@@ -180,9 +180,7 @@
       "gasMeaningBetter": "Better than expected",
       "gasMeaningAsExpected": "As expected",
       "gasMeaningLess": "Less than expected",
-      "gasMeaningMuchLess": "Much less than expected",
-      "baselineRefTitle": "Watch the starting point",
-      "baselineRefHint": "Here's the clip from the clinic. Record the same task the same way."
+      "gasMeaningMuchLess": "Much less than expected"
     }
   },
   "domain": {
@@ -520,35 +518,7 @@
       "secondsLabel": "Target length (seconds)",
       "save": "Save",
       "saving": "Saving…",
-      "cancel": "Cancel",
-      "baselineRecord": "Record baseline",
-      "baselineSet": "Baseline ✓"
-    },
-    "baseline": {
-      "title": "Record baseline",
-      "intro": "Film the patient doing this goal's task now, at the start. They'll see it as a reference when they record the peak-effect clip later.",
-      "existing": "A baseline clip is recorded.",
-      "loading": "Loading…",
-      "reRecord": "Record a new one",
-      "save": "Save baseline",
-      "saving": "Saving…",
-      "saved": "Baseline saved",
-      "error": "Couldn't save the baseline. Please try again.",
       "cancel": "Cancel"
-    },
-    "videoQueue": {
-      "open": "Score videos ({n})",
-      "title": "Score videos",
-      "progress": "Clip {n} of {total}",
-      "week": "Week {week}",
-      "thisVisit": "This visit",
-      "baseline": "Baseline",
-      "noBaseline": "No baseline recorded",
-      "skip": "Skip",
-      "saveNext": "Save & next",
-      "saveDone": "Save & done",
-      "saving": "Saving…",
-      "done": "Done"
     }
   },
   "intro": {
@@ -1008,9 +978,7 @@
       "baclofen_pump": "Baclofen pump",
       "surgery": "Surgery",
       "other": "Other"
-    },
-    "nrsStartTick": "start",
-    "nrsTargetTick": "target"
+    }
   },
   "goalVideo": {
     "introTitle": "Record a short video (optional)",
@@ -1126,11 +1094,7 @@
     "videoTaskInstructionPlaceholder": "Seated at a table, reach for the cup, bring it to the mouth, then set it down. 3 times.",
     "videoTaskSetupLabel": "Setup / framing (optional)",
     "videoTaskSetupPlaceholder": "Side-on, whole arm in frame, affected side toward the camera.",
-    "videoTaskSecondsLabel": "Target length (seconds)",
-    "nrsRangeLabel": "Starting point and target",
-    "nrsRangeHelp": "Agree both 0–10 values with the patient.",
-    "nrsBaselineLabel": "Now (0–10)",
-    "nrsTargetLabel": "Target (0–10)"
+    "videoTaskSecondsLabel": "Target length (seconds)"
   },
   "physioForms": {
     "loading": "Loading…",

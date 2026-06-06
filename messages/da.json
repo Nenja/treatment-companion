@@ -184,9 +184,7 @@
       "gasMeaningBetter": "Bedre end forventet",
       "gasMeaningAsExpected": "Som forventet",
       "gasMeaningLess": "Mindre end forventet",
-      "gasMeaningMuchLess": "Meget mindre end forventet",
-      "baselineRefTitle": "Se udgangspunktet",
-      "baselineRefHint": "Her er klippet fra klinikken. Optag den samme opgave på samme måde."
+      "gasMeaningMuchLess": "Meget mindre end forventet"
     }
   },
   "domain": {
@@ -524,35 +522,7 @@
       "secondsLabel": "Mållængde (sekunder)",
       "save": "Gem",
       "saving": "Gemmer…",
-      "cancel": "Annullér",
-      "baselineRecord": "Optag udgangspunkt",
-      "baselineSet": "Udgangspunkt ✓"
-    },
-    "baseline": {
-      "title": "Optag udgangspunkt",
-      "intro": "Film patienten udføre målets opgave nu, ved starten. De ser den som reference, når de senere optager klippet ved maksimal effekt.",
-      "existing": "Et udgangspunkt-klip er optaget.",
-      "loading": "Indlæser…",
-      "reRecord": "Optag et nyt",
-      "save": "Gem udgangspunkt",
-      "saving": "Gemmer…",
-      "saved": "Udgangspunkt gemt",
-      "error": "Kunne ikke gemme udgangspunktet. Prøv igen.",
       "cancel": "Annullér"
-    },
-    "videoQueue": {
-      "open": "Bedøm videoer ({n})",
-      "title": "Bedøm videoer",
-      "progress": "Klip {n} af {total}",
-      "week": "Uge {week}",
-      "thisVisit": "Dette besøg",
-      "baseline": "Udgangspunkt",
-      "noBaseline": "Intet udgangspunkt optaget",
-      "skip": "Spring over",
-      "saveNext": "Gem & næste",
-      "saveDone": "Gem & færdig",
-      "saving": "Gemmer…",
-      "done": "Færdig"
     }
   },
   "intro": {
@@ -1012,9 +982,7 @@
       "baclofen_pump": "Baklofenpumpe",
       "surgery": "Kirurgi",
       "other": "Andet"
-    },
-    "nrsStartTick": "start",
-    "nrsTargetTick": "mål"
+    }
   },
   "goalVideo": {
     "introTitle": "Optag en kort video (valgfrit)",
@@ -1130,11 +1098,7 @@
     "videoTaskInstructionPlaceholder": "Siddende ved et bord: ræk ud efter koppen, før den op til munden, og sæt den ned igen. 3 gange.",
     "videoTaskSetupLabel": "Opstilling / billedudsnit (valgfrit)",
     "videoTaskSetupPlaceholder": "Set fra siden, hele armen i billedet, den berørte side mod kameraet.",
-    "videoTaskSecondsLabel": "Mållængde (sekunder)",
-    "nrsRangeLabel": "Udgangspunkt og mål",
-    "nrsRangeHelp": "Aftal begge 0–10-værdier med patienten.",
-    "nrsBaselineLabel": "Nu (0–10)",
-    "nrsTargetLabel": "Mål (0–10)"
+    "videoTaskSecondsLabel": "Mållængde (sekunder)"
   },
   "physioForms": {
     "loading": "Indlæser…",
