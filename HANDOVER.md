@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `session-switching`._
+> _Last updated for build tag: `wide-layout`._
 
 ---
 
@@ -585,56 +585,66 @@ editable on an existing goal, not just at creation) →
 trend pulled into the since-last-visit summary; summary moved above the action
 row) →
 **`session-switching`** (0073; hold several patients open + switch without
-re-coding + same-day reopen; consent gate unchanged; current).
+re-coding + same-day reopen; consent gate unchanged) →
+**`wide-layout`** (no migration; clinician patient page two-column at lg —
+context left / goals right, look-up tools in a header toolbar; banner week
+eyebrow removed; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-session-switching.zip`
-- **Tag:** `session-switching`
-- **Change:** a clinician can now **hold several unlocked charts open at once**
-  and **switch between them without re-entering codes**, and **reopen a patient
-  they already unlocked today** without a fresh code. The **consent gate is
-  unchanged** — codes are still patient-generated, single-use, short-lived; the
-  0043 reusable-test containment is preserved verbatim; pre-visit access is NOT
-  added. Only session multiplicity + a today-scoped reopen changed.
-  - **Migration 0073:** the one-active-session-per-clinician unique index
-    becomes one-per-(clinician,patient). `unlock_with_visit_code` no longer
-    ends the clinician's other sessions (refreshes rather than duplicates an
-    existing active session for the same patient). RPCs:
-    `touch_clinician_session(p_patient_id)` (patient-scoped → "current" =
-    most-recently-touched), `end_clinician_session(p_patient_id)` (end one; the
-    no-arg end-all is kept), `reopen_session(p_patient_id)` (authorized ONLY by
-    this clinician's own session from today; reuses that day's code for the FK;
-    no new consent), `list_my_sessions()` (today's sessions, one row per
-    patient, display name + is_active). 1-hour RLS auto-lock unchanged.
-  - **clinicianSession.ts:** current session ordered by `last_activity_at`;
-    touch/end take optional patientId (typed `string | void`); new
-    `useMySessions`, `useSwitchSession`, `useReopenSession`.
-  - **Entry page (`/clinician`):** auto-redirect removed; now a **switcher** —
-    "Open patients" (switch, no code) + "Seen earlier today" (reopen, no code)
-    above the code form. A new code still goes straight to the patient view.
-  - **Patient page:** "End visit" ends only the current patient and returns to
-    the switcher; new **"Switch patient"** header button returns WITHOUT
-    ending; touch is patient-scoped.
-  - **i18n:** `clinician.session.{switchPatient,open,reopen,openHeading,
-    openHint,reopenHeading,reopenHint}` (en/da). Parity 1122 == 1122.
-- **DB needed:** **run migration 0073** (`0073_session_switching.sql`).
-  Standalone copy attached.
-- **⚠⚠ QA — SECURITY-SENSITIVE, can't test sessions/RLS/auth here:**
-  single-patient flow unchanged; open two patients and confirm both list under
-  "Open patients" and switching loads the right chart and doesn't cross data;
-  let one lapse (>1h) and confirm it moves to "Seen earlier today" and reopen
-  works without a code; **negative checks** — a clinician must NOT reopen a
-  patient they never unlocked or one from a previous day, and must not read a
-  patient with no active session (RLS still gates); "End visit" ends only that
-  patient (shared EndSessionButton + physio still end-all).
+- **Zip:** `treatment-companion-wide-layout.zip`
+- **Tag:** `wide-layout`
+- **Change:** the wide-layout pass for the clinician patient page (the approved
+  two-column mockup), plus a banner tweak. **No migration.** Gated on the
+  existing `wide` layout preference (the default), so compact users are
+  unchanged.
+  - **Two columns at `lg`:** the page now uses the full **page-wide** width at
+    `lg` and splits into **context (left) + goals (right)** via a
+    `grid-cols-[5fr_7fr]`. Left = `PatientBanner`, since-last-visit
+    (`VisitChanges`), the look-up panels, and the new-cycle action. Right = the
+    goals (active + earlier). Goals now sit at the **top of the right column**
+    instead of below the banner. Below `lg` (and in compact mode) everything
+    stacks in the same single-column order as before.
+  - **Look-up tools → header toolbar:** at `lg` (wide) the medication /
+    therapist / history / export / wearable row moves into a compact toolbar
+    under the patient name in the header (new `variant="toolbar"` on
+    `PatientActionRow`); the body action row is `lg:hidden` in that mode. The
+    panels those tools open still render in the **left context column**. On
+    narrow/compact the body action row is used exactly as before.
+  - **Banner:** the "week N since treatment" eyebrow was **removed** — the
+    banner now carries only the treatment **date** (top-right keeps the
+    modality pill). `PatientBanner` lost its `cycleContextText` prop. The
+    `cycleContext` i18n key is unchanged (still used by the patient home page).
+  - **Goals list:** the old 2-column goals grid was dropped; goals stack in one
+    column within the goals column (the page split now provides the horizontal
+    space). The action-handler + labels were lifted to one place and shared by
+    the body row and the header toolbar.
+- **DB needed:** **none** — migration count stays at **0073**.
+- **⚠ QA (layout-only, can't render/verify here — needs a visual pass at a
+  wide `lg` width and on mobile):**
+  - at a wide screen: context left / goals right, goals visible at the top; the
+    look-up toolbar sits under the name and its buttons still open the right
+    panels (medication/therapist) in the left column, navigate (history/
+    wearable), and open export;
+  - the **left column is narrower** now (~5/12 of the page) — confirm the
+    medication and therapist editor panels still read well there;
+  - on mobile/narrow: single column, body action row present, no toolbar —
+    same as before;
+  - in **compact** layout preference: unchanged (no two-column, no toolbar);
+  - banner shows the treatment date only (no "week N").
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`session-switching`** — zip `treatment-companion-session-switching.zip`
+  (migration 0073). Multi-patient open + switch without re-coding + same-day
+  reopen; consent gate unchanged. One-active index relaxed to
+  per-(clinician,patient); patient-scoped touch/end; `reopen_session`;
+  `list_my_sessions`; `/clinician` is now a switcher; patient page gained
+  "Switch patient" and ends only the current patient.
 - **`patient-banner`** — zip `treatment-companion-patient-banner.zip` (no
   migration). Always-visible patient banner (name, demographics summary,
   cycle/modality, medication, devices via `PatientBanner` + `usePatientInfo`);
@@ -750,16 +760,13 @@ re-coding + same-day reopen; consent gate unchanged; current).
   the visit — appointment-scoped, which needs a scheduling concept the app
   lacks, or standing opt-in, which needs DPO/regulatory sign-off). Don't build
   until that call is made.
-- **Clinician patient-view layout pass (next).** `patient-banner` shipped the
-  banner + conditional wearable trend + summary-above-actions. Still to do,
-  as a layout-only pass that wants visual verification: (a) **wide two-column**
-  arrangement at the `lg` breakpoint — context (since-last-visit + wearable +
-  clips) on the left, goals + record actions as the main column on the right;
-  (b) move the look-up row (medication / therapist / history / wearables /
-  export) into a **header toolbar**; (c) push the goals fully above the action
-  row so they sit directly under the summary (today the action-row + treatment
-  block still sits between summary and goals). Mockups for all three were
-  approved (narrow + wide). The banner is already responsive.
+- **Clinician patient-view layout pass — DONE** in `wide-layout`: two columns
+  at `lg` (context left / goals right), the look-up row moved into a header
+  toolbar, and goals lifted above the context. Needs a visual verification pass
+  (see §7 QA). Remaining patient-view friction, in the user's ranked order:
+  (next) **review → record without leaving the view** — new-goal / new-cycle
+  are still separate routes; making them open as modals/inline is the next
+  slice. Then **faster clinic video scoring** (a lighter quick-score).
 
 0. **Informant-independent capture (lever 3).** Slice 1 (`guided-capture`,
    0071) standardized the capture; slice 2 (`clinic-video-scoring`, 0072) added
