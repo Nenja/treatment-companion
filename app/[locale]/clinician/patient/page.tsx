@@ -29,6 +29,7 @@ import { GoalGraphModal } from '@/components/clinician/GoalGraphModal';
 import { VideoProtocolEditor } from '@/components/clinician/VideoProtocolEditor';
 import { TrainingOverview } from '@/components/clinician/TrainingOverview';
 import { VisitChanges } from '@/components/clinician/VisitChanges';
+import { PatientBanner } from '@/components/clinician/PatientBanner';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
 import {
@@ -553,11 +554,6 @@ export default function ClinicianPatientPage() {
               <AccountMenu />
             </div>
           </div>
-          {patientSummary && (
-            <div className="mt-1 truncate text-[12px] text-ink-muted">
-              {patientSummary}
-            </div>
-          )}
         </div>
       </header>
 
@@ -567,19 +563,40 @@ export default function ClinicianPatientPage() {
             desktop. Otherwise the action row buttons + panels would
             sparse-stretch across the full 1080px page width. */}
         <div className={preGoalsWidthClass}>
-        <div className="eyebrow">
-          {t('cycleContext', {
-            week: weekNumber
-          })}
-        </div>
-        <p className="mt-1 text-[15px] text-ink-soft">
-          {t('treatmentDate', {
+        <PatientBanner
+          name={patient.displayName}
+          onOpenInfo={() =>
+            router.push(
+              locale === 'en' ? '/patient-info' : `/${locale}/patient-info`
+            )
+          }
+          openInfoAria={tInfo('openInfo', { name: patient.displayName })}
+          summary={patientSummary}
+          cycleContextText={t('cycleContext', { week: weekNumber })}
+          treatmentDateText={t('treatmentDate', {
             date: formatLongDate(cycle.startDate, locale)
           })}
-        </p>
-        <span className="mt-2 inline-flex items-center rounded-full border border-stone bg-stone-soft px-2.5 py-1 text-[12px] font-semibold text-ink-soft">
-          {tModality(cycle.modality)}
-        </span>
+          modalityLabel={tModality(cycle.modality)}
+          medication={patient.currentMedication}
+          devices={
+            patientInfo.data?.assistiveDevices ??
+            patient.physioAssistiveDevices ??
+            null
+          }
+          labels={{
+            medication: t('banner.medication'),
+            devices: t('banner.devices')
+          }}
+        />
+        <div className="mt-4">
+          <VisitChanges
+            lastTreatmentDate={treatment?.date ?? null}
+            cycleStartDate={cycle.startDate}
+            checkins={checkins}
+            goals={[...activeGoals, ...archivedGoals]}
+            patientId={patient.id}
+          />
+        </div>
 
         {/* Action row — always-visible entry points with live counts.
             Suggestions and therapist input open inline panels below;
@@ -887,13 +904,6 @@ export default function ClinicianPatientPage() {
           </span>
         </button>
         </div>
-
-        <VisitChanges
-          lastTreatmentDate={treatment?.date ?? null}
-          cycleStartDate={cycle.startDate}
-          checkins={checkins}
-          goals={[...activeGoals, ...archivedGoals]}
-        />
 
         {/* Active goals with progress visualisation */}
         <section className="mt-10">

@@ -5,6 +5,10 @@ import { useLocale, useTranslations } from 'next-intl';
 import { formatLongDate } from '@/lib/dates';
 import { VideoPlayerModal } from '@/components/clinician/VideoPlayerModal';
 import { useSetClinicVideoScore } from '@/lib/supabase/clinicianPatient';
+import {
+  usePatientObservations,
+  type Observation
+} from '@/lib/supabase/observations';
 import type {
   ClinicianPatientCheckin,
   ClinicianPatientGoal
@@ -19,9 +23,89 @@ interface VisitChangesProps {
   checkins: ClinicianPatientCheckin[];
   /** Active + archived goals — used for text, kind and NRS direction. */
   goals: ClinicianPatientGoal[];
+  /** Patient id — drives the conditional wearable trend (only shown when
+   *  the patient actually has observations). */
+  patientId: string;
 }
 
 type Trend = 'up' | 'down' | 'flat';
+
+interface WearableSeries {
+  label: string;
+  unit: string | null;
+  points: number[];
+  latest: number;
+  dir: Trend;
+}
+
+/** Group numeric observations by metric and build a small recent series for
+ *  each (oldest→newest), capped to a few metrics. Non-numeric or empty
+ *  metrics are dropped, so a patient with no usable data yields []. */
+function buildWearableSeries(observations: Observation[]): WearableSeries[] {
+  const byMetric = new Map<string, Observation[]>();
+  for (const o of observations) {
+    if (o.valueNumeric == null) continue;
+    const key = o.display || o.code;
+    const arr = byMetric.get(key);
+    if (arr) arr.push(o);
+    else byMetric.set(key, [o]);
+  }
+  const out: WearableSeries[] = [];
+  for (const [label, list] of byMetric) {
+    const sorted = [...list].sort(
+      (a, b) =>
+        new Date(a.effectiveTime).getTime() -
+        new Date(b.effectiveTime).getTime()
+    );
+    const points = sorted
+      .map((o) => o.valueNumeric as number)
+      .slice(-12);
+    if (points.length === 0) continue;
+    const first = points[0];
+    const latest = points[points.length - 1];
+    const dir: Trend =
+      latest > first ? 'up' : latest < first ? 'down' : 'flat';
+    out.push({ label, unit: sorted[sorted.length - 1].unit, points, latest, dir });
+    if (out.length >= 3) break;
+  }
+  return out;
+}
+
+function Sparkline({ points }: { points: number[] }) {
+  const w = 72;
+  const h = 24;
+  const pad = 2;
+  const n = points.length;
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const span = max - min || 1;
+  const coords = points
+    .map((v, i) => {
+      const x = n === 1 ? w : (i / (n - 1)) * w;
+      const y = h - pad - ((v - min) / span) * (h - 2 * pad);
+      return `${Math.round(x)},${Math.round(y)}`;
+    })
+    .join(' ');
+  return (
+    <svg
+      width={w}
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      preserveAspectRatio="none"
+      aria-hidden
+      className="shrink-0 text-sage-deep"
+    >
+      <polyline
+        points={coords}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 interface GoalRow {
   goalId: string;
@@ -46,12 +130,15 @@ export function VisitChanges({
   lastTreatmentDate,
   cycleStartDate,
   checkins,
-  goals
+  goals,
+  patientId
 }: VisitChangesProps) {
   const t = useTranslations('visitChanges');
   const tv = useTranslations('clinician.video');
   const locale = useLocale();
   const setClinicScore = useSetClinicVideoScore();
+  const observationsQuery = usePatientObservations(patientId);
+  const wearable = buildWearableSeries(observationsQuery.data ?? []);
   const [video, setVideo] = useState<{
     path: string;
     title: string;
@@ -297,6 +384,30 @@ export function VisitChanges({
               <Stat>{t('trainingNone')}</Stat>
             )}
           </div>
+          {wearable.length > 0 && (
+            <div className="mt-3 rounded-[var(--radius-button)] border border-stone bg-cream-soft p-3">
+              <p className="text-[12px] font-semibold text-ink-soft">
+                {t('wearableHeading')}
+              </p>
+              <div className="mt-2 flex flex-col gap-2">
+                {wearable.map((w) => (
+                  <div key={w.label} className="flex items-center gap-3">
+                    <Sparkline points={w.points} />
+                    <div className="min-w-0">
+                      <p className="truncate text-[13px] font-semibold text-ink">
+                        {w.label}
+                      </p>
+                      <p className="text-[12px] text-ink-soft">
+                        {w.dir === 'up' ? '↑' : w.dir === 'down' ? '↓' : '→'}{' '}
+                        {Math.round(w.latest * 100) / 100}
+                        {w.unit ? ` ${w.unit}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {videos.length > 0 && (
             <div className="mt-3">
               <p className="text-[12px] font-semibold text-ink-soft">
