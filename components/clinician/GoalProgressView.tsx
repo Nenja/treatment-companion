@@ -44,6 +44,11 @@ interface GoalProgressViewProps {
    *  can't be misread as a decline. GAS goals already encode this via
    *  their sage/amber bands and ignore this prop. */
   nrsDirection?: 'higherIsBetter' | 'lowerIsBetter';
+  /** NRS goals only: the agreed 0–10 starting value and target. When set,
+   *  a faint "start" line and a dashed "target" line are drawn so the
+   *  weekly self-report reads as a journey between them. */
+  nrsBaseline?: number | null;
+  nrsTarget?: number | null;
 }
 
 /**
@@ -75,7 +80,9 @@ export function GoalProgressView({
   ratings,
   physioRatings = [],
   onExpand,
-  nrsDirection
+  nrsDirection,
+  nrsBaseline,
+  nrsTarget
 }: GoalProgressViewProps) {
   const t = useTranslations('treatment');
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
@@ -358,7 +365,61 @@ export function GoalProgressView({
           </>
         )}
 
-        {/* Y-axis labels */}
+        {/* NRS only: start (faint) + target (dashed) reference lines, so
+            the weekly dots read as a journey from baseline toward target. */}
+        {isNrs && typeof nrsBaseline === 'number' && (
+          <>
+            <line
+              x1={padLeft}
+              x2={padLeft + innerWidth}
+              y1={yFor(nrsBaseline)}
+              y2={yFor(nrsBaseline)}
+              stroke="var(--color-ink-muted)"
+              strokeWidth={1}
+              strokeDasharray="2 3"
+              opacity={0.7}
+            />
+            <text
+              x={padLeft + innerWidth}
+              y={Math.max(
+                padTop + 7,
+                Math.min(yFor(nrsBaseline) - 3, padTop + innerHeight - 1)
+              )}
+              textAnchor="end"
+              fontSize={9}
+              fill="var(--color-ink-muted)"
+            >
+              {t('nrsStartTick')}
+            </text>
+          </>
+        )}
+        {isNrs && typeof nrsTarget === 'number' && (
+          <>
+            <line
+              x1={padLeft}
+              x2={padLeft + innerWidth}
+              y1={yFor(nrsTarget)}
+              y2={yFor(nrsTarget)}
+              stroke="var(--color-sage-deep)"
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
+              opacity={0.9}
+            />
+            <text
+              x={padLeft + innerWidth}
+              y={Math.max(
+                padTop + 7,
+                Math.min(yFor(nrsTarget) - 3, padTop + innerHeight - 1)
+              )}
+              textAnchor="end"
+              fontSize={9}
+              fill="var(--color-sage-deep)"
+              fontWeight={500}
+            >
+              {t('nrsTargetTick')}
+            </text>
+          </>
+        )}
         {(isNrs ? [10, 5, 0] : [2, 1, 0, -1, -2]).map((v) => (
           <text
             key={v}

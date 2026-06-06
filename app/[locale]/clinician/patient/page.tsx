@@ -1087,6 +1087,8 @@ export default function ClinicianPatientPage() {
                     ratings={ratingsByGoal.get(g.id) ?? []}
                     physioRatings={physioRatingsByGoal.get(g.id) ?? []}
                     nrsDirection={g.nrs?.direction}
+                    nrsBaseline={g.nrs?.baselineValue ?? null}
+                    nrsTarget={g.nrs?.targetValue ?? null}
                     onExpand={() => setEnlargedGoalId(g.id)}
                   />
                   {(clinicVideoByGoal.get(g.id) ?? []).length > 0 && (
@@ -1335,6 +1337,8 @@ export default function ClinicianPatientPage() {
               ratings={ratingsByGoal.get(g.id) ?? []}
               physioRatings={physioRatingsByGoal.get(g.id) ?? []}
               nrsDirection={g.nrs?.direction}
+              nrsBaseline={g.nrs?.baselineValue ?? null}
+              nrsTarget={g.nrs?.targetValue ?? null}
               closeLabel={tSession('done')}
               onClose={() => setEnlargedGoalId(null)}
             />
