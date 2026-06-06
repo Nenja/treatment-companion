@@ -425,7 +425,7 @@ export default function ClinicianPatientPage() {
     // stands down before endSession makes sessionQuery.data go null.
     endingSessionRef.current = true;
     try {
-      await endSession.mutateAsync();
+      await endSession.mutateAsync(sessionQuery.data?.patientId ?? undefined);
     } catch {
       // If ending failed, the session is still live — clear the flag
       // so the guard works normally again, and let the user retry.
@@ -474,7 +474,7 @@ export default function ClinicianPatientPage() {
 
   // Touch session on any meaningful click. Safe to call unconditionally
   // — the RPC silently no-ops for non-clinicians.
-  const touch = () => touchSession.mutate();
+  const touch = () => touchSession.mutate(sessionQuery.data?.patientId ?? undefined);
 
   return (
     <div className="min-h-dvh bg-cream">
@@ -523,6 +523,36 @@ export default function ClinicianPatientPage() {
               </span>
             </button>
             <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    locale === 'en' ? '/clinician' : `/${locale}/clinician`
+                  )
+                }
+                aria-label={tSession('switchPatient')}
+                title={tSession('switchPatient')}
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-stone bg-cream text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink sm:w-auto sm:rounded-[var(--radius-button)] sm:px-3"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                  className="shrink-0"
+                >
+                  <path d="M7 16V4M7 4 3 8M7 4l4 4" />
+                  <path d="M17 8v12m0 0 4-4m-4 4-4-4" />
+                </svg>
+                <span className="hidden sm:inline">
+                  {tSession('switchPatient')}
+                </span>
+              </button>
               <button
                 type="button"
                 onClick={() => setConfirmEnd(true)}

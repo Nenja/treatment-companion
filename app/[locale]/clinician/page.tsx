@@ -6,12 +6,13 @@ import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import {
-  useCurrentClinicianSession,
-  useUnlockWithCode
+  useUnlockWithCode,
+  useMySessions,
+  useSwitchSession,
+  useReopenSession
 } from '@/lib/supabase/clinicianSession';
 import { OnboardingWizard } from '@/components/feedback/OnboardingWizard';
 import { clearSessionEndingFlag } from '@/lib/sessionEndSignal';
-import { isTutorialReplayRequested } from '@/lib/tutorialReplay';
 
 /**
  * Clinician landing screen.
@@ -26,11 +27,27 @@ export default function ClinicianUnlockPage() {
   const tSession = useTranslations('clinician.session');
 
   const { user, profile, loading: authLoading } = useAuth();
-  const sessionQuery = useCurrentClinicianSession(
-    profile?.id ?? null,
-    profile?.role
-  );
   const unlock = useUnlockWithCode();
+  const mySessions = useMySessions(profile?.id ?? null, profile?.role);
+  const switchSession = useSwitchSession();
+  const reopenSession = useReopenSession();
+
+  const patientPath =
+    locale === 'en' ? '/clinician/patient' : `/${locale}/clinician/patient`;
+
+  const openToPatient = async (
+    patientId: string,
+    mode: 'switch' | 'reopen'
+  ) => {
+    try {
+      if (mode === 'switch') await switchSession.mutateAsync(patientId);
+      else await reopenSession.mutateAsync(patientId);
+      router.replace(patientPath);
+    } catch {
+      // Stale (e.g. the day rolled over) — fall back to needing a code.
+      mySessions.refetch();
+    }
+  };
 
   const [input, setInput] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -66,23 +83,6 @@ export default function ClinicianUnlockPage() {
     // guards checked. Safe to call unconditionally.
     clearSessionEndingFlag();
   }, []);
-
-  // If a valid session exists, jump to the patient view. Only act on a
-  // settled query result (status 'success'), not on a transient value
-  // mid-load — consistent with the patient page's guard, so the two
-  // pages cannot ping-pong.
-  useEffect(() => {
-    // If the user asked to redo the tutorial, stay on this landing
-    // screen so the wizard can show, even if a session is active.
-    if (isTutorialReplayRequested()) return;
-    if (sessionQuery.status === 'success' && sessionQuery.data) {
-      router.replace(
-        locale === 'en'
-          ? '/clinician/patient'
-          : `/${locale}/clinician/patient`
-      );
-    }
-  }, [sessionQuery.status, sessionQuery.data, router, locale]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,6 +131,68 @@ export default function ClinicianUnlockPage() {
             </p>
           </div>
         )}
+
+        {(() => {
+          const sessions = mySessions.data ?? [];
+          const open = sessions.filter((s) => s.isActive);
+          const reopen = sessions.filter((s) => !s.isActive);
+          if (open.length === 0 && reopen.length === 0) return null;
+          const Row = ({
+            s,
+            mode
+          }: {
+            s: { patientId: string; displayName: string };
+            mode: 'switch' | 'reopen';
+          }) => (
+            <button
+              key={s.patientId}
+              type="button"
+              onClick={() => openToPatient(s.patientId, mode)}
+              className="flex w-full items-center justify-between gap-3 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-3 text-left hover:bg-stone-soft"
+            >
+              <span className="truncate text-[15px] font-semibold text-ink">
+                {s.displayName}
+              </span>
+              <span className="shrink-0 text-[13px] font-semibold text-sage-deep">
+                {mode === 'switch' ? tSession('open') : tSession('reopen')}
+              </span>
+            </button>
+          );
+          return (
+            <div className="mt-8 flex flex-col gap-4">
+              {open.length > 0 && (
+                <div>
+                  <p className="text-[14px] font-semibold text-ink">
+                    {tSession('openHeading')}
+                  </p>
+                  <p className="mt-0.5 text-[13px] text-ink-soft">
+                    {tSession('openHint')}
+                  </p>
+                  <div className="mt-2 flex flex-col gap-2">
+                    {open.map((s) => (
+                      <Row key={s.patientId} s={s} mode="switch" />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {reopen.length > 0 && (
+                <div>
+                  <p className="text-[14px] font-semibold text-ink">
+                    {tSession('reopenHeading')}
+                  </p>
+                  <p className="mt-0.5 text-[13px] text-ink-soft">
+                    {tSession('reopenHint')}
+                  </p>
+                  <div className="mt-2 flex flex-col gap-2">
+                    {reopen.map((s) => (
+                      <Row key={s.patientId} s={s} mode="reopen" />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         <form onSubmit={onSubmit} className="mt-8">
           <label
