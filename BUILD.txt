@@ -1,37 +1,30 @@
-BUILD: pre-visit-suggestions   (patient cold-start #1 + #2)
+BUILD: patient-visit-and-status   (patient cold-start #3 + #5)
 =========================================================================
-WHAT & WHY
-A newly registered patient could not record anything: signup creates only a
-login profile, so there was no patient row (RLS blocked suggestions), and goal
-suggestions required a treatment cycle a new patient doesn't have. A suggestion
-is just a proposal awaiting approval, so it shouldn't need a cycle — tracking
-begins only when a clinician approves it into a real cycle.
+NO MIGRATION — client-only. (Requires 0081 from the previous build.)
 
-MIGRATION 0081 (run this in the Supabase SQL editor; standalone copy attached)
-- ensure_patient_row() trigger on profile + backfill: every patient profile now
-  has a patient row.
-- goal_suggestion.treatment_cycle_id made nullable.
-- approve_suggestion (NRS) and approve_suggestion_gas now resolve the patient's
-  ACTIVE cycle at approval (suggestion cycle, else active cycle) and refuse if
-  there is none — so a goal only becomes trackable once approved into a cycle.
-
-CLIENT
-- suggest-goal inserts a cycle-less suggestion (no more "No active cycle" error).
-- The patient no-cycle home now has a "Suggest a goal" card explaining the
-  clinician will review and set up tracking at the visit — no longer a dead end.
+WHAT THIS BUILD DOES
+- #3 Teach the visit code:
+  - A new "At your appointment" step in the patient onboarding wizard, with a
+    small visit-code illustration, explaining: show/read the code so the
+    clinician can open your record.
+  - A "At your visit — Show visit code" card on the patient no-cycle home,
+    linking to the visit-code screen. The empty state now explains the next
+    real step instead of just "wait".
+- #5 Suggestion status echo:
+  - The patient home now shows a quiet "N goal(s) sent — your clinician will
+    review them at your next visit" line whenever the patient has suggestions
+    awaiting review. Closes the loop without any clinic->patient messaging.
 
 DEPLOY
-- Run 0081; unzip; push to GitHub; Vercel builds. Page count 60.
+- Unzip; push to GitHub; Vercel builds. Page count 60. No SQL.
 
 ** QA (please verify — can't be tested here) **
-- A fresh patient signup gets a patient row.
-- From the no-cycle home, "Suggest a goal" completes and saves with no cycle.
-- The suggestion shows for the clinician once they have a session; approving
-  (NRS and GAS) lands the goal in the active cycle.
-- Approving with NO active cycle is refused with a clear error.
-- Existing seeded patients still suggest/approve exactly as before.
+- Replay patient onboarding: an "At your appointment" step appears between the
+  check-in and comfort steps.
+- The no-cycle home shows the visit-code card and it routes to /visit-code.
+- After suggesting a goal, the home shows the "sent — your clinician will
+  review" line (correct singular/plural), and it clears once the clinician
+  approves or declines the suggestion.
 
 NEXT IN THIS BATCH
-- #3 teach the visit code (onboarding + no-cycle home)
-- #5 echo pending-suggestion status on the home
-- #4 check-in edit/undo window
+- #4 check-in edit/undo window.

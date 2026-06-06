@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `pre-visit-suggestions`._
+> _Last updated for build tag: `patient-visit-and-status`._
 
 ---
 
@@ -639,47 +639,46 @@ markers on ITB goal charts) →
 **`action-row-tidy`** (no migration; reordered patient-page icons, compact
 therapist panel, panels open from the menu) →
 **`pre-visit-suggestions`** (0081; patient row on signup, cycle-agnostic goal
-suggestions, approval resolves the active cycle; current).
+suggestions, approval resolves the active cycle) →
+**`patient-visit-and-status`** (no migration; teach visit code in onboarding +
+no-cycle home, pending-suggestion status echo on the home; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-pre-visit-suggestions.zip`
-- **Tag:** `pre-visit-suggestions`
-- **Change:** **Patient cold-start fix #1+#2 — a patient can suggest goals
-  before their first visit; suggestions are cycle-agnostic.** Migration 0081.
-  - **Two blockers removed:** a self-registered patient had a `profile` but no
-    `patient` row (so `current_patient_id()` was null and the suggestion-insert
-    RLS check could never pass), and `goal_suggestion` required a cycle a new
-    patient doesn't have.
-  - **Migration 0081:** (a) `ensure_patient_row()` trigger on `profile` +
-    backfill — every patient profile now has a `patient` row; (b)
-    `goal_suggestion.treatment_cycle_id` made nullable; (c) `approve_suggestion`
-    (NRS) and `approve_suggestion_gas` resolve the patient's **active cycle at
-    approval** (coalesce suggestion cycle → active cycle) and raise if none —
-    so a goal only becomes trackable once approved into a real cycle.
-  - **Client:** `suggestGoal.ts` inserts with `treatment_cycle_id: null` (no
-    more "No active cycle" throw). The patient **no-cycle home** now offers a
-    "Suggest a goal" card explaining the clinician will review and set up
-    tracking at the visit — the empty state is no longer a dead end.
-  - **i18n:** `patient.home.noCycleSuggestTitle/Body` (en/da). Parity balanced.
-- **DB needed:** **run migration 0081** (`0081_cycle_agnostic_suggestions.sql`).
-  Standalone copy attached.
-- **⚠ QA (can't test here):** a fresh patient signup gets a `patient` row;
-  from the no-cycle home, "Suggest a goal" completes and saves (no cycle
-  needed); the suggestion appears for the clinician once they have a session;
-  approving it (NRS and GAS) lands the goal in the active cycle, and approving
-  with NO active cycle is refused with a clear error; existing seeded patients
-  still suggest/approve as before.
-- **Patient cold-start — remaining (this batch):** #3 teach the visit code in
-  onboarding + no-cycle home; #5 echo pending-suggestion status on the home;
-  #4 check-in edit/undo window. (Doing next.)
+- **Zip:** `treatment-companion-patient-visit-and-status.zip`
+- **Tag:** `patient-visit-and-status`
+- **Change:** **Patient cold-start #3 + #5. No migration (client-only).**
+  - **#3 Teach the visit code:** new `visit` step in the patient onboarding
+    wizard (`intro.visitTitle/visitBody`, with a little code illustration), and
+    a "At your visit — Show visit code" card on the patient **no-cycle home**
+    (links to /visit-code). The empty state now explains the real next step.
+  - **#5 Suggestion status echo:** `usePatientHomeData` now returns
+    `pendingSuggestions` (count of the patient's `needsReview` suggestions,
+    fetched before the no-cycle branch so it shows in both states). The home
+    surfaces a quiet "N goal(s) sent — your clinician will review…" line
+    (ICU-plural `patient.home.pendingSuggestions`) — closes the loop without
+    any clinic→patient messaging.
+  - **i18n:** `intro.visitTitle/visitBody`, `patient.home.visitCodeTitle/
+    visitCodeBody/pendingSuggestions` (en/da). Parity balanced.
+- **DB needed:** none.
+- **⚠ QA (can't test here):** replay the patient onboarding — a "At your
+  appointment" step appears between the check-in and comfort steps; the
+  no-cycle home shows the visit-code card; after suggesting a goal, the home
+  shows the "sent — your clinician will review" line (singular vs plural), and
+  it clears once the clinician approves/declines.
+- **Patient cold-start — remaining (this batch):** #4 check-in edit/undo window
+  (doing next).
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`pre-visit-suggestions`** — zip `treatment-companion-pre-visit-suggestions.zip`
+  (migration 0081). Patient row on signup (trigger+backfill), cycle-agnostic
+  goal suggestions, approval resolves the active cycle; no-cycle home offers
+  "Suggest a goal".
 - **`action-row-tidy`** — zip `treatment-companion-action-row-tidy.zip` (no
   migration). Reordered patient-page icons (medication/training/therapist/
   history/export), compact therapist panel, panels open from the menu.

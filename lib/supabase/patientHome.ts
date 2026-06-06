@@ -81,6 +81,8 @@ export interface PatientHomeData {
   currentWeek: number;
   /** Week numbers that have a completed check-in. */
   completedWeeks: number[];
+  /** Count of the patient's suggestions still awaiting clinician review. */
+  pendingSuggestions: number;
 }
 
 /**
@@ -124,6 +126,18 @@ export function usePatientHomeData(
           'Patient'
       };
 
+      // Pending (awaiting-review) suggestions — shown as a "sent, your
+      // clinician will review" status so the patient feels heard. Patients
+      // can suggest before any cycle exists, so this is fetched before the
+      // no-cycle branch and surfaced in both states.
+      const { count: pendingCount, error: sErr } = await supabase
+        .from('goal_suggestion')
+        .select('id', { count: 'exact', head: true })
+        .eq('patient_id', patient.id)
+        .eq('status', 'needsReview');
+      if (sErr) throw sErr;
+      const pendingSuggestions = pendingCount ?? 0;
+
       // 2. Active cycle (most recent)
       const { data: cycleRow, error: cErr } = await supabase
         .from('treatment_cycle')
@@ -152,7 +166,8 @@ export function usePatientHomeData(
           currentPrompt: null,
           catchUpPrompts: [],
           currentWeek: 0,
-          completedWeeks: []
+          completedWeeks: [],
+          pendingSuggestions
         };
       }
 
@@ -308,7 +323,8 @@ export function usePatientHomeData(
         currentPrompt,
         catchUpPrompts,
         currentWeek,
-        completedWeeks: completed
+        completedWeeks: completed,
+        pendingSuggestions
       };
     }
   });
