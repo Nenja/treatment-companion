@@ -344,14 +344,20 @@
       "reactivateGoal": "Reactivate",
       "reactivateToast": "Goal reactivated",
       "reactivateError": "Could not reactivate the goal. Please try again.",
-      "actionWearable": "Wearable data",
-      "actionShortWearable": "Wearable",
       "clinicSeriesHeading": "Clinic video assessment",
       "clinicSeriesHint": "The clinic's GAS score of the standardized clips — one consistent rater, so the trend holds even when the person filming changes.",
       "banner": {
         "medication": "Medication",
         "devices": "Assistive devices"
-      }
+      },
+      "actionTraining": "Training",
+      "actionShortTraining": "Training",
+      "trainingPanelTitle": "Training",
+      "trainingPanelEmpty": "No check-ins yet, so there's no training to show.",
+      "wearableModuleTitle": "Wearable",
+      "wearableModuleOpen": "Open",
+      "wearableModuleHasData": "This patient has wearable data. Open to view the readings.",
+      "wearableModuleNoData": "Wearable tracking is on for this patient. No readings yet."
     },
     "review": {
       "title": "Review suggestion",
@@ -768,7 +774,11 @@
     "dobDay": "Day",
     "dobMonth": "Month",
     "dobYear": "Year",
-    "yearPlaceholder": "YYYY"
+    "yearPlaceholder": "YYYY",
+    "wearableLabel": "Wearable tracking",
+    "wearableOn": "Enabled",
+    "wearableOff": "Not enabled",
+    "wearableHelper": "Show the wearable module on this patient's page. It also appears automatically once a wearable sends data."
   },
   "etiology": {
     "stroke": "Stroke",

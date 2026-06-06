@@ -348,14 +348,20 @@
       "reactivateGoal": "Genaktivér",
       "reactivateToast": "Mål genaktiveret",
       "reactivateError": "Kunne ikke genaktivere målet. Prøv venligst igen.",
-      "actionWearable": "Wearable-data",
-      "actionShortWearable": "Wearable",
       "clinicSeriesHeading": "Klinikkens videovurdering",
       "clinicSeriesHint": "Klinikkens GAS-score af de standardiserede klip — én konsistent bedømmer, så tendensen holder, selv når den, der filmer, skifter.",
       "banner": {
         "medication": "Medicin",
         "devices": "Hjælpemidler"
-      }
+      },
+      "actionTraining": "Træning",
+      "actionShortTraining": "Træning",
+      "trainingPanelTitle": "Træning",
+      "trainingPanelEmpty": "Ingen check-ins endnu, så der er ingen træning at vise.",
+      "wearableModuleTitle": "Wearable",
+      "wearableModuleOpen": "Åbn",
+      "wearableModuleHasData": "Denne patient har wearable-data. Åbn for at se målingerne.",
+      "wearableModuleNoData": "Wearable-sporing er slået til for denne patient. Ingen målinger endnu."
     },
     "review": {
       "title": "Gennemgå forslag",
@@ -772,7 +778,11 @@
     "dobDay": "Dag",
     "dobMonth": "Måned",
     "dobYear": "År",
-    "yearPlaceholder": "ÅÅÅÅ"
+    "yearPlaceholder": "ÅÅÅÅ",
+    "wearableLabel": "Wearable-sporing",
+    "wearableOn": "Slået til",
+    "wearableOff": "Ikke slået til",
+    "wearableHelper": "Vis wearable-modulet på denne patients side. Det vises også automatisk, når en wearable sender data."
   },
   "etiology": {
     "stroke": "Apopleksi",
