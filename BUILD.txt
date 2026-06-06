@@ -1,44 +1,49 @@
-BUILD: nrs-baseline-target  (Pass A of the video/baseline work)
+BUILD: video-score-queue  (Pass C of the video/baseline work)
 =========================================================================
 WHAT THIS BUILD DOES
-NRS goals now have a baseline and a target (0–10), agreed with the patient in
-clinic when the goal is recorded. This makes the weekly 0–10 self-report
-interpretable ("started at 8, aiming for 4"). It is independent of video — the
-pain/sleep example that motivated it isn't a video goal.
-
-The "higher/lower is better" question is gone; direction is derived from
-baseline vs target.
+A per-visit "Score videos" queue that clears the unscored peak-effect clips in
+one pass. Each clip is shown beside the goal's baseline; the clinician scores
+it and the queue auto-advances to the next.
+- GAS goals: scored against the goal's anchors on −2..+2 (existing field).
+- NRS goals: scored on the SAME 0–10 scale the patient uses, so you get a
+  clinician-0–10 vs patient-0–10 comparison on one axis (new field).
 
 CHANGES
-- Migration 0074: approved_goal gains nrs_baseline_value + nrs_target_value
-  (int 0–10, nullable). create_goal_for_patient takes the two new values; the
-  old 9-arg signature is dropped (single definition). Body otherwise identical
-  to 0035.
-- Record-goal form (NRS): two 0–10 inputs (now / target) replace the direction
-  buttons; direction is computed (target >= baseline => higher-is-better).
-- Goal graph: a faint "start" line and a dashed sage "target" line on the NRS
-  chart, so the weekly dots read as a journey between them (also in the
-  enlarged modal). GAS goals and the clinic-video chart are unchanged.
-- No change to existing goals (null baseline/target => no lines drawn).
-- i18n: newGoal.{nrsRangeLabel,nrsRangeHelp,nrsBaselineLabel,nrsTargetLabel} +
-  treatment.{nrsStartTick,nrsTargetTick} (en + da). Parity 1126 == 1126.
+- Migration 0076: weekly_goal_rating.clinic_video_nrs (int 0–10) +
+  set_clinic_video_nrs(p_rating_id, p_nrs, p_unusable) RPC (same access check
+  as set_clinic_video_score; "unusable" clears the score; shares the existing
+  unusable / scored_by / scored_at columns).
+- New components/clinician/VideoScoreQueue.tsx: the queue modal — peak clip
+  beside the baseline (or a "no baseline" placeholder), GAS anchor buttons or
+  an NRS 0–10 grid, an unusable toggle, Skip / Save & next / Save & done.
+- "Score videos (N)" button in the active-goals header, shown only when there
+  are unscored clips. Queue items are assembled from check-in ratings that
+  have a video but no clinic score yet, joined to the active goal.
+- Data: clinicVideoNrs added to the ratings read; new useSetClinicVideoNrs hook.
+- i18n (en + da) added; parity balanced.
 
 DEPLOY
-1. Run migration 0074 in the Supabase SQL editor. Standalone copy attached.
+1. Run migration 0076 in the Supabase SQL editor. Standalone copy attached.
 2. Unzip; push to GitHub; Vercel builds on push. Page count 60.
 
-** QA (cannot render/run here — please verify) **
-- Record an NRS goal: the form asks now / target (not higher/lower) and
-  rejects values outside 0–10.
-- On the goal's graph: start + target lines appear; weekly dots sit between
-  them; a target below baseline (8 -> 4) still reads correctly.
-- Existing goals (no baseline/target) draw no lines and are unaffected; GAS
-  goals are unchanged.
+** QA (please verify — can't be tested here) **
+- The queue lists exactly the clips with a video but no clinic score / unusable.
+- GAS scoring writes −2..+2; NRS scoring writes 0–10; unusable removes the clip
+  from the series.
+- Auto-advance works; Save & done and the Done/close button both exit.
+- The baseline shows beside the peak clip (or the placeholder when none was
+  recorded). Video playback, signed URLs, and the RLS path for the NRS write
+  all need a real device + Supabase.
 
-NEXT (the remaining passes, decisions already agreed)
-- Pass B: baseline VIDEO recorded in clinic, stored on the goal, doubling as
-  the patient's reference at the weeks 6–8 peak recording (+ patient read
-  access — new RLS path to verify).
-- Pass C: peak-video quick-score queue — GAS scored −2..+2 vs anchors, NRS
-  scored 0–10 to match the patient, baseline clip beside the peak clip,
-  auto-advance. (Adds a 0–10 clinic-score field for NRS.)
+ON RECORDING WITHOUT A WEBCAM (your question)
+- Primary path today: record on a phone/tablet. The clinician session roams
+  across devices via the switcher, so "film on the phone, plan on the desktop"
+  already works with no extra code.
+- Recommended follow-up (NOT in this build): add a file-upload fallback
+  (<input type="file" accept="video/*" capture>) to the recorder so a
+  webcam-less desktop can attach a clip too. This would help the baseline and
+  the patient check-in capture alike. I'd ship it as its own slice.
+
+NEXT CANDIDATES
+- File-upload fallback for the recorder (above).
+- Surface the clinic-0–10 vs patient-0–10 comparison on the NRS trend chart.

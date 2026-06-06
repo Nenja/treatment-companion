@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `nrs-baseline-target`._
+> _Last updated for build tag: `video-score-queue`._
 
 ---
 
@@ -242,7 +242,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0074**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0076**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -285,9 +285,16 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
   `approved_goal.nrs_baseline_value` + `nrs_target_value` (0–10, nullable) and
   extends `create_goal_for_patient` with the two values (old 9-arg signature
   dropped).
+- `0075_baseline_video.sql` — **`baseline-video`, RUN THIS.** Adds
+  `approved_goal.baseline_video_path` + `set_goal_baseline_video` RPC + two
+  storage policies letting a clinician write `<patient_id>/baseline/...` clips
+  for a patient they can access.
+- `0076_clinic_video_nrs.sql` — **`video-score-queue`, RUN THIS.** Adds
+  `weekly_goal_rating.clinic_video_nrs` (0–10) + `set_clinic_video_nrs` RPC
+  (NRS clips scored on the patient's 0–10 axis; GAS stays on −2..+2).
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0074 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target).
+> If unsure whether the user's DB is current, confirm 0062–0076 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS).
 
 ---
 
@@ -596,59 +603,68 @@ eyebrow removed) →
 **`record-goal-inline`** (no migration; record a goal in a slide-over over the
 chart instead of a separate route; form factored into RecordGoalForm) →
 **`nrs-baseline-target`** (0074; NRS goals get a baseline + target 0–10 set
-with the patient; direction derived; start/target lines on the graph; current).
+with the patient; direction derived; start/target lines on the graph) →
+**`baseline-video`** (0075; clinician records an in-clinic baseline clip per
+video goal; patient sees it as a reference at the weeks-6–8 check-in) →
+**`video-score-queue`** (0076; per-visit quick-score queue over unscored peak
+clips, baseline shown beside each, GAS anchors or NRS 0–10; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-nrs-baseline-target.zip`
-- **Tag:** `nrs-baseline-target`
-- **Change:** NRS goals now carry a **baseline** and a **target** (0–10),
-  agreed with the patient in clinic when the goal is recorded. **This is Pass A
-  of the video/baseline work** — a goal-model enrichment, independent of video
-  (the pain/sleep example that prompted it has no video). Migration 0074.
-  - **Migration 0074:** adds `approved_goal.nrs_baseline_value` and
-    `nrs_target_value` (int 0–10, nullable). `create_goal_for_patient` gains
-    two params (`p_nrs_baseline_value`, `p_nrs_target_value`); the old 9-arg
-    signature is dropped so there's one definition. Body otherwise identical to
-    0035 (auth, cut-point check, active-cycle lookup, insert, audit).
-  - **Direction now derived:** the record-goal form no longer asks
-    higher/lower-is-better — it's computed from baseline vs target
-    (`target >= baseline ? higherIsBetter : lowerIsBetter`) and still passed to
-    the RPC. The old direction i18n keys are unused but left in place.
-  - **Form (`RecordGoalForm`):** the NRS branch replaces the direction buttons
-    with two 0–10 number inputs (now / target); NRS validity now requires
-    question + both values in 0–10.
-  - **Graph (`GoalProgressView`):** new optional `nrsBaseline` / `nrsTarget`
-    props draw a faint dashed "start" line and a dashed sage "target" line on
-    the NRS chart, so the weekly dots read as a journey between them. Wired
-    through `GoalGraphModal` (enlarged view) too. The clinic-video series chart
-    is untouched.
-  - **Data layer:** `NrsConfig` gains optional `baselineValue` / `targetValue`;
-    the goals select + mapping read the two columns; `CreateGoalForPatientInput`
-    gains `nrsBaselineValue` / `nrsTargetValue`.
-  - **i18n:** `newGoal.{nrsRangeLabel,nrsRangeHelp,nrsBaselineLabel,
-    nrsTargetLabel}` + `treatment.{nrsStartTick,nrsTargetTick}` (en/da).
-    Parity 1126 == 1126.
-- **DB needed:** **run migration 0074** (`0074_nrs_baseline_target.sql`).
+- **Zip:** `treatment-companion-video-score-queue.zip`
+- **Tag:** `video-score-queue`
+- **Change:** **Pass C of the video/baseline work — the clinician quick-score
+  queue.** Clears the unscored peak-effect clips in one pass: each clip is
+  shown beside the goal's baseline, scored, and auto-advances. Migration 0076.
+  - **Migration 0076:** `weekly_goal_rating.clinic_video_nrs` (int 0–10) +
+    `set_clinic_video_nrs(p_rating_id, p_nrs, p_unusable)` RPC (same access
+    check as `set_clinic_video_score`; unusable wins and clears the score;
+    shares the existing `clinic_video_unusable` / `clinic_video_scored_by/at`).
+    GAS clips keep using the −2..+2 `clinic_video_rating` (0072); NRS clips get
+    a 0–10 score on the SAME axis the patient uses, for a clinician-vs-patient
+    comparison.
+  - **Queue:** new `components/clinician/VideoScoreQueue.tsx` — walks the
+    unscored clips one at a time; inner `ClipPair` shows the peak clip beside
+    the goal's baseline (or a "no baseline" placeholder). GAS → the five anchor
+    buttons (reuses `clinician.video.score.level.*`); NRS → 0–10 grid under the
+    goal's question. Shared unusable toggle; Skip / Save & next / Save & done;
+    auto-advance. Uses `useSetClinicVideoScore` (GAS) + `useSetClinicVideoNrs`
+    (NRS) + `useGoalVideoUrl` (×2) + `useModalA11y` + toast.
+  - **Entry point:** a **"Score videos (N)"** button in the active-goals header
+    (shown only when N>0), opening the queue. Items assembled on the patient
+    page from check-in ratings with a `videoPath` that aren't yet scored
+    (`clinicVideoRating == null && clinicVideoNrs == null && !unusable`), joined
+    to the active goal for kind/anchors/question/baseline/week.
+  - **Data:** `clinicVideoNrs` added to the ratings select + shape + mapping;
+    new `useSetClinicVideoNrs` hook.
+  - **i18n:** `clinician.videoQueue.*` (en/da). Parity balanced.
+- **DB needed:** **run migration 0076** (`0076_clinic_video_nrs.sql`).
   Standalone copy attached.
-- **⚠ QA (can't render/run here):** record an NRS goal — the form asks now /
-  target instead of higher/lower, and rejects values outside 0–10; on the
-  goal's graph the start and target lines appear and the weekly dots sit
-  between them; a target below baseline (e.g. 8→4) still reads correctly (axis
-  direction derived). Existing goals (no baseline/target) draw no lines and are
-  unaffected. GAS goals are unchanged.
-- **NOT in this build (next passes):** Pass B — baseline **video** captured in
-  clinic + patient reference at the weeks-6–8 check-in (+ storage/RLS). Pass C
-  — peak-video quick-score (GAS −…+ anchors, NRS 0–10, baseline beside peak,
-  auto-advance). Also: the suggestion-approval path still creates NRS goals
-  without baseline/target — a later consistency fix.
+- **⚠ QA (can't test here):** the queue lists exactly the unscored clips;
+  scoring GAS writes −2..+2 and NRS writes 0–10; unusable removes the clip
+  from the series; auto-advance + Save & done close correctly; the baseline
+  shows beside the peak clip (or the placeholder when none). Video playback /
+  signed URLs / RLS for the NRS write all need a real device + Supabase.
+- **NOT in this build / next candidates:** the **file-upload fallback** for the
+  recorder (desktop without a webcam — `<input type="file" accept="video/*"
+  capture>`, benefits baseline + check-in capture); surfacing the clinic-vs-
+  patient 0–10 comparison on the NRS trend chart.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`baseline-video`** — zip `treatment-companion-baseline-video.zip`
+  (migration 0075). Clinician records an in-clinic baseline clip per
+  video-enabled goal (`<patient_id>/baseline/<goal_id>`; new clinician-write
+  storage policy scoped to the baseline subfolder); the patient sees it as a
+  reference at the weeks-6–8 check-in.
+- **`nrs-baseline-target`** — zip `treatment-companion-nrs-baseline-target.zip`
+  (migration 0074). NRS goals gain a baseline + target (0–10) set with the
+  patient; direction derived from them (the higher/lower question is gone);
+  start + target reference lines on the NRS graph.
 - **`record-goal-inline`** — zip `treatment-companion-record-goal-inline.zip`
   (no migration). Goal form factored into `RecordGoalForm` + `RecordGoalDrawer`;
   "Record goal" opens a slide-over over the chart instead of routing to
@@ -792,12 +808,14 @@ with the patient; direction derived; start/target lines on the graph; current).
   video recorded IN CLINIC, stored on the goal, doubling as the patient's
   reference when they record the weeks-6–8 peak clip; video available on both
   GAS and NRS goals; peak-video clinician score = GAS −2…+2 vs anchors, NRS on
-  the same 0–10 as the patient. **Pass B (next):** baseline-video capture +
-  patient reference + storage/RLS (patient needs read on their goal's baseline
-  clip — new access path, flag for RLS testing). **Pass C:** peak-video
-  quick-score queue (anchors for GAS, 0–10 for NRS, baseline beside peak,
-  auto-advance; needs a new 0–10 clinic-score field for NRS). Optional: show a
-  patient's existing GAS levels as a reference while writing new ones.
+  the same 0–10 as the patient. **Pass B — DONE** (`baseline-video`, 0075): in-clinic
+  baseline capture + patient reference at check-in; the new access path turned
+  out to be the CLINICIAN write (patient read was already covered by 0062).
+  **Pass C — DONE** (`video-score-queue`, 0076): per-visit
+  quick-score queue, baseline beside each peak clip, anchors for GAS / 0–10 for
+  NRS, auto-advance. **Next candidate:** file-upload fallback for the recorder
+  so a webcam-less clinic desktop can capture (phone capture already works via
+  the session switcher — recommended primary path).
 
 0. **Informant-independent capture (lever 3).** Slice 1 (`guided-capture`,
    0071) standardized the capture; slice 2 (`clinic-video-scoring`, 0072) added
