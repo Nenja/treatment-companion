@@ -52,8 +52,8 @@ export function RecordGoalForm({
   const [patientText, setPatientText] = useState('');
   const [smartText, setSmartText] = useState('');
   const [nrsQuestion, setNrsQuestion] = useState('');
-  const [nrsDirection, setNrsDirection] =
-    useState<NrsDirection>('higherIsBetter');
+  const [nrsBaseline, setNrsBaseline] = useState('');
+  const [nrsTarget, setNrsTarget] = useState('');
 
   const [anchorMinus2, setAnchorMinus2] = useState('');
   const [anchorMinus1, setAnchorMinus1] = useState('');
@@ -63,6 +63,18 @@ export function RecordGoalForm({
 
   const commonValid =
     patientText.trim().length > 0 && smartText.trim().length > 0;
+  const nrsB = Number(nrsBaseline);
+  const nrsT = Number(nrsTarget);
+  const nrsValuesValid =
+    nrsBaseline.trim() !== '' &&
+    nrsTarget.trim() !== '' &&
+    Number.isInteger(nrsB) &&
+    nrsB >= 0 &&
+    nrsB <= 10 &&
+    Number.isInteger(nrsT) &&
+    nrsT >= 0 &&
+    nrsT <= 10;
+  const nrsValid = nrsQuestion.trim().length > 0 && nrsValuesValid;
   const anchorsValid =
     anchorMinus2.trim().length > 0 &&
     anchorMinus1.trim().length > 0 &&
@@ -72,7 +84,7 @@ export function RecordGoalForm({
 
   const canSubmit =
     commonValid &&
-    (goalKind === 'nrs' ? nrsQuestion.trim().length > 0 : anchorsValid) &&
+    (goalKind === 'nrs' ? nrsValid : anchorsValid) &&
     !create.isPending &&
     !createGas.isPending;
 
@@ -81,12 +93,18 @@ export function RecordGoalForm({
     try {
       let goalId: string;
       if (goalKind === 'nrs') {
+        const nrsDirection: NrsDirection =
+          Number(nrsTarget) >= Number(nrsBaseline)
+            ? 'higherIsBetter'
+            : 'lowerIsBetter';
         goalId = await create.mutateAsync({
           patientId,
           patientFacingText: patientText.trim(),
           smartText: smartText.trim(),
           nrsQuestion: nrsQuestion.trim(),
-          nrsDirection
+          nrsDirection,
+          nrsBaselineValue: Number(nrsBaseline),
+          nrsTargetValue: Number(nrsTarget)
         });
       } else {
         goalId = await createGas.mutateAsync({
@@ -245,34 +263,42 @@ export function RecordGoalForm({
 
           <div className="mt-7">
             <label className="block text-[14px] font-semibold text-ink">
-              {t('directionLabel')}
+              {t('nrsRangeLabel')}
             </label>
             <p className="mt-1 text-[14px] text-ink-muted">
-              {t('directionHelp')}
+              {t('nrsRangeHelp')}
             </p>
-            <div className="mt-2 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setNrsDirection('higherIsBetter')}
-                className={`flex-1 rounded-[var(--radius-button)] border px-3 py-2.5 text-[14px] font-semibold ${
-                  nrsDirection === 'higherIsBetter'
-                    ? 'border-sage bg-sage-soft text-sage-deep'
-                    : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
-                }`}
-              >
-                {t('higherIsBetter')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setNrsDirection('lowerIsBetter')}
-                className={`flex-1 rounded-[var(--radius-button)] border px-3 py-2.5 text-[14px] font-semibold ${
-                  nrsDirection === 'lowerIsBetter'
-                    ? 'border-sage bg-sage-soft text-sage-deep'
-                    : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
-                }`}
-              >
-                {t('lowerIsBetter')}
-              </button>
+            <div className="mt-2 flex gap-3">
+              <div className="flex-1">
+                <label className="block text-[13px] font-semibold text-ink-soft">
+                  {t('nrsBaselineLabel')}
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={10}
+                  inputMode="numeric"
+                  value={nrsBaseline}
+                  onChange={(e) => setNrsBaseline(e.target.value)}
+                  placeholder="8"
+                  className="mt-1 w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] text-ink focus:border-sage focus:outline-none"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-[13px] font-semibold text-ink-soft">
+                  {t('nrsTargetLabel')}
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={10}
+                  inputMode="numeric"
+                  value={nrsTarget}
+                  onChange={(e) => setNrsTarget(e.target.value)}
+                  placeholder="4"
+                  className="mt-1 w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] text-ink focus:border-sage focus:outline-none"
+                />
+              </div>
             </div>
           </div>
         </>
