@@ -61,7 +61,9 @@
       "errorBody": "Could not load your information right now. Please try again in a moment. If it keeps happening, contact your clinic.",
       "errorHint": "Check your internet connection and try refreshing.",
       "noCycleTitle": "No treatment cycle yet.",
-      "noCycleBody": "Your clinic will set up your first cycle at your next visit."
+      "noCycleBody": "Your clinic will set up your first cycle at your next visit.",
+      "noCycleSuggestTitle": "Start thinking about goals",
+      "noCycleSuggestBody": "You can suggest goals now, in your own words. Your clinician will review them with you and set up the ones to track at your visit."
     },
     "visitCode": {
       "pageTitle": "Visit code",

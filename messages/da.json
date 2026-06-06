@@ -65,7 +65,9 @@
       "errorBody": "Dine oplysninger kunne ikke indlæses lige nu. Prøv igen om et øjeblik. Hvis det bliver ved, så kontakt din klinik.",
       "errorHint": "Tjek din internetforbindelse, og prøv at opdatere siden.",
       "noCycleTitle": "Intet behandlingsforløb endnu.",
-      "noCycleBody": "Din klinik opretter dit første forløb ved dit næste besøg."
+      "noCycleBody": "Din klinik opretter dit første forløb ved dit næste besøg.",
+      "noCycleSuggestTitle": "Begynd at tænke over mål",
+      "noCycleSuggestBody": "Du kan foreslå mål nu, med dine egne ord. Din kliniker gennemgår dem sammen med dig og opsætter dem, der skal følges, ved dit besøg."
     },
     "visitCode": {
       "pageTitle": "Besøgskode",
