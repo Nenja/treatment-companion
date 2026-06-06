@@ -1,42 +1,41 @@
-BUILD: itb-therapy-track   (ITB + BTX in parallel — slice 1)
+BUILD: itb-goals   (ITB + BTX — slice 2: goals for both therapies)
 =========================================================================
-WHY THIS IS SLICE 1
-Intrathecal baclofen (ITB) is a continuous, titrated pump therapy, not a
-peak-effect cycle. And in the current code EVERY "resolve the patient's active
-cycle" RPC (goal creation, weekly check-in, the physio submits) assumes a
-single active cycle — so adding a second concurrent active treatment_cycle for
-ITB would silently break the botulinum-toxin (BoNT) flow.
-
-So ITB is introduced here as its OWN entity, running in parallel with the BoNT
-cycles and touching none of that logic. This slice = the ITB therapy + its dose
-titration log. ITB *goals* (which reuse the cycle/goal/check-in machinery and
-therefore need every active-cycle resolver made modality-aware) are slice 2.
+THE KEY IDEA
+A weekly_goal_rating just links a check-in to a goal (no cycle constraint), and
+the check-in submit rates exactly the goals the app sends it. So ITB goals do
+NOT need a second active cycle (which would have hijacked every "resolve the
+active cycle" RPC). Instead an ITB goal rides the patient's existing active
+cycle and is simply TAGGED as ITB. The weekly check-in then carries it
+automatically — the patient rates both therapies in one check-in — and the UI
+groups goals by tag.
 
 WHAT THIS BUILD DOES
-- Migration 0079: itb_therapy (one active per patient) + itb_dose_change
-  (titration log, dose in mcg/day) + RLS + start_itb_therapy /
-  log_itb_dose_change RPCs.
-- New ITB track on the clinician patient page (left column):
-  - No active therapy -> a compact "Start ITB track" card.
-  - Active -> current dose, start date, a dose-titration timeline, and a
-    "Log dose change" modal.
-  - No week/peak/video logic — ITB is continuous.
+- Migration 0080: approved_goal.therapy ('bont' default | 'itb') +
+  set_goal_therapy RPC. No change to the check-in submit or any active-cycle
+  resolver.
+- Goal creation: RecordGoalForm / RecordGoalDrawer take an optional therapy;
+  recording from the ITB section tags the new goal 'itb'.
+- Clinician patient page: BoNT goals fill the main list; a new "ITB goals"
+  section (shown when an ITB therapy is active or any ITB goal exists) lists
+  ITB goals with the same progress chart + a "Record ITB goal" action.
+- The patient's weekly check-in lists all active goals (both therapies) since
+  they share the cycle — one check-in, both therapies.
+- i18n (en + da) added; parity balanced.
 
 DEPLOY
-- Run migration 0079 in the Supabase SQL editor. Standalone copy attached.
+- Run migration 0080 in the Supabase SQL editor. Standalone copy attached.
 - Unzip; push to GitHub; Vercel builds on push. Page count 60.
 
 ** QA (please verify — can't be tested here) **
-- Start an ITB track on a test patient; log a few dose changes; confirm the
-  current dose and timeline read correctly.
-- Confirm the BoNT side of the page is completely unchanged.
-- Confirm RLS: a clinician without an active session can't read another
-  patient's ITB therapy/doses.
+- Record an ITB goal from the ITB goals section: it appears there, not in the
+  main BoNT list.
+- The patient's next weekly check-in lists the ITB goal alongside BoNT goals;
+  the submitted rating plots on the ITB goal's chart.
+- BoNT goals and the existing check-in flow are unchanged.
+- Retiring/reactivating an ITB goal works.
 
-REMAINING SLICES (planned)
-- Slice 2: ITB goals + their weekly self-report. Reuse approved_goal /
-  weekly_goal_rating via a baclofen_pump cycle, and make every active-cycle
-  resolver modality-aware (default botulinum_toxin) so two concurrent active
-  cycles never collide. Big, careful — its own pass.
-- Slice 3: patient-facing ITB view; group goals by therapy; optional ITB dose
-  overlay on outcome charts.
+REMAINING (slice 3)
+- Patient-facing ITB view; show the ITB tag on check-in goal cards (data is
+  already wired via CheckinGoal.therapy); optional ITB dose overlay on charts;
+  and — only if a real need emerges — moving ITB goals onto their own
+  baclofen_pump cycle with the full modality-aware resolver work.

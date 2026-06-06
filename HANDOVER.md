@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `itb-therapy-track`._
+> _Last updated for build tag: `itb-goals`._
 
 ---
 
@@ -242,7 +242,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0079**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0080**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -301,9 +301,12 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
   `itb_therapy` + `itb_dose_change` (+ RLS) and `start_itb_therapy` /
   `log_itb_dose_change` RPCs — ITB as a parallel therapy, separate from
   treatment_cycle.
+- `0080_goal_therapy.sql` — **`itb-goals`, RUN THIS.** Adds
+  `approved_goal.therapy` (bont|itb) + `set_goal_therapy` RPC; ITB goals ride
+  the active cycle and are grouped by this tag.
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0079 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy).
+> If unsure whether the user's DB is current, confirm 0062–0080 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag).
 
 ---
 
@@ -624,53 +627,60 @@ the icon row, wearables a gated module with a per-patient enable) →
 **`side-menu-option`** (0078; top-vs-side nav choice at setup + in the account
 menu, with a side rail on the patient page) →
 **`itb-therapy-track`** (0079; intrathecal-baclofen therapy as a parallel
-track with a dose-titration log, separate from the BoNT cycle; current).
+track with a dose-titration log, separate from the BoNT cycle) →
+**`itb-goals`** (0080; goals tagged bont|itb, grouped on the page, both
+therapies rated in one weekly check-in; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-itb-therapy-track.zip`
-- **Tag:** `itb-therapy-track`
-- **Change:** **Slice 1 of ITB + BTX in parallel.** Intrathecal baclofen is a
-  continuous, titrated therapy — not a peak-effect cycle — and crucially every
-  "resolve the patient's active cycle" RPC assumes a SINGLE active cycle, so a
-  second concurrent active `treatment_cycle` would silently break BoNT goal
-  creation / check-in / physio. This slice therefore models ITB as its OWN
-  entity, parallel to the BoNT cycles and touching none of that logic.
-  Migration 0079.
-  - **Migration 0079:** `itb_therapy` (one active per patient via a partial
-    unique index) + `itb_dose_change` (titration log, dose in mcg/day) + RLS
-    select policies (clinician-with-access OR the patient themselves) +
-    `start_itb_therapy` and `log_itb_dose_change` SECURITY DEFINER RPCs.
-  - **Data:** `lib/supabase/itb.ts` — `useItbTherapy` (active therapy + dose
-    changes + derived current dose), `useStartItbTherapy`, `useLogItbDoseChange`.
-  - **UI:** `components/clinician/ItbTrack.tsx` on the clinician patient page
-    (left column). No active therapy → a compact "Start ITB track" card; active
-    → current dose + start date + a dose-titration timeline + a "Log dose
-    change" modal. No week/peak/video logic — ITB is continuous.
-  - **i18n:** `itb.*` (en/da). Parity balanced.
-- **DB needed:** **run migration 0079** (`0079_itb_therapy.sql`). Standalone
+- **Zip:** `treatment-companion-itb-goals.zip`
+- **Tag:** `itb-goals`
+- **Change:** **Slice 2 of ITB + BTX — goals for both therapies in one weekly
+  check-in.** Migration 0080.
+  - **Key realisation:** `weekly_goal_rating` is `(weekly_checkin_id,
+    approved_goal_id)` with NO cycle link, and `submit_weekly_checkin_v4` rates
+    exactly the goals the client passes — it does not restrict to one cycle. So
+    a second concurrent active cycle (which would hijack every "resolve active
+    cycle" RPC) is NOT needed. Instead an ITB goal rides the patient's existing
+    active cycle and is simply TAGGED.
+  - **Migration 0080:** `approved_goal.therapy` (`'bont'` default | `'itb'`,
+    checked) + `set_goal_therapy(p_goal_id, p_therapy)` RPC (clinician-access
+    checked; kept separate from the create RPCs so their signatures are
+    untouched). No change to the check-in submit or any active-cycle resolver.
+  - **Data:** `ClinicianPatientGoal.therapy` + `CheckinGoal.therapy` read from
+    the column; `useSetGoalTherapy` hook.
+  - **Goal creation:** `RecordGoalForm`/`RecordGoalDrawer` gained an optional
+    `therapy` prop; when `'itb'`, the recorded goal is tagged via
+    `set_goal_therapy` right after creation (the create RPC still returns the
+    new id).
+  - **Patient page:** goals split by therapy — BoNT goals fill the main list;
+    a new **ITB goals** section (shown when an ITB therapy is active or any ITB
+    goal exists) lists them with the same progress chart + a "Record ITB goal"
+    action. Because ITB goals share the active cycle, the patient's weekly
+    check-in carries them automatically — one check-in rates both therapies.
+  - **i18n:** `clinician.patient.{itbGoalsTitle,itbGoalsEmpty,itbRecordGoal}` +
+    `patient.checkin.itbTag` (en/da). Parity balanced.
+- **DB needed:** **run migration 0080** (`0080_goal_therapy.sql`). Standalone
   copy attached.
-- **⚠ QA (can't test here):** start an ITB track on a test patient; log a few
-  dose changes and confirm the current dose + timeline read correctly; confirm
-  the BoNT side of the page is completely unchanged; confirm a second clinician
-  without an active session can't read another patient's ITB (RLS).
-- **ITB + BTX — remaining slices (planned):**
-  - **Slice 2:** ITB *goals* + their weekly self-report. These reuse
-    `approved_goal` / `weekly_goal_rating`, whose FK is to `treatment_cycle`, so
-    this needs a `baclofen_pump` cycle AND every active-cycle resolver
-    (`create_goal_for_patient`, `create_gas_goal_for_patient`,
-    `submit_weekly_checkin*`, the three physio submits, the data hook, the
-    check-in data) made **modality-aware** (default `botulinum_toxin`) so two
-    concurrent active cycles don't collide. Big, careful, its own pass.
-  - **Slice 3:** patient-facing ITB view + grouping goals by therapy on the
-    page; optional ITB dose overlay on outcome charts.
+- **⚠ QA (can't test here):** record an ITB goal from the ITB goals section —
+  it should appear there (not the main list); the patient's next weekly
+  check-in should list it alongside BoNT goals and its rating should plot on
+  the ITB goal's chart; BoNT goals/flow unchanged; retiring an ITB goal works.
+- **ITB + BTX — remaining (slice 3):** patient-facing ITB view; show the `itbTag`
+  on the check-in goal cards; optional ITB dose overlay on outcome charts; and
+  (only if a real clinical need emerges) migrating ITB goals onto their own
+  `baclofen_pump` cycle with the full modality-aware resolver work.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`itb-therapy-track`** — zip `treatment-companion-itb-therapy-track.zip`
+  (migration 0079). ITB modelled as its own therapy entity with a
+  dose-titration log (`itb_therapy` + `itb_dose_change`), parallel to the BoNT
+  cycle; ITB track module on the clinician patient page.
 - **`side-menu-option`** — zip `treatment-companion-side-menu-option.zip`
   (migration 0078). Top-vs-side navigation choice for the patient page, picked
   at setup (illustrated) and in the account menu; `PatientActionRow` gained a
