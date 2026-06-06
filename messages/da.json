@@ -224,7 +224,14 @@
       "timeoutTitle": "Sessionen er afsluttet",
       "timeoutBody": "Din session blev afsluttet på grund af inaktivitet. Bed patienten om en ny besøgskode for at fortsætte.",
       "endSessionError": "Sessionen kunne ikke afsluttes. Prøv venligst igen.",
-      "done": "Færdig"
+      "done": "Færdig",
+      "switchPatient": "Skift patient",
+      "open": "Åbn",
+      "reopen": "Genåbn",
+      "openHeading": "Åbne patienter",
+      "openHint": "Skift tilbage uden kode.",
+      "reopenHeading": "Set tidligere i dag",
+      "reopenHint": "Genåbn uden ny kode."
     },
     "history": {
       "linkLabel": "Se historik på tværs af cyklusser",

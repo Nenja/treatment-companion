@@ -220,7 +220,14 @@
       "timeoutTitle": "Session ended",
       "timeoutBody": "Your session ended after a period of inactivity. Ask the patient for a new visit code to continue.",
       "endSessionError": "Could not end the session. Please try again.",
-      "done": "Done"
+      "done": "Done",
+      "switchPatient": "Switch patient",
+      "open": "Open",
+      "reopen": "Reopen",
+      "openHeading": "Open patients",
+      "openHint": "Switch back without a code.",
+      "reopenHeading": "Seen earlier today",
+      "reopenHint": "Reopen without a new code."
     },
     "history": {
       "linkLabel": "View history across cycles",
