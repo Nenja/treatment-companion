@@ -120,6 +120,36 @@ export default function PatientHomePage() {
             </p>
           </Card>
         </div>
+
+        {/* Pre-visit goal capture. A patient can suggest goals before any
+            cycle exists; the clinician reviews and sets them up to track at
+            the visit. This turns the otherwise dead-end empty state into a
+            real next action. */}
+        <div className="mt-4">
+          <Card tone="muted">
+            <p className="font-display text-[18px] text-ink">
+              {t('noCycleSuggestTitle')}
+            </p>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-ink-soft">
+              {t('noCycleSuggestBody')}
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                router.push(
+                  locale === 'en' ? '/suggest-goal' : `/${locale}/suggest-goal`
+                )
+              }
+              className="mt-3 flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-sage/40 bg-cream-soft px-3 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
+            >
+              <span aria-hidden className="mr-2 text-[17px] leading-none">
+                +
+              </span>
+              {t('suggestGoal')}
+            </button>
+          </Card>
+        </div>
+
         <div className="mt-10">
           <SafetyNotice />
         </div>
