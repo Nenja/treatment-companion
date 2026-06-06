@@ -338,7 +338,11 @@
       "actionWearable": "Wearable data",
       "actionShortWearable": "Wearable",
       "clinicSeriesHeading": "Clinic video assessment",
-      "clinicSeriesHint": "The clinic's GAS score of the standardized clips — one consistent rater, so the trend holds even when the person filming changes."
+      "clinicSeriesHint": "The clinic's GAS score of the standardized clips — one consistent rater, so the trend holds even when the person filming changes.",
+      "banner": {
+        "medication": "Medication",
+        "devices": "Assistive devices"
+      }
     },
     "review": {
       "title": "Review suggestion",
@@ -1223,6 +1227,7 @@
     "gasP2": "much better than expected",
     "videosHeading": "Videos",
     "videoLabel": "{goal} · Week {week}",
-    "videoTitle": "{goal} — Week {week}"
+    "videoTitle": "{goal} — Week {week}",
+    "wearableHeading": "Wearable trend"
   }
 }

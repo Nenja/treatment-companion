@@ -342,7 +342,11 @@
       "actionWearable": "Wearable-data",
       "actionShortWearable": "Wearable",
       "clinicSeriesHeading": "Klinikkens videovurdering",
-      "clinicSeriesHint": "Klinikkens GAS-score af de standardiserede klip — én konsistent bedømmer, så tendensen holder, selv når den, der filmer, skifter."
+      "clinicSeriesHint": "Klinikkens GAS-score af de standardiserede klip — én konsistent bedømmer, så tendensen holder, selv når den, der filmer, skifter.",
+      "banner": {
+        "medication": "Medicin",
+        "devices": "Hjælpemidler"
+      }
     },
     "review": {
       "title": "Gennemgå forslag",
@@ -1227,6 +1231,7 @@
     "gasP2": "meget bedre end forventet",
     "videosHeading": "Videoer",
     "videoLabel": "{goal} · Uge {week}",
-    "videoTitle": "{goal} — Uge {week}"
+    "videoTitle": "{goal} — Uge {week}",
+    "wearableHeading": "Data fra bærbar enhed"
   }
 }
