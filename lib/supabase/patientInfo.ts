@@ -40,6 +40,8 @@ export interface PatientInfo {
   backgroundNotes: string | null;
   sex: Sex | null;
   assistiveDevices: string | null;
+  /** Clinician-set flag to surface the wearable module (0077). */
+  wearableEnabled: boolean;
 }
 
 /**
@@ -56,7 +58,7 @@ export function usePatientInfo(patientId: string | null) {
       const { data, error } = await supabase
         .from('patient')
         .select(
-          'id, date_of_birth, etiology, etiology_detail, affected_side, onset_year, ambulation, background_notes, sex, physio_assistive_devices, profile:profile_id (display_name)'
+          'id, date_of_birth, etiology, etiology_detail, affected_side, onset_year, ambulation, background_notes, sex, physio_assistive_devices, wearable_enabled, profile:profile_id (display_name)'
         )
         .eq('id', patientId!)
         .maybeSingle();
@@ -77,7 +79,8 @@ export function usePatientInfo(patientId: string | null) {
         backgroundNotes: (data.background_notes as string | null) ?? null,
         sex: (data.sex as Sex | null) ?? null,
         assistiveDevices:
-          (data.physio_assistive_devices as string | null) ?? null
+          (data.physio_assistive_devices as string | null) ?? null,
+        wearableEnabled: Boolean(data.wearable_enabled)
       };
     }
   });
@@ -125,6 +128,29 @@ export function useSetPatientInfo() {
       // info, so any header lines (age, etiology) refresh.
       qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
       qc.invalidateQueries({ queryKey: ['physioPatient'] });
+    }
+  });
+}
+
+/** Toggle the per-patient wearable module flag (0077). Separate from the
+ *  full patient-info save so it can be set on its own. */
+export function useSetPatientWearableEnabled() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      patientId: string;
+      enabled: boolean;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_patient_wearable_enabled', {
+        p_patient_id: input.patientId,
+        p_enabled: input.enabled
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['patientInfo', vars.patientId] });
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
     }
   });
 }

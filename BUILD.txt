@@ -1,35 +1,38 @@
-BUILD: recorder-upload-clinic-overlay   (two follow-ups, NO migration)
+BUILD: training-row-wearable-module   (patient-page layout corrections)
 =========================================================================
-1) RECORDER FILE-UPLOAD FALLBACK
-   The video recorder now offers "Attach a file" next to live recording:
-   - On a clinic desktop without a webcam, attach a video you already have.
-   - On a phone, the same control still offers the camera (capture attribute).
-   - The option also appears on the camera-error screen and when the browser
-     can't record at all.
-   Picked files are checked (must be a video, max 200 MB), previewed, then kept
-   through the same path as a recorded clip. This benefits both the patient
-   check-in recorder and the clinician baseline recorder.
+1) "Start treatment cycle" moved to the TOP of the left context column
+   (above the patient banner), as a normal-size primary button instead of a
+   full-width block buried at the bottom — leads the visit without shouting.
 
-2) CLINIC vs PATIENT 0–10 ON THE NRS TREND
-   For NRS goals, the clinic's 0–10 video score is now overlaid on the goal's
-   own trend chart as a distinct dark dotted line with square markers — beside
-   the patient's sage self-report line (and the amber physiotherapist line when
-   present). A legend entry and a tap-to-read caption are included. GAS goals
-   are unchanged (they keep their separate clinic trend chart).
+2) TRAINING is now in the icon row (medication / physio / history / export /
+   training). It opens an inline panel with the training-days overview, which
+   was previously an always-on section in the goals column.
+
+3) WEARABLES left the icon row and became its own module in the left column,
+   shown ONLY when:
+     - a clinician has enabled wearables for the patient (new toggle on the
+       patient-information page), OR
+     - the patient already has wearable observations.
+   The "or has data" rule means automated pairing will surface it later with no
+   further change. The module links to the existing /clinician/observations.
+
+MIGRATION 0077 (run in Supabase SQL editor; standalone copy attached)
+   - patient.wearable_enabled (bool, default false)
+   - set_patient_wearable_enabled(p_patient_id, p_enabled) RPC
+     (clinician/therapist + active session; separate from set_patient_info).
 
 DEPLOY
-- No database migration. Unzip; push to GitHub; Vercel builds on push.
-- Page count 60.
+   Run 0077, then unzip / push to GitHub / Vercel builds. Page count 60.
 
 ** QA (please verify — can't be tested here) **
-- File picker: choosing a video attaches + previews; the kept clip uploads and
-  plays back like a recorded one. Check on a real webcam-less desktop AND a
-  phone. Oversize / non-video files show the friendly error.
-- NRS chart: the clinic 0–10 square(s) land at the right week and value beside
-  the patient line; tapping that week shows the clinic value in the caption.
-- Recording/playback still need a real device; storage/RLS unchanged here.
+   - Icon row shows Training (opens the panel) and no longer shows Wearable.
+   - The wearable module appears only when enabled on the patient-info page OR
+     when observations exist; the toggle persists after Save.
+   - Start-cycle reads as primary but not overpowering, at the top of the
+     context column.
 
-CONTEXT
-- This completes the video/baseline arc: Pass A (NRS baseline+target), Pass B
-  (in-clinic baseline clip), Pass C (quick-score queue, migration 0076), and
-  now these two follow-ups.
+NOT IN THIS BUILD (agreed next)
+   - Side-menu layout option + setup chooser (top vs side, both kept), using
+     the approved illustrations.
+   - ITB + BTX modelling (recommendation noted; pending how common the combo is
+     in your practice).

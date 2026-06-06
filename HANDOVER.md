@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `recorder-upload-clinic-overlay`._
+> _Last updated for build tag: `training-row-wearable-module`._
 
 ---
 
@@ -242,7 +242,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0076**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0077**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -292,9 +292,12 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 - `0076_clinic_video_nrs.sql` — **`video-score-queue`, RUN THIS.** Adds
   `weekly_goal_rating.clinic_video_nrs` (0–10) + `set_clinic_video_nrs` RPC
   (NRS clips scored on the patient's 0–10 axis; GAS stays on −2..+2).
+- `0077_wearable_enabled.sql` — **`training-row-wearable-module`, RUN THIS.**
+  Adds `patient.wearable_enabled` + `set_patient_wearable_enabled` RPC; gates
+  the patient-page wearable module.
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0076 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS).
+> If unsure whether the user's DB is current, confirm 0062–0077 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled).
 
 ---
 
@@ -609,49 +612,58 @@ video goal; patient sees it as a reference at the weeks-6–8 check-in) →
 **`video-score-queue`** (0076; per-visit quick-score queue over unscored peak
 clips, baseline shown beside each, GAS anchors or NRS 0–10) →
 **`recorder-upload-clinic-overlay`** (no migration; recorder file-upload
-fallback for webcam-less desktops + clinic 0–10 overlaid on the NRS trend;
-current).
+fallback for webcam-less desktops + clinic 0–10 overlaid on the NRS trend) →
+**`training-row-wearable-module`** (0077; start-cycle moved up, training into
+the icon row, wearables a gated module with a per-patient enable; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-recorder-upload-clinic-overlay.zip`
-- **Tag:** `recorder-upload-clinic-overlay`
-- **Change:** Two small follow-ups. **No migration.**
-  - **Recorder file-upload fallback** (`components/wizard/GoalVideoRecorder.tsx`):
-    an "Attach a file" option (`<input type="file" accept="video/*" capture>`)
-    alongside live recording — covers a webcam-less clinic desktop, and on a
-    phone the `capture` attribute still offers the camera. Picked files are
-    validated (must be video, ≤200 MB), previewed, then kept via the same
-    `onChange(RecordedVideo)` path (ext mapped to webm/mp4). The upload option
-    also shows on the camera-error screen and when `MediaRecorder` is
-    unsupported. Benefits every recorder surface (patient check-in + the
-    clinician baseline modal) for free.
-  - **Clinic-vs-patient 0–10 on the NRS trend** (`GoalProgressView`): a new
-    optional `clinicPoints` series, drawn as a distinct dark dotted line +
-    filled squares (vs patient sage circles / physio amber diamonds), with a
-    legend entry and a caption line. The patient page assembles
-    `clinicPointsByGoal` from each NRS goal's `clinicVideoNrs` per week and
-    passes it to both the inline chart and the enlarged `GoalGraphModal`. GAS
-    goals are unchanged (they keep the separate clinic trend chart below the
-    main chart); only NRS goals get the overlay.
-  - **i18n:** `goalVideo.{orLabel,uploadCta,uploadHint,fileNotVideo,
-    fileTooLarge}` + `treatment.clinicVideoLine` (en/da). Parity balanced.
-- **DB needed:** none.
-- **⚠ QA (can't test here):** the file picker accepts a video and the kept clip
-  uploads + plays back like a recorded one (check on a real webcam-less desktop
-  and a phone); oversize / non-video files show the friendly error; the clinic
-  0–10 square(s) land at the right week/value on the NRS chart beside the
-  patient line, and the caption shows the clinic value when that week is tapped.
-- **NOT in this build / open ideas:** measuring uploaded-clip duration (the
-  ≥3s floor is skipped for uploads); a clinic-vs-patient delta callout; GAS
-  clinic overlay on the main chart (currently a separate chart).
+- **Zip:** `treatment-companion-training-row-wearable-module.zip`
+- **Tag:** `training-row-wearable-module`
+- **Change:** Patient-page layout corrections. Migration 0077.
+  - **Start-cycle moved up:** the "Start treatment cycle" button now sits at
+    the TOP of the left context column (above the patient banner) as a
+    normal-size primary button, instead of a full-width block buried at the
+    bottom.
+  - **Training into the icon row:** the action row is now medication / physio /
+    history / export / **training**. Training opens an inline panel showing the
+    `TrainingOverview` (moved out of the always-on right-column section).
+  - **Wearables out of the icon row → gated module:** wearable left the action
+    row. A new left-column "Wearable" module shows only when
+    `patientInfo.wearableEnabled` OR the patient has observations (so automated
+    pairing later surfaces it with no change). It links to
+    `/clinician/observations` (the existing wearable view).
+  - **Migration 0077:** `patient.wearable_enabled` (bool, default false) +
+    `set_patient_wearable_enabled(p_patient_id, p_enabled)` RPC (clinician/
+    therapist + active-session check; kept separate from `set_patient_info` so
+    that RPC's signature is untouched).
+  - **Patient-info page:** a wearable-tracking toggle (read row + edit switch);
+    saved alongside the rest on Save via the new RPC. `PatientInfo.wearableEnabled`
+    + `useSetPatientWearableEnabled` added.
+  - **i18n:** renamed `clinician.patient.action{,Short}Wearable` →
+    `…Training`; added training-panel + wearable-module strings +
+    `patientInfo.wearable*` (en/da). Parity balanced.
+- **DB needed:** **run migration 0077** (`0077_wearable_enabled.sql`).
+  Standalone copy attached.
+- **⚠ QA (can't test here):** the icon row shows Training (opens the training
+  panel) and no longer shows Wearable; the wearable module appears only when
+  enabled on the patient-info page or when observations exist; the toggle
+  persists; start-cycle reads as primary-but-not-shouting at the top.
+- **NOT in this build (agreed next):** the **side-menu layout option + setup
+  chooser** (top vs side, with the approved illustrations — keep BOTH options);
+  and the **ITB + BTX** modelling question (recommendation logged in §8; awaiting
+  how common the combination is).
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`recorder-upload-clinic-overlay`** — zip
+  `treatment-companion-recorder-upload-clinic-overlay.zip` (no migration).
+  Recorder file-upload fallback for webcam-less desktops; clinic 0–10 overlaid
+  on the NRS trend chart.
 - **`video-score-queue`** — zip `treatment-companion-video-score-queue.zip`
   (migration 0076). Per-visit clinician quick-score queue over unscored
   peak-effect clips: each shown beside its baseline, GAS anchors or NRS 0–10,
