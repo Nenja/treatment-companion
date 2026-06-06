@@ -182,7 +182,8 @@
       "gasMeaningLess": "Less than expected",
       "gasMeaningMuchLess": "Much less than expected",
       "baselineRefTitle": "Watch the starting point",
-      "baselineRefHint": "Here's the clip from the clinic. Record the same task the same way."
+      "baselineRefHint": "Here's the clip from the clinic. Record the same task the same way.",
+      "itbTag": "ITB"
     }
   },
   "domain": {
@@ -357,7 +358,10 @@
       "wearableModuleTitle": "Wearable",
       "wearableModuleOpen": "Open",
       "wearableModuleHasData": "This patient has wearable data. Open to view the readings.",
-      "wearableModuleNoData": "Wearable tracking is on for this patient. No readings yet."
+      "wearableModuleNoData": "Wearable tracking is on for this patient. No readings yet.",
+      "itbGoalsTitle": "ITB goals",
+      "itbGoalsEmpty": "No ITB goals recorded yet.",
+      "itbRecordGoal": "Record ITB goal"
     },
     "review": {
       "title": "Review suggestion",

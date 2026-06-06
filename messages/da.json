@@ -186,7 +186,8 @@
       "gasMeaningLess": "Mindre end forventet",
       "gasMeaningMuchLess": "Meget mindre end forventet",
       "baselineRefTitle": "Se udgangspunktet",
-      "baselineRefHint": "Her er klippet fra klinikken. Optag den samme opgave på samme måde."
+      "baselineRefHint": "Her er klippet fra klinikken. Optag den samme opgave på samme måde.",
+      "itbTag": "ITB"
     }
   },
   "domain": {
@@ -361,7 +362,10 @@
       "wearableModuleTitle": "Wearable",
       "wearableModuleOpen": "Åbn",
       "wearableModuleHasData": "Denne patient har wearable-data. Åbn for at se målingerne.",
-      "wearableModuleNoData": "Wearable-sporing er slået til for denne patient. Ingen målinger endnu."
+      "wearableModuleNoData": "Wearable-sporing er slået til for denne patient. Ingen målinger endnu.",
+      "itbGoalsTitle": "ITB-mål",
+      "itbGoalsEmpty": "Ingen ITB-mål registreret endnu.",
+      "itbRecordGoal": "Registrér ITB-mål"
     },
     "review": {
       "title": "Gennemgå forslag",
