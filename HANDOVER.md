@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `clinic-video-scoring`._
+> _Last updated for build tag: `edit-video-protocol`._
 
 ---
 
@@ -571,57 +571,52 @@ videos via signed URLs — reuses the 0062 `goal-videos` bucket) →
 **`guided-capture`** (0071; standardized video task protocol + guided capture
 — same task every week for rotating informants) →
 **`clinic-video-scoring`** (0072; clinic scores each standardized clip on GAS
-levels — the authoritative one-rater outcome series, + unusable mark; current).
+levels — the authoritative one-rater outcome series, + unusable mark) →
+**`clinic-trend-chart`** (no migration; charts the clinic-scored series as its
+own "Clinic video assessment" GAS trend under each goal) →
+**`edit-video-protocol`** (no migration; video request + task protocol now
+editable on an existing goal, not just at creation; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-clinic-video-scoring.zip`
-- **Tag:** `clinic-video-scoring`
-- **Change:** **clinic-side structured scoring** of the standardized videos —
-  slice 2 of "separate capturing from judging". The clinician scores each clip
-  on the goal's GAS levels (−2..2), producing the authoritative, one-rater
-  outcome that stays comparable week to week even as the at-home informant
-  rotates; plus an off-protocol / unusable mark that excludes a clip from that
-  series.
-  - **Schema (migration 0072):** `weekly_goal_rating` gains
-    `clinic_video_rating` (−2..2), `clinic_video_unusable`,
-    `clinic_video_scored_by`, `clinic_video_scored_at`, plus a
-    `set_clinic_video_score(rating, score, unusable)` security-definer RPC
-    (unusable wins → clears the numeric score). Additive; a video with no score
-    reads as "pending".
-  - **Scoring UI:** `VideoPlayerModal` gained an optional `scoring` panel — the
-    clinician watches the clip and picks a GAS level in the same view. For GAS
-    goals the buttons show the goal's own anchor text; for NRS goals they show
-    generic level meanings. An "unusable" toggle and a Save sit beneath.
-    Mutation via the new `useSetClinicVideoScore` hook.
-  - **Where:** launched from the per-clip play buttons in `VisitChanges`
-    (video-playback build), which now also show a **score badge** (Clinic +1 /
-    Unusable / Not scored). Needed threading the rating `id` +
-    `clinic_video_rating` + `clinic_video_unusable` into the clinician check-in
-    data (select + type + map).
-  - **i18n:** `clinician.video.score.*` (heading, intro, the five GAS level
-    meanings, unusable, save, and the three badges) (en/da). Parity
-    1097 == 1097.
-- **DB needed:** **run migration 0072** (`0072_clinic_video_score.sql`).
-  Additive, safe to re-run. Standalone copy attached.
-- **What this completes / what's left:** capture (0071) + judging (0072) now
-  give a clean, informant-independent series in the data. Still open: a
-  **visualization** of the clinic-scored series as its own trend line/graph
-  (today the scores are stored + shown per clip as badges, not yet charted),
-  and editing a video protocol on an existing goal. See §8.
-- **⚠ QA (can't test playback / DB here):** with a patient who recorded a
-  standardized clip, open it from the visit summary, pick a GAS level (confirm
-  GAS goals show the goal's anchor text, NRS goals show generic meanings),
-  Save, and confirm the badge updates to "Clinic ±n"; mark another clip
-  unusable and confirm the badge + that it's excluded from any series use.
-  Confirm a clinician without an active session can't score (RPC denies).
+- **Zip:** `treatment-companion-edit-video-protocol.zip`
+- **Tag:** `edit-video-protocol`
+- **Change:** the video request + task protocol can now be **edited on an
+  existing goal** (previously only settable at goal creation). **Frontend only
+  — no migration**; reuses the 0071/0062 RPCs.
+  - New `components/clinician/VideoProtocolEditor.tsx` — a modal that toggles
+    the check-in video on/off and edits the recipe (instruction / framing /
+    target length), via the existing `useSetGoalVideoEnabled` +
+    `useSetGoalVideoProtocol` hooks.
+  - Opened from a new **"Video task"** button next to each goal's Retire
+    button on the clinician patient view.
+  - The clinician goal data now carries the current video settings
+    (`videoEnabled` + `videoTask*` added to `ClinicianPatientGoal` + the goal
+    select/map) so the editor opens pre-filled.
+  - **i18n:** `clinician.videoProtocol.*` (en/da). Parity 1112 == 1112.
+- **DB needed:** **none** — migration count stays at **0072**.
+- **⚠ QA (can't render here):** on a goal with no video, open "Video task",
+  enable it, fill the recipe, save, and confirm a check-in then offers the
+  guided recorder; on a goal that already has video, confirm the editor opens
+  pre-filled and edits persist; confirm disabling video stops offering it.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`clinic-trend-chart`** — zip `treatment-companion-clinic-trend-chart.zip`
+  (no migration). Charts the clinic-scored video series as its own "Clinic
+  video assessment" GAS trend under each goal's patient chart (reuses
+  `GoalProgressView` kind=gas; no SVG edits; avoids NRS/GAS axis mixing).
+- **`clinic-video-scoring`** — zip `treatment-companion-clinic-video-scoring.zip`
+  (migration **0072**). Clinic-side structured scoring of the standardized
+  videos: `weekly_goal_rating.clinic_video_*` + `set_clinic_video_score` RPC;
+  a scoring panel in `VideoPlayerModal` (GAS levels — goal anchors for GAS
+  goals, generic meanings for NRS — plus an unusable toggle); score badges on
+  the `VisitChanges` clips. The authoritative one-rater outcome. **Run
+  migration 0072.**
 - **`guided-capture`** — zip `treatment-companion-guided-capture.zip` (migration
   **0071**). Standardized video task protocol + guided capture: the clinician
   defines a per-goal recipe (`approved_goal.video_task_*` +
@@ -712,13 +707,18 @@ levels — the authoritative one-rater outcome series, + unusable mark; current)
 0. **Informant-independent capture (lever 3).** Slice 1 (`guided-capture`,
    0071) standardized the capture; slice 2 (`clinic-video-scoring`, 0072) added
    the clinic GAS scoring + unusable mark, so the authoritative one-rater
-   series now exists in the data. **Still open:** (a) a **visualization** of
-   the clinic-scored series as its own trend line/graph (scores are stored +
-   shown per clip as badges, not yet charted alongside the at-home ratings);
-   (b) editing a video protocol on an *existing* goal (today set only at goal
-   creation, since video is only enabled there); (c) standardized framing is
-   the precondition for later automated movement scoring (WP5), still
-   "informs, clinician decides".
+   series now exists in the data. **Still open:** (a) DONE in `clinic-trend-chart` —
+   the clinic-scored series is charted as its own "Clinic video assessment"
+   GAS trend under each goal; (b) DONE in `edit-video-protocol` —
+   the video request + task protocol are now editable on an existing goal;
+   (c) standardized framing is the precondition for later automated movement
+   scoring (WP5) — **NOT built, and not a code drop**: it needs an actual model
+   + clinical validation + an MDR determination, and would cross the
+   "informs, clinician decides" line the scope sets. The DATA readiness already
+   exists (the `observation` store can hold a machine-derived signal as a
+   distinct, clearly-labelled, advisory source, separate from and never
+   overwriting the clinic's human `clinic_video_rating`). Build the explicit AI
+   lane only once there is a validated model to feed it.
 
 1. **(DONE in `video-playback`)** Clinician video playback (signed-URL
    `<video>` via `useGoalVideoUrl` + `VideoPlayerModal`, launched from

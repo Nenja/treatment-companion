@@ -26,6 +26,12 @@ export interface ClinicianPatientGoal {
   nrs?: NrsConfig;
   /** Present for GAS goals; undefined for NRS goals. */
   gas?: GasAnchors;
+  /** Whether a check-in video is requested for this goal. */
+  videoEnabled: boolean;
+  /** Standardized task protocol (0071); null when unset. */
+  videoTaskInstruction: string | null;
+  videoTaskSetup: string | null;
+  videoTaskSeconds: number | null;
 }
 
 export interface ClinicianPatientSuggestion {
@@ -257,7 +263,7 @@ export function useClinicianPatientData(
           supabase
             .from('approved_goal')
             .select(
-              'id, patient_facing_text, smart_text, goal_kind, goal_outcome, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2, status'
+              'id, patient_facing_text, smart_text, goal_kind, goal_outcome, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2, status, video_enabled, video_task_instruction, video_task_setup, video_task_seconds'
             )
             .eq('treatment_cycle_id', cycle.id)
             .order('approved_at', { ascending: true }),
@@ -358,7 +364,12 @@ export function useClinicianPatientData(
                     plus1: g.anchor_plus1 as string,
                     plus2: g.anchor_plus2 as string
                   }
-                : undefined
+                : undefined,
+            videoEnabled: (g.video_enabled as boolean) ?? false,
+            videoTaskInstruction:
+              (g.video_task_instruction as string | null) ?? null,
+            videoTaskSetup: (g.video_task_setup as string | null) ?? null,
+            videoTaskSeconds: (g.video_task_seconds as number | null) ?? null
           };
         }
       );

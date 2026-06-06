@@ -1,61 +1,36 @@
-BUILD: clinic-video-scoring
+BUILD: edit-video-protocol
 =========================================================================
 WHAT THIS BUILD DOES
-Adds CLINIC-SIDE STRUCTURED SCORING of the standardized check-in videos —
-slice 2 of "separate capturing from judging". Slice 1 (guided-capture) made
-the capture standardized; this makes the judging consistent: the clinician
-scores each clip on the goal's GAS levels (-2..2), producing an
-authoritative outcome rated by ONE consistent assessor (the clinic), which
-stays comparable week to week even as the at-home informant rotates. An
-"off-protocol / unusable" mark excludes a clip from that series.
-
-Additive: a video with no score reads as "pending".
+Lets the clinician edit the check-in video request + standardized task
+protocol on an EXISTING goal. Until now these could only be set when the
+goal was first created. NO DATABASE MIGRATION — frontend only; it reuses
+the set_approved_goal_video_enabled (0062) and set_goal_video_protocol
+(0071) RPCs.
 
 CHANGES
-- NEW supabase/migrations/0072_clinic_video_score.sql:
-    * weekly_goal_rating gains clinic_video_rating (-2..2),
-      clinic_video_unusable, clinic_video_scored_by, clinic_video_scored_at.
-    * set_clinic_video_score(rating, score, unusable) security-definer RPC
-      (same access check as the other goal-video RPCs; "unusable" clears the
-      numeric score so the clip drops out of the series).
-- components/clinician/VideoPlayerModal.tsx: optional scoring panel. The
-  clinician watches the clip and picks a GAS level in the same view. GAS
-  goals show the goal's own anchor text on each level; NRS goals show
-  generic level meanings. Plus an "unusable" toggle and Save.
-- components/clinician/VisitChanges.tsx: the per-clip play buttons now show a
-  score badge (Clinic +1 / Unusable / Not scored) and open the scoring view.
-- lib/supabase/clinicianPatient.ts: rating id + clinic score threaded into
-  the clinician check-in data; new useSetClinicVideoScore hook.
-- i18n: clinician.video.score.* (en + da). Parity 1097 == 1097.
-
-DATABASE / MIGRATIONS
-- RUN migration 0072 (0072_clinic_video_score.sql) in the Supabase SQL
-  editor. Additive, safe to re-run. Standalone copy attached.
-- (A fresh environment also needs 0067-0071 applied.)
+- NEW components/clinician/VideoProtocolEditor.tsx — a modal that toggles
+  the check-in video on/off and edits the recipe (instruction / framing /
+  target length), via the existing useSetGoalVideoEnabled +
+  useSetGoalVideoProtocol hooks.
+- app/[locale]/clinician/patient/page.tsx — a new "Video task" button next
+  to each goal's Retire button opens the editor, pre-filled.
+- lib/supabase/clinicianPatient.ts — the clinician goal now carries its
+  current video settings (videoEnabled + videoTask* added to the goal
+  type/select/map) so the editor opens with the existing values.
+- i18n: clinician.videoProtocol.* (en + da). Parity 1112 == 1112.
 
 DEPLOY
-1. Run 0072 in Supabase SQL editor.
-2. Unzip; push to GitHub; Vercel builds on push. Page count unchanged (60).
+1. Unzip; push to GitHub; Vercel builds on push. Page count unchanged (60).
+2. No SQL to run.
 
-HOW TO CONFIRM IT WORKED (needs a real browser + Supabase + a recorded
-clip — cannot be tested in this environment)
-- As a clinician with a patient who recorded a standardized clip, open it
-  from the "since last visit" summary.
-- Pick a GAS level: a GAS goal should show the goal's own anchor text on the
-  buttons; an NRS goal should show the generic level meanings. Save, and
-  confirm the clip's badge updates to "Clinic +/-n".
-- Mark another clip "unusable" and confirm the badge shows Unusable and the
-  numeric score is cleared.
-- Negative check: a clinician without an active session for that patient
-  cannot score (the RPC denies it).
-
-WHAT THIS DOES NOT DO (see HANDOVER section 8)
-- It does not yet CHART the clinic-scored series as its own trend line
-  alongside the at-home ratings — the scores are stored and shown per clip
-  as badges. The graph is the natural next step (slice 3 / visualization).
-- It does not let you edit a video protocol on an existing goal (protocol is
-  set at goal creation, since video is only enabled there).
+HOW TO CONFIRM IT WORKED (needs a real browser + Supabase)
+- On a goal with no video: open "Video task", enable it, fill the recipe,
+  save; a subsequent check-in should offer the guided recorder with that
+  recipe.
+- On a goal that already has video: the editor should open pre-filled, and
+  edits should persist.
+- Disabling video should stop offering the recorder at check-in.
 
 QA FLAGS
-- The score capture is plain UI + DB (lower risk); playback + RLS denial
-  need a real Supabase + browser.
+- Plain UI + existing RPCs; lower risk. Verify the modal layout on a real
+  screen.
