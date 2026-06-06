@@ -373,7 +373,13 @@
       "wearableModuleNoData": "Wearable-sporing er slået til for denne patient. Ingen målinger endnu.",
       "itbGoalsTitle": "ITB-mål",
       "itbGoalsEmpty": "Ingen ITB-mål registreret endnu.",
-      "itbRecordGoal": "Registrér ITB-mål"
+      "itbRecordGoal": "Registrér ITB-mål",
+      "physioVisitsHeading": "Træningsbesøg",
+      "physioVisitsCount": "{count, plural, one {# besøg registreret i denne cyklus} other {# besøg registreret i denne cyklus}}",
+      "physioWeekdaysAria": "Ugedage hvor terapeuten registrerede et besøg",
+      "physioAdjustmentsHeading": "Anmodninger om justering",
+      "physioAdjustmentGoalGone": "(mål ikke længere aktivt)",
+      "physioWorkingOnTag": "Terapeut arbejder med dette"
     },
     "review": {
       "title": "Gennemgå forslag",
@@ -1205,7 +1211,23 @@
     "tabSuggestGoal": "Foreslå mål",
     "tabSuggestMuscle": "Foreslå muskel",
     "tabsAria": "Terapeutopgaver",
-    "actionsAria": "Terapethandlinger"
+    "actionsAria": "Terapethandlinger",
+    "sectionTitle": "Registrér et besøg",
+    "sectionHint": "Når du gemmer, registreres i dag som et træningsbesøg. For hvert mål kan du markere, hvad du arbejder med, vurdere fremgang eller markere, at behandlingen skal justeres — alt efter hvad der passer.",
+    "dateLabel": "Besøgsdato",
+    "workingOn": "Arbejder med dette",
+    "needsAdjustment": "Behandling skal justeres",
+    "adjustmentNoteLabel": "Hvad ville gøre dette mere gennemførligt?",
+    "adjustmentNotePlaceholder": "f.eks. for meget tonus til at strække albuen ved rækkebevægelser — kan næste injektion hjælpe?",
+    "setValueHint": "Flyt skyderen eller brug knapperne for at sætte en værdi.",
+    "notAssessedHint": "Ikke berørt — brug knapperne ovenfor for at inkludere dette mål.",
+    "noteLabel": "Besked til lægen",
+    "noteOptional": "(valgfrit)",
+    "noteHint": "En kort besked, som lægen ser ved næste besøg. Dine egne kliniske notater hører hjemme i dit sædvanlige journalsystem.",
+    "saveAssessment": "{count, plural, one {Gem besøg (# mål)} other {Gem besøg (# mål)}}",
+    "recentTitle": "Seneste besøg",
+    "recentEmpty": "Ingen besøg registreret i denne cyklus endnu.",
+    "recentGoalsRated": "{count, plural, one {# mål vurderet} other {# mål vurderet}}"
   },
   "notifications": {
     "regionAria": "Aktivér notifikationer",

@@ -369,7 +369,13 @@
       "wearableModuleNoData": "Wearable tracking is on for this patient. No readings yet.",
       "itbGoalsTitle": "ITB goals",
       "itbGoalsEmpty": "No ITB goals recorded yet.",
-      "itbRecordGoal": "Record ITB goal"
+      "itbRecordGoal": "Record ITB goal",
+      "physioVisitsHeading": "Therapy visits",
+      "physioVisitsCount": "{count, plural, one {# visit recorded this cycle} other {# visits recorded this cycle}}",
+      "physioWeekdaysAria": "Weekdays the therapist recorded a visit",
+      "physioAdjustmentsHeading": "Adjustment requests",
+      "physioAdjustmentGoalGone": "(goal no longer active)",
+      "physioWorkingOnTag": "Therapist working on this"
     },
     "review": {
       "title": "Review suggestion",
@@ -1201,7 +1207,23 @@
     "tabSuggestGoal": "Suggest goal",
     "tabSuggestMuscle": "Suggest muscle",
     "tabsAria": "Therapist tasks",
-    "actionsAria": "Therapist actions"
+    "actionsAria": "Therapist actions",
+    "sectionTitle": "Record a visit",
+    "sectionHint": "Submitting registers today as a therapy visit. For each goal you can mark what you're working on, rate progress, or flag that treatment needs adjusting — whatever applies.",
+    "dateLabel": "Date of visit",
+    "workingOn": "Working on this",
+    "needsAdjustment": "Needs treatment adjusted",
+    "adjustmentNoteLabel": "What would make this more feasible?",
+    "adjustmentNotePlaceholder": "e.g. too much tone to extend the elbow for reaching — could the next injection help?",
+    "setValueHint": "Move the slider or use the buttons to set a value.",
+    "notAssessedHint": "Not touched — use the buttons above to include this goal.",
+    "noteLabel": "Note for the physician",
+    "noteOptional": "(optional)",
+    "noteHint": "A short message the physician sees at the next visit. Your own clinical notes belong in your usual record system.",
+    "saveAssessment": "{count, plural, one {Save visit (# goal)} other {Save visit (# goals)}}",
+    "recentTitle": "Recent visits",
+    "recentEmpty": "No visits recorded yet this cycle.",
+    "recentGoalsRated": "{count, plural, one {# goal rated} other {# goals rated}}"
   },
   "notifications": {
     "regionAria": "Enable notifications",
