@@ -5,7 +5,16 @@ import { createSupabaseBrowserClient } from './browser';
 
 export interface PhysioGoalRatingInput {
   approvedGoalId: string;
-  nrsValue: number;
+  /** NRS 0–10 for NRS goals, or null (GAS goal / flag-only row). */
+  nrsValue: number | null;
+  /** GAS level −2..+2 for GAS goals, or null (NRS goal / flag-only row). */
+  gasValue?: number | null;
+  /** The therapist is working on this function/goal in their sessions. */
+  workingOn?: boolean;
+  /** Asking the physician to consider adjusting treatment for feasibility. */
+  needsAdjustment?: boolean;
+  /** Short reason for the adjustment request. */
+  adjustmentNote?: string | null;
 }
 
 export interface SubmitPhysioAssessmentInput {
@@ -33,7 +42,11 @@ export function useSubmitPhysioAssessment() {
         p_note: input.note ?? null,
         p_ratings: input.ratings.map((r) => ({
           approved_goal_id: r.approvedGoalId,
-          nrs_value: r.nrsValue
+          nrs_value: r.nrsValue,
+          gas_value: r.gasValue ?? null,
+          working_on: r.workingOn ?? false,
+          needs_adjustment: r.needsAdjustment ?? false,
+          adjustment_note: r.adjustmentNote ?? null
         }))
       });
       if (error) throw error;
@@ -51,7 +64,11 @@ export interface PhysioAssessmentSummary {
   note: string | null;
   ratings: {
     approvedGoalId: string;
-    nrsValue: number;
+    nrsValue: number | null;
+    gasValue: number | null;
+    workingOn: boolean;
+    needsAdjustment: boolean;
+    adjustmentNote: string | null;
   }[];
 }
 
@@ -73,7 +90,7 @@ export function usePhysioAssessments(
       const { data, error } = await supabase
         .from('physio_assessment')
         .select(
-          'id, assessment_date, note, ratings:physio_goal_rating ( approved_goal_id, nrs_value )'
+          'id, assessment_date, note, ratings:physio_goal_rating ( approved_goal_id, nrs_value, gas_value, working_on, needs_adjustment, adjustment_note )'
         )
         .eq('patient_id', patientId!)
         .order('assessment_date', { ascending: false });
@@ -84,10 +101,18 @@ export function usePhysioAssessments(
         note: (a.note as string | null) ?? null,
         ratings: ((a.ratings as Array<{
           approved_goal_id: string;
-          nrs_value: number;
+          nrs_value: number | null;
+          gas_value: number | null;
+          working_on: boolean | null;
+          needs_adjustment: boolean | null;
+          adjustment_note: string | null;
         }> | null) ?? []).map((r) => ({
           approvedGoalId: r.approved_goal_id,
-          nrsValue: r.nrs_value
+          nrsValue: r.nrs_value,
+          gasValue: r.gas_value,
+          workingOn: !!r.working_on,
+          needsAdjustment: !!r.needs_adjustment,
+          adjustmentNote: r.adjustment_note ?? null
         }))
       }));
     }

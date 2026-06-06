@@ -108,7 +108,11 @@ export interface ClinicianPhysioAssessment {
   note: string | null;
   ratings: {
     approvedGoalId: string;
-    nrsValue: number;
+    nrsValue: number | null;
+    gasValue: number | null;
+    workingOn: boolean;
+    needsAdjustment: boolean;
+    adjustmentNote: string | null;
   }[];
 }
 
@@ -292,7 +296,7 @@ export function useClinicianPatientData(
           supabase
             .from('physio_assessment')
             .select(
-              'id, assessment_date, note, ratings:physio_goal_rating (approved_goal_id, nrs_value)'
+              'id, assessment_date, note, ratings:physio_goal_rating (approved_goal_id, nrs_value, gas_value, working_on, needs_adjustment, adjustment_note)'
             )
             .eq('treatment_cycle_id', cycle.id)
             .order('assessment_date', { ascending: true }),
@@ -467,10 +471,18 @@ export function useClinicianPatientData(
         note: (a.note as string | null) ?? null,
         ratings: ((a.ratings as Array<{
           approved_goal_id: string;
-          nrs_value: number;
+          nrs_value: number | null;
+          gas_value: number | null;
+          working_on: boolean | null;
+          needs_adjustment: boolean | null;
+          adjustment_note: string | null;
         }> | null) ?? []).map((r) => ({
           approvedGoalId: r.approved_goal_id,
-          nrsValue: r.nrs_value
+          nrsValue: r.nrs_value,
+          gasValue: r.gas_value,
+          workingOn: !!r.working_on,
+          needsAdjustment: !!r.needs_adjustment,
+          adjustmentNote: r.adjustment_note ?? null
         }))
       }));
 

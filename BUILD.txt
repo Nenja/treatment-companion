@@ -1,36 +1,38 @@
-BUILD: audit-followups   (remaining patient-audit items)
+BUILD: therapist-gas-rating   (GAS-aware therapist rating)
 =========================================================================
-NO MIGRATION — client/copy only.
-
-CONTEXT
-Most remaining audit items were already handled in the code (autoComplete +
-inline password hint on signup; plain-language importance options; the check-in
-already shows a named per-goal progress strip; pre-visit suggestions, status
-echo and check-in undo shipped in earlier builds). This build does the
-genuinely-open ones:
+MIGRATION: 0084_physio_gas_value.sql  — RUN THIS (after 0083).
 
 WHAT THIS BUILD DOES
-- Signup: a patient-only note under the role choice setting expectations — your
-  clinic connects your record at your first visit, and you can start suggesting
-  goals before then.
-- Onboarding: the patient wizard now teaches the visit code BEFORE the check-in
-  (intro -> details -> visit -> checkin -> comfort) — connect first, then learn
-  the weekly rating.
-- Home: a gentle reassurance line under the goals — progress is uneven and a
-  flat week isn't failure; the clinician looks at the whole picture. Shown only
-  when the patient has goals.
+The therapist now rates a GAS goal against its outcome levels/anchors — the
+same five-level picker the patient uses — instead of a bare 0–10 scale. This
+fixes the old lossy behaviour where a GAS goal's 0–10 value was cast to a
+−2..+2 level. NRS goals are unchanged (still 0–10).
+
+SCHEMA (0084)
+- physio_goal_rating + gas_value int (−2..+2 check).
+- new type physio_goal_rating_input_v3 (adds gas_value); submit_physio_assessment
+  recreated with v3 (validates nrs 0–10 and gas −2..+2 independently, each only
+  when present).
+
+CLIENT
+- Therapist progress form renders the GAS picker (with the goal's anchors) for
+  GAS goals and the 0–10 picker for NRS goals; sends nrsValue XOR gasValue by
+  kind.
+- Both chart overlays (therapist page + clinician page) now plot GAS goals from
+  gas_value directly and NRS goals via nrsToGas(nrs_value), and ignore
+  flag-only rows. (Removes the old NRS→GAS cast on the clinician page.)
 
 DEPLOY
-- Unzip; push to GitHub; Vercel builds. Page count 60. No SQL.
+1. Run 0084 in the Supabase SQL editor (after 0083).
+2. Unzip; push to GitHub; Vercel builds. Page count 60.
 
 ** QA (please verify — can't be tested here) **
-- Signup shows the patient note for "Patient" and not for "Therapist".
-- Onboarding step order reads visit -> check-in.
-- The reassurance line appears under the goals when the patient has any.
+- As a therapist, rate a GAS goal: the five anchored levels show (not a 0–10
+  slider); submit succeeds.
+- Rate an NRS goal: the 0–10 picker still shows.
+- The therapist line plots correctly on both the therapist and clinician charts
+  for a GAS goal.
 
-NOT CHANGED (by design / can't action here)
-- Clinic->patient visibility of clinician edits: intentionally upward-only.
-- Visit-code 10-min expiry / no-screen fallback: inherent / clinic-side.
-- Notifications push pipeline: opt-in UI exists; runtime/infra, untestable here.
-- Visual focus-ring / contrast / screen-reader checks: need a rendered build;
-  tap targets and aria-labels look correct in code.
+REMAINING (therapist epic)
+- Suggestion/flag status echo to the therapist; cycle-agnostic therapist
+  suggestions.

@@ -29,6 +29,14 @@ export interface PhysioPatientData {
     cutLow: number;
     cutZero: number;
     cutHigh: number;
+    /** GAS anchor sentences for GAS goals (null for NRS goals). */
+    gas: {
+      minus2: string | null;
+      minus1: string | null;
+      zero: string | null;
+      plus1: string | null;
+      plus2: string | null;
+    } | null;
   }[];
   /**
    * Patient self-reported weekly check-ins for the active cycle, used
@@ -71,7 +79,8 @@ export interface PhysioPatientData {
     note: string | null;
     ratings: {
       approvedGoalId: string;
-      nrsValue: number;
+      nrsValue: number | null;
+      gasValue: number | null;
     }[];
   }[];
 }
@@ -138,7 +147,7 @@ export function usePhysioPatientData(
         const { data: goalRows, error: gErr } = await supabase
           .from('approved_goal')
           .select(
-            'id, patient_facing_text, goal_kind, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high'
+            'id, patient_facing_text, goal_kind, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2'
           )
           .eq('treatment_cycle_id', cycleRow.id as string)
           .eq('status', 'active')
@@ -155,7 +164,17 @@ export function usePhysioPatientData(
           cutLowLow: g.nrs_cut_low_low as number,
           cutLow: g.nrs_cut_low as number,
           cutZero: g.nrs_cut_zero as number,
-          cutHigh: g.nrs_cut_high as number
+          cutHigh: g.nrs_cut_high as number,
+          gas:
+            (g.goal_kind as string) === 'gas'
+              ? {
+                  minus2: (g.anchor_minus2 as string | null) ?? null,
+                  minus1: (g.anchor_minus1 as string | null) ?? null,
+                  zero: (g.anchor_zero as string | null) ?? null,
+                  plus1: (g.anchor_plus1 as string | null) ?? null,
+                  plus2: (g.anchor_plus2 as string | null) ?? null
+                }
+              : null
         }));
 
         // Patient self-reports for this cycle. RLS permits the read
@@ -230,7 +249,7 @@ export function usePhysioPatientData(
         const { data: asRows, error: asErr } = await supabase
           .from('physio_assessment')
           .select(
-            'id, assessment_date, note, ratings:physio_goal_rating (approved_goal_id, nrs_value)'
+            'id, assessment_date, note, ratings:physio_goal_rating (approved_goal_id, nrs_value, gas_value)'
           )
           .eq('treatment_cycle_id', cycleRow.id as string)
           .order('assessment_date', { ascending: true });
@@ -241,10 +260,12 @@ export function usePhysioPatientData(
           note: (a.note as string | null) ?? null,
           ratings: ((a.ratings as Array<{
             approved_goal_id: string;
-            nrs_value: number;
+            nrs_value: number | null;
+            gas_value: number | null;
           }> | null) ?? []).map((r) => ({
             approvedGoalId: r.approved_goal_id,
-            nrsValue: r.nrs_value
+            nrsValue: r.nrs_value,
+            gasValue: r.gas_value
           }))
         }));
       }

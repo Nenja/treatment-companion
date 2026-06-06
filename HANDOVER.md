@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `audit-followups`._
+> _Last updated for build tag: `therapist-gas-rating`._
 
 ---
 
@@ -242,7 +242,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0082**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0084**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -313,7 +313,7 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
   has scored a clip).
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0082 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag, **0081** cycle-agnostic suggestions, **0082** check-in undo).
+> If unsure whether the user's DB is current, confirm 0062–0084 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag, **0081** cycle-agnostic suggestions, **0082** check-in undo, **0083** physio goal signals, **0084** physio GAS value).
 
 ---
 
@@ -647,47 +647,65 @@ suggestions, approval resolves the active cycle) →
 no-cycle home, pending-suggestion status echo on the home) →
 **`checkin-undo`** (0082; patient can undo a just-submitted check-in within
 24h via reopen_weekly_checkin) →
-**`audit-followups`** (no migration; signup expectation note, onboarding visit-
-before-checkin order, home progress reassurance; current).
+**`audit-followups`** (no migration; signup note, onboarding order, progress
+reassurance) →
+**`therapist-signals`** (0083; therapist per-goal signals — working-on,
+needs-adjustment+note, visit auto-registers; capture) →
+**`therapist-signals-physician`** (no migration; surfaces those to the
+physician) →
+**`therapist-gas-rating`** (0084; therapist rates GAS goals against anchors
+via gas_value; overlays corrected; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-audit-followups.zip`
-- **Tag:** `audit-followups`
-- **Change:** **Remaining patient-audit items. No migration (client/copy).**
-  Most audit items turned out already-handled (autoComplete + inline password
-  hint on signup; plain-language importance options; the check-in already
-  passes a named `stepLabels` progress strip; status echo / undo / pre-visit
-  suggestions shipped earlier). The genuinely-open ones done here:
-  - **Signup expectation framing:** a patient-only note under the role choice
-    — "Your clinic connects your record at your first visit; you can start
-    suggesting goals before then." (`signup.patientNote`).
-  - **Onboarding order:** the patient wizard now teaches the **visit code
-    before the check-in** (`intro → details → visit → checkin → comfort`) —
-    connect first, then learn the weekly rating.
-  - **Progress reassurance:** a gentle, honest line under the home goals —
-    progress is uneven and a flat week isn't failure; the clinician looks at
-    the whole picture (`patient.home.progressReassurance`, shown when goals
-    exist).
-  - **i18n:** `signup.patientNote`, `patient.home.progressReassurance` (en/da).
-- **DB needed:** none.
-- **⚠ QA (can't test here):** signup shows the patient note when "Patient" is
-  selected (and not for "Therapist"); onboarding step order reads visit →
-  check-in; the reassurance line shows under the goals when the patient has any.
-- **Audit items NOT changed (by design / can't action here):** clinic→patient
-  visibility of what the clinician added (intentionally upward-only); visit-code
-  10-min expiry + no-screen fallback (inherent / clinic-side); notifications
-  push pipeline (opt-in UI exists; runtime/infra, untestable here); visual
-  focus-ring / colour-contrast / screen-reader checks (need a rendered build —
-  tap targets and aria-labels look right in code). Role two-button kept (defaults
-  to patient; the role hint already explains physicians are clinic-set-up).
+- **Zip:** `treatment-companion-therapist-gas-rating.zip`
+- **Tag:** `therapist-gas-rating`
+- **Migration:** **0084_physio_gas_value.sql** (run it).
+- **Change:** **GAS-aware therapist rating** (audit follow-up). The therapist
+  now rates a **GAS goal against its outcome levels/anchors** (the same five-
+  level picker the patient uses) instead of a bare 0–10 — fixing the old
+  lossy behaviour where a GAS goal's 0–10 value was cast to a −2..+2 level.
+  NRS goals are unchanged.
+- **DB schema (0084):** added `physio_goal_rating.gas_value int` (−2..+2 check).
+  New input type `physio_goal_rating_input_v3` (adds `gas_value`);
+  `submit_physio_assessment` dropped + recreated with v3 (validates nrs 0–10 and
+  gas −2..+2 independently, each only when present).
+- **Client:** `PhysioProgressForm` renders `GasGoalRatingPicker` for GAS goals
+  (anchors fetched), `GoalRatingPicker` for NRS; submit sends `nrsValue` XOR
+  `gasValue` by kind. `physioPatient` goals now carry GAS anchors; both physio
+  assessment reads (physio hook, clinician hook, summary) carry `gas_value`.
+- **Overlays corrected:** the physio AND clinician chart overlays now plot GAS
+  goals from `gas_value` directly and NRS goals via `nrsToGas(nrs_value)`, and
+  skip flag-only rows by the relevant value (removes the old NRS→GAS cast hack
+  on the clinician page).
+- **DB needed:** 0084 (and 0083 before it).
+- **⚠ QA (can't test here):** as a therapist, rate a GAS goal — confirm the
+  five anchored levels show (not a 0–10 slider) and submit succeeds; rate an
+  NRS goal — confirm the 0–10 picker still shows. Then confirm the therapist
+  line plots correctly on both the therapist and clinician charts for a GAS
+  goal.
+- **Next (therapist epic remaining):** suggestion/flag status echo to the
+  therapist; cycle-agnostic therapist suggestions.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`therapist-signals-physician`** — zip
+  `treatment-companion-therapist-signals-physician.zip` (no migration). Surfaces
+  the slice-1 signals to the physician: therapy visit-day strip (count +
+  weekday strip), "working on this" chips on goals, adjustment-requests list.
+- **`therapist-signals`** — zip `treatment-companion-therapist-signals.zip`
+  (migration 0083). Capture slice: per-goal "working on this" + "needs treatment
+  adjusted" (+ short note) flags in the therapist progress form; visit
+  auto-registers on submit; nrs_value nullable; overlay builders skip null-NRS
+  rows.
+- **`audit-followups`** — zip `treatment-companion-audit-followups.zip` (no
+  migration). Remaining patient-audit items: signup expectation note,
+  onboarding visit-before-checkin order, home progress reassurance. (Most other
+  audit items were already handled.)
 - **`checkin-undo`** — zip `treatment-companion-checkin-undo.zip` (migration
   0082). `reopen_weekly_checkin` lets a patient undo a just-submitted check-in
   within 24h (refused once a clinician has scored a clip); "Edit my answers" on
