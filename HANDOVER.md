@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `itb-goals`._
+> _Last updated for build tag: `action-row-tidy`._
 
 ---
 
@@ -629,54 +629,51 @@ menu, with a side rail on the patient page) →
 **`itb-therapy-track`** (0079; intrathecal-baclofen therapy as a parallel
 track with a dose-titration log, separate from the BoNT cycle) →
 **`itb-goals`** (0080; goals tagged bont|itb, grouped on the page, both
-therapies rated in one weekly check-in; current).
+therapies rated in one weekly check-in) →
+**`itb-goals-polish`** (no migration; check-in ITB chip + dose-titration
+markers on ITB goal charts) →
+**`action-row-tidy`** (no migration; reordered patient-page icons, compact
+therapist panel, panels open from the menu; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-itb-goals.zip`
-- **Tag:** `itb-goals`
-- **Change:** **Slice 2 of ITB + BTX — goals for both therapies in one weekly
-  check-in.** Migration 0080.
-  - **Key realisation:** `weekly_goal_rating` is `(weekly_checkin_id,
-    approved_goal_id)` with NO cycle link, and `submit_weekly_checkin_v4` rates
-    exactly the goals the client passes — it does not restrict to one cycle. So
-    a second concurrent active cycle (which would hijack every "resolve active
-    cycle" RPC) is NOT needed. Instead an ITB goal rides the patient's existing
-    active cycle and is simply TAGGED.
-  - **Migration 0080:** `approved_goal.therapy` (`'bont'` default | `'itb'`,
-    checked) + `set_goal_therapy(p_goal_id, p_therapy)` RPC (clinician-access
-    checked; kept separate from the create RPCs so their signatures are
-    untouched). No change to the check-in submit or any active-cycle resolver.
-  - **Data:** `ClinicianPatientGoal.therapy` + `CheckinGoal.therapy` read from
-    the column; `useSetGoalTherapy` hook.
-  - **Goal creation:** `RecordGoalForm`/`RecordGoalDrawer` gained an optional
-    `therapy` prop; when `'itb'`, the recorded goal is tagged via
-    `set_goal_therapy` right after creation (the create RPC still returns the
-    new id).
-  - **Patient page:** goals split by therapy — BoNT goals fill the main list;
-    a new **ITB goals** section (shown when an ITB therapy is active or any ITB
-    goal exists) lists them with the same progress chart + a "Record ITB goal"
-    action. Because ITB goals share the active cycle, the patient's weekly
-    check-in carries them automatically — one check-in rates both therapies.
-  - **i18n:** `clinician.patient.{itbGoalsTitle,itbGoalsEmpty,itbRecordGoal}` +
-    `patient.checkin.itbTag` (en/da). Parity balanced.
-- **DB needed:** **run migration 0080** (`0080_goal_therapy.sql`). Standalone
-  copy attached.
-- **⚠ QA (can't test here):** record an ITB goal from the ITB goals section —
-  it should appear there (not the main list); the patient's next weekly
-  check-in should list it alongside BoNT goals and its rating should plot on
-  the ITB goal's chart; BoNT goals/flow unchanged; retiring an ITB goal works.
-- **ITB + BTX — remaining (slice 3):** patient-facing ITB view; show the `itbTag`
-  on the check-in goal cards; optional ITB dose overlay on outcome charts; and
-  (only if a real clinical need emerges) migrating ITB goals onto their own
-  `baclofen_pump` cycle with the full modality-aware resolver work.
+- **Zip:** `treatment-companion-action-row-tidy.zip`
+- **Tag:** `action-row-tidy`
+- **Change:** **Clinician patient-page action row + panels tidy-up. No
+  migration (client-only).**
+  - **Icon order** is now medication → training → therapist (physio) → history
+    → export (`PatientActionRow` `items`). Applies to all three variants
+    (body row / wide-header toolbar / side rail).
+  - **Therapist panel made compact:** the physio panel header and its goal /
+    flagged-muscle items are smaller and tighter (lighter inner rows, smaller
+    type, less padding) — it was visually heavier than its content warranted.
+  - **Panels now open from the menu:** the action row and its three panels
+    (medication / therapist / training) moved to the TOP of the left context
+    column, right under the Start-new-cycle button. So an opened panel sits
+    directly beneath the menu (under the header toolbar on the wide layout,
+    under the visible in-body row on narrow) instead of far down the column.
+    Single render — the body row's existing `lg:hidden` (wide) keeps it
+    responsive without duplicate mounts. The training icon opens the weekly
+    training calendar (`TrainingOverview`) as before.
+- **DB needed:** none.
+- **⚠ QA (can't test here):** icon order reads medication/training/therapist/
+  history/export; opening any panel shows it right under the menu (check both
+  the wide header-toolbar layout and the narrow in-body row); the therapist
+  panel looks appropriately compact; training opens the calendar.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`itb-goals-polish`** — zip `treatment-companion-itb-goals-polish.zip` (no
+  migration). Check-in ITB chip on ITB goal steps + dose-titration markers on
+  ITB goal charts (`GoalProgressView` `doseMarkers`).
+- **`itb-goals`** — zip `treatment-companion-itb-goals.zip` (migration 0080).
+  Goals tagged `therapy` bont|itb (`set_goal_therapy` RPC); ITB goals ride the
+  active cycle so the weekly check-in rates both therapies at once; clinician
+  page groups them under an "ITB goals" section with a "Record ITB goal" action.
 - **`itb-therapy-track`** — zip `treatment-companion-itb-therapy-track.zip`
   (migration 0079). ITB modelled as its own therapy entity with a
   dose-titration log (`itb_therapy` + `itb_dose_change`), parallel to the BoNT

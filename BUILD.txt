@@ -1,41 +1,25 @@
-BUILD: itb-goals   (ITB + BTX — slice 2: goals for both therapies)
+BUILD: action-row-tidy   (clinician patient-page menu + panels)
 =========================================================================
-THE KEY IDEA
-A weekly_goal_rating just links a check-in to a goal (no cycle constraint), and
-the check-in submit rates exactly the goals the app sends it. So ITB goals do
-NOT need a second active cycle (which would have hijacked every "resolve the
-active cycle" RPC). Instead an ITB goal rides the patient's existing active
-cycle and is simply TAGGED as ITB. The weekly check-in then carries it
-automatically — the patient rates both therapies in one check-in — and the UI
-groups goals by tag.
+NO MIGRATION — client-only. Nothing to run in Supabase.
 
 WHAT THIS BUILD DOES
-- Migration 0080: approved_goal.therapy ('bont' default | 'itb') +
-  set_goal_therapy RPC. No change to the check-in submit or any active-cycle
-  resolver.
-- Goal creation: RecordGoalForm / RecordGoalDrawer take an optional therapy;
-  recording from the ITB section tags the new goal 'itb'.
-- Clinician patient page: BoNT goals fill the main list; a new "ITB goals"
-  section (shown when an ITB therapy is active or any ITB goal exists) lists
-  ITB goals with the same progress chart + a "Record ITB goal" action.
-- The patient's weekly check-in lists all active goals (both therapies) since
-  they share the cycle — one check-in, both therapies.
-- i18n (en + da) added; parity balanced.
+- Reordered the patient-page action icons: medication, training, therapist
+  (physio), history, export. Applies to all layouts (body row, wide header
+  toolbar, side rail).
+- Made the therapist (physio) panel compact: smaller header and tighter goal /
+  flagged-muscle rows — it was heavier than its content warranted.
+- Panels now open FROM the menu: the action row + its panels (medication /
+  therapist / training) moved to the top of the left context column, so an
+  opened panel sits directly under the menu (under the header toolbar on wide,
+  under the in-body row on narrow) instead of far down the column. The training
+  icon opens the weekly training calendar as before.
 
 DEPLOY
-- Run migration 0080 in the Supabase SQL editor. Standalone copy attached.
-- Unzip; push to GitHub; Vercel builds on push. Page count 60.
+- Unzip; push to GitHub; Vercel builds on push. Page count 60. No SQL.
 
 ** QA (please verify — can't be tested here) **
-- Record an ITB goal from the ITB goals section: it appears there, not in the
-  main BoNT list.
-- The patient's next weekly check-in lists the ITB goal alongside BoNT goals;
-  the submitted rating plots on the ITB goal's chart.
-- BoNT goals and the existing check-in flow are unchanged.
-- Retiring/reactivating an ITB goal works.
-
-REMAINING (slice 3)
-- Patient-facing ITB view; show the ITB tag on check-in goal cards (data is
-  already wired via CheckinGoal.therapy); optional ITB dose overlay on charts;
-  and — only if a real need emerges — moving ITB goals onto their own
-  baclofen_pump cycle with the full modality-aware resolver work.
+- Icon order reads medication / training / therapist / history / export.
+- Opening any panel shows it right under the menu — check both the wide
+  header-toolbar layout and the narrow in-body row.
+- The therapist panel looks appropriately compact.
+- Training opens the calendar view.
