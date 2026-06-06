@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `therapist-gas-rating`._
+> _Last updated for build tag: `therapist-cycle-agnostic`._
 
 ---
 
@@ -242,7 +242,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0084**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0085**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -313,7 +313,7 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
   has scored a clip).
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0084 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag, **0081** cycle-agnostic suggestions, **0082** check-in undo, **0083** physio goal signals, **0084** physio GAS value).
+> If unsure whether the user's DB is current, confirm 0062–0085 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag, **0081** cycle-agnostic suggestions, **0082** check-in undo, **0083** physio goal signals, **0084** physio GAS value, **0085** cycle-agnostic physio suggestions).
 
 ---
 
@@ -654,45 +654,58 @@ needs-adjustment+note, visit auto-registers; capture) →
 **`therapist-signals-physician`** (no migration; surfaces those to the
 physician) →
 **`therapist-gas-rating`** (0084; therapist rates GAS goals against anchors
-via gas_value; overlays corrected; current).
+via gas_value; overlays corrected) →
+**`therapist-status-echo`** (no migration; therapist sees physician status on
+their goal/muscle suggestions) →
+**`therapist-cycle-agnostic`** (0085; therapist can suggest pre-cycle; physician
+read widened to null-cycle; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-therapist-gas-rating.zip`
-- **Tag:** `therapist-gas-rating`
-- **Migration:** **0084_physio_gas_value.sql** (run it).
-- **Change:** **GAS-aware therapist rating** (audit follow-up). The therapist
-  now rates a **GAS goal against its outcome levels/anchors** (the same five-
-  level picker the patient uses) instead of a bare 0–10 — fixing the old
-  lossy behaviour where a GAS goal's 0–10 value was cast to a −2..+2 level.
-  NRS goals are unchanged.
-- **DB schema (0084):** added `physio_goal_rating.gas_value int` (−2..+2 check).
-  New input type `physio_goal_rating_input_v3` (adds `gas_value`);
-  `submit_physio_assessment` dropped + recreated with v3 (validates nrs 0–10 and
-  gas −2..+2 independently, each only when present).
-- **Client:** `PhysioProgressForm` renders `GasGoalRatingPicker` for GAS goals
-  (anchors fetched), `GoalRatingPicker` for NRS; submit sends `nrsValue` XOR
-  `gasValue` by kind. `physioPatient` goals now carry GAS anchors; both physio
-  assessment reads (physio hook, clinician hook, summary) carry `gas_value`.
-- **Overlays corrected:** the physio AND clinician chart overlays now plot GAS
-  goals from `gas_value` directly and NRS goals via `nrsToGas(nrs_value)`, and
-  skip flag-only rows by the relevant value (removes the old NRS→GAS cast hack
-  on the clinician page).
-- **DB needed:** 0084 (and 0083 before it).
-- **⚠ QA (can't test here):** as a therapist, rate a GAS goal — confirm the
-  five anchored levels show (not a 0–10 slider) and submit succeeds; rate an
-  NRS goal — confirm the 0–10 picker still shows. Then confirm the therapist
-  line plots correctly on both the therapist and clinician charts for a GAS
-  goal.
-- **Next (therapist epic remaining):** suggestion/flag status echo to the
-  therapist; cycle-agnostic therapist suggestions.
+- **Zip:** `treatment-companion-therapist-cycle-agnostic.zip`
+- **Tag:** `therapist-cycle-agnostic`
+- **Migration:** **0085_cycle_agnostic_physio_suggestions.sql** (run it).
+- **Change:** **Cycle-agnostic therapist suggestions** (final audit item;
+  mirrors the patient fix 0081). A therapist seeing a patient before the first
+  cycle can now suggest a goal / flag a muscle instead of hitting "no active
+  treatment cycle".
+  - **Schema (0085):** `physio_goal_suggestion` + `physio_muscle_suggestion`
+    `treatment_cycle_id` made **nullable**; both submit RPCs
+    (`submit_physio_goal_suggestion`, `submit_physio_muscle_suggestion`)
+    recreated to resolve the active cycle if present and insert a **null cycle**
+    otherwise (no raise). Session/consent gate unchanged.
+  - **No black hole:** the physician's read of physio suggestions
+    (`useClinicianPatient`) now uses `treatment_cycle_id = cycle OR is null`
+    (was cycle-only), so a pre-cycle suggestion surfaces in the Therapist-input
+    panel once a cycle exists.
+  - **Therapist UI:** the no-cycle branch of the therapist page now offers
+    **Suggest a goal** (+ the status echo), so the action is reachable
+    pre-cycle. (Muscle suggestions stay in the with-cycle action row.)
+- **DB needed:** 0085.
+- **⚠ QA (can't test here):** with a patient that has NO active cycle, unlock as
+  a therapist → the no-cycle view offers Suggest a goal; submit one (no error).
+  Then as the physician create the first cycle → the suggestion appears in the
+  Therapist-input panel; mark it considered → the therapist's status echo
+  updates.
+- **Therapist epic COMPLETE.** All audit follow-ups shipped: signals capture
+  (0083), physician surfacing, GAS rating (0084), status echo, cycle-agnostic
+  (0085). Open by-design items remain (recurring/persistent therapist access vs
+  per-visit code; a status loop for adjustment requests) — proposals, not bugs.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`therapist-status-echo`** — zip `treatment-companion-therapist-status-echo.zip`
+  (no migration). Therapist sees the physician's status (awaiting / will take
+  forward / considered / not this time) on their goal + muscle suggestions,
+  under the Suggest panels.
+- **`therapist-gas-rating`** — zip `treatment-companion-therapist-gas-rating.zip`
+  (migration 0084). Therapist rates GAS goals against their anchors via a new
+  `gas_value` column; both chart overlays corrected to plot GAS from gas_value
+  and NRS via nrsToGas.
 - **`therapist-signals-physician`** — zip
   `treatment-companion-therapist-signals-physician.zip` (no migration). Surfaces
   the slice-1 signals to the physician: therapy visit-day strip (count +

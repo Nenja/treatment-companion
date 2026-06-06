@@ -303,7 +303,7 @@ export function useClinicianPatientData(
           supabase
             .from('physio_goal_suggestion')
             .select('id, suggested_goal, rationale, status, created_at')
-            .eq('treatment_cycle_id', cycle.id)
+            .or(`treatment_cycle_id.eq.${cycle.id},treatment_cycle_id.is.null`)
             // Only unhandled suggestions reach the physician's page.
             // Once reviewed/dismissed they drop out of the list — the
             // physician's decision is recorded by the status change.
@@ -314,7 +314,7 @@ export function useClinicianPatientData(
             .select(
               'id, muscle, side, rationale, related_goal_id, status, created_at'
             )
-            .eq('treatment_cycle_id', cycle.id)
+            .or(`treatment_cycle_id.eq.${cycle.id},treatment_cycle_id.is.null`)
             .eq('status', 'needsReview')
             .order('created_at', { ascending: true })
         ]);

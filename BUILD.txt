@@ -1,38 +1,42 @@
-BUILD: therapist-gas-rating   (GAS-aware therapist rating)
+BUILD: therapist-cycle-agnostic   (cycle-agnostic therapist suggestions)
 =========================================================================
-MIGRATION: 0084_physio_gas_value.sql  — RUN THIS (after 0083).
+MIGRATION: 0085_cycle_agnostic_physio_suggestions.sql  — RUN THIS.
 
-WHAT THIS BUILD DOES
-The therapist now rates a GAS goal against its outcome levels/anchors — the
-same five-level picker the patient uses — instead of a bare 0–10 scale. This
-fixes the old lossy behaviour where a GAS goal's 0–10 value was cast to a
-−2..+2 level. NRS goals are unchanged (still 0–10).
+WHAT THIS BUILD DOES (final therapist-audit item)
+A therapist seeing a patient before the first treatment cycle can now suggest a
+goal / flag a muscle, instead of hitting "patient has no active treatment
+cycle". Mirrors the patient-side fix (0081).
 
-SCHEMA (0084)
-- physio_goal_rating + gas_value int (−2..+2 check).
-- new type physio_goal_rating_input_v3 (adds gas_value); submit_physio_assessment
-  recreated with v3 (validates nrs 0–10 and gas −2..+2 independently, each only
-  when present).
+SCHEMA (0085)
+- physio_goal_suggestion + physio_muscle_suggestion: treatment_cycle_id made
+  nullable.
+- Both submit RPCs recreated: resolve the active cycle if present, otherwise
+  insert a null cycle (no raise). Session/consent gate unchanged.
 
-CLIENT
-- Therapist progress form renders the GAS picker (with the goal's anchors) for
-  GAS goals and the 0–10 picker for NRS goals; sends nrsValue XOR gasValue by
-  kind.
-- Both chart overlays (therapist page + clinician page) now plot GAS goals from
-  gas_value directly and NRS goals via nrsToGas(nrs_value), and ignore
-  flag-only rows. (Removes the old NRS→GAS cast on the clinician page.)
+NO BLACK HOLE
+- The physician's read of physio suggestions now matches
+  "treatment_cycle_id = current cycle OR is null" (was cycle-only), so a
+  pre-cycle suggestion shows up in the Therapist-input panel once a cycle
+  exists.
+
+THERAPIST UI
+- The no-cycle view of the therapist page now offers "Suggest a goal" (plus the
+  status echo), so the action is reachable before a cycle. Muscle suggestions
+  remain in the with-cycle action row.
 
 DEPLOY
-1. Run 0084 in the Supabase SQL editor (after 0083).
+1. Run 0085 in the Supabase SQL editor.
 2. Unzip; push to GitHub; Vercel builds. Page count 60.
 
 ** QA (please verify — can't be tested here) **
-- As a therapist, rate a GAS goal: the five anchored levels show (not a 0–10
-  slider); submit succeeds.
-- Rate an NRS goal: the 0–10 picker still shows.
-- The therapist line plots correctly on both the therapist and clinician charts
-  for a GAS goal.
+- With a patient that has NO active cycle, unlock as a therapist: the no-cycle
+  view offers "Suggest a goal"; submit one with no error.
+- As the physician, create the first cycle: the suggestion appears in the
+  Therapist-input panel.
+- Mark it considered: the therapist's status echo updates accordingly.
 
-REMAINING (therapist epic)
-- Suggestion/flag status echo to the therapist; cycle-agnostic therapist
-  suggestions.
+THERAPIST EPIC COMPLETE
+- Shipped: signals capture (0083), physician surfacing, GAS rating (0084),
+  status echo, cycle-agnostic (0085).
+- Open BY DESIGN (proposals, not bugs): persistent/recurring therapist access
+  vs the per-visit code; a status loop for adjustment requests.
