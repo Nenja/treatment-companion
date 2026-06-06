@@ -10,6 +10,8 @@ import {
   useEndClinicianSession
 } from '@/lib/supabase/clinicianSession';
 import { usePhysioPatientData } from '@/lib/supabase/physioPatient';
+import { usePhysioGoalSuggestions } from '@/lib/supabase/physioGoalSuggestion';
+import { usePhysioMuscleSuggestions } from '@/lib/supabase/physioMuscleSuggestion';
 import {
   usePatientInfo,
   formatPatientSummary
@@ -85,6 +87,18 @@ export default function PhysioPatientPage() {
   // patient id resolves from the session.
   const patientInfo = usePatientInfo(sessionQuery.data?.patientId ?? null);
   const endSession = useEndClinicianSession();
+
+  // The therapist's submitted suggestions + the physician's status on
+  // them — surfaced read-only so the therapist sees what came of their
+  // input (status echo). RLS already permits the read during a session.
+  const goalSuggestions = usePhysioGoalSuggestions(
+    sessionQuery.data?.patientId ?? null,
+    !!sessionQuery.data
+  );
+  const muscleSuggestions = usePhysioMuscleSuggestions(
+    sessionQuery.data?.patientId ?? null,
+    !!sessionQuery.data
+  );
 
   // Which inline panel is open under the action row, if any. Only one
   // at a time. Progress reporting is NOT in this set — it's a primary
@@ -507,6 +521,28 @@ export default function PhysioPatientPage() {
                     <PhysioGoalSuggestionForm
                       patientId={patientData.data.patient.id}
                     />
+                    {(goalSuggestions.data ?? []).length > 0 && (
+                      <div className="mt-4">
+                        <h3 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
+                          {t('sentGoalsHeading')}
+                        </h3>
+                        <ul className="mt-2 space-y-2">
+                          {goalSuggestions.data!.map((s) => (
+                            <li
+                              key={s.id}
+                              className="rounded-[var(--radius-button)] border border-stone/70 bg-cream p-2.5"
+                            >
+                              <p className="text-[14px] font-semibold leading-snug text-ink">
+                                {s.suggestedGoal}
+                              </p>
+                              <p className="mt-1">
+                                <SuggestionStatusBadge status={s.status} />
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 )}
                 {openPanel === 'suggestMuscle' && (
@@ -515,6 +551,28 @@ export default function PhysioPatientPage() {
                       patientId={patientData.data.patient.id}
                       goals={patientData.data.goals}
                     />
+                    {(muscleSuggestions.data ?? []).length > 0 && (
+                      <div className="mt-4">
+                        <h3 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
+                          {t('sentMusclesHeading')}
+                        </h3>
+                        <ul className="mt-2 space-y-2">
+                          {muscleSuggestions.data!.map((s) => (
+                            <li
+                              key={s.id}
+                              className="rounded-[var(--radius-button)] border border-stone/70 bg-cream p-2.5"
+                            >
+                              <p className="text-[14px] font-semibold leading-snug text-ink">
+                                {s.muscle}
+                              </p>
+                              <p className="mt-1">
+                                <SuggestionStatusBadge status={s.status} />
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 )}
                 {openPanel === 'history' && (
@@ -556,6 +614,45 @@ export default function PhysioPatientPage() {
                 <p className="text-[14px] leading-relaxed text-ink-soft">
                   {t('noCycleHint')}
                 </p>
+                {/* Even before a cycle exists, the therapist can suggest a
+                    goal or flag a muscle for the physician to weigh at the
+                    first injection. These record now and surface in the
+                    physician's review once a cycle is created. */}
+                <div className="mt-4 border-t border-stone/60 pt-4">
+                  <h3 className="font-display text-[15px] text-ink">
+                    {t('preCycleSuggestTitle')}
+                  </h3>
+                  <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">
+                    {t('preCycleSuggestHint')}
+                  </p>
+                  <div className="mt-4">
+                    <PhysioGoalSuggestionForm
+                      patientId={patientData.data.patient.id}
+                    />
+                  </div>
+                  {(goalSuggestions.data ?? []).length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
+                        {t('sentGoalsHeading')}
+                      </h4>
+                      <ul className="mt-2 space-y-2">
+                        {goalSuggestions.data!.map((s) => (
+                          <li
+                            key={s.id}
+                            className="rounded-[var(--radius-button)] border border-stone/70 bg-cream p-2.5"
+                          >
+                            <p className="text-[14px] font-semibold leading-snug text-ink">
+                              {s.suggestedGoal}
+                            </p>
+                            <p className="mt-1">
+                              <SuggestionStatusBadge status={s.status} />
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -669,6 +766,37 @@ function TreatedMusclesSection({
         </ul>
       )}
     </section>
+  );
+}
+
+/**
+ * Read-only badge echoing the physician's status on a therapist
+ * suggestion (status echo). Maps the stored status to a plain,
+ * non-clinical label so the therapist knows what came of their input,
+ * without any clinic→therapist messaging.
+ */
+function SuggestionStatusBadge({ status }: { status: string }) {
+  const t = useTranslations('physio');
+  const map: Record<string, { key: string; tone: 'pending' | 'good' | 'muted' }> =
+    {
+      needsReview: { key: 'statusPending', tone: 'pending' },
+      accepted: { key: 'statusAccepted', tone: 'good' },
+      reviewed: { key: 'statusReviewed', tone: 'good' },
+      dismissed: { key: 'statusDismissed', tone: 'muted' }
+    };
+  const entry = map[status] ?? { key: 'statusPending', tone: 'pending' as const };
+  const toneClass =
+    entry.tone === 'good'
+      ? 'bg-sage-soft text-sage-deep'
+      : entry.tone === 'muted'
+        ? 'bg-stone-soft text-ink-muted'
+        : 'bg-amber-soft text-ink';
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-semibold ${toneClass}`}
+    >
+      {t(entry.key)}
+    </span>
   );
 }
 
