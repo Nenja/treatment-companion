@@ -9,17 +9,26 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `video-playback`._
+> _Last updated for build tag: `clinic-video-scoring`._
 
 ---
 
 ## 1. What this is
 
-A clinical web app for **botulinum-toxin treatment** (spasticity **and**
-dystonia). It helps a clinician set patient-centred goals, capture treatment
-sessions (incl. a face-injection map), and track weekly patient-reported
-outcomes over a treatment cycle. The end user is a **clinician**; patients do
-weekly check-ins.
+A **communication tool across the care triangle** — patient/caregiver, the
+weekly therapist (the **physiotherapist** role), and the treating clinic (the
+**clinician** role). Its main function is to **make all relevant data available
+to the clinic when planning treatment**, so treatment quality improves.
+
+Between visits, the patient (or a caregiver on the patient's device) and the
+weekly therapist feed data in: patient-reported weekly outcomes against
+patient-centred goals, optional check-in videos, therapist assessments, and
+(newer) third-party / wearable data. The clinic reviews it all in one place —
+the consolidated "since last visit" review — **discusses goals with the
+patient, and plans the next treatment** (capturing the session, incl. a
+face-injection map). Treatment today is **botulinum toxin** (spasticity **and**
+dystonia), but the model is being generalised toward other modalities
+(baclofen pumps, surgery) — see §6 / §8.
 
 - **Stack:** Next.js 15.1.9 (App Router) · React 19 · next-intl · Supabase
   (Postgres + Auth + Storage, RLS-enforced) · Tailwind **v4** (`@theme` in
@@ -29,6 +38,23 @@ weekly check-ins.
   regulatory/clinical-validation step is later and is **not** a current
   blocker. The user deploys by uploading the repo zip to GitHub → Vercel, and
   runs DB migrations by pasting SQL into the Supabase SQL editor.
+
+**Scope boundaries (decided — keep future work anchored here):**
+- **Direction is primarily upward** (patient/therapist → clinic), plus the
+  clinic's goal discussion with the patient — which is handled by the existing
+  goal **suggestion → clinician-approval → shared-goal** flow. There is **no**
+  clinic→patient messaging / feedback channel, and that is intentional; don't
+  build one.
+- **Caregivers use the patient's own device/login.** The per-check-in
+  *self / caregiver* submission label records who entered it. There are **no
+  separate caregiver accounts** — proxy access is out of scope.
+- **The clinic's consolidated review-and-plan view is the product's centre of
+  gravity.** Everything else exists to make that view complete and trustworthy
+  at the visit.
+- **The app *informs* decisions; the clinician decides.** This is the safer
+  side of the medical-device (MDR) line: AI / wearable signals must inform the
+  clinic's planning, never automate the decision (auto-titration / triage would
+  change the classification).
 
 ---
 
@@ -216,7 +242,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0070**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0072**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -239,12 +265,20 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 - `0069_wearable_observations.sql` — Adds the vendor-neutral `observation`
   table (FHIR-aligned PGHD store) + the `import_observations(patient, jsonb[])`
   security-definer RPC + RLS. Storage + import only.
-- `0070_treatment_modality.sql` — **`treatment-modality-seam`, RUN THIS.** Adds
-  the `treatment_modality` enum + `treatment_cycle.modality` column (default
-  `botulinum_toxin`). WP4 readiness seam; no clinical logic branches on it yet.
+- `0070_treatment_modality.sql` — Adds the `treatment_modality` enum +
+  `treatment_cycle.modality` column (default `botulinum_toxin`). WP4 readiness
+  seam; no clinical logic branches on it yet.
+- `0071_goal_video_protocol.sql` — Adds
+  `approved_goal.video_task_instruction/setup/seconds` + the
+  `set_goal_video_protocol` RPC. The standardized task recipe shown at video
+  capture so a rotating informant films the same task each week.
+- `0072_clinic_video_score.sql` — **`clinic-video-scoring`, RUN THIS.** Adds
+  `weekly_goal_rating.clinic_video_rating/unusable/scored_by/scored_at` + the
+  `set_clinic_video_score` RPC. The clinic's GAS-level score of each
+  standardized video — the authoritative one-rater outcome.
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0070 are applied (0066 is dev-only; **0067** is required for GAS suggestion-approval, **0068** for the read-aloud toggle, **0069** for the wearable/PGHD ingestion layer, **0070** for the treatment-modality column).
+> If unsure whether the user's DB is current, confirm 0062–0072 are applied (0066 is dev-only; **0067** is required for GAS suggestion-approval, **0068** for the read-aloud toggle, **0069** for the wearable/PGHD ingestion layer, **0070** for the treatment-modality column, **0071** for the video task protocol, **0072** for the clinic video score).
 
 ---
 
@@ -533,55 +567,73 @@ GAS option, `/demo` deleted, `clinician/patient` forced dynamic) →
 enum + `treatment_cycle.modality` column defaulting to botulinum toxin; additive,
 BoNT flow unchanged) →
 **`video-playback`** (no migration; clinicians can play back patient check-in
-videos via signed URLs — reuses the 0062 `goal-videos` bucket; current).
+videos via signed URLs — reuses the 0062 `goal-videos` bucket) →
+**`guided-capture`** (0071; standardized video task protocol + guided capture
+— same task every week for rotating informants) →
+**`clinic-video-scoring`** (0072; clinic scores each standardized clip on GAS
+levels — the authoritative one-rater outcome series, + unusable mark; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-video-playback.zip`
-- **Tag:** `video-playback`
-- **Change:** clinicians can now **play back** the short videos patients
-  record at check-in. Previously the clinician view only showed a *count* of
-  videos (indicator-only); now each is playable. **Frontend only — no
-  migration**; it reuses the `goal-videos` bucket + policies from 0062.
-  - **Access was already in place:** migration 0062 created the private
-    `goal-videos` bucket with a "clinician reads patient goal videos" policy
-    (read granted when `clinician_can_access_patient(folder)` — i.e. an active
-    session). So `createSignedUrl` works from the clinician's own session; no
-    service role needed.
-  - **Signed-URL hook:** `lib/supabase/goalVideo.ts` → `useGoalVideoUrl(path)`
-    creates a 1-hour signed URL for a `goal-videos` object (refetches before
-    expiry).
-  - **Player:** `components/clinician/VideoPlayerModal.tsx` — a11y modal
-    (`useModalA11y`: Esc / backdrop / button to close) rendering a native
-    `<video controls playsInline>` from the signed URL, with loading / error
-    / unsupported states.
-  - **Launch point:** `VisitChanges` (the "since last visit" summary, which
-    already had the video count) now lists each clip as a play button labelled
-    by goal + week. `videoPath` was already threaded into the clinician data
-    per rating, so no data-layer change was needed.
-  - **i18n:** `visitChanges.videosHeading/videoLabel/videoTitle` +
-    `clinician.video.{close,loading,error,unsupported}` (en/da). Parity
-    1072 == 1072. (The old `visitChanges.statVideo` count key is now unused
-    but left in place.)
-- **DB needed:** **none** — migration count stays at **0070**. (0062's bucket
-  + policies must already be applied, which they are on any current deploy.)
-- **Scope note:** playback is surfaced in the visit-review window (videos
-  since the last treatment). Videos recorded earlier in the cycle aren't
-  listed there yet — a per-goal playback entry point is a small follow-up.
-- **⚠ QA (can't test Storage / playback / devices here):** with a patient
-  who has recorded a video this visit window, open the clinician patient view,
-  confirm a **play button per clip** appears under the visit summary, and that
-  tapping it streams the video in the modal. Verify a clinician **without** an
-  active session for that patient cannot load it (signed-URL creation should
-  fail — the policy denies it). Check playback on real iOS Safari / Android
-  Chrome (codecs/orientation).
+- **Zip:** `treatment-companion-clinic-video-scoring.zip`
+- **Tag:** `clinic-video-scoring`
+- **Change:** **clinic-side structured scoring** of the standardized videos —
+  slice 2 of "separate capturing from judging". The clinician scores each clip
+  on the goal's GAS levels (−2..2), producing the authoritative, one-rater
+  outcome that stays comparable week to week even as the at-home informant
+  rotates; plus an off-protocol / unusable mark that excludes a clip from that
+  series.
+  - **Schema (migration 0072):** `weekly_goal_rating` gains
+    `clinic_video_rating` (−2..2), `clinic_video_unusable`,
+    `clinic_video_scored_by`, `clinic_video_scored_at`, plus a
+    `set_clinic_video_score(rating, score, unusable)` security-definer RPC
+    (unusable wins → clears the numeric score). Additive; a video with no score
+    reads as "pending".
+  - **Scoring UI:** `VideoPlayerModal` gained an optional `scoring` panel — the
+    clinician watches the clip and picks a GAS level in the same view. For GAS
+    goals the buttons show the goal's own anchor text; for NRS goals they show
+    generic level meanings. An "unusable" toggle and a Save sit beneath.
+    Mutation via the new `useSetClinicVideoScore` hook.
+  - **Where:** launched from the per-clip play buttons in `VisitChanges`
+    (video-playback build), which now also show a **score badge** (Clinic +1 /
+    Unusable / Not scored). Needed threading the rating `id` +
+    `clinic_video_rating` + `clinic_video_unusable` into the clinician check-in
+    data (select + type + map).
+  - **i18n:** `clinician.video.score.*` (heading, intro, the five GAS level
+    meanings, unusable, save, and the three badges) (en/da). Parity
+    1097 == 1097.
+- **DB needed:** **run migration 0072** (`0072_clinic_video_score.sql`).
+  Additive, safe to re-run. Standalone copy attached.
+- **What this completes / what's left:** capture (0071) + judging (0072) now
+  give a clean, informant-independent series in the data. Still open: a
+  **visualization** of the clinic-scored series as its own trend line/graph
+  (today the scores are stored + shown per clip as badges, not yet charted),
+  and editing a video protocol on an existing goal. See §8.
+- **⚠ QA (can't test playback / DB here):** with a patient who recorded a
+  standardized clip, open it from the visit summary, pick a GAS level (confirm
+  GAS goals show the goal's anchor text, NRS goals show generic meanings),
+  Save, and confirm the badge updates to "Clinic ±n"; mark another clip
+  unusable and confirm the badge + that it's excluded from any series use.
+  Confirm a clinician without an active session can't score (RPC denies).
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`guided-capture`** — zip `treatment-companion-guided-capture.zip` (migration
+  **0071**). Standardized video task protocol + guided capture: the clinician
+  defines a per-goal recipe (`approved_goal.video_task_*` +
+  `set_goal_video_protocol`), shown at record time in `GoalVideoRecorder`
+  (task card persists while filming, landscape nudge, target length, min-3s
+  gate) so a rotating informant films the same task each week. **Run migration
+  0071.**
+- **`video-playback`** — zip `treatment-companion-video-playback.zip` (no
+  migration). Clinicians can play back patient check-in videos: a signed-URL
+  hook (`useGoalVideoUrl`) + an a11y `VideoPlayerModal`, launched from the
+  per-clip play buttons added to `VisitChanges`. Reuses the 0062 `goal-videos`
+  bucket + its clinician-read policy; frontend only.
 - **`treatment-modality-seam`** — zip
   `treatment-companion-treatment-modality-seam.zip` (migration **0070**). WP4
   futureproofing: a `treatment_modality` enum + `treatment_cycle.modality`
@@ -656,6 +708,17 @@ videos via signed URLs — reuses the 0062 `goal-videos` bucket; current).
 ---
 
 ## 8. Pending / next slices
+
+0. **Informant-independent capture (lever 3).** Slice 1 (`guided-capture`,
+   0071) standardized the capture; slice 2 (`clinic-video-scoring`, 0072) added
+   the clinic GAS scoring + unusable mark, so the authoritative one-rater
+   series now exists in the data. **Still open:** (a) a **visualization** of
+   the clinic-scored series as its own trend line/graph (scores are stored +
+   shown per clip as badges, not yet charted alongside the at-home ratings);
+   (b) editing a video protocol on an *existing* goal (today set only at goal
+   creation, since video is only enabled there); (c) standardized framing is
+   the precondition for later automated movement scoring (WP5), still
+   "informs, clinician decides".
 
 1. **(DONE in `video-playback`)** Clinician video playback (signed-URL
    `<video>` via `useGoalVideoUrl` + `VideoPlayerModal`, launched from

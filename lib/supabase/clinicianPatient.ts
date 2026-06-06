@@ -51,11 +51,16 @@ export interface ClinicianPatientCheckin {
   /** ISO weekday numbers trained with a therapist that week, or null. */
   trainingDaysTherapist: number[] | null;
   ratings: {
+    id: string;
     approvedGoalId: string;
     ratingValue: number | null;
     nrsValue: number | null;
     /** Storage key of a video recorded for this goal at this check-in, if any. */
     videoPath: string | null;
+    /** Clinic's GAS-level (-2..2) score of the standardized video (0072). */
+    clinicVideoRating: number | null;
+    /** Clip marked off-protocol / unusable — excluded from the clinic series. */
+    clinicVideoUnusable: boolean;
   }[];
 }
 
@@ -259,7 +264,7 @@ export function useClinicianPatientData(
           supabase
             .from('weekly_checkin')
             .select(
-              'id, week_number, submitted_at, comment, submitter_label, training_days, training_days_therapist, ratings:weekly_goal_rating (approved_goal_id, rating_value, nrs_value, video_path)'
+              'id, week_number, submitted_at, comment, submitter_label, training_days, training_days_therapist, ratings:weekly_goal_rating (id, approved_goal_id, rating_value, nrs_value, video_path, clinic_video_rating, clinic_video_unusable)'
             )
             .eq('treatment_cycle_id', cycle.id)
             .order('week_number', { ascending: true }),
@@ -375,15 +380,21 @@ export function useClinicianPatientData(
           trainingDaysTherapist:
             (c.training_days_therapist as number[] | null) ?? null,
           ratings: (c.ratings as Array<{
+            id: string;
             approved_goal_id: string;
             rating_value: number | null;
             nrs_value: number | null;
             video_path: string | null;
+            clinic_video_rating: number | null;
+            clinic_video_unusable: boolean | null;
           }> | null ?? []).map((r) => ({
+            id: r.id,
             approvedGoalId: r.approved_goal_id,
             ratingValue: r.rating_value,
             nrsValue: r.nrs_value,
-            videoPath: (r.video_path as string | null) ?? null
+            videoPath: (r.video_path as string | null) ?? null,
+            clinicVideoRating: (r.clinic_video_rating as number | null) ?? null,
+            clinicVideoUnusable: Boolean(r.clinic_video_unusable)
           }))
         })
       );
@@ -758,6 +769,52 @@ export function useSetGoalVideoEnabled() {
       const { error } = await supabase.rpc('set_approved_goal_video_enabled', {
         p_goal_id: input.goalId,
         p_enabled: input.enabled
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
+export function useSetGoalVideoProtocol() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      goalId: string;
+      instruction: string;
+      setup: string;
+      seconds: number | null;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_goal_video_protocol', {
+        p_goal_id: input.goalId,
+        p_instruction: input.instruction,
+        p_setup: input.setup,
+        p_seconds: input.seconds
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
+export function useSetClinicVideoScore() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      ratingId: string;
+      rating: number | null;
+      unusable: boolean;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_clinic_video_score', {
+        p_rating_id: input.ratingId,
+        p_rating: input.unusable ? null : input.rating,
+        p_unusable: input.unusable
       });
       if (error) throw error;
     },

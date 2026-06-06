@@ -42,6 +42,13 @@ export interface CheckinGoal {
    */
   videoEnabled: boolean;
   /**
+   * Standardized task protocol (migration 0071), shown at record time so a
+   * rotating informant films the same task each week. Null when not set.
+   */
+  videoTaskInstruction: string | null;
+  videoTaskSetup: string | null;
+  videoTaskSeconds: number | null;
+  /**
    * True when this goal already has a video recorded earlier in the
    * current cycle. The recorder is offered at weeks 6–8 only until one
    * video exists, so there's at most one per cycle.
@@ -140,7 +147,7 @@ export function useCheckinData(
       // Load active goals with their NRS configs.
       const { data: goalRows, error: gErr } = await supabase
         .from('approved_goal')
-        .select('id, patient_facing_text, goal_kind, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2, video_enabled')
+        .select('id, patient_facing_text, goal_kind, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2, video_enabled, video_task_instruction, video_task_setup, video_task_seconds')
         .eq('treatment_cycle_id', cycleId)
         .eq('status', 'active')
         .order('approved_at', { ascending: true });
@@ -239,6 +246,10 @@ export function useCheckinData(
               ? previousByGoal.get(g.id as string) ?? null
               : null,
           videoEnabled: (g.video_enabled as boolean) ?? false,
+          videoTaskInstruction:
+            (g.video_task_instruction as string | null) ?? null,
+          videoTaskSetup: (g.video_task_setup as string | null) ?? null,
+          videoTaskSeconds: (g.video_task_seconds as number | null) ?? null,
           videoAlreadyInCycle: videoInCycle.has(g.id as string)
         };
       });

@@ -1,52 +1,61 @@
-BUILD: video-playback
+BUILD: clinic-video-scoring
 =========================================================================
 WHAT THIS BUILD DOES
-Clinicians can now PLAY BACK the short videos patients record at check-in.
-Until now the clinician view only showed a COUNT of videos (indicator
-only) with no way to watch them. This makes each clip playable.
+Adds CLINIC-SIDE STRUCTURED SCORING of the standardized check-in videos —
+slice 2 of "separate capturing from judging". Slice 1 (guided-capture) made
+the capture standardized; this makes the judging consistent: the clinician
+scores each clip on the goal's GAS levels (-2..2), producing an
+authoritative outcome rated by ONE consistent assessor (the clinic), which
+stays comparable week to week even as the at-home informant rotates. An
+"off-protocol / unusable" mark excludes a clip from that series.
 
-** NO DATABASE MIGRATION. ** Frontend only. It reuses the private
-`goal-videos` Storage bucket and its policies from migration 0062 — which
-already grant a clinician read access to the videos of patients they have
-an active session with. So the player works from the clinician's own
-session; no service role and no new SQL.
+Additive: a video with no score reads as "pending".
 
 CHANGES
-- NEW lib/supabase/goalVideo.ts — useGoalVideoUrl(path): creates a 1-hour
-  signed URL for a `goal-videos` object (refetches before it expires).
-- NEW components/clinician/VideoPlayerModal.tsx — accessible modal
-  (Esc / backdrop / button to close) that streams the signed URL in a
-  native <video controls playsInline> element, with loading / error /
-  unsupported states.
-- components/clinician/VisitChanges.tsx — the "since last visit" summary
-  (which already showed a video count) now lists each clip as a play
-  button labelled by goal + week, and opens the player. videoPath was
-  already present in the clinician data per rating, so no data-layer change.
-- i18n: visitChanges.videosHeading / videoLabel / videoTitle +
-  clinician.video.{close,loading,error,unsupported} (en + da).
-  Parity 1072 == 1072.
+- NEW supabase/migrations/0072_clinic_video_score.sql:
+    * weekly_goal_rating gains clinic_video_rating (-2..2),
+      clinic_video_unusable, clinic_video_scored_by, clinic_video_scored_at.
+    * set_clinic_video_score(rating, score, unusable) security-definer RPC
+      (same access check as the other goal-video RPCs; "unusable" clears the
+      numeric score so the clip drops out of the series).
+- components/clinician/VideoPlayerModal.tsx: optional scoring panel. The
+  clinician watches the clip and picks a GAS level in the same view. GAS
+  goals show the goal's own anchor text on each level; NRS goals show
+  generic level meanings. Plus an "unusable" toggle and Save.
+- components/clinician/VisitChanges.tsx: the per-clip play buttons now show a
+  score badge (Clinic +1 / Unusable / Not scored) and open the scoring view.
+- lib/supabase/clinicianPatient.ts: rating id + clinic score threaded into
+  the clinician check-in data; new useSetClinicVideoScore hook.
+- i18n: clinician.video.score.* (en + da). Parity 1097 == 1097.
+
+DATABASE / MIGRATIONS
+- RUN migration 0072 (0072_clinic_video_score.sql) in the Supabase SQL
+  editor. Additive, safe to re-run. Standalone copy attached.
+- (A fresh environment also needs 0067-0071 applied.)
 
 DEPLOY
-1. Unzip; push to GitHub; Vercel builds on push. Page count unchanged (60).
-2. No SQL to run. (Confirm 0062 — the goal-videos bucket — is already
-   applied; it is on any current deploy, since video capture already works.)
+1. Run 0072 in Supabase SQL editor.
+2. Unzip; push to GitHub; Vercel builds on push. Page count unchanged (60).
 
-HOW TO CONFIRM IT WORKED (needs a real browser + Supabase Storage + a
-recorded video — cannot be tested in this environment)
-- Use a patient who recorded a video in the current visit window (e.g. the
-  test1 seed has video enabled on a goal). Unlock that patient.
-- On the clinician patient view, under the "since last visit" summary, you
-  should see a "Videos" row with a play button per clip ("Goal · Week N").
-- Tap one: a modal opens and the video streams.
-- Negative check: a clinician WITHOUT an active session for that patient
-  should not be able to load the video (the Storage policy denies the
-  signed-URL request).
+HOW TO CONFIRM IT WORKED (needs a real browser + Supabase + a recorded
+clip — cannot be tested in this environment)
+- As a clinician with a patient who recorded a standardized clip, open it
+  from the "since last visit" summary.
+- Pick a GAS level: a GAS goal should show the goal's own anchor text on the
+  buttons; an NRS goal should show the generic level meanings. Save, and
+  confirm the clip's badge updates to "Clinic +/-n".
+- Mark another clip "unusable" and confirm the badge shows Unusable and the
+  numeric score is cleared.
+- Negative check: a clinician without an active session for that patient
+  cannot score (the RPC denies it).
 
-QA FLAGS (cannot be verified here)
-- Storage signed-URL creation, RLS denial for non-session clinicians, and
-  actual streaming need a real Supabase + browser.
-- Real-device playback (iOS Safari / Android Chrome): codecs and video
-  orientation should be checked on hardware.
-- Scope: playback is currently surfaced for the since-last-visit window.
-  Videos recorded earlier in the cycle aren't listed there yet — a per-goal
-  playback entry point is a small follow-up (noted in HANDOVER section 8).
+WHAT THIS DOES NOT DO (see HANDOVER section 8)
+- It does not yet CHART the clinic-scored series as its own trend line
+  alongside the at-home ratings — the scores are stored and shown per clip
+  as badges. The graph is the natural next step (slice 3 / visualization).
+- It does not let you edit a video protocol on an existing goal (protocol is
+  set at goal creation, since video is only enabled there).
+
+QA FLAGS
+- The score capture is plain UI + DB (lower risk); playback + RLS denial
+  need a real Supabase + browser.
