@@ -1,41 +1,42 @@
-BUILD: side-menu-option   (top vs side navigation, chosen at setup)
+BUILD: itb-therapy-track   (ITB + BTX in parallel — slice 1)
 =========================================================================
-WHAT THIS BUILD DOES
-Adds a navigation-style choice for the clinician patient page:
-  - Top menu  — icons in a row under the patient name (the current default)
-  - Side menu — icons in a vertical rail down the left edge, content to the right
-The choice is offered at setup (in the onboarding comfort step) with a small
-illustration of each, and can be changed any time in the account menu. Both
-options stay available.
+WHY THIS IS SLICE 1
+Intrathecal baclofen (ITB) is a continuous, titrated pump therapy, not a
+peak-effect cycle. And in the current code EVERY "resolve the patient's active
+cycle" RPC (goal creation, weekly check-in, the physio submits) assumes a
+single active cycle — so adding a second concurrent active treatment_cycle for
+ITB would silently break the botulinum-toxin (BoNT) flow.
 
-CHANGES
-- Migration 0078: profile.nav_style ('top' default | 'side').
-- Preference plumbing on the profile (AppProfile.navStyle, useSetNavStyle,
-  useNavStyle), mirroring the existing layout (wide/compact) preference.
-- New NavStyleChooser component: two selectable cards, each with a wireframe
-  preview. Shown in the onboarding wizard and the account menu (professionals,
-  large screens — a side rail needs the width).
-- PatientActionRow gained a vertical 'sidebar' variant. On the patient page,
-  Side mode renders the action menu as a left rail and hides the top toolbar;
-  Top mode keeps the toolbar. On phones/narrow windows both fall back to the
-  stacked body row, unchanged.
-- i18n (en + da) added; parity balanced.
+So ITB is introduced here as its OWN entity, running in parallel with the BoNT
+cycles and touching none of that logic. This slice = the ITB therapy + its dose
+titration log. ITB *goals* (which reuse the cycle/goal/check-in machinery and
+therefore need every active-cycle resolver made modality-aware) are slice 2.
+
+WHAT THIS BUILD DOES
+- Migration 0079: itb_therapy (one active per patient) + itb_dose_change
+  (titration log, dose in mcg/day) + RLS + start_itb_therapy /
+  log_itb_dose_change RPCs.
+- New ITB track on the clinician patient page (left column):
+  - No active therapy -> a compact "Start ITB track" card.
+  - Active -> current dose, start date, a dose-titration timeline, and a
+    "Log dose change" modal.
+  - No week/peak/video logic — ITB is continuous.
 
 DEPLOY
-- Run migration 0078 in the Supabase SQL editor. Standalone copy attached.
+- Run migration 0079 in the Supabase SQL editor. Standalone copy attached.
 - Unzip; push to GitHub; Vercel builds on push. Page count 60.
 
 ** QA (please verify — can't be tested here) **
-- On a large screen with the wide layout: the two illustrated options appear at
-  setup and in the account menu, and the choice persists.
-- Side menu moves the actions to a left rail and hides the top toolbar; Top
-  menu restores the toolbar.
-- On a phone/narrow window, both show the stacked body action row.
-- The rail's panels (medication / physio / training) and history / export all
-  still work from the rail.
+- Start an ITB track on a test patient; log a few dose changes; confirm the
+  current dose and timeline read correctly.
+- Confirm the BoNT side of the page is completely unchanged.
+- Confirm RLS: a clinician without an active session can't read another
+  patient's ITB therapy/doses.
 
-NEXT (now unblocked — you confirmed ITB + BTX is common)
-- ITB + BTX parallel tracks: model ITB as a continuous therapy (dose-change
-  events, no peak/week logic), allow one active therapy per modality
-  concurrently, tag goals to a therapy, keep the weekly self-report shared, and
-  keep video/peak scoring BTX-only. This is a schema-level build — its own pass.
+REMAINING SLICES (planned)
+- Slice 2: ITB goals + their weekly self-report. Reuse approved_goal /
+  weekly_goal_rating via a baclofen_pump cycle, and make every active-cycle
+  resolver modality-aware (default botulinum_toxin) so two concurrent active
+  cycles never collide. Big, careful — its own pass.
+- Slice 3: patient-facing ITB view; group goals by therapy; optional ITB dose
+  overlay on outcome charts.

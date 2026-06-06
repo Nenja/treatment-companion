@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `side-menu-option`._
+> _Last updated for build tag: `itb-therapy-track`._
 
 ---
 
@@ -242,7 +242,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0078**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0079**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -297,9 +297,13 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
   the patient-page wearable module.
 - `0078_nav_style.sql` — **`side-menu-option`, RUN THIS.** Adds
   `profile.nav_style` (top|side) for the patient-page menu placement.
+- `0079_itb_therapy.sql` — **`itb-therapy-track`, RUN THIS.** Adds
+  `itb_therapy` + `itb_dose_change` (+ RLS) and `start_itb_therapy` /
+  `log_itb_dose_change` RPCs — ITB as a parallel therapy, separate from
+  treatment_cycle.
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0078 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style).
+> If unsure whether the user's DB is current, confirm 0062–0079 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy).
 
 ---
 
@@ -618,53 +622,59 @@ fallback for webcam-less desktops + clinic 0–10 overlaid on the NRS trend) →
 **`training-row-wearable-module`** (0077; start-cycle moved up, training into
 the icon row, wearables a gated module with a per-patient enable) →
 **`side-menu-option`** (0078; top-vs-side nav choice at setup + in the account
-menu, with a side rail on the patient page; current).
+menu, with a side rail on the patient page) →
+**`itb-therapy-track`** (0079; intrathecal-baclofen therapy as a parallel
+track with a dose-titration log, separate from the BoNT cycle; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-side-menu-option.zip`
-- **Tag:** `side-menu-option`
-- **Change:** A navigation-style choice — top icon row vs left side rail — for
-  the clinician patient page, picked at setup with illustrations and changeable
-  later in the account menu. Both options kept. Migration 0078.
-  - **Migration 0078:** `profile.nav_style` text (`'top'` default | `'side'`,
-    checked). Self-update only (existing profile RLS, like `layout_preference`).
-  - **Preference plumbing:** `AppProfile.navStyle` (auth.tsx select + map);
-    `useSetNavStyle` (lib/supabase/navStyle.ts, direct profile update +
-    refreshProfile, mirrors `useSetLayoutPreference`); `useNavStyle()`
-    (lib/useNavStyle.ts) reads it, default `'top'`.
-  - **Chooser:** new `components/clinician/NavStyleChooser.tsx` — two
-    selectable cards, each with a small wireframe preview (top row vs left
-    rail). Used in the **OnboardingWizard** comfort step (first run) and the
-    **AccountMenu** appearance section (`compact` variant), both gated to
-    professionals + `lg:` (a rail needs the width), same as the layout toggle.
-  - **Side rail:** `PatientActionRow` gained a `'sidebar'` variant (vertical
-    icon+label rail). On the patient page, when `wide && navStyle==='side'`,
-    the rail renders as the first grid column (`grid-cols-[auto_5fr_7fr]`,
-    `hidden lg:flex lg:sticky`) and the header toolbar is suppressed; `'top'`
-    keeps the header toolbar. On narrow screens both fall back to the stacked
-    body action row (unchanged).
-  - **i18n:** `appearance.navStyle{Label,Top,Side,TopHint,SideHint}` (en/da).
-    Parity balanced.
-- **DB needed:** **run migration 0078** (`0078_nav_style.sql`). Standalone copy
-  attached.
-- **⚠ QA (can't test here):** at setup and in the account menu (large screen,
-  wide layout) the two illustrated options appear and persist; choosing Side
-  moves the action menu to a left rail and hides the top toolbar; choosing Top
-  restores it; on a phone/narrow window both show the stacked body row; the
-  rail's panels (medication/physio/training) and history/export still work.
-- **NOT in this build (next, now unblocked):** **ITB + BTX parallel tracks** —
-  the user confirmed the combination is common, so the plan is full concurrent
-  tracks: ITB modelled as a continuous therapy (dose-change events, no
-  peak/week logic), one active per modality, goals tagged to a therapy, weekly
-  self-report shared, video/peak scoring BTX-only.
+- **Zip:** `treatment-companion-itb-therapy-track.zip`
+- **Tag:** `itb-therapy-track`
+- **Change:** **Slice 1 of ITB + BTX in parallel.** Intrathecal baclofen is a
+  continuous, titrated therapy — not a peak-effect cycle — and crucially every
+  "resolve the patient's active cycle" RPC assumes a SINGLE active cycle, so a
+  second concurrent active `treatment_cycle` would silently break BoNT goal
+  creation / check-in / physio. This slice therefore models ITB as its OWN
+  entity, parallel to the BoNT cycles and touching none of that logic.
+  Migration 0079.
+  - **Migration 0079:** `itb_therapy` (one active per patient via a partial
+    unique index) + `itb_dose_change` (titration log, dose in mcg/day) + RLS
+    select policies (clinician-with-access OR the patient themselves) +
+    `start_itb_therapy` and `log_itb_dose_change` SECURITY DEFINER RPCs.
+  - **Data:** `lib/supabase/itb.ts` — `useItbTherapy` (active therapy + dose
+    changes + derived current dose), `useStartItbTherapy`, `useLogItbDoseChange`.
+  - **UI:** `components/clinician/ItbTrack.tsx` on the clinician patient page
+    (left column). No active therapy → a compact "Start ITB track" card; active
+    → current dose + start date + a dose-titration timeline + a "Log dose
+    change" modal. No week/peak/video logic — ITB is continuous.
+  - **i18n:** `itb.*` (en/da). Parity balanced.
+- **DB needed:** **run migration 0079** (`0079_itb_therapy.sql`). Standalone
+  copy attached.
+- **⚠ QA (can't test here):** start an ITB track on a test patient; log a few
+  dose changes and confirm the current dose + timeline read correctly; confirm
+  the BoNT side of the page is completely unchanged; confirm a second clinician
+  without an active session can't read another patient's ITB (RLS).
+- **ITB + BTX — remaining slices (planned):**
+  - **Slice 2:** ITB *goals* + their weekly self-report. These reuse
+    `approved_goal` / `weekly_goal_rating`, whose FK is to `treatment_cycle`, so
+    this needs a `baclofen_pump` cycle AND every active-cycle resolver
+    (`create_goal_for_patient`, `create_gas_goal_for_patient`,
+    `submit_weekly_checkin*`, the three physio submits, the data hook, the
+    check-in data) made **modality-aware** (default `botulinum_toxin`) so two
+    concurrent active cycles don't collide. Big, careful, its own pass.
+  - **Slice 3:** patient-facing ITB view + grouping goals by therapy on the
+    page; optional ITB dose overlay on outcome charts.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`side-menu-option`** — zip `treatment-companion-side-menu-option.zip`
+  (migration 0078). Top-vs-side navigation choice for the patient page, picked
+  at setup (illustrated) and in the account menu; `PatientActionRow` gained a
+  vertical `sidebar` variant. `profile.nav_style`.
 - **`training-row-wearable-module`** — zip
   `treatment-companion-training-row-wearable-module.zip` (migration 0077).
   Start-cycle moved to the top of the context column; training moved into the
