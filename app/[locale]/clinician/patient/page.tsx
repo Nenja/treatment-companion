@@ -26,6 +26,7 @@ import { formatLongDate } from '@/lib/dates';
 import { nrsToGas, injectionSideLabel, type GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { GoalGraphModal } from '@/components/clinician/GoalGraphModal';
+import { VideoProtocolEditor } from '@/components/clinician/VideoProtocolEditor';
 import { TrainingOverview } from '@/components/clinician/TrainingOverview';
 import { VisitChanges } from '@/components/clinician/VisitChanges';
 import { ExportModal } from '@/components/clinician/ExportModal';
@@ -60,6 +61,7 @@ export default function ClinicianPatientPage() {
   const tDomain = useTranslations('domain');
   const tImportance = useTranslations('importance');
   const tModality = useTranslations('treatment.modality');
+  const tVideoProtocol = useTranslations('clinician.videoProtocol');
 
   const { user, profile, loading: authLoading } = useAuth();
   const sessionQuery = useCurrentClinicianSession(
@@ -111,6 +113,14 @@ export default function ClinicianPatientPage() {
     : 'mt-3 space-y-3';
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [enlargedGoalId, setEnlargedGoalId] = useState<string | null>(null);
+  const [videoEditorGoal, setVideoEditorGoal] = useState<{
+    id: string;
+    text: string;
+    enabled: boolean;
+    instruction: string | null;
+    setup: string | null;
+    seconds: number | null;
+  } | null>(null);
   const [showExport, setShowExport] = useState(false);
   const [showNewCycle, setShowNewCycle] = useState(false);
   // Which inline action panel is open under the action row, if any.
@@ -324,6 +334,37 @@ export default function ClinicianPatientPage() {
       })
       .sort((a, b) => a.weekNumber - b.weekNumber);
     ratingsByGoal.set(goal.id, perWeek);
+  }
+
+  // Build per-goal CLINIC VIDEO series — the clinic's GAS-level score of each
+  // standardized clip (0072). This is the authoritative, one-rater outcome,
+  // always on the GAS scale, so it's drawn as its own GAS chart beneath the
+  // patient's. Unusable / unscored weeks are omitted (a gap), not zeroed.
+  const clinicVideoByGoal = new Map<
+    string,
+    {
+      weekNumber: number;
+      value: -2 | -1 | 0 | 1 | 2 | null;
+      nrs: number | null;
+      reported: boolean;
+    }[]
+  >();
+  for (const goal of activeGoals) {
+    const perWeek = checkins
+      .flatMap((c) => {
+        const r = c.ratings.find((x) => x.approvedGoalId === goal.id);
+        if (!r || r.clinicVideoRating == null) return [];
+        return [
+          {
+            weekNumber: c.weekNumber,
+            value: r.clinicVideoRating as -2 | -1 | 0 | 1 | 2,
+            nrs: null,
+            reported: true
+          }
+        ];
+      })
+      .sort((a, b) => a.weekNumber - b.weekNumber);
+    clinicVideoByGoal.set(goal.id, perWeek);
   }
 
   // Build per-goal physiotherapist ratings. Physio assessments happen
@@ -984,10 +1025,59 @@ export default function ClinicianPatientPage() {
                     nrsDirection={g.nrs?.direction}
                     onExpand={() => setEnlargedGoalId(g.id)}
                   />
+                  {(clinicVideoByGoal.get(g.id) ?? []).length > 0 && (
+                    <div className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3">
+                      <p className="text-[12px] font-semibold text-ink-soft">
+                        {t('clinicSeriesHeading')}
+                      </p>
+                      <p className="mt-0.5 text-[11px] leading-relaxed text-ink-muted">
+                        {t('clinicSeriesHint')}
+                      </p>
+                      <div className="mt-2">
+                        <GoalProgressView
+                          goalText={g.patientFacingText}
+                          kind="gas"
+                          currentWeek={weekNumber}
+                          ratings={clinicVideoByGoal.get(g.id) ?? []}
+                        />
+                      </div>
+                    </div>
+                  )}
                   {/* Retire action — retires a goal (achieved /
                       partial / no longer suitable). History is kept;
                       the goal leaves the patient's future check-ins. */}
-                  <div className="mt-1.5 flex justify-end">
+                  <div className="mt-1.5 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        touch();
+                        setVideoEditorGoal({
+                          id: g.id,
+                          text: g.patientFacingText,
+                          enabled: g.videoEnabled,
+                          instruction: g.videoTaskInstruction,
+                          setup: g.videoTaskSetup,
+                          seconds: g.videoTaskSeconds
+                        });
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
+                    >
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <rect x="2" y="6" width="14" height="12" rx="2" />
+                        <path d="M16 10l6-3v10l-6-3z" />
+                      </svg>
+                      {tVideoProtocol('open')}
+                    </button>
                     <button
                       type="button"
                       onClick={() => {
@@ -1177,6 +1267,17 @@ export default function ClinicianPatientPage() {
             />
           );
         })()}
+      {videoEditorGoal && (
+        <VideoProtocolEditor
+          goalId={videoEditorGoal.id}
+          goalText={videoEditorGoal.text}
+          initialEnabled={videoEditorGoal.enabled}
+          initialInstruction={videoEditorGoal.instruction}
+          initialSetup={videoEditorGoal.setup}
+          initialSeconds={videoEditorGoal.seconds}
+          onClose={() => setVideoEditorGoal(null)}
+        />
+      )}
     </div>
   );
 }
