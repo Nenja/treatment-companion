@@ -63,7 +63,11 @@
       "noCycleTitle": "No treatment cycle yet.",
       "noCycleBody": "Your clinic will set up your first cycle at your next visit.",
       "noCycleSuggestTitle": "Start thinking about goals",
-      "noCycleSuggestBody": "You can suggest goals now, in your own words. Your clinician will review them with you and set up the ones to track at your visit."
+      "noCycleSuggestBody": "You can suggest goals now, in your own words. Your clinician will review them with you and set up the ones to track at your visit.",
+      "visitCodeTitle": "At your visit",
+      "visitCodeBody": "Bring this app to your appointment. Open “Show visit code” so your clinician can open your record.",
+      "pendingSuggestions": "{count, plural, one {# goal sent — your clinician will review it at your next visit.} other {# goals sent — your clinician will review them at your next visit.}}",
+      "progressReassurance": "Progress often comes in ups and downs — a flat week isn't a failure. Your clinician looks at the whole picture over time."
     },
     "visitCode": {
       "pageTitle": "Visit code",
@@ -185,7 +189,9 @@
       "gasMeaningMuchLess": "Much less than expected",
       "baselineRefTitle": "Watch the starting point",
       "baselineRefHint": "Here's the clip from the clinic. Record the same task the same way.",
-      "itbTag": "ITB"
+      "itbTag": "ITB",
+      "editAnswers": "Made a mistake? Edit my answers",
+      "editAnswersBusy": "Reopening…"
     }
   },
   "domain": {
@@ -656,7 +662,9 @@
     "m12": "December",
     "comfortReadAloud": "Read aloud",
     "comfortReadAloudOn": "On",
-    "comfortReadAloudOff": "Off"
+    "comfortReadAloudOff": "Off",
+    "visitTitle": "At your appointment",
+    "visitBody": "When you see your clinician or therapist, open “Show visit code” and show or read them the code. That lets them open your record for the visit."
   },
   "appearance": {
     "heading": "Appearance",
@@ -949,7 +957,8 @@
     "errEmail": "That email address doesn’t look right. Please check it.",
     "errRateLimit": "Too many attempts. Please wait a minute, then try again.",
     "errNetwork": "Network problem. Check your connection and try again.",
-    "errGeneric": "Something went wrong creating your account. Please try again."
+    "errGeneric": "Something went wrong creating your account. Please try again.",
+    "patientNote": "Your clinic connects your record at your first visit. You can start suggesting goals before then."
   },
   "treatment": {
     "edit": "Edit",

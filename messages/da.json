@@ -67,7 +67,11 @@
       "noCycleTitle": "Intet behandlingsforløb endnu.",
       "noCycleBody": "Din klinik opretter dit første forløb ved dit næste besøg.",
       "noCycleSuggestTitle": "Begynd at tænke over mål",
-      "noCycleSuggestBody": "Du kan foreslå mål nu, med dine egne ord. Din kliniker gennemgår dem sammen med dig og opsætter dem, der skal følges, ved dit besøg."
+      "noCycleSuggestBody": "Du kan foreslå mål nu, med dine egne ord. Din kliniker gennemgår dem sammen med dig og opsætter dem, der skal følges, ved dit besøg.",
+      "visitCodeTitle": "Ved dit besøg",
+      "visitCodeBody": "Tag denne app med til din aftale. Åbn “Vis besøgskode”, så din kliniker kan åbne din journal.",
+      "pendingSuggestions": "{count, plural, one {# mål sendt — din kliniker gennemgår det ved dit næste besøg.} other {# mål sendt — din kliniker gennemgår dem ved dit næste besøg.}}",
+      "progressReassurance": "Fremgang kommer ofte i op- og nedture — en uge uden ændring er ikke en fiasko. Din kliniker ser på hele billedet over tid."
     },
     "visitCode": {
       "pageTitle": "Besøgskode",
@@ -189,7 +193,9 @@
       "gasMeaningMuchLess": "Meget mindre end forventet",
       "baselineRefTitle": "Se udgangspunktet",
       "baselineRefHint": "Her er klippet fra klinikken. Optag den samme opgave på samme måde.",
-      "itbTag": "ITB"
+      "itbTag": "ITB",
+      "editAnswers": "Lavet en fejl? Ret mine svar",
+      "editAnswersBusy": "Åbner igen…"
     }
   },
   "domain": {
@@ -660,7 +666,9 @@
     "m12": "december",
     "comfortReadAloud": "Læs højt",
     "comfortReadAloudOn": "Til",
-    "comfortReadAloudOff": "Fra"
+    "comfortReadAloudOff": "Fra",
+    "visitTitle": "Ved din aftale",
+    "visitBody": "Når du møder din kliniker eller terapeut, skal du åbne “Vis besøgskode” og vise eller læse koden højt. Så kan de åbne din journal til besøget."
   },
   "appearance": {
     "heading": "Udseende",
@@ -953,7 +961,8 @@
     "errEmail": "E-mailadressen ser ikke rigtig ud. Tjek den venligst.",
     "errRateLimit": "For mange forsøg. Vent et øjeblik, og prøv igen.",
     "errNetwork": "Netværksproblem. Tjek din forbindelse, og prøv igen.",
-    "errGeneric": "Noget gik galt under oprettelsen af din konto. Prøv igen."
+    "errGeneric": "Noget gik galt under oprettelsen af din konto. Prøv igen.",
+    "patientNote": "Din klinik forbinder din journal ved dit første besøg. Du kan begynde at foreslå mål allerede inden da."
   },
   "treatment": {
     "edit": "Redigér",
