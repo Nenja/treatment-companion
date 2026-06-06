@@ -1,49 +1,40 @@
-BUILD: video-score-queue  (Pass C of the video/baseline work)
+BUILD: record-goal-inline
 =========================================================================
 WHAT THIS BUILD DOES
-A per-visit "Score videos" queue that clears the unscored peak-effect clips in
-one pass. Each clip is shown beside the goal's baseline; the clinician scores
-it and the queue auto-advances to the next.
-- GAS goals: scored against the goal's anchors on −2..+2 (existing field).
-- NRS goals: scored on the SAME 0–10 scale the patient uses, so you get a
-  clinician-0–10 vs patient-0–10 comparison on one axis (new field).
+Recording a goal no longer leaves the patient view. The "Record goal" button
+now opens the goal form in a right-side slide-over over the chart; on save the
+panel closes and the new goal appears in the list — no navigation, no reload.
+NO database migration.
 
 CHANGES
-- Migration 0076: weekly_goal_rating.clinic_video_nrs (int 0–10) +
-  set_clinic_video_nrs(p_rating_id, p_nrs, p_unusable) RPC (same access check
-  as set_clinic_video_score; "unusable" clears the score; shares the existing
-  unusable / scored_by / scored_at columns).
-- New components/clinician/VideoScoreQueue.tsx: the queue modal — peak clip
-  beside the baseline (or a "no baseline" placeholder), GAS anchor buttons or
-  an NRS 0–10 grid, an unusable toggle, Skip / Save & next / Save & done.
-- "Score videos (N)" button in the active-goals header, shown only when there
-  are unscored clips. Queue items are assembled from check-in ratings that
-  have a video but no clinic score yet, joined to the active goal.
-- Data: clinicVideoNrs added to the ratings read; new useSetClinicVideoNrs hook.
-- i18n (en + da) added; parity balanced.
+- New components/clinician/RecordGoalForm.tsx — the whole goal form (goal text,
+  SMART line, NRS-vs-GAS choice with each one's config, optional weekly-video
+  protocol, Cancel/Record), factored out of the /clinician/new-goal route so it
+  can render in both places. Same create RPCs; on success it shows the existing
+  toast. The create mutations already invalidate the patient query, so the goal
+  list refreshes on its own.
+- New components/clinician/RecordGoalDrawer.tsx — the slide-over: an overlay +
+  right panel (max 560px, scrollable; full-height sheet on mobile) with focus
+  trap + Escape, matching the existing ExportModal pattern.
+- Clinician patient page: "Record goal" opens the drawer instead of navigating
+  to /clinician/new-goal.
+- /clinician/new-goal route kept as a thin wrapper around the same form, for
+  deep links and the narrow fallback. No duplicated form code.
+- No new translations (reuses newGoal.* + a11y.close). Parity 1122 == 1122.
 
 DEPLOY
-1. Run migration 0076 in the Supabase SQL editor. Standalone copy attached.
-2. Unzip; push to GitHub; Vercel builds on push. Page count 60.
+- No SQL. Unzip; push to GitHub; Vercel builds on push. Page count 60.
 
-** QA (please verify — can't be tested here) **
-- The queue lists exactly the clips with a video but no clinic score / unusable.
-- GAS scoring writes −2..+2; NRS scoring writes 0–10; unusable removes the clip
-  from the series.
-- Auto-advance works; Save & done and the Done/close button both exit.
-- The baseline shows beside the peak clip (or the placeholder when none was
-  recorded). Video playback, signed URLs, and the RLS path for the NRS write
-  all need a real device + Supabase.
+** QA (cannot render/run here — please verify) **
+- From a patient, tap Record goal: the slide-over opens over the chart and the
+  goal list stays visible behind it.
+- Record an NRS goal AND a GAS goal: in each case the panel closes and the new
+  goal shows up in the list with NO page navigation.
+- Cancel and the Escape key close without saving; focus returns to the button.
+- On a phone the panel is a full-height sheet.
+- The old /clinician/new-goal?patient=... deep link still works as before.
 
-ON RECORDING WITHOUT A WEBCAM (your question)
-- Primary path today: record on a phone/tablet. The clinician session roams
-  across devices via the switcher, so "film on the phone, plan on the desktop"
-  already works with no extra code.
-- Recommended follow-up (NOT in this build): add a file-upload fallback
-  (<input type="file" accept="video/*" capture>) to the recorder so a
-  webcam-less desktop can attach a clip too. This would help the baseline and
-  the patient check-in capture alike. I'd ship it as its own slice.
-
-NEXT CANDIDATES
-- File-upload fallback for the recorder (above).
-- Surface the clinic-0–10 vs patient-0–10 comparison on the NRS trend chart.
+NEXT (per your ranked list)
+- Faster clinic video scoring (a lighter quick-score for clearing a clip queue).
+- Optional follow-up you floated: show a patient's existing GAS levels as a
+  reference while writing new ones (not built yet — say the word).

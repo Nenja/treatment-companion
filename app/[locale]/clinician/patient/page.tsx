@@ -27,11 +27,6 @@ import { nrsToGas, injectionSideLabel, type GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { GoalGraphModal } from '@/components/clinician/GoalGraphModal';
 import { VideoProtocolEditor } from '@/components/clinician/VideoProtocolEditor';
-import { BaselineRecorderModal } from '@/components/clinician/BaselineRecorderModal';
-import {
-  VideoScoreQueue,
-  type ScoreQueueItem
-} from '@/components/clinician/VideoScoreQueue';
 import { TrainingOverview } from '@/components/clinician/TrainingOverview';
 import { VisitChanges } from '@/components/clinician/VisitChanges';
 import { PatientBanner } from '@/components/clinician/PatientBanner';
@@ -69,7 +64,6 @@ export default function ClinicianPatientPage() {
   const tImportance = useTranslations('importance');
   const tModality = useTranslations('treatment.modality');
   const tVideoProtocol = useTranslations('clinician.videoProtocol');
-  const tVideoQueue = useTranslations('clinician.videoQueue');
 
   const { user, profile, loading: authLoading } = useAuth();
   const sessionQuery = useCurrentClinicianSession(
@@ -131,15 +125,6 @@ export default function ClinicianPatientPage() {
     setup: string | null;
     seconds: number | null;
   } | null>(null);
-  const [baselineGoal, setBaselineGoal] = useState<{
-    id: string;
-    text: string;
-    instruction: string | null;
-    setup: string | null;
-    seconds: number | null;
-    existingPath: string | null;
-  } | null>(null);
-  const [showScoreQueue, setShowScoreQueue] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showNewCycle, setShowNewCycle] = useState(false);
   const [showRecordGoal, setShowRecordGoal] = useState(false);
@@ -290,36 +275,6 @@ export default function ClinicianPatientPage() {
     physioGoalSuggestions,
     physioMuscleSuggestions
   } = patientData.data;
-
-  // Unscored peak-effect clips across this patient's check-ins: a video was
-  // recorded but the clinic hasn't scored it (GAS or NRS) or marked it
-  // unusable yet. Feeds the quick-score queue.
-  const goalByIdForQueue = new Map(activeGoals.map((g) => [g.id, g]));
-  const scoreQueueItems: ScoreQueueItem[] = [];
-  for (const c of checkins) {
-    for (const r of c.ratings) {
-      if (!r.videoPath) continue;
-      if (
-        r.clinicVideoRating != null ||
-        r.clinicVideoNrs != null ||
-        r.clinicVideoUnusable
-      ) {
-        continue;
-      }
-      const g = goalByIdForQueue.get(r.approvedGoalId);
-      if (!g) continue;
-      scoreQueueItems.push({
-        ratingId: r.id,
-        goalText: g.patientFacingText,
-        kind: g.kind,
-        anchors: g.gas ?? null,
-        nrsQuestion: g.nrs?.question ?? null,
-        peakPath: r.videoPath,
-        baselinePath: g.baselineVideoPath,
-        weekNumber: c.weekNumber
-      });
-    }
-  }
 
   // Quiet at-a-glance summary line in the header. Just a derived string
   // — not a hook, safe after the early return.
@@ -1014,32 +969,6 @@ export default function ClinicianPatientPage() {
               {t('activeGoalsTitle')}
             </h2>
             <div className="flex shrink-0 items-center gap-2">
-              {scoreQueueItems.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    touch();
-                    setShowScoreQueue(true);
-                  }}
-                  className="relative inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-sage-deep bg-sage-deep px-3 py-2 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    <rect x="2" y="6" width="14" height="12" rx="2" />
-                    <path d="M16 10l6-3v10l-6-3z" />
-                  </svg>
-                  {tVideoQueue('open', { n: scoreQueueItems.length })}
-                </button>
-              )}
               {/* Patient suggestions — moved here from the action row so
                   both goal-related actions sit together. Toggles the
                   suggestions panel above; the badge shows how many await
@@ -1158,8 +1087,6 @@ export default function ClinicianPatientPage() {
                     ratings={ratingsByGoal.get(g.id) ?? []}
                     physioRatings={physioRatingsByGoal.get(g.id) ?? []}
                     nrsDirection={g.nrs?.direction}
-                    nrsBaseline={g.nrs?.baselineValue ?? null}
-                    nrsTarget={g.nrs?.targetValue ?? null}
                     onExpand={() => setEnlargedGoalId(g.id)}
                   />
                   {(clinicVideoByGoal.get(g.id) ?? []).length > 0 && (
@@ -1184,41 +1111,6 @@ export default function ClinicianPatientPage() {
                       partial / no longer suitable). History is kept;
                       the goal leaves the patient's future check-ins. */}
                   <div className="mt-1.5 flex justify-end gap-2">
-                    {g.videoEnabled && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          touch();
-                          setBaselineGoal({
-                            id: g.id,
-                            text: g.patientFacingText,
-                            instruction: g.videoTaskInstruction,
-                            setup: g.videoTaskSetup,
-                            seconds: g.videoTaskSeconds,
-                            existingPath: g.baselineVideoPath
-                          });
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
-                      >
-                        <svg
-                          width="15"
-                          height="15"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden
-                        >
-                          <path d="M3 4h18l-4 5 4 5H3z" />
-                          <path d="M3 4v16" />
-                        </svg>
-                        {g.baselineVideoPath
-                          ? tVideoProtocol('baselineSet')
-                          : tVideoProtocol('baselineRecord')}
-                      </button>
-                    )}
                     <button
                       type="button"
                       onClick={() => {
@@ -1443,8 +1335,6 @@ export default function ClinicianPatientPage() {
               ratings={ratingsByGoal.get(g.id) ?? []}
               physioRatings={physioRatingsByGoal.get(g.id) ?? []}
               nrsDirection={g.nrs?.direction}
-              nrsBaseline={g.nrs?.baselineValue ?? null}
-              nrsTarget={g.nrs?.targetValue ?? null}
               closeLabel={tSession('done')}
               onClose={() => setEnlargedGoalId(null)}
             />
@@ -1459,28 +1349,6 @@ export default function ClinicianPatientPage() {
           initialSetup={videoEditorGoal.setup}
           initialSeconds={videoEditorGoal.seconds}
           onClose={() => setVideoEditorGoal(null)}
-        />
-      )}
-
-      {baselineGoal && (
-        <BaselineRecorderModal
-          patientId={patient.id}
-          goalId={baselineGoal.id}
-          goalText={baselineGoal.text}
-          protocol={{
-            instruction: baselineGoal.instruction,
-            setup: baselineGoal.setup,
-            seconds: baselineGoal.seconds
-          }}
-          existingPath={baselineGoal.existingPath}
-          onClose={() => setBaselineGoal(null)}
-        />
-      )}
-
-      {showScoreQueue && scoreQueueItems.length > 0 && (
-        <VideoScoreQueue
-          items={scoreQueueItems}
-          onClose={() => setShowScoreQueue(false)}
         />
       )}
     </div>

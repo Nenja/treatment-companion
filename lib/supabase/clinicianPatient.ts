@@ -32,8 +32,6 @@ export interface ClinicianPatientGoal {
   videoTaskInstruction: string | null;
   videoTaskSetup: string | null;
   videoTaskSeconds: number | null;
-  /** Storage key of the in-clinic baseline clip for this goal, or null. */
-  baselineVideoPath: string | null;
 }
 
 export interface ClinicianPatientSuggestion {
@@ -67,8 +65,6 @@ export interface ClinicianPatientCheckin {
     videoPath: string | null;
     /** Clinic's GAS-level (-2..2) score of the standardized video (0072). */
     clinicVideoRating: number | null;
-    /** Clinic's 0–10 score of the standardized video for an NRS goal (0076). */
-    clinicVideoNrs: number | null;
     /** Clip marked off-protocol / unusable — excluded from the clinic series. */
     clinicVideoUnusable: boolean;
   }[];
@@ -267,14 +263,14 @@ export function useClinicianPatientData(
           supabase
             .from('approved_goal')
             .select(
-              'id, patient_facing_text, smart_text, goal_kind, goal_outcome, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, nrs_baseline_value, nrs_target_value, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2, status, video_enabled, video_task_instruction, video_task_setup, video_task_seconds, baseline_video_path'
+              'id, patient_facing_text, smart_text, goal_kind, goal_outcome, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2, status, video_enabled, video_task_instruction, video_task_setup, video_task_seconds'
             )
             .eq('treatment_cycle_id', cycle.id)
             .order('approved_at', { ascending: true }),
           supabase
             .from('weekly_checkin')
             .select(
-              'id, week_number, submitted_at, comment, submitter_label, training_days, training_days_therapist, ratings:weekly_goal_rating (id, approved_goal_id, rating_value, nrs_value, video_path, clinic_video_rating, clinic_video_unusable, clinic_video_nrs)'
+              'id, week_number, submitted_at, comment, submitter_label, training_days, training_days_therapist, ratings:weekly_goal_rating (id, approved_goal_id, rating_value, nrs_value, video_path, clinic_video_rating, clinic_video_unusable)'
             )
             .eq('treatment_cycle_id', cycle.id)
             .order('week_number', { ascending: true }),
@@ -356,10 +352,7 @@ export function useClinicianPatientData(
                     cutLowLow: g.nrs_cut_low_low as number,
                     cutLow: g.nrs_cut_low as number,
                     cutZero: g.nrs_cut_zero as number,
-                    cutHigh: g.nrs_cut_high as number,
-                    baselineValue:
-                      (g.nrs_baseline_value as number | null) ?? null,
-                    targetValue: (g.nrs_target_value as number | null) ?? null
+                    cutHigh: g.nrs_cut_high as number
                   }
                 : undefined,
             gas:
@@ -376,8 +369,7 @@ export function useClinicianPatientData(
             videoTaskInstruction:
               (g.video_task_instruction as string | null) ?? null,
             videoTaskSetup: (g.video_task_setup as string | null) ?? null,
-            videoTaskSeconds: (g.video_task_seconds as number | null) ?? null,
-            baselineVideoPath: (g.baseline_video_path as string | null) ?? null
+            videoTaskSeconds: (g.video_task_seconds as number | null) ?? null
           };
         }
       );
@@ -406,7 +398,6 @@ export function useClinicianPatientData(
             video_path: string | null;
             clinic_video_rating: number | null;
             clinic_video_unusable: boolean | null;
-            clinic_video_nrs: number | null;
           }> | null ?? []).map((r) => ({
             id: r.id,
             approvedGoalId: r.approved_goal_id,
@@ -414,7 +405,6 @@ export function useClinicianPatientData(
             nrsValue: r.nrs_value,
             videoPath: (r.video_path as string | null) ?? null,
             clinicVideoRating: (r.clinic_video_rating as number | null) ?? null,
-            clinicVideoNrs: (r.clinic_video_nrs as number | null) ?? null,
             clinicVideoUnusable: Boolean(r.clinic_video_unusable)
           }))
         })
@@ -664,8 +654,6 @@ export interface CreateGoalForPatientInput {
   smartText: string;
   nrsQuestion: string;
   nrsDirection: NrsDirection;
-  nrsBaselineValue: number;
-  nrsTargetValue: number;
 }
 
 /**
@@ -692,36 +680,11 @@ export function useCreateGoalForPatient() {
           p_nrs_cut_low_low: DEFAULT_NRS_CUTS.cutLowLow,
           p_nrs_cut_low: DEFAULT_NRS_CUTS.cutLow,
           p_nrs_cut_zero: DEFAULT_NRS_CUTS.cutZero,
-          p_nrs_cut_high: DEFAULT_NRS_CUTS.cutHigh,
-          p_nrs_baseline_value: input.nrsBaselineValue,
-          p_nrs_target_value: input.nrsTargetValue
+          p_nrs_cut_high: DEFAULT_NRS_CUTS.cutHigh
         }
       );
       if (error) throw error;
       return data as string;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
-    }
-  });
-}
-
-/** Clinic 0–10 score (or unusable) for an NRS goal's standardized clip. */
-export function useSetClinicVideoNrs() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: {
-      ratingId: string;
-      nrs: number | null;
-      unusable: boolean;
-    }): Promise<void> => {
-      const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.rpc('set_clinic_video_nrs', {
-        p_rating_id: input.ratingId,
-        p_nrs: input.unusable ? null : input.nrs,
-        p_unusable: input.unusable
-      });
-      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
@@ -817,52 +780,6 @@ export function useSetGoalVideoEnabled() {
       const { error } = await supabase.rpc('set_approved_goal_video_enabled', {
         p_goal_id: input.goalId,
         p_enabled: input.enabled
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
-    }
-  });
-}
-
-/**
- * Uploads an in-clinic baseline clip for a goal to the private
- * `goal-videos` bucket under <patient_id>/baseline/<goal_id>.<ext> and
- * returns the object key. The clinician's active session authorizes the
- * write (migration 0075); re-recording overwrites the previous clip.
- */
-export async function uploadBaselineVideo(params: {
-  patientId: string;
-  goalId: string;
-  blob: Blob;
-  ext: string;
-}): Promise<string> {
-  const { patientId, goalId, blob, ext } = params;
-  const supabase = createSupabaseBrowserClient();
-  const path = `${patientId}/baseline/${goalId}.${ext}`;
-  const { error } = await supabase.storage
-    .from('goal-videos')
-    .upload(path, blob, {
-      contentType: blob.type || `video/${ext}`,
-      upsert: true
-    });
-  if (error) throw error;
-  return path;
-}
-
-/** Records the baseline clip's storage key on the goal. */
-export function useSetGoalBaselineVideo() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: {
-      goalId: string;
-      path: string;
-    }): Promise<void> => {
-      const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.rpc('set_goal_baseline_video', {
-        p_goal_id: input.goalId,
-        p_path: input.path
       });
       if (error) throw error;
     },

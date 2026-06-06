@@ -21,7 +21,6 @@ import {
   GoalVideoRecorder,
   type RecordedVideo
 } from '@/components/wizard/GoalVideoRecorder';
-import { BaselineReference } from '@/components/wizard/BaselineReference';
 import { TrainingDaysPicker } from '@/components/wizard/TrainingDaysPicker';
 
 /**
@@ -371,10 +370,6 @@ function CheckinPageInner() {
       <>
         {picker}
         {showVideo && (
-          <>
-            {goal.baselineVideoPath && (
-              <BaselineReference path={goal.baselineVideoPath} />
-            )}
           <GoalVideoRecorder
             value={videos[goal.id] ?? null}
             protocol={{
@@ -393,7 +388,6 @@ function CheckinPageInner() {
               })
             }
           />
-          </>
         )}
       </>
     );
