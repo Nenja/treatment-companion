@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useTranslations } from 'next-intl';
 
 const MAX_SECONDS = 30;
@@ -71,7 +71,11 @@ export function GoalVideoRecorder({ value, onChange, protocol }: GoalVideoRecord
   const [recordedSeconds, setRecordedSeconds] = useState(0);
   const [portrait, setPortrait] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [uploaded, setUploaded] = useState(false);
   const elapsedRef = useRef(0);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const pickedRef = useRef<RecordedVideo | null>(null);
 
   const liveRef = useRef<HTMLVideoElement | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
@@ -206,6 +210,12 @@ export function GoalVideoRecorder({ value, onChange, protocol }: GoalVideoRecord
   }
 
   function keepVideo() {
+    if (pickedRef.current) {
+      stopStream();
+      onChange(pickedRef.current);
+      setPhase('kept');
+      return;
+    }
     const type = recorderRef.current?.mimeType || chunksRef.current[0]?.type || '';
     const ext: 'mp4' | 'webm' = type.includes('mp4') ? 'mp4' : 'webm';
     const blob = new Blob(chunksRef.current, { type: type || undefined });
@@ -214,7 +224,48 @@ export function GoalVideoRecorder({ value, onChange, protocol }: GoalVideoRecord
     setPhase('kept');
   }
 
+  // File-upload fallback: lets a clinician on a webcam-less desktop (or
+  // anyone who already has a clip) attach a video instead of recording live.
+  // On phones the `capture` attribute still offers the camera.
+  const MAX_UPLOAD_BYTES = 200 * 1024 * 1024; // 200 MB
+  function onFilePicked(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-picking the same file later
+    if (!file) return;
+    if (!file.type.startsWith('video/')) {
+      setErrorMsg(t('fileNotVideo'));
+      setPhase('error');
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setErrorMsg(t('fileTooLarge', { n: 200 }));
+      setPhase('error');
+      return;
+    }
+    const ext: 'mp4' | 'webm' =
+      file.type.includes('webm') || file.name.toLowerCase().endsWith('.webm')
+        ? 'webm'
+        : 'mp4';
+    pickedRef.current = { blob: file, ext };
+    stopStream();
+    revokePreview();
+    const url = URL.createObjectURL(file);
+    previewUrlRef.current = url;
+    setUploaded(true);
+    setPhase('preview');
+    requestAnimationFrame(() => {
+      if (previewRef.current) previewRef.current.src = url;
+    });
+  }
+
   function reRecord() {
+    if (pickedRef.current) {
+      pickedRef.current = null;
+      setUploaded(false);
+      revokePreview();
+      setPhase('intro');
+      return;
+    }
     revokePreview();
     chunksRef.current = [];
     setElapsed(0);
@@ -236,6 +287,8 @@ export function GoalVideoRecorder({ value, onChange, protocol }: GoalVideoRecord
     revokePreview();
     stopStream();
     chunksRef.current = [];
+    pickedRef.current = null;
+    setUploaded(false);
     onChange(null);
     setPhase('intro');
   }
@@ -244,14 +297,31 @@ export function GoalVideoRecorder({ value, onChange, protocol }: GoalVideoRecord
     stopStream();
     revokePreview();
     chunksRef.current = [];
+    pickedRef.current = null;
+    setUploaded(false);
     setElapsed(0);
     setPhase(value ? 'kept' : 'intro');
   }
 
   if (!supported) {
     return (
-      <div className="mt-3 rounded-[var(--radius-button)] border border-stone bg-stone-soft px-3 py-2 text-[13px] text-ink-soft">
-        {t('notSupported')}
+      <div className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3">
+        <p className="text-[13px] text-ink-soft">{t('notSupported')}</p>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="mt-3 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+        >
+          {t('uploadCta')}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="video/*"
+          capture
+          className="hidden"
+          onChange={onFilePicked}
+        />
       </div>
     );
   }
@@ -266,7 +336,8 @@ export function GoalVideoRecorder({ value, onChange, protocol }: GoalVideoRecord
 
   const hasProtocol = !!(protocol && (protocol.instruction || protocol.setup));
   const targetSeconds = protocol?.seconds ?? null;
-  const tooShort = recordedSeconds > 0 && recordedSeconds < MIN_SECONDS;
+  const tooShort =
+    !uploaded && recordedSeconds > 0 && recordedSeconds < MIN_SECONDS;
 
   const taskCard = hasProtocol ? (
     <div className="rounded-[var(--radius-button)] border border-sage bg-sage-soft px-3 py-2">
@@ -300,6 +371,14 @@ export function GoalVideoRecorder({ value, onChange, protocol }: GoalVideoRecord
 
   return (
     <div className={box}>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="video/*"
+        capture
+        className="hidden"
+        onChange={onFilePicked}
+      />
       {phase === 'intro' && (
         <div>
           <p className="text-[14px] font-semibold text-ink">{t('introTitle')}</p>
@@ -308,13 +387,24 @@ export function GoalVideoRecorder({ value, onChange, protocol }: GoalVideoRecord
           ) : (
             <p className="mt-1 text-[13px] text-ink-soft">{t('introHelp')}</p>
           )}
-          <button
-            type="button"
-            onClick={() => setPhase('consent')}
-            className={`${btnNeutral} mt-3`}
-          >
-            {t('recordCta')}
-          </button>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPhase('consent')}
+              className={btnNeutral}
+            >
+              {t('recordCta')}
+            </button>
+            <span className="text-[12px] text-ink-muted">{t('orLabel')}</span>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className={btnNeutral}
+            >
+              {t('uploadCta')}
+            </button>
+          </div>
+          <p className="mt-2 text-[12px] text-ink-muted">{t('uploadHint')}</p>
         </div>
       )}
 
@@ -437,13 +527,22 @@ export function GoalVideoRecorder({ value, onChange, protocol }: GoalVideoRecord
       {phase === 'error' && (
         <div>
           <p className="text-[13px] text-[#9a3b3b]">{errorMsg || t('cameraError')}</p>
-          <button
-            type="button"
-            onClick={cancelToIntro}
-            className={`${btnNeutral} mt-3`}
-          >
-            {t('back')}
-          </button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={cancelToIntro}
+              className={btnNeutral}
+            >
+              {t('back')}
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className={btnNeutral}
+            >
+              {t('uploadCta')}
+            </button>
+          </div>
         </div>
       )}
     </div>

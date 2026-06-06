@@ -49,6 +49,15 @@ interface GoalProgressViewProps {
    *  weekly self-report reads as a journey between them. */
   nrsBaseline?: number | null;
   nrsTarget?: number | null;
+  /** Clinic video score(s) for this goal, overlaid as a distinct dark
+   *  series. For NRS goals this is the clinic's 0–10 read of the
+   *  peak-effect clip, shown beside the patient's own 0–10 self-report on
+   *  the same axis. */
+  clinicPoints?: {
+    weekNumber: number;
+    nrs: number | null;
+    value: -2 | -1 | 0 | 1 | 2 | null;
+  }[];
 }
 
 /**
@@ -82,7 +91,8 @@ export function GoalProgressView({
   onExpand,
   nrsDirection,
   nrsBaseline,
-  nrsTarget
+  nrsTarget,
+  clinicPoints = []
 }: GoalProgressViewProps) {
   const t = useTranslations('treatment');
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
@@ -217,6 +227,34 @@ export function GoalProgressView({
       y2: yFor(plotVal(physioByWeek.get(wb)!)!)
     });
   }
+
+  // Clinic video score points (deduped by week), drawn as a distinct dark
+  // series on top — the authoritative one-rater read to compare against the
+  // patient's self-report on the same axis.
+  const clinicByWeek = new Map<
+    number,
+    { weekNumber: number; nrs: number | null; value: -2 | -1 | 0 | 1 | 2 | null }
+  >();
+  for (const p of clinicPoints) clinicByWeek.set(p.weekNumber, p);
+  const clinicWeeks = Array.from(clinicByWeek.keys()).sort((a, b) => a - b);
+  const clinicSegments: { x1: number; y1: number; x2: number; y2: number }[] =
+    [];
+  for (let i = 0; i < clinicWeeks.length - 1; i++) {
+    const wa = clinicWeeks[i];
+    const wb = clinicWeeks[i + 1];
+    const va = plotVal(clinicByWeek.get(wa)!);
+    const vb = plotVal(clinicByWeek.get(wb)!);
+    if (typeof va === 'number' && typeof vb === 'number') {
+      clinicSegments.push({
+        x1: xFor(wa),
+        y1: yFor(va),
+        x2: xFor(wb),
+        y2: yFor(vb)
+      });
+    }
+  }
+  const selectedClinic =
+    selectedWeek !== null ? clinicByWeek.get(selectedWeek) ?? null : null;
 
   return (
     <article className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
@@ -632,11 +670,44 @@ export function GoalProgressView({
             />
           );
         })}
+        {/* Clinic video score — dark, dotted line + filled squares, distinct
+            from the patient (sage circles) and physio (amber diamonds). */}
+        {clinicSegments.map((s, i) => (
+          <line
+            key={`cs-${i}`}
+            x1={s.x1}
+            y1={s.y1}
+            x2={s.x2}
+            y2={s.y2}
+            stroke="var(--color-ink)"
+            strokeWidth={1.5}
+            strokeDasharray="1 3"
+            strokeLinecap="round"
+          />
+        ))}
+        {clinicWeeks.map((w) => {
+          const p = clinicByWeek.get(w)!;
+          const cv = plotVal(p);
+          if (typeof cv !== 'number') return null;
+          const cy = yFor(cv);
+          return (
+            <rect
+              key={`ct-${w}`}
+              x={xFor(w) - 3.5}
+              y={cy - 3.5}
+              width={7}
+              height={7}
+              fill="var(--color-ink)"
+              stroke="var(--color-cream-soft)"
+              strokeWidth={1.25}
+            />
+          );
+        })}
       </svg>
 
-      {/* Legend — only shown when there are physio ratings to explain. */}
-      {physioWeeks.length > 0 && (
-        <div className="mt-1 flex gap-4 text-[13px] text-ink-muted">
+      {/* Legend — shown when there's a second/third series to explain. */}
+      {(physioWeeks.length > 0 || clinicWeeks.length > 0) && (
+        <div className="mt-1 flex flex-wrap gap-4 text-[13px] text-ink-muted">
           <span className="flex items-center gap-1.5">
             <span
               aria-hidden
@@ -645,14 +716,26 @@ export function GoalProgressView({
             />
             Patient
           </span>
-          <span className="flex items-center gap-1.5">
-            <span
-              aria-hidden
-              className="inline-block h-2 w-2 rotate-45"
-              style={{ background: 'var(--color-amber-deep)' }}
-            />
-            Physiotherapist
-          </span>
+          {physioWeeks.length > 0 && (
+            <span className="flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="inline-block h-2 w-2 rotate-45"
+                style={{ background: 'var(--color-amber-deep)' }}
+              />
+              Physiotherapist
+            </span>
+          )}
+          {clinicWeeks.length > 0 && (
+            <span className="flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="inline-block h-2.5 w-2.5"
+                style={{ background: 'var(--color-ink)' }}
+              />
+              {t('clinicVideoLine')}
+            </span>
+          )}
         </div>
       )}
 
@@ -728,6 +811,16 @@ export function GoalProgressView({
           </p>
         ) : (
           <p className="text-ink-soft">{t('tapPointForDetails')}</p>
+        )}
+        {selectedClinic && typeof plotVal(selectedClinic) === 'number' && (
+          <p className="text-ink-soft">
+            <span className="text-ink-muted">{t('clinicVideoLine')}: </span>
+            <span className="font-semibold text-ink">
+              {isNrs
+                ? `NRS ${selectedClinic.nrs}/10`
+                : `GAS ${formatGas(selectedClinic.value)}`}
+            </span>
+          </p>
         )}
       </div>
     </article>
