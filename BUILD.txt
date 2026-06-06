@@ -1,30 +1,36 @@
-BUILD: patient-visit-and-status   (patient cold-start #3 + #5)
+BUILD: audit-followups   (remaining patient-audit items)
 =========================================================================
-NO MIGRATION — client-only. (Requires 0081 from the previous build.)
+NO MIGRATION — client/copy only.
+
+CONTEXT
+Most remaining audit items were already handled in the code (autoComplete +
+inline password hint on signup; plain-language importance options; the check-in
+already shows a named per-goal progress strip; pre-visit suggestions, status
+echo and check-in undo shipped in earlier builds). This build does the
+genuinely-open ones:
 
 WHAT THIS BUILD DOES
-- #3 Teach the visit code:
-  - A new "At your appointment" step in the patient onboarding wizard, with a
-    small visit-code illustration, explaining: show/read the code so the
-    clinician can open your record.
-  - A "At your visit — Show visit code" card on the patient no-cycle home,
-    linking to the visit-code screen. The empty state now explains the next
-    real step instead of just "wait".
-- #5 Suggestion status echo:
-  - The patient home now shows a quiet "N goal(s) sent — your clinician will
-    review them at your next visit" line whenever the patient has suggestions
-    awaiting review. Closes the loop without any clinic->patient messaging.
+- Signup: a patient-only note under the role choice setting expectations — your
+  clinic connects your record at your first visit, and you can start suggesting
+  goals before then.
+- Onboarding: the patient wizard now teaches the visit code BEFORE the check-in
+  (intro -> details -> visit -> checkin -> comfort) — connect first, then learn
+  the weekly rating.
+- Home: a gentle reassurance line under the goals — progress is uneven and a
+  flat week isn't failure; the clinician looks at the whole picture. Shown only
+  when the patient has goals.
 
 DEPLOY
 - Unzip; push to GitHub; Vercel builds. Page count 60. No SQL.
 
 ** QA (please verify — can't be tested here) **
-- Replay patient onboarding: an "At your appointment" step appears between the
-  check-in and comfort steps.
-- The no-cycle home shows the visit-code card and it routes to /visit-code.
-- After suggesting a goal, the home shows the "sent — your clinician will
-  review" line (correct singular/plural), and it clears once the clinician
-  approves or declines the suggestion.
+- Signup shows the patient note for "Patient" and not for "Therapist".
+- Onboarding step order reads visit -> check-in.
+- The reassurance line appears under the goals when the patient has any.
 
-NEXT IN THIS BATCH
-- #4 check-in edit/undo window.
+NOT CHANGED (by design / can't action here)
+- Clinic->patient visibility of clinician edits: intentionally upward-only.
+- Visit-code 10-min expiry / no-screen fallback: inherent / clinic-side.
+- Notifications push pipeline: opt-in UI exists; runtime/infra, untestable here.
+- Visual focus-ring / contrast / screen-reader checks: need a rendered build;
+  tap targets and aria-labels look correct in code.

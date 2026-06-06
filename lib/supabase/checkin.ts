@@ -321,6 +321,29 @@ export async function uploadGoalVideo(params: {
 }
 
 /**
+ * Undo a recently-submitted check-in (within the server's 24h window),
+ * via reopen_weekly_checkin. Deletes the check-in and reopens its prompt
+ * so the patient can redo it. Refused server-side once a clinician has
+ * scored a clip on it.
+ */
+export function useReopenCheckin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (checkinId: string): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('reopen_weekly_checkin', {
+        p_checkin_id: checkinId
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['patientHome'] });
+      qc.invalidateQueries({ queryKey: ['checkin'] });
+    }
+  });
+}
+
+/**
  * Submits a check-in via the submit_weekly_checkin_v4 RPC. The server
  * derives GAS from NRS for NRS goals, and stores the picked level
  * directly for GAS goals. A single check-in may mix both kinds. An

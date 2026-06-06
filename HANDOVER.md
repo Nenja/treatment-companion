@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `patient-visit-and-status`._
+> _Last updated for build tag: `audit-followups`._
 
 ---
 
@@ -242,7 +242,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0081**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0082**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -308,9 +308,12 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
   THIS.** patient row on patient signup (+ backfill); `goal_suggestion` cycle
   nullable; `approve_suggestion`/`approve_suggestion_gas` resolve the active
   cycle at approval.
+- `0082_reopen_checkin.sql` — **`checkin-undo`, RUN THIS.** `reopen_weekly_checkin`
+  lets a patient undo their own check-in within 24h (refused once a clinician
+  has scored a clip).
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0081 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag, **0081** cycle-agnostic suggestions).
+> If unsure whether the user's DB is current, confirm 0062–0082 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag, **0081** cycle-agnostic suggestions, **0082** check-in undo).
 
 ---
 
@@ -641,40 +644,57 @@ therapist panel, panels open from the menu) →
 **`pre-visit-suggestions`** (0081; patient row on signup, cycle-agnostic goal
 suggestions, approval resolves the active cycle) →
 **`patient-visit-and-status`** (no migration; teach visit code in onboarding +
-no-cycle home, pending-suggestion status echo on the home; current).
+no-cycle home, pending-suggestion status echo on the home) →
+**`checkin-undo`** (0082; patient can undo a just-submitted check-in within
+24h via reopen_weekly_checkin) →
+**`audit-followups`** (no migration; signup expectation note, onboarding visit-
+before-checkin order, home progress reassurance; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-patient-visit-and-status.zip`
-- **Tag:** `patient-visit-and-status`
-- **Change:** **Patient cold-start #3 + #5. No migration (client-only).**
-  - **#3 Teach the visit code:** new `visit` step in the patient onboarding
-    wizard (`intro.visitTitle/visitBody`, with a little code illustration), and
-    a "At your visit — Show visit code" card on the patient **no-cycle home**
-    (links to /visit-code). The empty state now explains the real next step.
-  - **#5 Suggestion status echo:** `usePatientHomeData` now returns
-    `pendingSuggestions` (count of the patient's `needsReview` suggestions,
-    fetched before the no-cycle branch so it shows in both states). The home
-    surfaces a quiet "N goal(s) sent — your clinician will review…" line
-    (ICU-plural `patient.home.pendingSuggestions`) — closes the loop without
-    any clinic→patient messaging.
-  - **i18n:** `intro.visitTitle/visitBody`, `patient.home.visitCodeTitle/
-    visitCodeBody/pendingSuggestions` (en/da). Parity balanced.
+- **Zip:** `treatment-companion-audit-followups.zip`
+- **Tag:** `audit-followups`
+- **Change:** **Remaining patient-audit items. No migration (client/copy).**
+  Most audit items turned out already-handled (autoComplete + inline password
+  hint on signup; plain-language importance options; the check-in already
+  passes a named `stepLabels` progress strip; status echo / undo / pre-visit
+  suggestions shipped earlier). The genuinely-open ones done here:
+  - **Signup expectation framing:** a patient-only note under the role choice
+    — "Your clinic connects your record at your first visit; you can start
+    suggesting goals before then." (`signup.patientNote`).
+  - **Onboarding order:** the patient wizard now teaches the **visit code
+    before the check-in** (`intro → details → visit → checkin → comfort`) —
+    connect first, then learn the weekly rating.
+  - **Progress reassurance:** a gentle, honest line under the home goals —
+    progress is uneven and a flat week isn't failure; the clinician looks at
+    the whole picture (`patient.home.progressReassurance`, shown when goals
+    exist).
+  - **i18n:** `signup.patientNote`, `patient.home.progressReassurance` (en/da).
 - **DB needed:** none.
-- **⚠ QA (can't test here):** replay the patient onboarding — a "At your
-  appointment" step appears between the check-in and comfort steps; the
-  no-cycle home shows the visit-code card; after suggesting a goal, the home
-  shows the "sent — your clinician will review" line (singular vs plural), and
-  it clears once the clinician approves/declines.
-- **Patient cold-start — remaining (this batch):** #4 check-in edit/undo window
-  (doing next).
+- **⚠ QA (can't test here):** signup shows the patient note when "Patient" is
+  selected (and not for "Therapist"); onboarding step order reads visit →
+  check-in; the reassurance line shows under the goals when the patient has any.
+- **Audit items NOT changed (by design / can't action here):** clinic→patient
+  visibility of what the clinician added (intentionally upward-only); visit-code
+  10-min expiry + no-screen fallback (inherent / clinic-side); notifications
+  push pipeline (opt-in UI exists; runtime/infra, untestable here); visual
+  focus-ring / colour-contrast / screen-reader checks (need a rendered build —
+  tap targets and aria-labels look right in code). Role two-button kept (defaults
+  to patient; the role hint already explains physicians are clinic-set-up).
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`checkin-undo`** — zip `treatment-companion-checkin-undo.zip` (migration
+  0082). `reopen_weekly_checkin` lets a patient undo a just-submitted check-in
+  within 24h (refused once a clinician has scored a clip); "Edit my answers" on
+  the thanks screen.
+- **`patient-visit-and-status`** — zip `treatment-companion-patient-visit-and-status.zip`
+  (no migration). Visit-code teaching in the patient onboarding wizard + the
+  no-cycle home; pending-suggestion status echo on the home.
 - **`pre-visit-suggestions`** — zip `treatment-companion-pre-visit-suggestions.zip`
   (migration 0081). Patient row on signup (trigger+backfill), cycle-agnostic
   goal suggestions, approval resolves the active cycle; no-cycle home offers
