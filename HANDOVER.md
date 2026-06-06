@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `patient-banner`._
+> _Last updated for build tag: `session-switching`._
 
 ---
 
@@ -242,7 +242,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0072**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0073**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -276,9 +276,14 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
   `weekly_goal_rating.clinic_video_rating/unusable/scored_by/scored_at` + the
   `set_clinic_video_score` RPC. The clinic's GAS-level score of each
   standardized video — the authoritative one-rater outcome.
+- `0073_session_switching.sql` — **`session-switching`, RUN THIS.** Lets a
+  clinician hold several patients open + switch without re-coding + reopen
+  today's without a new code. Consent gate unchanged; relaxes the
+  one-active-session index to per-(clinician,patient), adds patient-scoped
+  touch/end + `reopen_session` + `list_my_sessions`.
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0072 are applied (0066 is dev-only; **0067** is required for GAS suggestion-approval, **0068** for the read-aloud toggle, **0069** for the wearable/PGHD ingestion layer, **0070** for the treatment-modality column, **0071** for the video task protocol, **0072** for the clinic video score).
+> If unsure whether the user's DB is current, confirm 0062–0073 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching).
 
 ---
 
@@ -578,51 +583,63 @@ own "Clinic video assessment" GAS trend under each goal) →
 editable on an existing goal, not just at creation) →
 **`patient-banner`** (no migration; always-visible patient banner + wearable
 trend pulled into the since-last-visit summary; summary moved above the action
-row; current).
+row) →
+**`session-switching`** (0073; hold several patients open + switch without
+re-coding + same-day reopen; consent gate unchanged; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-patient-banner.zip`
-- **Tag:** `patient-banner`
-- **Change:** the clinician patient view now leads with an **always-visible
-  patient banner** and surfaces the **wearable trend inside the
-  since-last-visit summary** (only when the patient has data), and the summary
-  was moved **above** the action row. Directly targets the core problem (data
-  available at the planning moment). **Frontend only — no migration.**
-  - New `components/clinician/PatientBanner.tsx` — name (still taps through to
-    the full patient-info route), the demographics summary (age / sex /
-    etiology / side / ambulation, from `usePatientInfo` + `formatPatientSummary`,
-    which were already loaded), cycle + week + modality, current medication,
-    and assistive devices. Replaces the old cycle-context eyebrow and the
-    truncated summary line in the header (both removed to avoid duplication).
-  - `VisitChanges` gained a `patientId` prop and a conditional **wearable
-    trend** block: `usePatientObservations` → `buildWearableSeries` groups
-    numeric observations by metric (≤3), each shown as a `Sparkline` + latest
-    value + direction. Renders only when there's usable data — a patient with
-    no observations sees nothing (no empty state), per the design note.
-  - IA: the since-last-visit summary now renders right under the banner,
-    above the action row.
-  - **i18n:** `clinician.patient.banner.{medication,devices}` +
-    `visitChanges.wearableHeading` (en/da). Parity 1115 == 1115.
-- **DB needed:** **none** — migration count stays at **0072**.
-- **NOT in this build (deferred — see §8):** the full **wide two-column
-  reflow** (context left / goals right at the `lg` breakpoint), moving the
-  look-up row into a **header toolbar**, and pushing the goals fully above the
-  action row. Those are a layout-only restructure of the page's responsive
-  render tree, best landed as a focused pass that can be visually verified.
-- **⚠ QA (can't render here):** confirm the banner shows name + summary +
-  cycle/modality + medication + devices (and that the meds/devices rows are
-  absent when null); confirm the wearable block appears only for a patient
-  with observations and is gone otherwise; confirm the demographics summary
-  isn't duplicated in the header anymore; sanity-check the banner + summary at
-  narrow and wide widths.
+- **Zip:** `treatment-companion-session-switching.zip`
+- **Tag:** `session-switching`
+- **Change:** a clinician can now **hold several unlocked charts open at once**
+  and **switch between them without re-entering codes**, and **reopen a patient
+  they already unlocked today** without a fresh code. The **consent gate is
+  unchanged** — codes are still patient-generated, single-use, short-lived; the
+  0043 reusable-test containment is preserved verbatim; pre-visit access is NOT
+  added. Only session multiplicity + a today-scoped reopen changed.
+  - **Migration 0073:** the one-active-session-per-clinician unique index
+    becomes one-per-(clinician,patient). `unlock_with_visit_code` no longer
+    ends the clinician's other sessions (refreshes rather than duplicates an
+    existing active session for the same patient). RPCs:
+    `touch_clinician_session(p_patient_id)` (patient-scoped → "current" =
+    most-recently-touched), `end_clinician_session(p_patient_id)` (end one; the
+    no-arg end-all is kept), `reopen_session(p_patient_id)` (authorized ONLY by
+    this clinician's own session from today; reuses that day's code for the FK;
+    no new consent), `list_my_sessions()` (today's sessions, one row per
+    patient, display name + is_active). 1-hour RLS auto-lock unchanged.
+  - **clinicianSession.ts:** current session ordered by `last_activity_at`;
+    touch/end take optional patientId (typed `string | void`); new
+    `useMySessions`, `useSwitchSession`, `useReopenSession`.
+  - **Entry page (`/clinician`):** auto-redirect removed; now a **switcher** —
+    "Open patients" (switch, no code) + "Seen earlier today" (reopen, no code)
+    above the code form. A new code still goes straight to the patient view.
+  - **Patient page:** "End visit" ends only the current patient and returns to
+    the switcher; new **"Switch patient"** header button returns WITHOUT
+    ending; touch is patient-scoped.
+  - **i18n:** `clinician.session.{switchPatient,open,reopen,openHeading,
+    openHint,reopenHeading,reopenHint}` (en/da). Parity 1122 == 1122.
+- **DB needed:** **run migration 0073** (`0073_session_switching.sql`).
+  Standalone copy attached.
+- **⚠⚠ QA — SECURITY-SENSITIVE, can't test sessions/RLS/auth here:**
+  single-patient flow unchanged; open two patients and confirm both list under
+  "Open patients" and switching loads the right chart and doesn't cross data;
+  let one lapse (>1h) and confirm it moves to "Seen earlier today" and reopen
+  works without a code; **negative checks** — a clinician must NOT reopen a
+  patient they never unlocked or one from a previous day, and must not read a
+  patient with no active session (RLS still gates); "End visit" ends only that
+  patient (shared EndSessionButton + physio still end-all).
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`patient-banner`** — zip `treatment-companion-patient-banner.zip` (no
+  migration). Always-visible patient banner (name, demographics summary,
+  cycle/modality, medication, devices via `PatientBanner` + `usePatientInfo`);
+  conditional wearable trend pulled into `VisitChanges` (shown only when data
+  exists); since-last-visit summary moved above the action row.
 - **`edit-video-protocol`** — zip `treatment-companion-edit-video-protocol.zip`
   (no migration). The check-in video request + task protocol became editable on
   an existing goal via a new `VideoProtocolEditor` modal opened from a "Video
@@ -727,6 +744,12 @@ row; current).
 
 ## 8. Pending / next slices
 
+- **Access & switching — partly done.** `session-switching` (0073) shipped
+  multi-patient switching + same-day reopen, consent gate unchanged. PARKED
+  by decision: **pre-visit prep / roster** (needs consent to move earlier than
+  the visit — appointment-scoped, which needs a scheduling concept the app
+  lacks, or standing opt-in, which needs DPO/regulatory sign-off). Don't build
+  until that call is made.
 - **Clinician patient-view layout pass (next).** `patient-banner` shipped the
   banner + conditional wearable trend + summary-above-actions. Still to do,
   as a layout-only pass that wants visual verification: (a) **wide two-column**

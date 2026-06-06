@@ -1,56 +1,60 @@
-BUILD: patient-banner
+BUILD: session-switching
 =========================================================================
 WHAT THIS BUILD DOES
-Reworks the top of the clinician patient view so the background a clinician
-needs to plan is visible on arrival, and pulls the wearable trend into the
-"since last visit" summary (only when the patient has data). Directly targets
-the core problem: relevant data available at the planning moment, not behind
-taps and separate pages. NO DATABASE MIGRATION — frontend only.
+Lets a clinician hold several unlocked patient charts open at once and
+switch between them WITHOUT re-entering codes, and reopen a patient they
+already unlocked TODAY without a fresh code.
+
+** THE CONSENT GATE IS UNCHANGED. ** Visit codes are still patient-generated,
+single-use, and short-lived; the 0043 reusable-test-code containment is
+preserved verbatim; PRE-VISIT access is NOT added (that decision is parked).
+Only two things changed: a clinician may have more than one session open at
+a time, and may reopen today's patients without a new code.
 
 CHANGES
-- NEW components/clinician/PatientBanner.tsx — an always-visible banner:
-    * name (still taps through to the full patient-info page),
-    * demographics summary (age / sex / etiology / affected side /
-      ambulation) — from data already loaded via usePatientInfo,
-    * cycle + week + treatment modality,
-    * current medication,
-    * assistive devices.
-  Medication/devices rows are omitted when empty.
-- The old cycle-context eyebrow and the truncated summary line in the header
-  were removed (the banner now owns that background — no duplication).
-- VisitChanges (the since-last-visit summary):
-    * now takes a patientId prop;
-    * shows a CONDITIONAL "wearable trend" block — usePatientObservations,
-      grouped by metric (up to 3), each a small sparkline + latest value +
-      up/down/flat direction. Shown ONLY when the patient has usable
-      observations; a patient with none sees nothing (no empty state).
-- Information architecture: the since-last-visit summary now sits directly
-  under the banner, ABOVE the action row.
-- i18n: clinician.patient.banner.{medication,devices} +
-  visitChanges.wearableHeading (en + da). Parity 1115 == 1115.
+- Migration 0073_session_switching.sql:
+    * one-active-session-per-clinician unique index -> per-(clinician,patient),
+      so several patients can be open at once;
+    * unlock_with_visit_code no longer ends your other sessions;
+    * touch_clinician_session(p_patient_id) and end_clinician_session(
+      p_patient_id) — patient-scoped (the no-arg "all" versions are kept);
+    * reopen_session(p_patient_id) — reopen a patient YOU unlocked today, no
+      new code (authorized only by your own session from today);
+    * list_my_sessions() — today's sessions for the switcher.
+  The 1-hour inactivity auto-lock (RLS) is unchanged.
+- lib/supabase/clinicianSession.ts: "current" session now = most-recently-
+  active; touch/end take an optional patientId; new useMySessions,
+  useSwitchSession, useReopenSession.
+- Clinician entry page (/clinician): no longer auto-redirects into the last
+  patient; shows a SWITCHER — "Open patients" (switch back, no code) and
+  "Seen earlier today" (reopen, no code) — above the code form. A new code
+  still goes straight to the patient view.
+- Clinician patient page: "End visit" ends only the current patient (others
+  stay open) and returns to the switcher; a new "Switch patient" button
+  returns to the switcher WITHOUT ending.
+- i18n: clinician.session.{switchPatient,open,reopen,openHeading,openHint,
+  reopenHeading,reopenHint} (en + da). Parity 1122 == 1122.
 
 DEPLOY
-1. Unzip; push to GitHub; Vercel builds on push. Page count unchanged (60).
-2. No SQL to run.
+1. Run migration 0073 in the Supabase SQL editor. Standalone copy attached.
+2. Unzip; push to GitHub; Vercel builds on push. Page count unchanged (60).
 
-HOW TO CONFIRM IT WORKED (needs a real browser + Supabase)
-- The patient view should open with the banner: name, summary, cycle/
-  modality, medication, devices. Meds/devices rows should be absent when
-  there's nothing recorded.
-- The demographics summary should no longer appear twice (it's only in the
-  banner now, not the header).
-- The wearable trend should appear in the since-last-visit summary ONLY for a
-  patient who has imported observations; for a patient with none, the block
-  should be entirely absent.
-- Check the banner + summary at a narrow (phone) and a wide (desktop) width.
+** SECURITY-SENSITIVE — VERIFY ON REAL SUPABASE (cannot be tested here) **
+- Single-patient flow unchanged: unlock -> patient view; End visit -> switcher.
+- Open two patients (unlock A; "Switch patient"; unlock B). Both should appear
+  under "Open patients"; switching should load the correct chart and must NOT
+  cross data between patients.
+- Let one session pass 1h idle: it should move to "Seen earlier today" and
+  reopen should work WITHOUT a code.
+- NEGATIVE CHECKS (the security boundary):
+    * a clinician must NOT be able to reopen a patient they never unlocked,
+      nor one from a previous day (reopen_session should raise);
+    * with no active session, patient data must still be unreadable (RLS).
+- "End visit" should end only the current patient. The shared EndSessionButton
+  (sub-flows) and the physiotherapist end still end ALL sessions — acceptable,
+  but flag if you want those scoped to one patient too.
 
-NOT IN THIS BUILD (deferred — see HANDOVER section 8)
-- The wide two-column arrangement (context left / goals right), moving the
-  look-up row into a header toolbar, and pushing the goals fully above the
-  action row. Those are a layout-only restructure best done as a focused pass
-  that can be checked visually.
-
-QA FLAGS
-- New component + one data read; lower logic risk. The layout/visual result
-  is the thing to eyeball, especially the banner wrap on narrow screens and
-  the sparkline rendering.
+NOT IN THIS BUILD (parked by decision — HANDOVER section 8)
+- Pre-visit prep / roster. Needs consent to move earlier than the visit
+  (appointment-scoped, which needs a scheduling concept the app doesn't have,
+  or standing opt-in, which needs DPO/regulatory sign-off).

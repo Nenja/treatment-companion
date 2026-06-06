@@ -35,7 +35,7 @@ export function useCurrentClinicianSession(
         .select('id, patient_id, started_at, last_activity_at, ended_at')
         .is('ended_at', null)
         .gt('last_activity_at', oneHourAgo)
-        .order('started_at', { ascending: false })
+        .order('last_activity_at', { ascending: false })
         .limit(1)
         .maybeSingle();
       if (error) throw error;
@@ -74,10 +74,14 @@ export function useUnlockWithCode() {
 }
 
 export function useTouchClinicianSession() {
-  return useMutation({
-    mutationFn: async (): Promise<void> => {
+  return useMutation<void, Error, string | void>({
+    mutationFn: async (patientId): Promise<void> => {
       const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.rpc('touch_clinician_session');
+      const { error } = patientId
+        ? await supabase.rpc('touch_clinician_session', {
+            p_patient_id: patientId
+          })
+        : await supabase.rpc('touch_clinician_session');
       if (error) throw error;
     }
   });
@@ -85,15 +89,90 @@ export function useTouchClinicianSession() {
 
 export function useEndClinicianSession() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (): Promise<void> => {
+  return useMutation<void, Error, string | void>({
+    mutationFn: async (patientId): Promise<void> => {
       const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.rpc('end_clinician_session');
+      const { error } = patientId
+        ? await supabase.rpc('end_clinician_session', {
+            p_patient_id: patientId
+          })
+        : await supabase.rpc('end_clinician_session');
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['clinicianSession'] });
       qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+      qc.invalidateQueries({ queryKey: ['mySessions'] });
+    }
+  });
+}
+
+export interface MySession {
+  patientId: string;
+  displayName: string;
+  lastActivityAt: string;
+  isActive: boolean;
+}
+
+/** This clinician's own sessions from today — the switcher list. Active rows
+ *  can be switched back to; inactive rows can be reopened (same-day, no new
+ *  code). Refetches periodically so an aging session flips to "reopen". */
+export function useMySessions(
+  profileId: string | null,
+  role: string | null | undefined
+) {
+  return useQuery({
+    queryKey: ['mySessions', profileId],
+    enabled:
+      !!profileId && (role === 'clinician' || role === 'physiotherapist'),
+    queryFn: async (): Promise<MySession[]> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc('list_my_sessions');
+      if (error) throw error;
+      return ((data as Array<Record<string, unknown>>) ?? []).map((r) => ({
+        patientId: r.patient_id as string,
+        displayName: (r.display_name as string) ?? 'Patient',
+        lastActivityAt: r.last_activity_at as string,
+        isActive: Boolean(r.is_active)
+      }));
+    },
+    refetchInterval: 30_000
+  });
+}
+
+/** Switch focus to an already-open patient: touch their session so it becomes
+ *  the most-recently-active (the "current" one the patient view reads). */
+export function useSwitchSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (patientId: string): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('touch_clinician_session', {
+        p_patient_id: patientId
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianSession'] });
+      qc.invalidateQueries({ queryKey: ['mySessions'] });
+    }
+  });
+}
+
+/** Reopen a patient unlocked earlier today, without a fresh code. */
+export function useReopenSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (patientId: string): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('reopen_session', {
+        p_patient_id: patientId
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianSession'] });
+      qc.invalidateQueries({ queryKey: ['mySessions'] });
     }
   });
 }
