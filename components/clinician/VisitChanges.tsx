@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { formatLongDate } from '@/lib/dates';
 import { VideoPlayerModal } from '@/components/clinician/VideoPlayerModal';
+import { useSetClinicVideoScore } from '@/lib/supabase/clinicianPatient';
 import type {
   ClinicianPatientCheckin,
   ClinicianPatientGoal
@@ -48,10 +49,28 @@ export function VisitChanges({
   goals
 }: VisitChangesProps) {
   const t = useTranslations('visitChanges');
+  const tv = useTranslations('clinician.video');
   const locale = useLocale();
-  const [video, setVideo] = useState<{ path: string; title: string } | null>(
-    null
-  );
+  const setClinicScore = useSetClinicVideoScore();
+  const [video, setVideo] = useState<{
+    path: string;
+    title: string;
+    ratingId: string;
+    goalId: string;
+    clinicRating: number | null;
+    clinicUnusable: boolean;
+  } | null>(null);
+
+  // Compact badge describing the clinic's score state for a clip.
+  const scoreBadge = (rating: number | null, unusable: boolean): string => {
+    if (unusable) return tv('score.badgeUnusable');
+    if (rating != null) {
+      return tv('score.badgeScored', {
+        n: rating > 0 ? `+${rating}` : String(rating)
+      });
+    }
+    return tv('score.badgePending');
+  };
 
   const anchoredToTreatment = !!lastTreatmentDate;
   const anchorIso = lastTreatmentDate ?? cycleStartDate;
@@ -142,17 +161,29 @@ export function VisitChanges({
   // Patient-recorded clips since the anchor, labelled by goal + week so the
   // clinician can play each back. (Storage read is granted to clinicians with
   // an active session by the goal-videos bucket policy; see migration 0062.)
-  const goalTextById = new Map(goals.map((g) => [g.id, g.patientFacingText]));
-  const videos: { key: string; goalText: string; week: number; path: string }[] =
-    [];
+  const goalById = new Map(goals.map((g) => [g.id, g]));
+  const videos: {
+    key: string;
+    goalText: string;
+    week: number;
+    path: string;
+    ratingId: string;
+    goalId: string;
+    clinicRating: number | null;
+    clinicUnusable: boolean;
+  }[] = [];
   for (const c of since) {
     for (const r of c.ratings) {
       if (r.videoPath) {
         videos.push({
           key: `${c.id}:${r.approvedGoalId}`,
-          goalText: goalTextById.get(r.approvedGoalId) ?? '',
+          goalText: goalById.get(r.approvedGoalId)?.patientFacingText ?? '',
           week: c.weekNumber,
-          path: r.videoPath
+          path: r.videoPath,
+          ratingId: r.id,
+          goalId: r.approvedGoalId,
+          clinicRating: r.clinicVideoRating,
+          clinicUnusable: r.clinicVideoUnusable
         });
       }
     }
@@ -282,7 +313,11 @@ export function VisitChanges({
                         title: t('videoTitle', {
                           goal: v.goalText,
                           week: v.week
-                        })
+                        }),
+                        ratingId: v.ratingId,
+                        goalId: v.goalId,
+                        clinicRating: v.clinicRating,
+                        clinicUnusable: v.clinicUnusable
                       })
                     }
                     className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-stone-soft"
@@ -297,6 +332,17 @@ export function VisitChanges({
                       <path d="M8 5v14l11-7z" />
                     </svg>
                     {t('videoLabel', { goal: v.goalText, week: v.week })}
+                    <span
+                      className={`ml-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
+                        v.clinicUnusable
+                          ? 'bg-amber-soft text-amber-deep'
+                          : v.clinicRating != null
+                            ? 'bg-sage-soft text-sage-deep'
+                            : 'bg-stone-soft text-ink-muted'
+                      }`}
+                    >
+                      {scoreBadge(v.clinicRating, v.clinicUnusable)}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -309,6 +355,20 @@ export function VisitChanges({
           path={video.path}
           title={video.title}
           onClose={() => setVideo(null)}
+          scoring={{
+            ratingId: video.ratingId,
+            currentRating: video.clinicRating,
+            currentUnusable: video.clinicUnusable,
+            goalKind: goalById.get(video.goalId)?.kind ?? 'gas',
+            anchors: goalById.get(video.goalId)?.gas ?? null,
+            onSave: async (next) => {
+              await setClinicScore.mutateAsync({
+                ratingId: video.ratingId,
+                rating: next.rating,
+                unusable: next.unusable
+              });
+            }
+          }}
         />
       )}
     </section>

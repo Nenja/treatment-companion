@@ -4,10 +4,19 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 const MAX_SECONDS = 30;
+const MIN_SECONDS = 3;
 
 export interface RecordedVideo {
   blob: Blob;
   ext: 'mp4' | 'webm';
+}
+
+/** Standardized task recipe for this goal (migration 0071). Shown at record
+ *  time so a rotating / untrained informant films the same task every week. */
+export interface VideoTaskProtocol {
+  instruction: string | null;
+  setup: string | null;
+  seconds: number | null;
 }
 
 interface GoalVideoRecorderProps {
@@ -15,6 +24,8 @@ interface GoalVideoRecorderProps {
   value: RecordedVideo | null;
   /** Called when the patient keeps a clip (RecordedVideo) or removes it (null). */
   onChange: (v: RecordedVideo | null) => void;
+  /** Optional task protocol to guide capture. */
+  protocol?: VideoTaskProtocol;
 }
 
 type Phase = 'intro' | 'consent' | 'live' | 'recording' | 'preview' | 'kept' | 'error';
@@ -48,7 +59,7 @@ function pickMime(): { mimeType?: string; ext: 'mp4' | 'webm' } {
  * it to Storage on submit. Recording is unsupported on very old browsers,
  * in which case we say so rather than offering a broken control.
  */
-export function GoalVideoRecorder({ value, onChange }: GoalVideoRecorderProps) {
+export function GoalVideoRecorder({ value, onChange, protocol }: GoalVideoRecorderProps) {
   const t = useTranslations('goalVideo');
   const supported =
     typeof navigator !== 'undefined' &&
@@ -57,7 +68,10 @@ export function GoalVideoRecorder({ value, onChange }: GoalVideoRecorderProps) {
 
   const [phase, setPhase] = useState<Phase>(value ? 'kept' : 'intro');
   const [elapsed, setElapsed] = useState(0);
+  const [recordedSeconds, setRecordedSeconds] = useState(0);
+  const [portrait, setPortrait] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const elapsedRef = useRef(0);
 
   const liveRef = useRef<HTMLVideoElement | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
@@ -96,6 +110,17 @@ export function GoalVideoRecorder({ value, onChange }: GoalVideoRecorderProps) {
         /* already stopped */
       }
     };
+  }, []);
+
+  // Track device orientation so we can nudge toward landscape, which frames
+  // limb/functional tasks far better and keeps clips consistent across weeks.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(orientation: portrait)');
+    const update = () => setPortrait(mq.matches);
+    update();
+    mq.addEventListener?.('change', update);
+    return () => mq.removeEventListener?.('change', update);
   }, []);
 
   async function startCamera() {
@@ -142,6 +167,7 @@ export function GoalVideoRecorder({ value, onChange }: GoalVideoRecorderProps) {
     };
     recorder.onstop = () => {
       clearTimer();
+      setRecordedSeconds(elapsedRef.current);
       const type = recorderRef.current?.mimeType || chunksRef.current[0]?.type || '';
       const blob = new Blob(chunksRef.current, { type: type || undefined });
       revokePreview();
@@ -156,10 +182,12 @@ export function GoalVideoRecorder({ value, onChange }: GoalVideoRecorderProps) {
     };
     recorder.start();
     setElapsed(0);
+    elapsedRef.current = 0;
     setPhase('recording');
     timerRef.current = window.setInterval(() => {
       setElapsed((s) => {
         const next = s + 1;
+        elapsedRef.current = next;
         if (next >= MAX_SECONDS) stopRecording();
         return next;
       });
@@ -236,12 +264,50 @@ export function GoalVideoRecorder({ value, onChange }: GoalVideoRecorderProps) {
   const btnNeutral = `${btn} border border-stone bg-cream text-ink-soft hover:bg-stone-soft`;
   const btnDanger = `${btn} border border-[#d8b9b9] bg-cream text-[#9a3b3b] hover:bg-stone-soft`;
 
+  const hasProtocol = !!(protocol && (protocol.instruction || protocol.setup));
+  const targetSeconds = protocol?.seconds ?? null;
+  const tooShort = recordedSeconds > 0 && recordedSeconds < MIN_SECONDS;
+
+  const taskCard = hasProtocol ? (
+    <div className="rounded-[var(--radius-button)] border border-sage bg-sage-soft px-3 py-2">
+      <p className="text-[12px] font-semibold text-sage-deep">
+        {t('taskHeading')}
+      </p>
+      {protocol?.instruction && (
+        <p className="mt-1 text-[13px] leading-relaxed text-ink">
+          {protocol.instruction}
+        </p>
+      )}
+      {protocol?.setup && (
+        <p className="mt-1 text-[12px] leading-relaxed text-ink-soft">
+          {protocol.setup}
+        </p>
+      )}
+      {targetSeconds != null && (
+        <p className="mt-1 text-[12px] font-semibold text-ink-soft">
+          {t('taskTarget', { n: targetSeconds })}
+        </p>
+      )}
+    </div>
+  ) : null;
+
+  const orientationHint =
+    portrait ? (
+      <div className="mt-2 rounded-[var(--radius-button)] border border-amber-deep bg-amber-soft px-3 py-2 text-[12px] font-semibold text-amber-deep">
+        {t('orientationHint')}
+      </div>
+    ) : null;
+
   return (
     <div className={box}>
       {phase === 'intro' && (
         <div>
           <p className="text-[14px] font-semibold text-ink">{t('introTitle')}</p>
-          <p className="mt-1 text-[13px] text-ink-soft">{t('introHelp')}</p>
+          {taskCard ? (
+            <div className="mt-2">{taskCard}</div>
+          ) : (
+            <p className="mt-1 text-[13px] text-ink-soft">{t('introHelp')}</p>
+          )}
           <button
             type="button"
             onClick={() => setPhase('consent')}
@@ -271,7 +337,9 @@ export function GoalVideoRecorder({ value, onChange }: GoalVideoRecorderProps) {
 
       {(phase === 'live' || phase === 'recording') && (
         <div>
-          <div className="overflow-hidden rounded-[var(--radius-button)] bg-ink">
+          {taskCard && <div className="mb-2">{taskCard}</div>}
+          {orientationHint}
+          <div className="mt-2 overflow-hidden rounded-[var(--radius-button)] bg-ink">
             <video
               ref={liveRef}
               className="aspect-video w-full object-cover"
@@ -313,8 +381,21 @@ export function GoalVideoRecorder({ value, onChange }: GoalVideoRecorderProps) {
               playsInline
             />
           </div>
+          {hasProtocol && (
+            <p className="mt-2 text-[12px] text-ink-soft">{t('previewCheck')}</p>
+          )}
+          {tooShort && (
+            <p className="mt-2 text-[12px] font-semibold text-[#9a3b3b]">
+              {t('tooShort', { n: MIN_SECONDS })}
+            </p>
+          )}
           <div className="mt-2 flex flex-wrap gap-2">
-            <button type="button" onClick={keepVideo} className={btnPrimary}>
+            <button
+              type="button"
+              onClick={keepVideo}
+              disabled={tooShort}
+              className={`${btnPrimary} ${tooShort ? 'opacity-50' : ''}`}
+            >
               {t('useVideo')}
             </button>
             <button type="button" onClick={reRecord} className={btnNeutral}>

@@ -8,7 +8,8 @@ import { useAuth } from '@/lib/supabase/auth';
 import {
   useCreateGoalForPatient,
   useCreateGasGoalForPatient,
-  useSetGoalVideoEnabled
+  useSetGoalVideoEnabled,
+  useSetGoalVideoProtocol
 } from '@/lib/supabase/clinicianPatient';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
 import { useToast } from '@/components/feedback/Toast';
@@ -53,6 +54,7 @@ function NewGoalInner() {
   const create = useCreateGoalForPatient();
   const createGas = useCreateGasGoalForPatient();
   const setVideo = useSetGoalVideoEnabled();
+  const setVideoProtocol = useSetGoalVideoProtocol();
   const toast = useToast();
 
   const patientId = searchParams.get('patient') ?? '';
@@ -64,6 +66,10 @@ function NewGoalInner() {
   const [goalKind, setGoalKind] = useState<'nrs' | 'gas'>('nrs');
   // Whether to ask the patient for an optional short video at check-in.
   const [videoEnabled, setVideoEnabled] = useState(false);
+  // Standardized task protocol shown at record time (migration 0071).
+  const [videoTaskInstruction, setVideoTaskInstruction] = useState('');
+  const [videoTaskSetup, setVideoTaskSetup] = useState('');
+  const [videoTaskSeconds, setVideoTaskSeconds] = useState('');
 
   const [patientText, setPatientText] = useState('');
   const [smartText, setSmartText] = useState('');
@@ -128,6 +134,21 @@ function NewGoalInner() {
       }
       if (videoEnabled && goalId) {
         await setVideo.mutateAsync({ goalId, enabled: true });
+        if (
+          videoTaskInstruction.trim() ||
+          videoTaskSetup.trim() ||
+          videoTaskSeconds.trim()
+        ) {
+          const secs = videoTaskSeconds.trim()
+            ? Math.min(30, Math.max(3, Math.round(Number(videoTaskSeconds))))
+            : null;
+          await setVideoProtocol.mutateAsync({
+            goalId,
+            instruction: videoTaskInstruction,
+            setup: videoTaskSetup,
+            seconds: Number.isFinite(secs as number) ? secs : null
+          });
+        }
       }
       toast.success(t('toastRecorded'));
       router.push(patientPath);
@@ -392,6 +413,51 @@ function NewGoalInner() {
               </span>
             </span>
           </label>
+          {videoEnabled && (
+            <div className="mt-4 space-y-3 border-t border-stone pt-4">
+              <p className="text-[13px] leading-relaxed text-ink-soft">
+                {t('videoTaskHint')}
+              </p>
+              <div>
+                <label className="text-[13px] font-semibold text-ink-soft">
+                  {t('videoTaskInstructionLabel')}
+                </label>
+                <textarea
+                  value={videoTaskInstruction}
+                  onChange={(e) => setVideoTaskInstruction(e.target.value)}
+                  rows={3}
+                  placeholder={t('videoTaskInstructionPlaceholder')}
+                  className="mt-1 w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink"
+                />
+              </div>
+              <div>
+                <label className="text-[13px] font-semibold text-ink-soft">
+                  {t('videoTaskSetupLabel')}
+                </label>
+                <textarea
+                  value={videoTaskSetup}
+                  onChange={(e) => setVideoTaskSetup(e.target.value)}
+                  rows={2}
+                  placeholder={t('videoTaskSetupPlaceholder')}
+                  className="mt-1 w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink"
+                />
+              </div>
+              <div>
+                <label className="text-[13px] font-semibold text-ink-soft">
+                  {t('videoTaskSecondsLabel')}
+                </label>
+                <input
+                  type="number"
+                  min={3}
+                  max={30}
+                  value={videoTaskSeconds}
+                  onChange={(e) => setVideoTaskSeconds(e.target.value)}
+                  placeholder="10"
+                  className="mt-1 w-28 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-8 flex gap-3">

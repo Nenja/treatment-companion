@@ -372,6 +372,11 @@ function CheckinPageInner() {
         {showVideo && (
           <GoalVideoRecorder
             value={videos[goal.id] ?? null}
+            protocol={{
+              instruction: goal.videoTaskInstruction,
+              setup: goal.videoTaskSetup,
+              seconds: goal.videoTaskSeconds
+            }}
             onChange={(v) =>
               setVideos((prev) => {
                 if (!v) {
