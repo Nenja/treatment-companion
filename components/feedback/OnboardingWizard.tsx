@@ -66,6 +66,7 @@ type StepId =
   | 'actions'
   | 'record'
   | 'checkin'
+  | 'visit'
   | 'comfort';
 
 /* Sample data for the live mini-graph in the graph-reading step.
@@ -140,7 +141,7 @@ export function OnboardingWizard({
   // Per-role step lists.
   const steps: StepId[] =
     role === 'patient'
-      ? ['intro', 'details', 'checkin', 'comfort']
+      ? ['intro', 'details', 'checkin', 'visit', 'comfort']
       : ['intro', 'how', 'graph', 'actions', 'record', 'comfort'];
 
   const total = steps.length;
@@ -325,6 +326,36 @@ export function OnboardingWizard({
             lowLabel={t('checkinLow')}
             highLabel={t('checkinHigh')}
           />
+        </div>
+      </div>
+    );
+  } else if (current === 'visit') {
+    title = t('visitTitle');
+    body = (
+      <div className="mt-2">
+        <p className="text-[15px] leading-relaxed text-ink-soft">
+          {t('visitBody')}
+        </p>
+        <div className="mt-4 flex items-center justify-center">
+          <div className="flex items-center gap-2 rounded-[var(--radius-button)] border border-sage/40 bg-cream-soft px-4 py-3 text-sage-deep">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <rect x="3" y="6" width="18" height="12" rx="2" />
+              <path d="M7 10v4M11 10v4M15 10v4M19 10v4" />
+            </svg>
+            <span className="font-display text-[18px] tracking-[0.2em]">
+              1234
+            </span>
+          </div>
         </div>
       </div>
     );

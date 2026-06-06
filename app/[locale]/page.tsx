@@ -110,6 +110,17 @@ export default function PatientHomePage() {
         <h1 className="font-display text-[30px] leading-tight text-ink">
           {t('greeting', { name: data.patient.displayName })}
         </h1>
+
+        {data.pendingSuggestions > 0 && (
+          <div className="mt-4">
+            <Card tone="muted">
+              <p className="text-[14px] leading-relaxed text-ink-soft">
+                {t('pendingSuggestions', { count: data.pendingSuggestions })}
+              </p>
+            </Card>
+          </div>
+        )}
+
         <div className="mt-6">
           <Card tone="muted">
             <p className="font-display text-[18px] text-ink">
@@ -146,6 +157,45 @@ export default function PatientHomePage() {
                 +
               </span>
               {t('suggestGoal')}
+            </button>
+          </Card>
+        </div>
+
+        {/* What to bring to the visit — the visit code is how the clinician
+            opens the patient's record at the appointment. Taught here (and
+            in onboarding) so the empty state explains the next real step. */}
+        <div className="mt-4">
+          <Card tone="muted">
+            <p className="font-display text-[18px] text-ink">
+              {t('visitCodeTitle')}
+            </p>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-ink-soft">
+              {t('visitCodeBody')}
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                router.push(
+                  locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
+                )
+              }
+              className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-button)] border border-sage/40 bg-cream-soft px-3 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <rect x="3" y="6" width="18" height="12" rx="2" />
+                <path d="M7 10v4M11 10v4M15 10v4M19 10v4" />
+              </svg>
+              {t('showVisitCode')}
             </button>
           </Card>
         </div>
@@ -255,6 +305,14 @@ export default function PatientHomePage() {
               </li>
             ))}
           </ul>
+        )}
+
+        {/* Sent-suggestion status — so the patient knows their input was
+            received, without any clinic→patient messaging. */}
+        {data.pendingSuggestions > 0 && (
+          <p className="mt-4 text-[13px] leading-relaxed text-ink-muted">
+            {t('pendingSuggestions', { count: data.pendingSuggestions })}
+          </p>
         )}
 
         {/* Occasional patient actions, paired side-by-side: showing
