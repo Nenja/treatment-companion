@@ -6,6 +6,7 @@ import {
   useCreateGoalForPatient,
   useCreateGasGoalForPatient,
   useSetGoalVideoEnabled,
+  useSetGoalTherapy,
   useSetGoalVideoProtocol
 } from '@/lib/supabase/clinicianPatient';
 import { useToast } from '@/components/feedback/Toast';
@@ -30,17 +31,22 @@ const inputClasses =
 export function RecordGoalForm({
   patientId,
   onCancel,
-  onRecorded
+  onRecorded,
+  therapy = 'bont'
 }: {
   patientId: string;
   onCancel: () => void;
   onRecorded: () => void;
+  /** When 'itb', the recorded goal is tagged as an intrathecal-baclofen
+   *  goal so it shows under the ITB track. Defaults to 'bont'. */
+  therapy?: 'bont' | 'itb';
 }) {
   const t = useTranslations('newGoal');
   const create = useCreateGoalForPatient();
   const createGas = useCreateGasGoalForPatient();
   const setVideo = useSetGoalVideoEnabled();
   const setVideoProtocol = useSetGoalVideoProtocol();
+  const setGoalTherapy = useSetGoalTherapy();
   const toast = useToast();
 
   const [goalKind, setGoalKind] = useState<'nrs' | 'gas'>('nrs');
@@ -135,6 +141,9 @@ export function RecordGoalForm({
             seconds: Number.isFinite(secs as number) ? secs : null
           });
         }
+      }
+      if (therapy === 'itb' && goalId) {
+        await setGoalTherapy.mutateAsync({ goalId, therapy: 'itb' });
       }
       toast.success(t('toastRecorded'));
       onRecorded();

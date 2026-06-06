@@ -35,6 +35,7 @@ import {
 import { TrainingOverview } from '@/components/clinician/TrainingOverview';
 import { usePatientObservations } from '@/lib/supabase/observations';
 import { ItbTrack } from '@/components/clinician/ItbTrack';
+import { useItbTherapy } from '@/lib/supabase/itb';
 import { VisitChanges } from '@/components/clinician/VisitChanges';
 import { PatientBanner } from '@/components/clinician/PatientBanner';
 import { ExportModal } from '@/components/clinician/ExportModal';
@@ -91,6 +92,7 @@ export default function ClinicianPatientPage() {
   const observationsQuery = usePatientObservations(
     sessionQuery.data?.patientId ?? null
   );
+  const itbTherapyQuery = useItbTherapy(sessionQuery.data?.patientId ?? null);
 
   const endSession = useEndClinicianSession();
   const touchSession = useTouchClinicianSession();
@@ -155,7 +157,7 @@ export default function ClinicianPatientPage() {
   const [showExport, setShowExport] = useState(false);
   const [showNewCycle, setShowNewCycle] = useState(false);
   const [showRecordGoal, setShowRecordGoal] = useState(false);
-  // Which inline action panel is open under the action row, if any.
+  const [showRecordItbGoal, setShowRecordItbGoal] = useState(false);  // Which inline action panel is open under the action row, if any.
   // History and export are not panels — they navigate / open a modal.
   const [openPanel, setOpenPanel] = useState<'medication' | 'physio' | 'training' | null>(
     null
@@ -307,6 +309,11 @@ export default function ClinicianPatientPage() {
   // recorded but the clinic hasn't scored it (GAS or NRS) or marked it
   // unusable yet. Feeds the quick-score queue.
   const goalByIdForQueue = new Map(activeGoals.map((g) => [g.id, g]));
+  // Goals are tagged by therapy: BoNT goals fill the main list, ITB goals
+  // are grouped under the ITB section. Both flow through the same weekly
+  // check-in (they share the active cycle), so their ratings load identically.
+  const bontGoals = activeGoals.filter((g) => g.therapy !== 'itb');
+  const itbGoals = activeGoals.filter((g) => g.therapy === 'itb');
   const scoreQueueItems: ScoreQueueItem[] = [];
   for (const c of checkins) {
     for (const r of c.ratings) {
@@ -1247,13 +1254,13 @@ export default function ClinicianPatientPage() {
               </div>
             </section>
           )}
-          {activeGoals.length === 0 ? (
+          {bontGoals.length === 0 ? (
             <p className="mt-3 text-[14px] text-ink-muted">
               {t('activeGoalsEmpty')}
             </p>
           ) : (
             <ul className={goalsListClass}>
-              {activeGoals.map((g) => (
+              {bontGoals.map((g) => (
                 <li key={g.id}>
                   <GoalProgressView
                     goalText={g.patientFacingText}
@@ -1391,6 +1398,72 @@ export default function ClinicianPatientPage() {
           )}
         </section>
 
+        {/* ITB goals — tagged for the intrathecal-baclofen therapy. They
+            share the weekly check-in with the BoNT goals (same cycle), so
+            the patient rates them in one go; here they're grouped under
+            their own heading. Shown when there's an active ITB therapy or
+            any ITB goal already exists. */}
+        {(itbTherapyQuery.data || itbGoals.length > 0) && (
+          <section className="mt-10">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-display text-[20px] leading-tight text-ink">
+                {t('itbGoalsTitle')}
+              </h2>
+              {itbTherapyQuery.data && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    touch();
+                    setShowRecordItbGoal(true);
+                  }}
+                  className="shrink-0 rounded-[var(--radius-button)] border border-sage/50 bg-cream-soft px-3 py-2 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
+                >
+                  {t('itbRecordGoal')}
+                </button>
+              )}
+            </div>
+            {itbGoals.length === 0 ? (
+              <p className="mt-3 text-[14px] text-ink-muted">
+                {t('itbGoalsEmpty')}
+              </p>
+            ) : (
+              <ul className={goalsListClass}>
+                {itbGoals.map((g) => (
+                  <li key={g.id}>
+                    <GoalProgressView
+                      goalText={g.patientFacingText}
+                      kind={g.kind}
+                      currentWeek={weekNumber}
+                      ratings={ratingsByGoal.get(g.id) ?? []}
+                      physioRatings={physioRatingsByGoal.get(g.id) ?? []}
+                      nrsDirection={g.nrs?.direction}
+                      nrsBaseline={g.nrs?.baselineValue ?? null}
+                      nrsTarget={g.nrs?.targetValue ?? null}
+                      clinicPoints={clinicPointsByGoal.get(g.id) ?? []}
+                      onExpand={() => setEnlargedGoalId(g.id)}
+                    />
+                    <div className="mt-1.5 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          touch();
+                          setGoalToArchive({
+                            id: g.id,
+                            text: g.patientFacingText
+                          });
+                        }}
+                        className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
+                      >
+                        {t('retireGoal')}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
         {/* Earlier goals — retired this cycle, with how each ended.
             Shows the climb (achieved goals) and course-corrections
             (reframed / no longer suitable) without re-asking the
@@ -1514,6 +1587,13 @@ export default function ClinicianPatientPage() {
         <RecordGoalDrawer
           patientId={patient.id}
           onClose={() => setShowRecordGoal(false)}
+        />
+      )}
+      {showRecordItbGoal && (
+        <RecordGoalDrawer
+          patientId={patient.id}
+          therapy="itb"
+          onClose={() => setShowRecordItbGoal(false)}
         />
       )}
 

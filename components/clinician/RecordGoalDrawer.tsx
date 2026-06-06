@@ -13,10 +13,12 @@ import { RecordGoalForm } from './RecordGoalForm';
  */
 export function RecordGoalDrawer({
   patientId,
-  onClose
+  onClose,
+  therapy = 'bont'
 }: {
   patientId: string;
   onClose: () => void;
+  therapy?: 'bont' | 'itb';
 }) {
   const tA11y = useTranslations('a11y');
   const t = useTranslations('newGoal');
@@ -48,6 +50,7 @@ export function RecordGoalDrawer({
             patientId={patientId}
             onCancel={onClose}
             onRecorded={onClose}
+            therapy={therapy}
           />
         </div>
       </div>
