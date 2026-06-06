@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `training-row-wearable-module`._
+> _Last updated for build tag: `side-menu-option`._
 
 ---
 
@@ -242,7 +242,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0077**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0078**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -295,9 +295,11 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 - `0077_wearable_enabled.sql` — **`training-row-wearable-module`, RUN THIS.**
   Adds `patient.wearable_enabled` + `set_patient_wearable_enabled` RPC; gates
   the patient-page wearable module.
+- `0078_nav_style.sql` — **`side-menu-option`, RUN THIS.** Adds
+  `profile.nav_style` (top|side) for the patient-page menu placement.
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0077 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled).
+> If unsure whether the user's DB is current, confirm 0062–0078 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style).
 
 ---
 
@@ -614,52 +616,60 @@ clips, baseline shown beside each, GAS anchors or NRS 0–10) →
 **`recorder-upload-clinic-overlay`** (no migration; recorder file-upload
 fallback for webcam-less desktops + clinic 0–10 overlaid on the NRS trend) →
 **`training-row-wearable-module`** (0077; start-cycle moved up, training into
-the icon row, wearables a gated module with a per-patient enable; current).
+the icon row, wearables a gated module with a per-patient enable) →
+**`side-menu-option`** (0078; top-vs-side nav choice at setup + in the account
+menu, with a side rail on the patient page; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-training-row-wearable-module.zip`
-- **Tag:** `training-row-wearable-module`
-- **Change:** Patient-page layout corrections. Migration 0077.
-  - **Start-cycle moved up:** the "Start treatment cycle" button now sits at
-    the TOP of the left context column (above the patient banner) as a
-    normal-size primary button, instead of a full-width block buried at the
-    bottom.
-  - **Training into the icon row:** the action row is now medication / physio /
-    history / export / **training**. Training opens an inline panel showing the
-    `TrainingOverview` (moved out of the always-on right-column section).
-  - **Wearables out of the icon row → gated module:** wearable left the action
-    row. A new left-column "Wearable" module shows only when
-    `patientInfo.wearableEnabled` OR the patient has observations (so automated
-    pairing later surfaces it with no change). It links to
-    `/clinician/observations` (the existing wearable view).
-  - **Migration 0077:** `patient.wearable_enabled` (bool, default false) +
-    `set_patient_wearable_enabled(p_patient_id, p_enabled)` RPC (clinician/
-    therapist + active-session check; kept separate from `set_patient_info` so
-    that RPC's signature is untouched).
-  - **Patient-info page:** a wearable-tracking toggle (read row + edit switch);
-    saved alongside the rest on Save via the new RPC. `PatientInfo.wearableEnabled`
-    + `useSetPatientWearableEnabled` added.
-  - **i18n:** renamed `clinician.patient.action{,Short}Wearable` →
-    `…Training`; added training-panel + wearable-module strings +
-    `patientInfo.wearable*` (en/da). Parity balanced.
-- **DB needed:** **run migration 0077** (`0077_wearable_enabled.sql`).
-  Standalone copy attached.
-- **⚠ QA (can't test here):** the icon row shows Training (opens the training
-  panel) and no longer shows Wearable; the wearable module appears only when
-  enabled on the patient-info page or when observations exist; the toggle
-  persists; start-cycle reads as primary-but-not-shouting at the top.
-- **NOT in this build (agreed next):** the **side-menu layout option + setup
-  chooser** (top vs side, with the approved illustrations — keep BOTH options);
-  and the **ITB + BTX** modelling question (recommendation logged in §8; awaiting
-  how common the combination is).
+- **Zip:** `treatment-companion-side-menu-option.zip`
+- **Tag:** `side-menu-option`
+- **Change:** A navigation-style choice — top icon row vs left side rail — for
+  the clinician patient page, picked at setup with illustrations and changeable
+  later in the account menu. Both options kept. Migration 0078.
+  - **Migration 0078:** `profile.nav_style` text (`'top'` default | `'side'`,
+    checked). Self-update only (existing profile RLS, like `layout_preference`).
+  - **Preference plumbing:** `AppProfile.navStyle` (auth.tsx select + map);
+    `useSetNavStyle` (lib/supabase/navStyle.ts, direct profile update +
+    refreshProfile, mirrors `useSetLayoutPreference`); `useNavStyle()`
+    (lib/useNavStyle.ts) reads it, default `'top'`.
+  - **Chooser:** new `components/clinician/NavStyleChooser.tsx` — two
+    selectable cards, each with a small wireframe preview (top row vs left
+    rail). Used in the **OnboardingWizard** comfort step (first run) and the
+    **AccountMenu** appearance section (`compact` variant), both gated to
+    professionals + `lg:` (a rail needs the width), same as the layout toggle.
+  - **Side rail:** `PatientActionRow` gained a `'sidebar'` variant (vertical
+    icon+label rail). On the patient page, when `wide && navStyle==='side'`,
+    the rail renders as the first grid column (`grid-cols-[auto_5fr_7fr]`,
+    `hidden lg:flex lg:sticky`) and the header toolbar is suppressed; `'top'`
+    keeps the header toolbar. On narrow screens both fall back to the stacked
+    body action row (unchanged).
+  - **i18n:** `appearance.navStyle{Label,Top,Side,TopHint,SideHint}` (en/da).
+    Parity balanced.
+- **DB needed:** **run migration 0078** (`0078_nav_style.sql`). Standalone copy
+  attached.
+- **⚠ QA (can't test here):** at setup and in the account menu (large screen,
+  wide layout) the two illustrated options appear and persist; choosing Side
+  moves the action menu to a left rail and hides the top toolbar; choosing Top
+  restores it; on a phone/narrow window both show the stacked body row; the
+  rail's panels (medication/physio/training) and history/export still work.
+- **NOT in this build (next, now unblocked):** **ITB + BTX parallel tracks** —
+  the user confirmed the combination is common, so the plan is full concurrent
+  tracks: ITB modelled as a continuous therapy (dose-change events, no
+  peak/week logic), one active per modality, goals tagged to a therapy, weekly
+  self-report shared, video/peak scoring BTX-only.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`training-row-wearable-module`** — zip
+  `treatment-companion-training-row-wearable-module.zip` (migration 0077).
+  Start-cycle moved to the top of the context column; training moved into the
+  icon row (panel); wearables became a gated left-column module with a
+  per-patient enable on the patient-info page.
 - **`recorder-upload-clinic-overlay`** — zip
   `treatment-companion-recorder-upload-clinic-overlay.zip` (no migration).
   Recorder file-upload fallback for webcam-less desktops; clinic 0–10 overlaid

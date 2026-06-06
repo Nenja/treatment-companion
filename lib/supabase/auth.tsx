@@ -56,6 +56,7 @@ export interface AppProfile {
    *  'compact' (single-column). No effect on phones / narrow windows,
    *  which are always single-column. Defaults to 'wide'. */
   layoutPreference: 'wide' | 'compact';
+  navStyle: 'top' | 'side';
 }
 
 interface AuthState {
@@ -107,7 +108,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data, error } = await supabase
         .from('profile')
         .select(
-          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin, color_scheme, night_mode, read_aloud, profession, profession_other, layout_preference'
+          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin, color_scheme, night_mode, read_aloud, profession, profession_other, layout_preference, nav_style'
         )
         .eq('id', userId)
         .maybeSingle();
@@ -130,7 +131,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         layoutPreference:
           (data.layout_preference as 'wide' | 'compact' | null) === 'compact'
             ? 'compact'
-            : 'wide'
+            : 'wide',
+        navStyle:
+          (data.nav_style as 'top' | 'side' | null) === 'side' ? 'side' : 'top'
       };
     },
     []
