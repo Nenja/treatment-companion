@@ -670,7 +670,12 @@
     "paletteHighContrast": "High contrast",
     "showTutorialAgain": "Show tutorial again",
     "readAloud": "Read aloud",
-    "readAloudHint": "Show a button to read goals and questions aloud."
+    "readAloudHint": "Show a button to read goals and questions aloud.",
+    "navStyleLabel": "Menu placement",
+    "navStyleTop": "Top menu",
+    "navStyleSide": "Side menu",
+    "navStyleTopHint": "Icons in a row under the patient name.",
+    "navStyleSideHint": "Icons in a rail down the left edge."
   },
   "admin": {
     "roleTherapist": "Therapist",
@@ -1288,5 +1293,30 @@
     "videoLabel": "{goal} · Week {week}",
     "videoTitle": "{goal} — Week {week}",
     "wearableHeading": "Wearable trend"
+  },
+  "itb": {
+    "title": "Intrathecal baclofen",
+    "intro": "For a patient also on an ITB pump, track the current dose and titration here.",
+    "startTrack": "Start ITB track",
+    "startedOnLabel": "Started",
+    "noteLabel": "Note",
+    "notePlaceholder": "Pump model, implant details…",
+    "start": "Start track",
+    "starting": "Starting…",
+    "startedToast": "ITB track started",
+    "cancel": "Cancel",
+    "currentDose": "Current dose",
+    "notSet": "Not set",
+    "doseValue": "{n} mcg/day",
+    "doseUnit": "mcg/day",
+    "logDose": "Log dose change",
+    "doseDate": "Date of change",
+    "doseValueLabel": "Dose (mcg/day)",
+    "timelineHeading": "Dose titration",
+    "noChanges": "No dose changes recorded yet.",
+    "save": "Save",
+    "saving": "Saving…",
+    "doseSavedToast": "Dose change saved",
+    "error": "Something went wrong. Please try again."
   }
 }

@@ -674,7 +674,12 @@
     "paletteHighContrast": "Høj kontrast",
     "showTutorialAgain": "Vis vejledning igen",
     "readAloud": "Læs højt",
-    "readAloudHint": "Vis en knap, der kan læse mål og spørgsmål højt."
+    "readAloudHint": "Vis en knap, der kan læse mål og spørgsmål højt.",
+    "navStyleLabel": "Menuplacering",
+    "navStyleTop": "Topmenu",
+    "navStyleSide": "Sidemenu",
+    "navStyleTopHint": "Ikoner i en række under patientens navn.",
+    "navStyleSideHint": "Ikoner i en skinne langs venstre kant."
   },
   "admin": {
     "roleTherapist": "Terapeut",
@@ -1292,5 +1297,30 @@
     "videoLabel": "{goal} · Uge {week}",
     "videoTitle": "{goal} — Uge {week}",
     "wearableHeading": "Data fra bærbar enhed"
+  },
+  "itb": {
+    "title": "Intratekal baclofen",
+    "intro": "For en patient der også har en ITB-pumpe, kan du følge den aktuelle dosis og titrering her.",
+    "startTrack": "Start ITB-forløb",
+    "startedOnLabel": "Startet",
+    "noteLabel": "Note",
+    "notePlaceholder": "Pumpemodel, implantationsdetaljer…",
+    "start": "Start forløb",
+    "starting": "Starter…",
+    "startedToast": "ITB-forløb startet",
+    "cancel": "Annullér",
+    "currentDose": "Aktuel dosis",
+    "notSet": "Ikke angivet",
+    "doseValue": "{n} mcg/døgn",
+    "doseUnit": "mcg/døgn",
+    "logDose": "Registrér dosisændring",
+    "doseDate": "Dato for ændring",
+    "doseValueLabel": "Dosis (mcg/døgn)",
+    "timelineHeading": "Dosistitrering",
+    "noChanges": "Ingen dosisændringer registreret endnu.",
+    "save": "Gem",
+    "saving": "Gemmer…",
+    "doseSavedToast": "Dosisændring gemt",
+    "error": "Noget gik galt. Prøv igen."
   }
 }
