@@ -472,7 +472,25 @@
       "close": "Close",
       "loading": "Loading video…",
       "error": "Couldn't load this video. The link may have expired — close and reopen it.",
-      "unsupported": "Your browser can't play this video."
+      "unsupported": "Your browser can't play this video.",
+      "score": {
+        "heading": "Clinic score",
+        "intro": "Rate the standardized video against this goal's levels. This is the consistent, clinic-rated outcome — comparable across weeks even when the person filming changes.",
+        "level": {
+          "muchBetter": "Much better than expected",
+          "better": "Better than expected",
+          "asExpected": "As expected",
+          "less": "Less than expected",
+          "muchLess": "Much less than expected"
+        },
+        "unusable": "Off-protocol / unusable",
+        "unusableHint": "Excluded from the series",
+        "save": "Save score",
+        "saving": "Saving…",
+        "badgeScored": "Clinic {n}",
+        "badgeUnusable": "Unusable",
+        "badgePending": "Not scored"
+      }
     }
   },
   "intro": {
@@ -953,7 +971,12 @@
     "remove": "Remove",
     "back": "Back",
     "cameraError": "Couldn't access the camera. Check your browser's camera permission and try again.",
-    "notSupported": "Video recording isn't supported on this browser."
+    "notSupported": "Video recording isn't supported on this browser.",
+    "taskHeading": "Film this task",
+    "taskTarget": "Aim for about {n} seconds.",
+    "orientationHint": "Turn your phone sideways for a clearer view.",
+    "previewCheck": "Check the clip shows the whole task before using it.",
+    "tooShort": "That clip is very short (under {n} seconds). Please record it again."
   },
   "training": {
     "stepLabel": "Training",
@@ -1037,7 +1060,13 @@
     "modelNrsDesc": "Patient answers a 0–10 question each week.",
     "modelGasLabel": "Descriptive levels (GAS)",
     "modelGasDesc": "You describe each outcome level in words; the patient picks the one that matches.",
-    "nrsSetupHeading": "NRS rating setup"
+    "nrsSetupHeading": "NRS rating setup",
+    "videoTaskHint": "These instructions are shown to whoever films the video, so it's the same task every week — important when the person filming changes.",
+    "videoTaskInstructionLabel": "What should they film? (task)",
+    "videoTaskInstructionPlaceholder": "Seated at a table, reach for the cup, bring it to the mouth, then set it down. 3 times.",
+    "videoTaskSetupLabel": "Setup / framing (optional)",
+    "videoTaskSetupPlaceholder": "Side-on, whole arm in frame, affected side toward the camera.",
+    "videoTaskSecondsLabel": "Target length (seconds)"
   },
   "physioForms": {
     "loading": "Loading…",

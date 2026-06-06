@@ -476,7 +476,25 @@
       "close": "Luk",
       "loading": "Indlæser video…",
       "error": "Kunne ikke indlæse videoen. Linket kan være udløbet — luk og åbn igen.",
-      "unsupported": "Din browser kan ikke afspille denne video."
+      "unsupported": "Din browser kan ikke afspille denne video.",
+      "score": {
+        "heading": "Klinikscore",
+        "intro": "Bedøm den standardiserede video efter målets niveauer. Dette er det konsistente, klinik-bedømte resultat — sammenligneligt på tværs af uger, selv når den, der filmer, skifter.",
+        "level": {
+          "muchBetter": "Meget bedre end forventet",
+          "better": "Bedre end forventet",
+          "asExpected": "Som forventet",
+          "less": "Mindre end forventet",
+          "muchLess": "Meget mindre end forventet"
+        },
+        "unusable": "Uden for protokol / ubrugelig",
+        "unusableHint": "Udeladt fra serien",
+        "save": "Gem score",
+        "saving": "Gemmer…",
+        "badgeScored": "Klinik {n}",
+        "badgeUnusable": "Ubrugelig",
+        "badgePending": "Ikke bedømt"
+      }
     }
   },
   "intro": {
@@ -957,7 +975,12 @@
     "remove": "Fjern",
     "back": "Tilbage",
     "cameraError": "Kunne ikke få adgang til kameraet. Tjek browserens kameratilladelse, og prøv igen.",
-    "notSupported": "Videooptagelse understøttes ikke i denne browser."
+    "notSupported": "Videooptagelse understøttes ikke i denne browser.",
+    "taskHeading": "Film denne opgave",
+    "taskTarget": "Sigt efter cirka {n} sekunder.",
+    "orientationHint": "Drej telefonen på langs for et tydeligere billede.",
+    "previewCheck": "Tjek, at klippet viser hele opgaven, før du bruger det.",
+    "tooShort": "Klippet er meget kort (under {n} sekunder). Optag det igen."
   },
   "training": {
     "stepLabel": "Træning",
@@ -1041,7 +1064,13 @@
     "modelNrsDesc": "Patienten besvarer et 0–10-spørgsmål hver uge.",
     "modelGasLabel": "Beskrivende niveauer (GAS)",
     "modelGasDesc": "Du beskriver hvert udfaldsniveau med ord; patienten vælger det, der passer.",
-    "nrsSetupHeading": "NRS-vurdering"
+    "nrsSetupHeading": "NRS-vurdering",
+    "videoTaskHint": "Vejledningen vises til den, der optager videoen, så det er den samme opgave hver uge — vigtigt, når den, der filmer, skifter.",
+    "videoTaskInstructionLabel": "Hvad skal de filme? (opgave)",
+    "videoTaskInstructionPlaceholder": "Siddende ved et bord: ræk ud efter koppen, før den op til munden, og sæt den ned igen. 3 gange.",
+    "videoTaskSetupLabel": "Opstilling / billedudsnit (valgfrit)",
+    "videoTaskSetupPlaceholder": "Set fra siden, hele armen i billedet, den berørte side mod kameraet.",
+    "videoTaskSecondsLabel": "Mållængde (sekunder)"
   },
   "physioForms": {
     "loading": "Indlæser…",
