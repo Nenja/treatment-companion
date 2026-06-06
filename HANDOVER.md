@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `action-row-tidy`._
+> _Last updated for build tag: `pre-visit-suggestions`._
 
 ---
 
@@ -242,7 +242,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0080**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0081**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -304,9 +304,13 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 - `0080_goal_therapy.sql` — **`itb-goals`, RUN THIS.** Adds
   `approved_goal.therapy` (bont|itb) + `set_goal_therapy` RPC; ITB goals ride
   the active cycle and are grouped by this tag.
+- `0081_cycle_agnostic_suggestions.sql` — **`pre-visit-suggestions`, RUN
+  THIS.** patient row on patient signup (+ backfill); `goal_suggestion` cycle
+  nullable; `approve_suggestion`/`approve_suggestion_gas` resolve the active
+  cycle at approval.
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0080 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag).
+> If unsure whether the user's DB is current, confirm 0062–0081 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag, **0081** cycle-agnostic suggestions).
 
 ---
 
@@ -633,40 +637,52 @@ therapies rated in one weekly check-in) →
 **`itb-goals-polish`** (no migration; check-in ITB chip + dose-titration
 markers on ITB goal charts) →
 **`action-row-tidy`** (no migration; reordered patient-page icons, compact
-therapist panel, panels open from the menu; current).
+therapist panel, panels open from the menu) →
+**`pre-visit-suggestions`** (0081; patient row on signup, cycle-agnostic goal
+suggestions, approval resolves the active cycle; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-action-row-tidy.zip`
-- **Tag:** `action-row-tidy`
-- **Change:** **Clinician patient-page action row + panels tidy-up. No
-  migration (client-only).**
-  - **Icon order** is now medication → training → therapist (physio) → history
-    → export (`PatientActionRow` `items`). Applies to all three variants
-    (body row / wide-header toolbar / side rail).
-  - **Therapist panel made compact:** the physio panel header and its goal /
-    flagged-muscle items are smaller and tighter (lighter inner rows, smaller
-    type, less padding) — it was visually heavier than its content warranted.
-  - **Panels now open from the menu:** the action row and its three panels
-    (medication / therapist / training) moved to the TOP of the left context
-    column, right under the Start-new-cycle button. So an opened panel sits
-    directly beneath the menu (under the header toolbar on the wide layout,
-    under the visible in-body row on narrow) instead of far down the column.
-    Single render — the body row's existing `lg:hidden` (wide) keeps it
-    responsive without duplicate mounts. The training icon opens the weekly
-    training calendar (`TrainingOverview`) as before.
-- **DB needed:** none.
-- **⚠ QA (can't test here):** icon order reads medication/training/therapist/
-  history/export; opening any panel shows it right under the menu (check both
-  the wide header-toolbar layout and the narrow in-body row); the therapist
-  panel looks appropriately compact; training opens the calendar.
+- **Zip:** `treatment-companion-pre-visit-suggestions.zip`
+- **Tag:** `pre-visit-suggestions`
+- **Change:** **Patient cold-start fix #1+#2 — a patient can suggest goals
+  before their first visit; suggestions are cycle-agnostic.** Migration 0081.
+  - **Two blockers removed:** a self-registered patient had a `profile` but no
+    `patient` row (so `current_patient_id()` was null and the suggestion-insert
+    RLS check could never pass), and `goal_suggestion` required a cycle a new
+    patient doesn't have.
+  - **Migration 0081:** (a) `ensure_patient_row()` trigger on `profile` +
+    backfill — every patient profile now has a `patient` row; (b)
+    `goal_suggestion.treatment_cycle_id` made nullable; (c) `approve_suggestion`
+    (NRS) and `approve_suggestion_gas` resolve the patient's **active cycle at
+    approval** (coalesce suggestion cycle → active cycle) and raise if none —
+    so a goal only becomes trackable once approved into a real cycle.
+  - **Client:** `suggestGoal.ts` inserts with `treatment_cycle_id: null` (no
+    more "No active cycle" throw). The patient **no-cycle home** now offers a
+    "Suggest a goal" card explaining the clinician will review and set up
+    tracking at the visit — the empty state is no longer a dead end.
+  - **i18n:** `patient.home.noCycleSuggestTitle/Body` (en/da). Parity balanced.
+- **DB needed:** **run migration 0081** (`0081_cycle_agnostic_suggestions.sql`).
+  Standalone copy attached.
+- **⚠ QA (can't test here):** a fresh patient signup gets a `patient` row;
+  from the no-cycle home, "Suggest a goal" completes and saves (no cycle
+  needed); the suggestion appears for the clinician once they have a session;
+  approving it (NRS and GAS) lands the goal in the active cycle, and approving
+  with NO active cycle is refused with a clear error; existing seeded patients
+  still suggest/approve as before.
+- **Patient cold-start — remaining (this batch):** #3 teach the visit code in
+  onboarding + no-cycle home; #5 echo pending-suggestion status on the home;
+  #4 check-in edit/undo window. (Doing next.)
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`action-row-tidy`** — zip `treatment-companion-action-row-tidy.zip` (no
+  migration). Reordered patient-page icons (medication/training/therapist/
+  history/export), compact therapist panel, panels open from the menu.
 - **`itb-goals-polish`** — zip `treatment-companion-itb-goals-polish.zip` (no
   migration). Check-in ITB chip on ITB goal steps + dose-titration markers on
   ITB goal charts (`GoalProgressView` `doseMarkers`).

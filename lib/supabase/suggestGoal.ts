@@ -48,19 +48,10 @@ export function useSubmitSuggestion() {
 
       const patientId = patientRow.id as string;
 
-      // Resolve the active cycle.
-      const { data: cycleRow, error: cErr } = await supabase
-        .from('treatment_cycle')
-        .select('id')
-        .eq('patient_id', patientId)
-        .eq('status', 'active')
-        .order('cycle_number', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (cErr) throw cErr;
-      if (!cycleRow) throw new Error('No active cycle for this patient');
-
-      const cycleId = cycleRow.id as string;
+      // A suggestion is just a proposal awaiting clinician approval, so it
+      // is cycle-agnostic — a patient can suggest goals before their first
+      // visit, before any cycle exists. The cycle is assigned when the
+      // clinician approves it into a tracked goal.
 
       // Compose the patient wording. If the domain is 'other' and the
       // patient labelled it, prepend that label so the clinician has
@@ -74,7 +65,7 @@ export function useSubmitSuggestion() {
         .from('goal_suggestion')
         .insert({
           patient_id: patientId,
-          treatment_cycle_id: cycleId,
+          treatment_cycle_id: null,
           domain: input.domain,
           patient_wording: wording,
           importance: input.importance,

@@ -1,25 +1,37 @@
-BUILD: action-row-tidy   (clinician patient-page menu + panels)
+BUILD: pre-visit-suggestions   (patient cold-start #1 + #2)
 =========================================================================
-NO MIGRATION — client-only. Nothing to run in Supabase.
+WHAT & WHY
+A newly registered patient could not record anything: signup creates only a
+login profile, so there was no patient row (RLS blocked suggestions), and goal
+suggestions required a treatment cycle a new patient doesn't have. A suggestion
+is just a proposal awaiting approval, so it shouldn't need a cycle — tracking
+begins only when a clinician approves it into a real cycle.
 
-WHAT THIS BUILD DOES
-- Reordered the patient-page action icons: medication, training, therapist
-  (physio), history, export. Applies to all layouts (body row, wide header
-  toolbar, side rail).
-- Made the therapist (physio) panel compact: smaller header and tighter goal /
-  flagged-muscle rows — it was heavier than its content warranted.
-- Panels now open FROM the menu: the action row + its panels (medication /
-  therapist / training) moved to the top of the left context column, so an
-  opened panel sits directly under the menu (under the header toolbar on wide,
-  under the in-body row on narrow) instead of far down the column. The training
-  icon opens the weekly training calendar as before.
+MIGRATION 0081 (run this in the Supabase SQL editor; standalone copy attached)
+- ensure_patient_row() trigger on profile + backfill: every patient profile now
+  has a patient row.
+- goal_suggestion.treatment_cycle_id made nullable.
+- approve_suggestion (NRS) and approve_suggestion_gas now resolve the patient's
+  ACTIVE cycle at approval (suggestion cycle, else active cycle) and refuse if
+  there is none — so a goal only becomes trackable once approved into a cycle.
+
+CLIENT
+- suggest-goal inserts a cycle-less suggestion (no more "No active cycle" error).
+- The patient no-cycle home now has a "Suggest a goal" card explaining the
+  clinician will review and set up tracking at the visit — no longer a dead end.
 
 DEPLOY
-- Unzip; push to GitHub; Vercel builds on push. Page count 60. No SQL.
+- Run 0081; unzip; push to GitHub; Vercel builds. Page count 60.
 
 ** QA (please verify — can't be tested here) **
-- Icon order reads medication / training / therapist / history / export.
-- Opening any panel shows it right under the menu — check both the wide
-  header-toolbar layout and the narrow in-body row.
-- The therapist panel looks appropriately compact.
-- Training opens the calendar view.
+- A fresh patient signup gets a patient row.
+- From the no-cycle home, "Suggest a goal" completes and saves with no cycle.
+- The suggestion shows for the clinician once they have a session; approving
+  (NRS and GAS) lands the goal in the active cycle.
+- Approving with NO active cycle is refused with a clear error.
+- Existing seeded patients still suggest/approve exactly as before.
+
+NEXT IN THIS BATCH
+- #3 teach the visit code (onboarding + no-cycle home)
+- #5 echo pending-suggestion status on the home
+- #4 check-in edit/undo window
