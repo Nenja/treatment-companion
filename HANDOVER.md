@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `video-score-queue`._
+> _Last updated for build tag: `recorder-upload-clinic-overlay`._
 
 ---
 
@@ -607,55 +607,56 @@ with the patient; direction derived; start/target lines on the graph) →
 **`baseline-video`** (0075; clinician records an in-clinic baseline clip per
 video goal; patient sees it as a reference at the weeks-6–8 check-in) →
 **`video-score-queue`** (0076; per-visit quick-score queue over unscored peak
-clips, baseline shown beside each, GAS anchors or NRS 0–10; current).
+clips, baseline shown beside each, GAS anchors or NRS 0–10) →
+**`recorder-upload-clinic-overlay`** (no migration; recorder file-upload
+fallback for webcam-less desktops + clinic 0–10 overlaid on the NRS trend;
+current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-video-score-queue.zip`
-- **Tag:** `video-score-queue`
-- **Change:** **Pass C of the video/baseline work — the clinician quick-score
-  queue.** Clears the unscored peak-effect clips in one pass: each clip is
-  shown beside the goal's baseline, scored, and auto-advances. Migration 0076.
-  - **Migration 0076:** `weekly_goal_rating.clinic_video_nrs` (int 0–10) +
-    `set_clinic_video_nrs(p_rating_id, p_nrs, p_unusable)` RPC (same access
-    check as `set_clinic_video_score`; unusable wins and clears the score;
-    shares the existing `clinic_video_unusable` / `clinic_video_scored_by/at`).
-    GAS clips keep using the −2..+2 `clinic_video_rating` (0072); NRS clips get
-    a 0–10 score on the SAME axis the patient uses, for a clinician-vs-patient
-    comparison.
-  - **Queue:** new `components/clinician/VideoScoreQueue.tsx` — walks the
-    unscored clips one at a time; inner `ClipPair` shows the peak clip beside
-    the goal's baseline (or a "no baseline" placeholder). GAS → the five anchor
-    buttons (reuses `clinician.video.score.level.*`); NRS → 0–10 grid under the
-    goal's question. Shared unusable toggle; Skip / Save & next / Save & done;
-    auto-advance. Uses `useSetClinicVideoScore` (GAS) + `useSetClinicVideoNrs`
-    (NRS) + `useGoalVideoUrl` (×2) + `useModalA11y` + toast.
-  - **Entry point:** a **"Score videos (N)"** button in the active-goals header
-    (shown only when N>0), opening the queue. Items assembled on the patient
-    page from check-in ratings with a `videoPath` that aren't yet scored
-    (`clinicVideoRating == null && clinicVideoNrs == null && !unusable`), joined
-    to the active goal for kind/anchors/question/baseline/week.
-  - **Data:** `clinicVideoNrs` added to the ratings select + shape + mapping;
-    new `useSetClinicVideoNrs` hook.
-  - **i18n:** `clinician.videoQueue.*` (en/da). Parity balanced.
-- **DB needed:** **run migration 0076** (`0076_clinic_video_nrs.sql`).
-  Standalone copy attached.
-- **⚠ QA (can't test here):** the queue lists exactly the unscored clips;
-  scoring GAS writes −2..+2 and NRS writes 0–10; unusable removes the clip
-  from the series; auto-advance + Save & done close correctly; the baseline
-  shows beside the peak clip (or the placeholder when none). Video playback /
-  signed URLs / RLS for the NRS write all need a real device + Supabase.
-- **NOT in this build / next candidates:** the **file-upload fallback** for the
-  recorder (desktop without a webcam — `<input type="file" accept="video/*"
-  capture>`, benefits baseline + check-in capture); surfacing the clinic-vs-
-  patient 0–10 comparison on the NRS trend chart.
+- **Zip:** `treatment-companion-recorder-upload-clinic-overlay.zip`
+- **Tag:** `recorder-upload-clinic-overlay`
+- **Change:** Two small follow-ups. **No migration.**
+  - **Recorder file-upload fallback** (`components/wizard/GoalVideoRecorder.tsx`):
+    an "Attach a file" option (`<input type="file" accept="video/*" capture>`)
+    alongside live recording — covers a webcam-less clinic desktop, and on a
+    phone the `capture` attribute still offers the camera. Picked files are
+    validated (must be video, ≤200 MB), previewed, then kept via the same
+    `onChange(RecordedVideo)` path (ext mapped to webm/mp4). The upload option
+    also shows on the camera-error screen and when `MediaRecorder` is
+    unsupported. Benefits every recorder surface (patient check-in + the
+    clinician baseline modal) for free.
+  - **Clinic-vs-patient 0–10 on the NRS trend** (`GoalProgressView`): a new
+    optional `clinicPoints` series, drawn as a distinct dark dotted line +
+    filled squares (vs patient sage circles / physio amber diamonds), with a
+    legend entry and a caption line. The patient page assembles
+    `clinicPointsByGoal` from each NRS goal's `clinicVideoNrs` per week and
+    passes it to both the inline chart and the enlarged `GoalGraphModal`. GAS
+    goals are unchanged (they keep the separate clinic trend chart below the
+    main chart); only NRS goals get the overlay.
+  - **i18n:** `goalVideo.{orLabel,uploadCta,uploadHint,fileNotVideo,
+    fileTooLarge}` + `treatment.clinicVideoLine` (en/da). Parity balanced.
+- **DB needed:** none.
+- **⚠ QA (can't test here):** the file picker accepts a video and the kept clip
+  uploads + plays back like a recorded one (check on a real webcam-less desktop
+  and a phone); oversize / non-video files show the friendly error; the clinic
+  0–10 square(s) land at the right week/value on the NRS chart beside the
+  patient line, and the caption shows the clinic value when that week is tapped.
+- **NOT in this build / open ideas:** measuring uploaded-clip duration (the
+  ≥3s floor is skipped for uploads); a clinic-vs-patient delta callout; GAS
+  clinic overlay on the main chart (currently a separate chart).
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`video-score-queue`** — zip `treatment-companion-video-score-queue.zip`
+  (migration 0076). Per-visit clinician quick-score queue over unscored
+  peak-effect clips: each shown beside its baseline, GAS anchors or NRS 0–10,
+  unusable escape, auto-advance. Added `weekly_goal_rating.clinic_video_nrs` +
+  `set_clinic_video_nrs` RPC.
 - **`baseline-video`** — zip `treatment-companion-baseline-video.zip`
   (migration 0075). Clinician records an in-clinic baseline clip per
   video-enabled goal (`<patient_id>/baseline/<goal_id>`; new clinician-write
@@ -813,9 +814,10 @@ clips, baseline shown beside each, GAS anchors or NRS 0–10; current).
   out to be the CLINICIAN write (patient read was already covered by 0062).
   **Pass C — DONE** (`video-score-queue`, 0076): per-visit
   quick-score queue, baseline beside each peak clip, anchors for GAS / 0–10 for
-  NRS, auto-advance. **Next candidate:** file-upload fallback for the recorder
-  so a webcam-less clinic desktop can capture (phone capture already works via
-  the session switcher — recommended primary path).
+  NRS, auto-advance. Both follow-ups also DONE in
+  `recorder-upload-clinic-overlay` (no migration): the recorder file-upload
+  fallback for webcam-less desktops, and the clinic-vs-patient 0–10 overlay on
+  the NRS trend. The whole 3-pass video/baseline arc plus its polish is shipped.
 
 0. **Informant-independent capture (lever 3).** Slice 1 (`guided-capture`,
    0071) standardized the capture; slice 2 (`clinic-video-scoring`, 0072) added
