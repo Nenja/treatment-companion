@@ -141,7 +141,7 @@ export function OnboardingWizard({
   // Per-role step lists.
   const steps: StepId[] =
     role === 'patient'
-      ? ['intro', 'details', 'checkin', 'visit', 'comfort']
+      ? ['intro', 'details', 'visit', 'checkin', 'comfort']
       : ['intro', 'how', 'graph', 'actions', 'record', 'comfort'];
 
   const total = steps.length;

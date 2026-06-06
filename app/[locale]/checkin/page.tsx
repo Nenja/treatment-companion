@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
-import { useCheckinData, useSubmitCheckin, uploadGoalVideo } from '@/lib/supabase/checkin';
+import { useCheckinData, useSubmitCheckin, useReopenCheckin, uploadGoalVideo } from '@/lib/supabase/checkin';
 import { useCheckinDraft, checkinDraftStorage } from '@/lib/useCheckinDraft';
 import { useModalA11y } from '@/lib/useModalA11y';
 import { isCheckinComplete } from '@/lib/checkinDraft';
@@ -79,6 +79,7 @@ function CheckinPageInner() {
   const { user, profile, loading: authLoading } = useAuth();
   const checkinQuery = useCheckinData(profile?.id ?? null, profile?.role, promptIdParam);
   const submitMutation = useSubmitCheckin();
+  const reopenMutation = useReopenCheckin();
   const toast = useToast();
   const tFeedback = useTranslations('feedback');
 
@@ -157,7 +158,28 @@ function CheckinPageInner() {
 
   // Thanks view comes first — see ref comment above.
   if (submittedId) {
-    return <ThanksView onBackHome={goHomeHard} />;
+    return (
+      <ThanksView
+        onBackHome={goHomeHard}
+        onEditAnswers={async () => {
+          try {
+            await reopenMutation.mutateAsync(submittedId);
+            // Hard reload back into the wizard; the prompt is pending again,
+            // so the check-in opens fresh for a redo.
+            const checkinPath =
+              locale === 'en' ? '/checkin' : `/${locale}/checkin`;
+            if (typeof window !== 'undefined') {
+              window.location.href = checkinPath;
+            } else {
+              router.replace(checkinPath);
+            }
+          } catch {
+            toast.error(tFeedback('errorGeneric'));
+          }
+        }}
+        editing={reopenMutation.isPending}
+      />
+    );
   }
 
   // Auth or data still loading → render a wizard-shaped skeleton so
@@ -637,7 +659,15 @@ function SummaryRow({
   );
 }
 
-function ThanksView({ onBackHome }: { onBackHome: () => void }) {
+function ThanksView({
+  onBackHome,
+  onEditAnswers,
+  editing
+}: {
+  onBackHome: () => void;
+  onEditAnswers: () => void;
+  editing: boolean;
+}) {
   const t = useTranslations('patient.checkin');
   return (
     <div className="min-h-dvh bg-cream">
@@ -654,6 +684,16 @@ function ThanksView({ onBackHome }: { onBackHome: () => void }) {
           className="mt-8 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft"
         >
           {t('thanksBackHome')}
+        </button>
+        {/* Quiet undo for a just-noticed mis-tap. Reopens this check-in
+            (within the server's 24h window) so it can be redone. */}
+        <button
+          type="button"
+          onClick={onEditAnswers}
+          disabled={editing}
+          className="mt-3 flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink disabled:opacity-60"
+        >
+          {editing ? t('editAnswersBusy') : t('editAnswers')}
         </button>
       </main>
     </div>

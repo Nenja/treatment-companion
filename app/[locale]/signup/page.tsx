@@ -185,6 +185,11 @@ export default function SignupPage() {
             <p className="mt-1.5 text-[13px] leading-relaxed text-ink-muted">
               {t('roleHint')}
             </p>
+            {role === 'patient' && (
+              <p className="mt-2 rounded-[var(--radius-button)] border border-sage/30 bg-sage-soft/50 px-3 py-2 text-[13px] leading-relaxed text-ink-soft">
+                {t('patientNote')}
+              </p>
+            )}
           </div>
 
           {/* Profession — therapist only. */}

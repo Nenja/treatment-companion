@@ -307,6 +307,15 @@ export default function PatientHomePage() {
           </ul>
         )}
 
+        {/* Gentle, honest reassurance — progress in spasticity is slow and
+            uneven, so a few flat weeks shouldn't read as failure. Only shown
+            once there are goals being tracked. */}
+        {data.goals.length > 0 && (
+          <p className="mt-4 text-[13px] leading-relaxed text-ink-muted">
+            {t('progressReassurance')}
+          </p>
+        )}
+
         {/* Sent-suggestion status — so the patient knows their input was
             received, without any clinic→patient messaging. */}
         {data.pendingSuggestions > 0 && (
