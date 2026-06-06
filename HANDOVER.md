@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `wide-layout`._
+> _Last updated for build tag: `record-goal-inline`._
 
 ---
 
@@ -588,57 +588,57 @@ row) →
 re-coding + same-day reopen; consent gate unchanged) →
 **`wide-layout`** (no migration; clinician patient page two-column at lg —
 context left / goals right, look-up tools in a header toolbar; banner week
-eyebrow removed; current).
+eyebrow removed) →
+**`record-goal-inline`** (no migration; record a goal in a slide-over over the
+chart instead of a separate route; form factored into RecordGoalForm; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-wide-layout.zip`
-- **Tag:** `wide-layout`
-- **Change:** the wide-layout pass for the clinician patient page (the approved
-  two-column mockup), plus a banner tweak. **No migration.** Gated on the
-  existing `wide` layout preference (the default), so compact users are
-  unchanged.
-  - **Two columns at `lg`:** the page now uses the full **page-wide** width at
-    `lg` and splits into **context (left) + goals (right)** via a
-    `grid-cols-[5fr_7fr]`. Left = `PatientBanner`, since-last-visit
-    (`VisitChanges`), the look-up panels, and the new-cycle action. Right = the
-    goals (active + earlier). Goals now sit at the **top of the right column**
-    instead of below the banner. Below `lg` (and in compact mode) everything
-    stacks in the same single-column order as before.
-  - **Look-up tools → header toolbar:** at `lg` (wide) the medication /
-    therapist / history / export / wearable row moves into a compact toolbar
-    under the patient name in the header (new `variant="toolbar"` on
-    `PatientActionRow`); the body action row is `lg:hidden` in that mode. The
-    panels those tools open still render in the **left context column**. On
-    narrow/compact the body action row is used exactly as before.
-  - **Banner:** the "week N since treatment" eyebrow was **removed** — the
-    banner now carries only the treatment **date** (top-right keeps the
-    modality pill). `PatientBanner` lost its `cycleContextText` prop. The
-    `cycleContext` i18n key is unchanged (still used by the patient home page).
-  - **Goals list:** the old 2-column goals grid was dropped; goals stack in one
-    column within the goals column (the page split now provides the horizontal
-    space). The action-handler + labels were lifted to one place and shared by
-    the body row and the header toolbar.
+- **Zip:** `treatment-companion-record-goal-inline.zip`
+- **Tag:** `record-goal-inline`
+- **Change:** recording a goal no longer leaves the patient view. **No
+  migration.** The goal form was factored out and is now also reachable as a
+  slide-over over the chart.
+  - **New `components/clinician/RecordGoalForm.tsx`** — the entire goal form
+    (goal text, SMART line, NRS-vs-GAS model choice + each one's config, the
+    optional weekly-video protocol, Cancel / Record) lifted verbatim out of the
+    new-goal route, including the `GasAnchorField`. Props: `patientId`,
+    `onCancel`, `onRecorded`. Uses the same `useCreateGoalForPatient` /
+    `useCreateGasGoalForPatient` (+ video) mutations; on success it shows the
+    existing toast and calls `onRecorded()`. Those mutations already invalidate
+    `['clinicianPatient']`, so the goal list refreshes with no navigation.
+  - **New `components/clinician/RecordGoalDrawer.tsx`** — right-side slide-over
+    (`fixed inset-0 flex justify-end bg-ink/40`, panel `max-w-[560px]`,
+    scrollable, full-height sheet on mobile) using `useModalA11y` for focus
+    trap + Escape, matching `ExportModal`. Hosts `RecordGoalForm` with
+    `onCancel`/`onRecorded` both = close.
+  - **Patient page:** the "Record goal" button (by the goals heading) now opens
+    the drawer (`setShowRecordGoal(true)` + touch) instead of routing to
+    `/clinician/new-goal`. New `showRecordGoal` state + `<RecordGoalDrawer>`
+    rendered with the other modals.
+  - **`/clinician/new-goal` route kept** as a thin wrapper (chrome +
+    `RecordGoalForm`) for deep links / the narrow fallback — same behaviour,
+    no duplicated form.
+  - No new i18n (reuses `newGoal.*` + `a11y.close`). Parity 1122 == 1122.
 - **DB needed:** **none** — migration count stays at **0073**.
-- **⚠ QA (layout-only, can't render/verify here — needs a visual pass at a
-  wide `lg` width and on mobile):**
-  - at a wide screen: context left / goals right, goals visible at the top; the
-    look-up toolbar sits under the name and its buttons still open the right
-    panels (medication/therapist) in the left column, navigate (history/
-    wearable), and open export;
-  - the **left column is narrower** now (~5/12 of the page) — confirm the
-    medication and therapist editor panels still read well there;
-  - on mobile/narrow: single column, body action row present, no toolbar —
-    same as before;
-  - in **compact** layout preference: unchanged (no two-column, no toolbar);
-  - banner shows the treatment date only (no "week N").
+- **⚠ QA (can't render/run here):** open Record goal from a patient — the
+  slide-over appears over the chart, the goal list stays behind it; record an
+  NRS goal and a GAS goal and confirm the new goal appears in the list with the
+  drawer closed and **no navigation**; Cancel and Escape close without saving;
+  focus is trapped and returns to the button on close; on mobile it's a
+  full-height sheet; the old `/clinician/new-goal` deep link still works.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`wide-layout`** — zip `treatment-companion-wide-layout.zip` (no migration).
+  Clinician patient page goes two-column at `lg` (context left / goals right),
+  look-up tools moved into a header toolbar (`PatientActionRow variant="toolbar"`),
+  goals lifted above the context; banner "week N" eyebrow removed (date only).
+  Gated on the `wide` layout preference (default).
 - **`session-switching`** — zip `treatment-companion-session-switching.zip`
   (migration 0073). Multi-patient open + switch without re-coding + same-day
   reopen; consent gate unchanged. One-active index relaxed to
@@ -764,9 +764,13 @@ eyebrow removed; current).
   at `lg` (context left / goals right), the look-up row moved into a header
   toolbar, and goals lifted above the context. Needs a visual verification pass
   (see §7 QA). Remaining patient-view friction, in the user's ranked order:
-  (next) **review → record without leaving the view** — new-goal / new-cycle
-  are still separate routes; making them open as modals/inline is the next
-  slice. Then **faster clinic video scoring** (a lighter quick-score).
+  **review → record without leaving the view — DONE** in `record-goal-inline`:
+  the goal form opens as a slide-over over the chart (`RecordGoalForm` +
+  `RecordGoalDrawer`); the goal list refreshes in place. New-cycle is already a
+  modal (`NewCycleDialog`). (next) **faster clinic video scoring** — a lighter
+  quick-score so a clinician can clear a queue of clips quickly. Optional
+  follow-up floated to the user: show a patient's existing GAS levels as a
+  reference while writing new ones (not yet built).
 
 0. **Informant-independent capture (lever 3).** Slice 1 (`guided-capture`,
    0071) standardized the capture; slice 2 (`clinic-video-scoring`, 0072) added

@@ -32,6 +32,7 @@ import { VisitChanges } from '@/components/clinician/VisitChanges';
 import { PatientBanner } from '@/components/clinician/PatientBanner';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
+import { RecordGoalDrawer } from '@/components/clinician/RecordGoalDrawer';
 import {
   PatientActionRow,
   type PatientActionId
@@ -126,6 +127,7 @@ export default function ClinicianPatientPage() {
   } | null>(null);
   const [showExport, setShowExport] = useState(false);
   const [showNewCycle, setShowNewCycle] = useState(false);
+  const [showRecordGoal, setShowRecordGoal] = useState(false);
   // Which inline action panel is open under the action row, if any.
   // History and export are not panels — they navigate / open a modal.
   const [openPanel, setOpenPanel] = useState<'medication' | 'physio' | null>(
@@ -1004,13 +1006,10 @@ export default function ClinicianPatientPage() {
                   scribe — see create_goal_for_patient. */}
               <button
                 type="button"
-                onClick={() =>
-                  router.push(
-                    locale === 'en'
-                      ? `/clinician/new-goal?patient=${patient.id}`
-                      : `/${locale}/clinician/new-goal?patient=${patient.id}`
-                  )
-                }
+                onClick={() => {
+                  touch();
+                  setShowRecordGoal(true);
+                }}
                 className="rounded-[var(--radius-button)] border border-sage/50 bg-cream-soft px-3 py-2 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
               >
                 {t('recordGoal')}
@@ -1295,6 +1294,13 @@ export default function ClinicianPatientPage() {
       {showNewCycle && (
         <NewCycleDialog
           onClose={() => setShowNewCycle(false)}
+        />
+      )}
+
+      {showRecordGoal && (
+        <RecordGoalDrawer
+          patientId={patient.id}
+          onClose={() => setShowRecordGoal(false)}
         />
       )}
 
