@@ -1,36 +1,56 @@
-BUILD: edit-video-protocol
+BUILD: patient-banner
 =========================================================================
 WHAT THIS BUILD DOES
-Lets the clinician edit the check-in video request + standardized task
-protocol on an EXISTING goal. Until now these could only be set when the
-goal was first created. NO DATABASE MIGRATION — frontend only; it reuses
-the set_approved_goal_video_enabled (0062) and set_goal_video_protocol
-(0071) RPCs.
+Reworks the top of the clinician patient view so the background a clinician
+needs to plan is visible on arrival, and pulls the wearable trend into the
+"since last visit" summary (only when the patient has data). Directly targets
+the core problem: relevant data available at the planning moment, not behind
+taps and separate pages. NO DATABASE MIGRATION — frontend only.
 
 CHANGES
-- NEW components/clinician/VideoProtocolEditor.tsx — a modal that toggles
-  the check-in video on/off and edits the recipe (instruction / framing /
-  target length), via the existing useSetGoalVideoEnabled +
-  useSetGoalVideoProtocol hooks.
-- app/[locale]/clinician/patient/page.tsx — a new "Video task" button next
-  to each goal's Retire button opens the editor, pre-filled.
-- lib/supabase/clinicianPatient.ts — the clinician goal now carries its
-  current video settings (videoEnabled + videoTask* added to the goal
-  type/select/map) so the editor opens with the existing values.
-- i18n: clinician.videoProtocol.* (en + da). Parity 1112 == 1112.
+- NEW components/clinician/PatientBanner.tsx — an always-visible banner:
+    * name (still taps through to the full patient-info page),
+    * demographics summary (age / sex / etiology / affected side /
+      ambulation) — from data already loaded via usePatientInfo,
+    * cycle + week + treatment modality,
+    * current medication,
+    * assistive devices.
+  Medication/devices rows are omitted when empty.
+- The old cycle-context eyebrow and the truncated summary line in the header
+  were removed (the banner now owns that background — no duplication).
+- VisitChanges (the since-last-visit summary):
+    * now takes a patientId prop;
+    * shows a CONDITIONAL "wearable trend" block — usePatientObservations,
+      grouped by metric (up to 3), each a small sparkline + latest value +
+      up/down/flat direction. Shown ONLY when the patient has usable
+      observations; a patient with none sees nothing (no empty state).
+- Information architecture: the since-last-visit summary now sits directly
+  under the banner, ABOVE the action row.
+- i18n: clinician.patient.banner.{medication,devices} +
+  visitChanges.wearableHeading (en + da). Parity 1115 == 1115.
 
 DEPLOY
 1. Unzip; push to GitHub; Vercel builds on push. Page count unchanged (60).
 2. No SQL to run.
 
 HOW TO CONFIRM IT WORKED (needs a real browser + Supabase)
-- On a goal with no video: open "Video task", enable it, fill the recipe,
-  save; a subsequent check-in should offer the guided recorder with that
-  recipe.
-- On a goal that already has video: the editor should open pre-filled, and
-  edits should persist.
-- Disabling video should stop offering the recorder at check-in.
+- The patient view should open with the banner: name, summary, cycle/
+  modality, medication, devices. Meds/devices rows should be absent when
+  there's nothing recorded.
+- The demographics summary should no longer appear twice (it's only in the
+  banner now, not the header).
+- The wearable trend should appear in the since-last-visit summary ONLY for a
+  patient who has imported observations; for a patient with none, the block
+  should be entirely absent.
+- Check the banner + summary at a narrow (phone) and a wide (desktop) width.
+
+NOT IN THIS BUILD (deferred — see HANDOVER section 8)
+- The wide two-column arrangement (context left / goals right), moving the
+  look-up row into a header toolbar, and pushing the goals fully above the
+  action row. Those are a layout-only restructure best done as a focused pass
+  that can be checked visually.
 
 QA FLAGS
-- Plain UI + existing RPCs; lower risk. Verify the modal layout on a real
-  screen.
+- New component + one data read; lower logic risk. The layout/visual result
+  is the thing to eyeball, especially the banner wrap on narrow screens and
+  the sparkline rendering.

@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `edit-video-protocol`._
+> _Last updated for build tag: `patient-banner`._
 
 ---
 
@@ -575,37 +575,60 @@ levels — the authoritative one-rater outcome series, + unusable mark) →
 **`clinic-trend-chart`** (no migration; charts the clinic-scored series as its
 own "Clinic video assessment" GAS trend under each goal) →
 **`edit-video-protocol`** (no migration; video request + task protocol now
-editable on an existing goal, not just at creation; current).
+editable on an existing goal, not just at creation) →
+**`patient-banner`** (no migration; always-visible patient banner + wearable
+trend pulled into the since-last-visit summary; summary moved above the action
+row; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-edit-video-protocol.zip`
-- **Tag:** `edit-video-protocol`
-- **Change:** the video request + task protocol can now be **edited on an
-  existing goal** (previously only settable at goal creation). **Frontend only
-  — no migration**; reuses the 0071/0062 RPCs.
-  - New `components/clinician/VideoProtocolEditor.tsx` — a modal that toggles
-    the check-in video on/off and edits the recipe (instruction / framing /
-    target length), via the existing `useSetGoalVideoEnabled` +
-    `useSetGoalVideoProtocol` hooks.
-  - Opened from a new **"Video task"** button next to each goal's Retire
-    button on the clinician patient view.
-  - The clinician goal data now carries the current video settings
-    (`videoEnabled` + `videoTask*` added to `ClinicianPatientGoal` + the goal
-    select/map) so the editor opens pre-filled.
-  - **i18n:** `clinician.videoProtocol.*` (en/da). Parity 1112 == 1112.
+- **Zip:** `treatment-companion-patient-banner.zip`
+- **Tag:** `patient-banner`
+- **Change:** the clinician patient view now leads with an **always-visible
+  patient banner** and surfaces the **wearable trend inside the
+  since-last-visit summary** (only when the patient has data), and the summary
+  was moved **above** the action row. Directly targets the core problem (data
+  available at the planning moment). **Frontend only — no migration.**
+  - New `components/clinician/PatientBanner.tsx` — name (still taps through to
+    the full patient-info route), the demographics summary (age / sex /
+    etiology / side / ambulation, from `usePatientInfo` + `formatPatientSummary`,
+    which were already loaded), cycle + week + modality, current medication,
+    and assistive devices. Replaces the old cycle-context eyebrow and the
+    truncated summary line in the header (both removed to avoid duplication).
+  - `VisitChanges` gained a `patientId` prop and a conditional **wearable
+    trend** block: `usePatientObservations` → `buildWearableSeries` groups
+    numeric observations by metric (≤3), each shown as a `Sparkline` + latest
+    value + direction. Renders only when there's usable data — a patient with
+    no observations sees nothing (no empty state), per the design note.
+  - IA: the since-last-visit summary now renders right under the banner,
+    above the action row.
+  - **i18n:** `clinician.patient.banner.{medication,devices}` +
+    `visitChanges.wearableHeading` (en/da). Parity 1115 == 1115.
 - **DB needed:** **none** — migration count stays at **0072**.
-- **⚠ QA (can't render here):** on a goal with no video, open "Video task",
-  enable it, fill the recipe, save, and confirm a check-in then offers the
-  guided recorder; on a goal that already has video, confirm the editor opens
-  pre-filled and edits persist; confirm disabling video stops offering it.
+- **NOT in this build (deferred — see §8):** the full **wide two-column
+  reflow** (context left / goals right at the `lg` breakpoint), moving the
+  look-up row into a **header toolbar**, and pushing the goals fully above the
+  action row. Those are a layout-only restructure of the page's responsive
+  render tree, best landed as a focused pass that can be visually verified.
+- **⚠ QA (can't render here):** confirm the banner shows name + summary +
+  cycle/modality + medication + devices (and that the meds/devices rows are
+  absent when null); confirm the wearable block appears only for a patient
+  with observations and is gone otherwise; confirm the demographics summary
+  isn't duplicated in the header anymore; sanity-check the banner + summary at
+  narrow and wide widths.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`edit-video-protocol`** — zip `treatment-companion-edit-video-protocol.zip`
+  (no migration). The check-in video request + task protocol became editable on
+  an existing goal via a new `VideoProtocolEditor` modal opened from a "Video
+  task" button by each goal (reuses `useSetGoalVideoEnabled` +
+  `useSetGoalVideoProtocol`); the clinician goal now carries `videoEnabled` +
+  `videoTask*` so the editor opens pre-filled.
 - **`clinic-trend-chart`** — zip `treatment-companion-clinic-trend-chart.zip`
   (no migration). Charts the clinic-scored video series as its own "Clinic
   video assessment" GAS trend under each goal's patient chart (reuses
@@ -703,6 +726,17 @@ editable on an existing goal, not just at creation; current).
 ---
 
 ## 8. Pending / next slices
+
+- **Clinician patient-view layout pass (next).** `patient-banner` shipped the
+  banner + conditional wearable trend + summary-above-actions. Still to do,
+  as a layout-only pass that wants visual verification: (a) **wide two-column**
+  arrangement at the `lg` breakpoint — context (since-last-visit + wearable +
+  clips) on the left, goals + record actions as the main column on the right;
+  (b) move the look-up row (medication / therapist / history / wearables /
+  export) into a **header toolbar**; (c) push the goals fully above the action
+  row so they sit directly under the summary (today the action-row + treatment
+  block still sits between summary and goals). Mockups for all three were
+  approved (narrow + wide). The banner is already responsive.
 
 0. **Informant-independent capture (lever 3).** Slice 1 (`guided-capture`,
    0071) standardized the capture; slice 2 (`clinic-video-scoring`, 0072) added
