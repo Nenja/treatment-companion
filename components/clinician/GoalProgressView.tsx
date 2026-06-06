@@ -58,6 +58,10 @@ interface GoalProgressViewProps {
     nrs: number | null;
     value: -2 | -1 | 0 | 1 | 2 | null;
   }[];
+  /** ITB goals: weeks at which a pump dose change was recorded, drawn as
+   *  faint vertical markers so the outcome line can be read against the
+   *  titration. */
+  doseMarkers?: { weekNumber: number }[];
 }
 
 /**
@@ -92,7 +96,8 @@ export function GoalProgressView({
   nrsDirection,
   nrsBaseline,
   nrsTarget,
-  clinicPoints = []
+  clinicPoints = [],
+  doseMarkers = []
 }: GoalProgressViewProps) {
   const t = useTranslations('treatment');
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
@@ -255,6 +260,15 @@ export function GoalProgressView({
   }
   const selectedClinic =
     selectedWeek !== null ? clinicByWeek.get(selectedWeek) ?? null : null;
+
+  // ITB dose-change weeks within range, deduped.
+  const doseWeeks = Array.from(
+    new Set(
+      doseMarkers
+        .map((d) => d.weekNumber)
+        .filter((w) => w >= 1 && w <= totalWeeks)
+    )
+  );
 
   return (
     <article className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
@@ -513,6 +527,30 @@ export function GoalProgressView({
             opacity={0.5}
           />
         )}
+
+        {/* ITB dose-change markers — faint vertical lines with a small tick
+            at the top, so titration timing reads against the outcome line. */}
+        {doseWeeks.map((w) => (
+          <g key={`dose-${w}`}>
+            <line
+              x1={xFor(w)}
+              x2={xFor(w)}
+              y1={padTop}
+              y2={padTop + innerHeight}
+              stroke="var(--color-ink-muted)"
+              strokeWidth={1}
+              strokeDasharray="2 2"
+              opacity={0.45}
+            />
+            <path
+              d={`M ${xFor(w) - 3} ${padTop} L ${xFor(w) + 3} ${padTop} L ${xFor(
+                w
+              )} ${padTop + 4} Z`}
+              fill="var(--color-ink-muted)"
+              opacity={0.7}
+            />
+          </g>
+        ))}
 
         {/* Line segments between consecutive reported weeks */}
         {segments.map((s, i) => (

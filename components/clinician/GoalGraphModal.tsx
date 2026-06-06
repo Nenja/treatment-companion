@@ -23,6 +23,7 @@ export function GoalGraphModal({
   nrsBaseline,
   nrsTarget,
   clinicPoints,
+  doseMarkers,
   closeLabel,
   onClose
 }: {
@@ -37,6 +38,7 @@ export function GoalGraphModal({
   nrsBaseline?: number | null;
   nrsTarget?: number | null;
   clinicPoints?: React.ComponentProps<typeof GoalProgressView>['clinicPoints'];
+  doseMarkers?: React.ComponentProps<typeof GoalProgressView>['doseMarkers'];
   closeLabel: string;
   onClose: () => void;
 }) {
@@ -70,6 +72,7 @@ export function GoalGraphModal({
           nrsBaseline={nrsBaseline}
           nrsTarget={nrsTarget}
           clinicPoints={clinicPoints}
+          doseMarkers={doseMarkers}
         />
       </div>
     </div>

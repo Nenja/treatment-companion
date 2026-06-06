@@ -357,6 +357,17 @@ export default function ClinicianPatientPage() {
   );
   const weekNumber = Math.max(1, Math.floor(daysSinceStart / 7) + 1);
 
+  // ITB dose changes mapped to a week relative to the cycle start, so they
+  // can be drawn as titration markers on the ITB goal charts.
+  const itbDoseMarkers = (itbTherapyQuery.data?.doseChanges ?? []).map((d) => ({
+    weekNumber: Math.max(
+      1,
+      Math.floor(
+        (new Date(d.changedOn).getTime() - startMs) / (7 * 24 * 60 * 60 * 1000)
+      ) + 1
+    )
+  }));
+
   // Per-week training for the Home/therapist training overview. A check-in
   // with both fields null = not reported; an empty array = reported none
   // for that category (a real, counted data point).
@@ -770,79 +781,6 @@ export default function ClinicianPatientPage() {
           </svg>
           {t('startNewCycle')}
         </button>
-        <PatientBanner
-          name={patient.displayName}
-          onOpenInfo={() =>
-            router.push(
-              locale === 'en' ? '/patient-info' : `/${locale}/patient-info`
-            )
-          }
-          openInfoAria={tInfo('openInfo', { name: patient.displayName })}
-          summary={patientSummary}
-          treatmentDateText={t('treatmentDate', {
-            date: formatLongDate(cycle.startDate, locale)
-          })}
-          modalityLabel={tModality(cycle.modality)}
-          medication={patient.currentMedication}
-          devices={
-            patientInfo.data?.assistiveDevices ??
-            patient.physioAssistiveDevices ??
-            null
-          }
-          labels={{
-            medication: t('banner.medication'),
-            devices: t('banner.devices')
-          }}
-        />
-        <div className="mt-4">
-          <VisitChanges
-            lastTreatmentDate={treatment?.date ?? null}
-            cycleStartDate={cycle.startDate}
-            checkins={checkins}
-            goals={[...activeGoals, ...archivedGoals]}
-            patientId={patient.id}
-          />
-        </div>
-
-        {/* Wearable module — its own surface, shown only when a clinician
-            has enabled it for this patient OR the patient already has
-            wearable observations. (The "or has data" half means automated
-            pairing will surface it with no further change.) */}
-        {(patientInfo.data?.wearableEnabled ||
-          (observationsQuery.data?.length ?? 0) > 0) && (
-          <section className="mt-4 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-            <div className="flex items-baseline justify-between gap-2">
-              <h2 className="font-display text-[18px] leading-tight text-ink">
-                {t('wearableModuleTitle')}
-              </h2>
-              <button
-                type="button"
-                onClick={() => {
-                  touch();
-                  router.push(
-                    locale === 'en'
-                      ? '/clinician/observations'
-                      : `/${locale}/clinician/observations`
-                  );
-                }}
-                className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-stone-soft"
-              >
-                {t('wearableModuleOpen')}
-              </button>
-            </div>
-            <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">
-              {(observationsQuery.data?.length ?? 0) > 0
-                ? t('wearableModuleHasData')
-                : t('wearableModuleNoData')}
-            </p>
-          </section>
-        )}
-
-        {/* Intrathecal baclofen track — continuous, titrated therapy running
-            in parallel with the BoNT cycle. Shows the dose-titration log, or
-            a compact start affordance when there's no active ITB therapy. */}
-        <ItbTrack patientId={patient.id} onActivity={() => touch()} />
-
         {/* Action row — always-visible entry points with live counts.
             On the wide layout this is replaced at lg by the header
             toolbar (below the patient name); on narrow/compact it stays
@@ -992,41 +930,41 @@ export default function ClinicianPatientPage() {
 
         {/* Therapist input panel — opens from the action row. */}
         {openPanel === 'physio' && (
-          <section className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-            <h2 className="font-display text-[18px] leading-tight text-ink">
+          <section className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3.5">
+            <h2 className="font-display text-[15px] leading-tight text-ink">
               {t('physioInputHeading')}
             </h2>
-            <p className="mt-1 text-[13px] text-ink-muted">
+            <p className="mt-0.5 text-[12px] text-ink-muted">
               {t('physioInputSubtitle')}
             </p>
-            <div className="mt-3">
+            <div className="mt-2.5">
           {physioGoalSuggestions.length === 0 &&
           physioMuscleSuggestions.length === 0 ? (
-            <p className="text-[14px] text-ink-muted">
+            <p className="text-[13px] text-ink-muted">
               {t('physioInputNone')}
             </p>
           ) : (
             <>
               {/* Goal suggestions from the therapist. */}
               <div>
-                <h3 className="text-[15px] font-semibold text-ink-soft">
+                <h3 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
                   {t('physioSuggestedGoals')}
                 </h3>
                 {physioGoalSuggestions.length === 0 ? (
-                  <p className="mt-2 text-[14px] text-ink-muted">
+                  <p className="mt-1.5 text-[13px] text-ink-muted">
                     {t('physioGoalsEmpty')}
                   </p>
                 ) : (
-                  <ul className="mt-3 space-y-3">
+                  <ul className="mt-2 space-y-2">
                     {physioGoalSuggestions.map((s) => (
                       <li
                         key={s.id}
-                        className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
+                        className="rounded-[var(--radius-button)] border border-stone/70 bg-cream p-2.5"
                       >
-                        <p className="font-display text-[16px] leading-snug text-ink">
+                        <p className="text-[14px] font-semibold leading-snug text-ink">
                           {s.suggestedGoal}
                         </p>
-                        <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                        <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">
                           <span className="text-ink-muted">
                             {t('rationaleLabel')}:{' '}
                           </span>
@@ -1043,16 +981,16 @@ export default function ClinicianPatientPage() {
               </div>
 
               {/* Muscles flagged by the therapist. */}
-              <div className="mt-6">
-                <h3 className="text-[15px] font-semibold text-ink-soft">
+              <div className="mt-4">
+                <h3 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
                   {t('physioFlaggedMuscles')}
                 </h3>
                 {physioMuscleSuggestions.length === 0 ? (
-                  <p className="mt-2 text-[14px] text-ink-muted">
+                  <p className="mt-1.5 text-[13px] text-ink-muted">
                     {t('physioMusclesEmpty')}
                   </p>
                 ) : (
-                  <ul className="mt-3 space-y-3">
+                  <ul className="mt-2 space-y-2">
                     {physioMuscleSuggestions.map((s) => {
                       const linkedGoal = activeGoals.find(
                         (g) => g.id === s.relatedGoalId
@@ -1061,22 +999,22 @@ export default function ClinicianPatientPage() {
                       return (
                         <li
                           key={s.id}
-                          className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
+                          className="rounded-[var(--radius-button)] border border-stone/70 bg-cream p-2.5"
                         >
-                          <p className="font-display text-[16px] leading-snug text-ink">
+                          <p className="text-[14px] font-semibold leading-snug text-ink">
                             {s.muscle}{' '}
                             <span className="text-ink-muted">
                               · {sideLabel}
                             </span>
                           </p>
-                          <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                          <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">
                             <span className="text-ink-muted">
                               {t('rationaleLabel')}:{' '}
                             </span>
                             {s.rationale}
                           </p>
                           {linkedGoal && (
-                            <p className="mt-2 text-[13px] text-ink-muted">
+                            <p className="mt-1 text-[12px] text-ink-muted">
                               {t('relatedGoalLabel')}:{' '}
                               {linkedGoal.patientFacingText}
                             </p>
@@ -1118,6 +1056,78 @@ export default function ClinicianPatientPage() {
             )}
           </section>
         )}
+        <PatientBanner
+          name={patient.displayName}
+          onOpenInfo={() =>
+            router.push(
+              locale === 'en' ? '/patient-info' : `/${locale}/patient-info`
+            )
+          }
+          openInfoAria={tInfo('openInfo', { name: patient.displayName })}
+          summary={patientSummary}
+          treatmentDateText={t('treatmentDate', {
+            date: formatLongDate(cycle.startDate, locale)
+          })}
+          modalityLabel={tModality(cycle.modality)}
+          medication={patient.currentMedication}
+          devices={
+            patientInfo.data?.assistiveDevices ??
+            patient.physioAssistiveDevices ??
+            null
+          }
+          labels={{
+            medication: t('banner.medication'),
+            devices: t('banner.devices')
+          }}
+        />
+        <div className="mt-4">
+          <VisitChanges
+            lastTreatmentDate={treatment?.date ?? null}
+            cycleStartDate={cycle.startDate}
+            checkins={checkins}
+            goals={[...activeGoals, ...archivedGoals]}
+            patientId={patient.id}
+          />
+        </div>
+
+        {/* Wearable module — its own surface, shown only when a clinician
+            has enabled it for this patient OR the patient already has
+            wearable observations. (The "or has data" half means automated
+            pairing will surface it with no further change.) */}
+        {(patientInfo.data?.wearableEnabled ||
+          (observationsQuery.data?.length ?? 0) > 0) && (
+          <section className="mt-4 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="font-display text-[18px] leading-tight text-ink">
+                {t('wearableModuleTitle')}
+              </h2>
+              <button
+                type="button"
+                onClick={() => {
+                  touch();
+                  router.push(
+                    locale === 'en'
+                      ? '/clinician/observations'
+                      : `/${locale}/clinician/observations`
+                  );
+                }}
+                className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-stone-soft"
+              >
+                {t('wearableModuleOpen')}
+              </button>
+            </div>
+            <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">
+              {(observationsQuery.data?.length ?? 0) > 0
+                ? t('wearableModuleHasData')
+                : t('wearableModuleNoData')}
+            </p>
+          </section>
+        )}
+
+        {/* Intrathecal baclofen track — continuous, titrated therapy running
+            in parallel with the BoNT cycle. Shows the dose-titration log, or
+            a compact start affordance when there's no active ITB therapy. */}
+        <ItbTrack patientId={patient.id} onActivity={() => touch()} />
         </div>
 
         {/* Right column: the goals — the primary work surface. On the
@@ -1440,6 +1450,7 @@ export default function ClinicianPatientPage() {
                       nrsBaseline={g.nrs?.baselineValue ?? null}
                       nrsTarget={g.nrs?.targetValue ?? null}
                       clinicPoints={clinicPointsByGoal.get(g.id) ?? []}
+                      doseMarkers={itbDoseMarkers}
                       onExpand={() => setEnlargedGoalId(g.id)}
                     />
                     <div className="mt-1.5 flex justify-end">
@@ -1631,6 +1642,7 @@ export default function ClinicianPatientPage() {
               nrsBaseline={g.nrs?.baselineValue ?? null}
               nrsTarget={g.nrs?.targetValue ?? null}
               clinicPoints={clinicPointsByGoal.get(g.id) ?? []}
+              doseMarkers={g.therapy === 'itb' ? itbDoseMarkers : []}
               closeLabel={tSession('done')}
               onClose={() => setEnlargedGoalId(null)}
             />

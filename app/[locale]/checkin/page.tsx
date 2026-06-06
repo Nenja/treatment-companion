@@ -369,6 +369,11 @@ function CheckinPageInner() {
       );
     body = (
       <>
+        {goal.therapy === 'itb' && (
+          <span className="mb-2 inline-flex items-center rounded-full border border-sage/50 bg-sage-soft px-2.5 py-0.5 text-[12px] font-semibold uppercase tracking-wider text-sage-deep">
+            {t('itbTag')}
+          </span>
+        )}
         {picker}
         {showVideo && (
           <>
