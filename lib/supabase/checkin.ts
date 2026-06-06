@@ -54,6 +54,9 @@ export interface CheckinGoal {
    * video exists, so there's at most one per cycle.
    */
   videoAlreadyInCycle: boolean;
+  /** In-clinic baseline clip for this goal, shown as a reference when
+   *  recording the peak-effect video. Null when none was recorded. */
+  baselineVideoPath: string | null;
 }
 
 export interface CheckinData {
@@ -147,7 +150,7 @@ export function useCheckinData(
       // Load active goals with their NRS configs.
       const { data: goalRows, error: gErr } = await supabase
         .from('approved_goal')
-        .select('id, patient_facing_text, goal_kind, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2, video_enabled, video_task_instruction, video_task_setup, video_task_seconds')
+        .select('id, patient_facing_text, goal_kind, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2, video_enabled, video_task_instruction, video_task_setup, video_task_seconds, baseline_video_path')
         .eq('treatment_cycle_id', cycleId)
         .eq('status', 'active')
         .order('approved_at', { ascending: true });
@@ -250,7 +253,8 @@ export function useCheckinData(
             (g.video_task_instruction as string | null) ?? null,
           videoTaskSetup: (g.video_task_setup as string | null) ?? null,
           videoTaskSeconds: (g.video_task_seconds as number | null) ?? null,
-          videoAlreadyInCycle: videoInCycle.has(g.id as string)
+          videoAlreadyInCycle: videoInCycle.has(g.id as string),
+          baselineVideoPath: (g.baseline_video_path as string | null) ?? null
         };
       });
 
