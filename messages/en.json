@@ -377,7 +377,8 @@
       "physioAdjustmentGoalGone": "(goal no longer active)",
       "physioWorkingOnTag": "Therapist working on this",
       "editGoalCta": "Recalibrate",
-      "goalVersionLabel": "v{version}"
+      "goalVersionLabel": "v{version}",
+      "goalHistoryCta": "History"
     },
     "review": {
       "title": "Review suggestion",
@@ -1387,5 +1388,18 @@
     "saved": "New goal version saved.",
     "error": "Couldn't save the new version. Please try again.",
     "errorShort": "Couldn't save — please check the values."
+  },
+  "goalHistory": {
+    "eyebrow": "Goal history",
+    "title": "Goal history",
+    "loading": "Loading history…",
+    "error": "Couldn't load the goal history.",
+    "empty": "No versions to show yet.",
+    "versionN": "Version {n}",
+    "cycleN": "Cycle {n}",
+    "current": "Current",
+    "nrsCalibration": "Baseline {baseline} → target {target}",
+    "patientRatings": "{count, plural, =0 {No patient ratings} one {# patient rating} other {# patient ratings}}",
+    "therapistRatings": "{count, plural, =0 {No therapist ratings} one {# therapist rating} other {# therapist ratings}}"
   }
 }

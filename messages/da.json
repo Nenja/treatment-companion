@@ -381,7 +381,8 @@
       "physioAdjustmentGoalGone": "(mål ikke længere aktivt)",
       "physioWorkingOnTag": "Terapeut arbejder med dette",
       "editGoalCta": "Rekalibrér",
-      "goalVersionLabel": "v{version}"
+      "goalVersionLabel": "v{version}",
+      "goalHistoryCta": "Historik"
     },
     "review": {
       "title": "Gennemgå forslag",
@@ -1391,5 +1392,18 @@
     "saved": "Ny målversion gemt.",
     "error": "Kunne ikke gemme den nye version. Prøv igen.",
     "errorShort": "Kunne ikke gemme — tjek venligst værdierne."
+  },
+  "goalHistory": {
+    "eyebrow": "Målhistorik",
+    "title": "Målhistorik",
+    "loading": "Indlæser historik…",
+    "error": "Kunne ikke indlæse målhistorikken.",
+    "empty": "Ingen versioner at vise endnu.",
+    "versionN": "Version {n}",
+    "cycleN": "Cyklus {n}",
+    "current": "Nuværende",
+    "nrsCalibration": "Udgangspunkt {baseline} → mål {target}",
+    "patientRatings": "{count, plural, =0 {Ingen patientvurderinger} one {# patientvurdering} other {# patientvurderinger}}",
+    "therapistRatings": "{count, plural, =0 {Ingen terapeutvurderinger} one {# terapeutvurdering} other {# terapeutvurderinger}}"
   }
 }
