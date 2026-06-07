@@ -379,7 +379,9 @@
       "physioWeekdaysAria": "Ugedage hvor terapeuten registrerede et besøg",
       "physioAdjustmentsHeading": "Anmodninger om justering",
       "physioAdjustmentGoalGone": "(mål ikke længere aktivt)",
-      "physioWorkingOnTag": "Terapeut arbejder med dette"
+      "physioWorkingOnTag": "Terapeut arbejder med dette",
+      "editGoalCta": "Rekalibrér",
+      "goalVersionLabel": "v{version}"
     },
     "review": {
       "title": "Gennemgå forslag",
@@ -1367,5 +1369,27 @@
     "saving": "Gemmer…",
     "doseSavedToast": "Dosisændring gemt",
     "error": "Noget gik galt. Prøv igen."
+  },
+  "editGoal": {
+    "eyebrow": "Rekalibrér mål",
+    "title": "Rekalibrér dette mål",
+    "intro": "Når du gemmer, oprettes version {next} af målet i den nuværende cyklus, og version {version} bevares som historik. Tidligere vurderinger bliver hos den version, de blev lavet under.",
+    "patientText": "Målet med patientens egne ord",
+    "smartText": "SMART-beskrivelse",
+    "anchorsLegend": "Niveauer for målopnåelse",
+    "anchorPlus2": "+2 — meget mere end forventet",
+    "anchorPlus1": "+1 — mere end forventet",
+    "anchorZero": "0 — forventet resultat",
+    "anchorMinus1": "−1 — mindre end forventet",
+    "anchorMinus2": "−2 — meget mindre end forventet",
+    "baseline": "Udgangspunkt (0–10)",
+    "target": "Mål (0–10)",
+    "carryForwardNote": "Videoopgave og terapiindstillinger føres videre uændret. For at oprette et helt nyt mål skal du bruge “Registrér et mål”.",
+    "cancel": "Annullér",
+    "save": "Gem ny version",
+    "saving": "Gemmer…",
+    "saved": "Ny målversion gemt.",
+    "error": "Kunne ikke gemme den nye version. Prøv igen.",
+    "errorShort": "Kunne ikke gemme — tjek venligst værdierne."
   }
 }

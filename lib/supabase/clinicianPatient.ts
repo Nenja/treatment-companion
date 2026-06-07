@@ -36,6 +36,9 @@ export interface ClinicianPatientGoal {
   baselineVideoPath: string | null;
   /** Which therapy the goal belongs to: 'bont' (default) or 'itb'. */
   therapy: 'bont' | 'itb';
+  /** Versioning: stable lineage identity + version number of this row. */
+  lineageId: string;
+  version: number;
 }
 
 export interface ClinicianPatientSuggestion {
@@ -273,7 +276,7 @@ export function useClinicianPatientData(
           supabase
             .from('approved_goal')
             .select(
-              'id, patient_facing_text, smart_text, goal_kind, goal_outcome, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, nrs_baseline_value, nrs_target_value, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2, status, video_enabled, video_task_instruction, video_task_setup, video_task_seconds, baseline_video_path, therapy'
+              'id, patient_facing_text, smart_text, goal_kind, goal_outcome, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, nrs_baseline_value, nrs_target_value, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2, status, video_enabled, video_task_instruction, video_task_setup, video_task_seconds, baseline_video_path, therapy, lineage_id, version'
             )
             .eq('treatment_cycle_id', cycle.id)
             .is('superseded_at', null)
@@ -385,7 +388,9 @@ export function useClinicianPatientData(
             videoTaskSetup: (g.video_task_setup as string | null) ?? null,
             videoTaskSeconds: (g.video_task_seconds as number | null) ?? null,
             baselineVideoPath: (g.baseline_video_path as string | null) ?? null,
-            therapy: (g.therapy as 'bont' | 'itb' | null) === 'itb' ? 'itb' : 'bont'
+            therapy: (g.therapy as 'bont' | 'itb' | null) === 'itb' ? 'itb' : 'bont',
+            lineageId: g.lineage_id as string,
+            version: (g.version as number) ?? 1
           };
         }
       );
@@ -713,6 +718,56 @@ export function useCreateGoalForPatient() {
           p_nrs_target_value: input.nrsTargetValue
         }
       );
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
+/**
+ * Edit (recalibrate) a goal at a visit. Creates a new version in the active
+ * cycle and freezes the previous one (server-side `edit_goal`). Only fields
+ * provided are changed; the rest carry forward. Returns the new version id.
+ */
+export interface EditGoalInput {
+  sourceGoalId: string;
+  patientFacingText?: string;
+  smartText?: string;
+  // NRS calibration (only for NRS goals)
+  nrsQuestion?: string;
+  nrsDirection?: NrsDirection;
+  nrsBaselineValue?: number | null;
+  nrsTargetValue?: number | null;
+  // GAS anchors (only for GAS goals)
+  anchorMinus2?: string;
+  anchorMinus1?: string;
+  anchorZero?: string;
+  anchorPlus1?: string;
+  anchorPlus2?: string;
+}
+
+export function useEditGoal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: EditGoalInput): Promise<string> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc('edit_goal', {
+        p_source_goal_id: input.sourceGoalId,
+        p_patient_facing_text: input.patientFacingText ?? null,
+        p_smart_text: input.smartText ?? null,
+        p_nrs_question: input.nrsQuestion ?? null,
+        p_nrs_direction: input.nrsDirection ?? null,
+        p_nrs_baseline_value: input.nrsBaselineValue ?? null,
+        p_nrs_target_value: input.nrsTargetValue ?? null,
+        p_anchor_minus2: input.anchorMinus2 ?? null,
+        p_anchor_minus1: input.anchorMinus1 ?? null,
+        p_anchor_zero: input.anchorZero ?? null,
+        p_anchor_plus1: input.anchorPlus1 ?? null,
+        p_anchor_plus2: input.anchorPlus2 ?? null
+      });
       if (error) throw error;
       return data as string;
     },

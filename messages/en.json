@@ -375,7 +375,9 @@
       "physioWeekdaysAria": "Weekdays the therapist recorded a visit",
       "physioAdjustmentsHeading": "Adjustment requests",
       "physioAdjustmentGoalGone": "(goal no longer active)",
-      "physioWorkingOnTag": "Therapist working on this"
+      "physioWorkingOnTag": "Therapist working on this",
+      "editGoalCta": "Recalibrate",
+      "goalVersionLabel": "v{version}"
     },
     "review": {
       "title": "Review suggestion",
@@ -1363,5 +1365,27 @@
     "saving": "Saving…",
     "doseSavedToast": "Dose change saved",
     "error": "Something went wrong. Please try again."
+  },
+  "editGoal": {
+    "eyebrow": "Recalibrate goal",
+    "title": "Recalibrate this goal",
+    "intro": "Saving creates version {next} of this goal in the current cycle and keeps version {version} as history. Past ratings stay with the version they were made under.",
+    "patientText": "Goal, in the patient's words",
+    "smartText": "SMART description",
+    "anchorsLegend": "Goal Attainment levels",
+    "anchorPlus2": "+2 — much more than expected",
+    "anchorPlus1": "+1 — more than expected",
+    "anchorZero": "0 — expected outcome",
+    "anchorMinus1": "−1 — less than expected",
+    "anchorMinus2": "−2 — much less than expected",
+    "baseline": "Baseline (0–10)",
+    "target": "Target (0–10)",
+    "carryForwardNote": "Video task and therapy settings carry forward unchanged. To start a brand-new goal instead, use “Record a goal”.",
+    "cancel": "Cancel",
+    "save": "Save new version",
+    "saving": "Saving…",
+    "saved": "New goal version saved.",
+    "error": "Couldn't save the new version. Please try again.",
+    "errorShort": "Couldn't save — please check the values."
   }
 }
