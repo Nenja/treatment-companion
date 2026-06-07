@@ -1,56 +1,35 @@
-BUILD: goal-versioning   (goal versioning — foundation, build 1 of 2)
+BUILD: goal-edit   (edit/recalibrate a goal — build 2a of goal versioning)
 =========================================================================
-MIGRATION: 0086_goal_versioning.sql  — RUN THIS.
+NO MIGRATION — uses edit_goal from 0086. Ensure 0086 is applied.
 
 WHAT THIS BUILD DOES
-Lays the foundation for editable, versioned goals. A goal becomes a LINEAGE of
-frozen versions instead of one mutable row. Editing a goal at a visit will
-create a new approved_goal row (same lineage_id, version+1) and freeze the
-previous one. Ratings already point at a specific row, so every historical
-rating stays bound to the calibration it was made under — that is the goal's
-evolution log.
+A clinician can recalibrate a goal at a visit. Each goal card on the clinician
+patient page now has a "Recalibrate" button and a vN version label. It opens a
+drawer pre-filled with the goal's current wording and calibration; saving calls
+edit_goal, which creates the next version in the active cycle and freezes the
+previous one. Past ratings stay bound to the version they were made under.
 
-THIS BUILD HAS NO VISIBLE UI CHANGE. It ships the schema, the edit_goal RPC,
-and the live-version read filter. The treatment-flow "edit goal" entry point
-and the per-goal history view are build 2.
+- NRS goals: edit wording + baseline/target.
+- GAS goals: edit wording + the five anchors.
+- Video task and therapy tag carry forward unchanged (the drawer says so). Cut
+  points carry forward (not exposed for editing).
 
-SCHEMA (0086)
-- approved_goal += lineage_id (backfilled = id, NOT NULL), version (default 1),
-  superseded_at, superseded_by.
-- suggestion_id made nullable (edited versions have no originating suggestion).
-- indexes: lineage_id; partial-unique "one live version per lineage"
-  (where superseded_at is null).
-
-edit_goal RPC
-- Clones the live version into the patient's active cycle with version+1,
-  applying any edited fields passed (null = keep the old value), then supersedes
-  the prior version. Freeze-then-insert ordering keeps the one-live guard happy.
-- Clinician-only; requires an active session and an active cycle.
-
-LIVE FILTER
-- "Current" goal reads add superseded_at is null: clinician patient page, physio
-  page, patient home, check-in. NOT patientTrend (history keeps all versions).
-
-SAFE BY CONSTRUCTION
-- Backfill makes every existing goal v1/live, so the filter is a no-op on
-  existing data. Daily use is behaviourally identical until the first edit (which
-  can only happen via build 2's UI, or a manual SQL call).
+FILES
+- lib/supabase/clinicianPatient.ts: ClinicianPatientGoal gains lineageId +
+  version (added to the goal read); new useEditGoal hook.
+- components/clinician/EditGoalDrawer.tsx: the recalibrate drawer.
+- clinician patient page: Recalibrate button on bont + itb goal cards; drawer.
 
 DEPLOY
-1. Run 0086 in the Supabase SQL editor.
-2. Unzip; push to GitHub; Vercel builds. Page count 60.
+- Unzip; push to GitHub; Vercel builds. Page count 60. No SQL.
 
-** QA (please verify — SQL-testable now; can't be tested here) **
-- After 0086: every approved_goal has lineage_id = id, version = 1; daily
-  surfaces look unchanged.
-- SQL: select edit_goal('<a live goal id>', p_patient_facing_text => 'New text');
-    -> a new v2 row exists in the active cycle;
-    -> the v1 row now has superseded_at + superseded_by;
-    -> patient/clinician/physio/check-in show only v2;
-    -> v1's existing ratings are untouched.
-- The one-live-per-lineage unique index rejects a second live row in a lineage.
+** QA (please verify — can't be tested here) **
+- Recalibrate a goal: the drawer is pre-filled with current values.
+- Save: the card shows the new version (vN+1) with edited values; the old
+  version leaves the live view; patient/physio/check-in show only the new one.
+- The goal's past chart points (under the old version) are unaffected.
 
-NEXT (build 2)
-- Treatment-flow "edit goal" UI (calls edit_goal); per-goal history timeline
-  (versions by lineage; NRS continuous line, GAS per-version segments); manual
-  "link to an existing goal/lineage" action.
+NEXT
+- build 2b: per-goal history view (version timeline by lineage; NRS continuous,
+  GAS per-version segments; ratings under each).
+- build 2c: manual "link to an existing lineage" action.

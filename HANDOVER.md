@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `goal-versioning`._
+> _Last updated for build tag: `goal-edit`._
 
 ---
 
@@ -660,53 +660,47 @@ their goal/muscle suggestions) →
 **`therapist-cycle-agnostic`** (0085; therapist can suggest pre-cycle; physician
 read widened to null-cycle) →
 **`goal-versioning`** (0086; goal lineage/version foundation + edit_goal RPC +
-live-version read filter; UI in build 2; current).
+live-version read filter) →
+**`goal-edit`** (no migration; Recalibrate button + EditGoalDrawer call edit_goal;
+goal carries lineageId/version; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-goal-versioning.zip`
-- **Tag:** `goal-versioning`
-- **Migration:** **0086_goal_versioning.sql** (run it).
-- **Change:** **Goal versioning — foundation (build 1 of 2).** A goal becomes a
-  *lineage* of frozen versions instead of a single mutable row. Editing a goal
-  at a visit will create a new `approved_goal` row (same `lineage_id`,
-  `version`+1) and freeze the previous one; ratings already point at a specific
-  row, so historical ratings stay bound to the calibration they were made
-  under. This build lays the schema + the `edit_goal` RPC + the live-version
-  read filter; **no visible UI change yet** (the treatment-flow edit entry point
-  and the per-goal history view are build 2).
-- **Schema (0086):** `approved_goal` += `lineage_id` (backfilled = id, NOT
-  NULL), `version` (default 1), `superseded_at`, `superseded_by`. `suggestion_id`
-  made nullable (edited versions have no originating suggestion). Indexes:
-  `lineage_id`; partial-unique **one live version per lineage**
-  (`where superseded_at is null`).
-- **`edit_goal` RPC:** clones the live version into the patient's active cycle
-  with `version`+1, applying any edited fields (null = keep), then supersedes
-  the prior version (freeze-then-insert order so the one-live guard never sees
-  two live rows). Clinician-only, requires session + active cycle.
-- **Live filter:** "current" goal reads now add `superseded_at is null` —
-  clinician patient page, physio page, patient home, check-in. **Deliberately
-  NOT** on `patientTrend` (the cross-cycle history surface keeps all versions).
-- **Safe by construction:** backfill makes every existing goal v1/live, so the
-  live filter is a **no-op on existing data** — daily use is behaviourally
-  identical until an edit creates the first superseded row (build 2).
-- **DB needed:** 0086.
-- **⚠ QA (can't test here — SQL-testable now):** run 0086; confirm all goals get
-  `lineage_id=id, version=1`; daily surfaces unchanged. Then SQL-call
-  `edit_goal('<live goal id>', p_patient_facing_text => 'X')` → a v2 row appears
-  in the active cycle, the v1 row gets `superseded_at`/`superseded_by`, the
-  patient/clinician/physio/check-in views show only v2, and v1's old ratings are
-  intact. Verify the one-live-per-lineage index rejects a second live row.
-- **Next (build 2):** treatment-flow "edit goal" UI (calls `edit_goal`), the
-  per-goal history timeline (versions by lineage; NRS continuous, GAS per-version
-  segments), and the manual "link to existing lineage" action.
+- **Zip:** `treatment-companion-goal-edit.zip`
+- **Tag:** `goal-edit`
+- **Migration:** none (uses `edit_goal` from 0086 — ensure 0086 is applied).
+- **Change:** **Edit/recalibrate a goal (build 2a of goal versioning).** A
+  clinician can now recalibrate a goal at a visit: each goal card on the
+  clinician patient page gets a **Recalibrate** button (and a `v{n}` label).
+  It opens `EditGoalDrawer` pre-filled with the goal's current wording +
+  calibration; saving calls `edit_goal`, creating the next version in the
+  active cycle and freezing the previous one. Past ratings stay on the version
+  they were made under.
+  - NRS goals edit wording + baseline/target; GAS goals edit wording + the five
+    anchors. Video task + therapy tag carry forward unchanged (the drawer says
+    so). Cut points carry forward (not exposed).
+  - `ClinicianPatientGoal` now carries `lineageId` + `version` (added to the
+    goal read); `useEditGoal` wraps the RPC and invalidates ['clinicianPatient'].
+- **DB needed:** 0086 (no new migration).
+- **⚠ QA (can't test here):** on the clinician patient page, Recalibrate a goal
+  → the drawer is pre-filled; save → the card shows the new version (vN+1) with
+  the edited values, the old version drops out of the live view, and the
+  patient/physio/check-in views show only the new version. Confirm the goal's
+  past chart points (made under the old version) are unaffected.
+- **Next:** build 2b — per-goal **history view** (version timeline by lineage:
+  NRS continuous line, GAS per-version segments, ratings under each); then
+  build 2c — manual **link to an existing lineage** action.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`goal-versioning`** — zip `treatment-companion-goal-versioning.zip`
+  (migration 0086). Versioning foundation: lineage/version/superseded columns +
+  lineage-default trigger + `edit_goal` RPC + live-version read filter.
+  DB-verified locally.
 - **`therapist-cycle-agnostic`** — zip
   `treatment-companion-therapist-cycle-agnostic.zip` (migration 0085). Therapist
   can suggest a goal before the first cycle; physio-suggestion submit RPCs no
