@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `goal-edit`._
+> _Last updated for build tag: `goal-history`._
 
 ---
 
@@ -662,41 +662,44 @@ read widened to null-cycle) →
 **`goal-versioning`** (0086; goal lineage/version foundation + edit_goal RPC +
 live-version read filter) →
 **`goal-edit`** (no migration; Recalibrate button + EditGoalDrawer call edit_goal;
-goal carries lineageId/version; current).
+goal carries lineageId/version) →
+**`goal-history`** (no migration; per-goal History modal — version timeline by
+lineage with frozen calibration + ratings; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-goal-edit.zip`
-- **Tag:** `goal-edit`
-- **Migration:** none (uses `edit_goal` from 0086 — ensure 0086 is applied).
-- **Change:** **Edit/recalibrate a goal (build 2a of goal versioning).** A
-  clinician can now recalibrate a goal at a visit: each goal card on the
-  clinician patient page gets a **Recalibrate** button (and a `v{n}` label).
-  It opens `EditGoalDrawer` pre-filled with the goal's current wording +
-  calibration; saving calls `edit_goal`, creating the next version in the
-  active cycle and freezing the previous one. Past ratings stay on the version
-  they were made under.
-  - NRS goals edit wording + baseline/target; GAS goals edit wording + the five
-    anchors. Video task + therapy tag carry forward unchanged (the drawer says
-    so). Cut points carry forward (not exposed).
-  - `ClinicianPatientGoal` now carries `lineageId` + `version` (added to the
-    goal read); `useEditGoal` wraps the RPC and invalidates ['clinicianPatient'].
-- **DB needed:** 0086 (no new migration).
-- **⚠ QA (can't test here):** on the clinician patient page, Recalibrate a goal
-  → the drawer is pre-filled; save → the card shows the new version (vN+1) with
-  the edited values, the old version drops out of the live view, and the
-  patient/physio/check-in views show only the new version. Confirm the goal's
-  past chart points (made under the old version) are unaffected.
-- **Next:** build 2b — per-goal **history view** (version timeline by lineage:
-  NRS continuous line, GAS per-version segments, ratings under each); then
-  build 2c — manual **link to an existing lineage** action.
+- **Zip:** `treatment-companion-goal-history.zip`
+- **Tag:** `goal-history`
+- **Migration:** none (reads existing tables; ensure 0086 is applied).
+- **Change:** **Per-goal history view (build 2b of goal versioning).** Each goal
+  card on the clinician patient page now has a **History** button →
+  `GoalHistoryModal`: a timeline of the goal's versions (oldest first) by
+  lineage. Each version shows its number + cycle + a Current badge, the wording
+  and calibration frozen at the time (NRS baseline→target; GAS the five
+  anchors), and the **patient + therapist ratings recorded under it** as value
+  chips. NRS values 0–10; GAS shown as the −2..+2 level (versions kept
+  separate, not one continuous line, because anchors reset per version).
+  - New `useGoalHistory(lineageId)` hook reads all versions for the lineage and
+    their ratings (`weekly_goal_rating` → patient: nrs_value, or rating_value
+    for GAS; `physio_goal_rating` → therapist: nrs_value/gas_value), grouped by
+    version. Read-only; RLS scopes to accessible patients.
+- **DB needed:** none new (0086).
+- **⚠ QA (can't test here):** open History on a goal that's been recalibrated →
+  see v1, v2… each with its frozen wording/calibration and the ratings made
+  under it; the live version shows the Current badge. Confirm a goal with one
+  version shows just v1.
+- **Next:** build 2c — manual **link to an existing lineage** action (graft a
+  separately-created goal onto an existing goal's lineage).
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`goal-edit`** — zip `treatment-companion-goal-edit.zip` (no migration).
+  Recalibrate button + EditGoalDrawer call edit_goal to create a new goal
+  version at a visit; goal carries lineageId/version.
 - **`goal-versioning`** — zip `treatment-companion-goal-versioning.zip`
   (migration 0086). Versioning foundation: lineage/version/superseded columns +
   lineage-default trigger + `edit_goal` RPC + live-version read filter.

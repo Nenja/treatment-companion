@@ -1,35 +1,37 @@
-BUILD: goal-edit   (edit/recalibrate a goal — build 2a of goal versioning)
+BUILD: goal-history   (per-goal history view — build 2b of goal versioning)
 =========================================================================
-NO MIGRATION — uses edit_goal from 0086. Ensure 0086 is applied.
+NO MIGRATION — reads existing tables. Ensure 0086 is applied.
 
 WHAT THIS BUILD DOES
-A clinician can recalibrate a goal at a visit. Each goal card on the clinician
-patient page now has a "Recalibrate" button and a vN version label. It opens a
-drawer pre-filled with the goal's current wording and calibration; saving calls
-edit_goal, which creates the next version in the active cycle and freezes the
-previous one. Past ratings stay bound to the version they were made under.
+Each goal card on the clinician patient page gets a "History" button that opens
+a per-goal timeline of its versions (oldest first), by lineage. Each version
+shows:
+- version number + cycle + a "Current" badge on the live one;
+- the wording and calibration frozen at that version (NRS baseline->target; GAS
+  the five anchors);
+- the patient and therapist ratings recorded UNDER that version, as value chips
+  (NRS 0-10; GAS as the -2..+2 level).
 
-- NRS goals: edit wording + baseline/target.
-- GAS goals: edit wording + the five anchors.
-- Video task and therapy tag carry forward unchanged (the drawer says so). Cut
-  points carry forward (not exposed for editing).
+Versions are shown as separate segments rather than one continuous line,
+because GAS anchors (and NRS targets) reset per version — values are only
+comparable within the version they were rated against.
 
 FILES
-- lib/supabase/clinicianPatient.ts: ClinicianPatientGoal gains lineageId +
-  version (added to the goal read); new useEditGoal hook.
-- components/clinician/EditGoalDrawer.tsx: the recalibrate drawer.
-- clinician patient page: Recalibrate button on bont + itb goal cards; drawer.
+- lib/supabase/goalHistory.ts: useGoalHistory(lineageId) — all versions of a
+  lineage + their ratings (patient from weekly_goal_rating, therapist from
+  physio_goal_rating), grouped by version. Read-only.
+- components/clinician/GoalHistoryModal.tsx: the timeline modal.
+- clinician patient page: "History" button on bont + itb goal cards; modal.
 
 DEPLOY
 - Unzip; push to GitHub; Vercel builds. Page count 60. No SQL.
 
 ** QA (please verify — can't be tested here) **
-- Recalibrate a goal: the drawer is pre-filled with current values.
-- Save: the card shows the new version (vN+1) with edited values; the old
-  version leaves the live view; patient/physio/check-in show only the new one.
-- The goal's past chart points (under the old version) are unaffected.
+- Recalibrate a goal (build 2a) so it has 2+ versions, then open History:
+  see each version with its frozen wording/calibration and the ratings made
+  under it; the live version shows "Current".
+- A goal with a single version shows just v1.
 
 NEXT
-- build 2b: per-goal history view (version timeline by lineage; NRS continuous,
-  GAS per-version segments; ratings under each).
-- build 2c: manual "link to an existing lineage" action.
+- build 2c: manual "link to an existing lineage" action (graft a
+  separately-created goal onto an existing goal's lineage).
