@@ -158,8 +158,9 @@ export type InjectionSide = (typeof INJECTION_SIDES)[number];
 /**
  * Display label for an injection side. The raw enum values are
  * lowercase ('left' / 'right' / 'bilateral') and must never reach the
- * UI raw — this is the single source for the readable form, used by
- * the clinician card, the physiotherapist views, and the EHR export.
+ * UI raw — this is the readable form used by the clinician card and the
+ * physiotherapist views. (The EHR-paste export deliberately uses its own
+ * compact L / R / B form in `lib/ehrExport.ts`, not this function.)
  */
 export function injectionSideLabel(side: InjectionSide): string {
   switch (side) {

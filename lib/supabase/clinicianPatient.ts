@@ -90,6 +90,12 @@ export interface ClinicianTreatmentRecord {
   dilution: string | null;
   guidance: string;
   notes: string | null;
+  /** Physician → therapist handoff note for this cycle (the only downward
+   *  channel; therapist-only, never patient-visible). Null when none set. */
+  therapistNote: string | null;
+  /** Did the physician adjust the treatment at this visit? true = adjusted,
+   *  false = no change, null = not stated. Surfaced to the therapist. */
+  treatmentChanged: boolean | null;
   injections: {
     id: string;
     muscle: string;
@@ -263,7 +269,8 @@ export function useClinicianPatientData(
         treatmentRes,
         physioRes,
         physioSuggRes,
-        physioMuscleRes
+        physioMuscleRes,
+        handoffRes
       ] = await Promise.all([
           supabase
             .from('goal_suggestion')
@@ -320,7 +327,14 @@ export function useClinicianPatientData(
             )
             .or(`treatment_cycle_id.eq.${cycle.id},treatment_cycle_id.is.null`)
             .eq('status', 'needsReview')
-            .order('created_at', { ascending: true })
+            .order('created_at', { ascending: true }),
+          // Physician → therapist handoff note for this cycle (1:1 with the
+          // cycle). Loaded so the treatment form can pre-fill it for editing.
+          supabase
+            .from('treatment_handoff')
+            .select('note, treatment_changed')
+            .eq('treatment_cycle_id', cycle.id)
+            .maybeSingle()
         ]);
 
       if (suggestionsRes.error) throw suggestionsRes.error;
@@ -330,6 +344,7 @@ export function useClinicianPatientData(
       if (physioRes.error) throw physioRes.error;
       if (physioSuggRes.error) throw physioSuggRes.error;
       if (physioMuscleRes.error) throw physioMuscleRes.error;
+      if (handoffRes.error) throw handoffRes.error;
 
       const suggestions: ClinicianPatientSuggestion[] = (
         suggestionsRes.data ?? []
@@ -443,6 +458,10 @@ export function useClinicianPatientData(
             dilution: (treatmentRes.data.dilution as string | null) ?? null,
             guidance: treatmentRes.data.guidance as string,
             notes: (treatmentRes.data.notes as string | null) ?? null,
+            therapistNote:
+              (handoffRes.data?.note as string | null) ?? null,
+            treatmentChanged:
+              (handoffRes.data?.treatment_changed as boolean | null) ?? null,
             injections: (
               treatmentRes.data.injections as Array<{
                 id: string;
@@ -926,6 +945,34 @@ export function useSetCycleClinicianNote() {
   });
 }
 
+/**
+ * Upsert (or clear) the physician → therapist handoff note for a cycle.
+ * `note` is the short focus note; `treatmentChanged` is true (adjusted) /
+ * false (no change) / null (not stated). Passing an empty note + null flag
+ * clears any existing handoff. Server-enforced clinician-only + access.
+ */
+export function useSetTreatmentHandoff() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      cycleId: string;
+      note: string;
+      treatmentChanged: boolean | null;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_treatment_handoff', {
+        p_cycle_id: input.cycleId,
+        p_note: input.note,
+        p_treatment_changed: input.treatmentChanged
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
 export function useSetGoalVideoEnabled() {
   const qc = useQueryClient();
   return useMutation({
@@ -1321,6 +1368,10 @@ export function usePreviousTreatment(
         dilution: (sessions.dilution as string | null) ?? null,
         guidance: sessions.guidance as string,
         notes: (sessions.notes as string | null) ?? null,
+        // A handoff note belongs to a specific visit and is not carried over
+        // by "copy from previous"; the previous record exposes none.
+        therapistNote: null,
+        treatmentChanged: null,
         injections: (
           sessions.injections as Array<{
             id: string;

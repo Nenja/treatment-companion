@@ -3,13 +3,17 @@
 > **Purpose.** This is the single source of truth for picking up work on this
 > project in a new chat/session. Read it first. It captures the app, the
 > non-obvious build workflow, the data model, what's built, and what's pending.
+> A short, paste-able kickoff that points here lives at **`TRANSFER_PROMPT.md`**
+> (repo root) — that's what the user pastes into a new chat alongside the zip.
 >
 > **Keep it current.** At the end of *every* delivery, update:
-> §7 Latest delivered build, §6 Build history, §8 Pending, and §4/§5 if the
-> schema, conventions, or a feature's state changed. Treat this as part of the
-> deliverable, not an afterthought.
+> §7 Latest delivered build (move the old one into §7b), §6 Build history,
+> §8 Pending, and §4/§5 if the schema, conventions, or a feature's state
+> changed. **Also update `TRANSFER_PROMPT.md`** (its “Where we are” / “What's
+> likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
+> all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `goal-link`._
+> _Last updated for build tag: `audit-fixes` (no migration; remediation of the four audit docs in `docs/audits/` — EHR-export logic, i18n leaks, cockpit accessibility, cross-role legibility — §3, §7)._
 
 ---
 
@@ -44,7 +48,9 @@ dystonia), but the model is being generalised toward other modalities
   clinic's goal discussion with the patient — which is handled by the existing
   goal **suggestion → clinician-approval → shared-goal** flow. There is **no**
   clinic→patient messaging / feedback channel, and that is intentional; don't
-  build one.
+  build one. The **one** sanctioned downward channel is the physician→therapist
+  handoff note (`physician-therapist-note`, §5.13) — inter-professional
+  hand-off, never patient-visible — not a clinic→patient channel.
 - **Caregivers use the patient's own device/login.** The per-check-in
   *self / caregiver* submission label records who entered it. There are **no
   separate caregiver accounts** — proxy access is out of scope.
@@ -86,16 +92,18 @@ blocks that host, so a real build **fails** unless you stub them first.
    the brand now lives in each page header via `AppHeader` / `BrandMark` (§5.3).
    layout.tsx still contains only the two font calls to stub + `{children}`.
 4. `rm -rf .next && NEXT_TELEMETRY_DISABLED=1 npx next build`
-5. **Success = exit 0 and "✓ Generating static pages (58/58)".** (55 before
-   the dev tools; +2 for `/dev/scenarios` in two locales, plus the API route.
-   The no-auth `/demo` sandbox was removed in `batch-a`, dropping the count
-   from 60 to 58.) The only
+5. **Success = exit 0 and "✓ Generating static pages (60/60)".** (Historical:
+   55 before the dev tools; +2 for `/dev/scenarios`; the no-auth `/demo` removal
+   in `batch-a` dropped 60→58; the goal-versioning routes brought it back to
+   **60**. No new route since.) The only
    expected warning is a Sentry/OpenTelemetry "critical dependency" message
    (unrelated, ignore).
 6. **Restore** `app/[locale]/layout.tsx` from `/tmp/layout.tsx.orig`, then verify:
    - `sha256sum` of the restored file ==
-     `6b5bb2fd1a13bd15c7b3f11f998450a80315c917f2c56eb776937be6f4714d67`
-     (the post-`unified-header` layout, BrandBar removed; **was** `cfaf492…`).
+     `5a1cf0da324497bc26f2a10bb332d8aced01d68bb7b8e533abc7ef62fdae90d9`
+     (current as of `physician-therapist-note`; **was** `6b5bb2fd…`, and
+     `cfaf492…` before that — layout.tsx evolves, so recompute from the backup
+     you took this session rather than trusting a frozen hash).
    - **zero** `BUILD-STUB` remnants anywhere in `app components lib`.
 
 `npx tsc --noEmit` is a fast pre-check before the full build.
@@ -148,6 +156,19 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 `--max-w-page-wide` **1080px**. Radii: `--radius-card` 1.25rem,
 `--radius-button` 0.875rem. Headings use `font-display`.
 
+**Contrast guardrail** (computed, `clinician-cockpit-accessibility-audit.md`):
+every text-bearing pair passes WCAG AA. The one exception is **plain `sage`
+(`#5c7a6a`)** — as text on cream it is 4.20:1 and white-on-`sage` is 4.45:1,
+both **below AA for normal-size text**. Today it's used only for decorative
+dots, which is fine. **Do not use plain `sage` for normal text or as a button
+fill with light text — use `sage-deep` (which passes).**
+
+**Modal a11y:** every blocking dialog must call `useModalA11y(onClose)` (focus
+restore + focus-on-open + bidirectional Tab trap + Escape + body-scroll-lock).
+The one deliberate exception is `FaceMap`'s anchored popover, which hand-rolls
+focus + Escape (no Tab trap) by design because it's a popover, not a blocking
+modal.
+
 ---
 
 ## 4. Database (verified from migrations)
@@ -183,6 +204,14 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
   `pending`/`completed`). `treatment_cycle`, `treatment_session`,
   `muscle_injection`, `goal_suggestion`, `physio_assessment`,
   `physio_goal_rating`, `audit_event`.
+- **`treatment_handoff`** (0088): id, `treatment_cycle_id` **UNIQUE** (1:1 with
+  the cycle), patient_id, `note` text, `treatment_changed` boolean (NULL =
+  not stated; true = adjusted; false = no change), created_by, created_at,
+  updated_at. The physician→therapist handoff note (§5.13). RLS read =
+  `clinician_can_access_patient(patient_id)` (role-agnostic → physician +
+  therapist read it; **no patient policy at all**, so a patient can never read
+  it — the note must NOT be put on `treatment_session`, which the patient can
+  read). Writes only via `set_treatment_handoff` (clinician-only).
 
 ### 4.3 Enums
 
@@ -230,6 +259,11 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 - `set_cycle_clinician_note(p_cycle_id, p_note)` (0065, SECURITY DEFINER,
   checks `clinician_can_access_patient`). Saves the per-cycle "since last
   visit" clinician note (`treatment_cycle.clinician_note`).
+- `set_treatment_handoff(p_cycle_id, p_note, p_treatment_changed)` (0088,
+  SECURITY DEFINER). Upserts the physician→therapist handoff for a cycle into
+  `treatment_handoff`. **Clinician-only** (`current_app_role() = 'clinician'`;
+  a physiotherapist cannot author it) + `clinician_can_access_patient`. Empty
+  note **and** null flag → deletes the row (clears it); a bare flag is kept.
 - Helpers: `nrs_to_gas(...)`, `gas_label(int)`.
 
 ### 4.5 Storage
@@ -242,7 +276,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0087**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0088**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -312,8 +346,12 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
   lets a patient undo their own check-in within 24h (refused once a clinician
   has scored a clip).
   `add column if not exists`, safe to re-run.
+- `0088_treatment_handoff.sql` — **`physician-therapist-note`, RUN THIS (after
+  0087).** New `treatment_handoff` table (1:1 with the cycle) + RLS + the
+  clinician-only `set_treatment_handoff` RPC. The physician→therapist note
+  (§5.13). DB-verified locally (§5.12 D).
 
-> If unsure whether the user's DB is current, confirm 0062–0087 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag, **0081** cycle-agnostic suggestions, **0082** check-in undo, **0083** physio goal signals, **0084** physio GAS value, **0085** cycle-agnostic physio suggestions, **0086** goal versioning, **0087** link goal to lineage).
+> If unsure whether the user's DB is current, confirm 0062–0088 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag, **0081** cycle-agnostic suggestions, **0082** check-in undo, **0083** physio goal signals, **0084** physio GAS value, **0085** cycle-agnostic physio suggestions, **0086** goal versioning, **0087** link goal to lineage, **0088** physician→therapist handoff note).
 
 ---
 
@@ -451,6 +489,20 @@ measured where possible, `[verified-in-code]` vs `[needs-on-screen-check]` tags.
 Known still-open a11y items: FaceMap dose-by-colour can't reach WCAG 3:1 across
 5 bands; no keyboard-only mark creation — both **accepted by the clinician**.
 
+Also in `docs/audits/`:
+- **`patient-workflow-audit.md`** — full patient journey, end to end. Headline:
+  a brand-new patient couldn't record goals (cold start). Its five prioritized
+  recommendations are **all shipped** (builds `pre-visit-suggestions`,
+  `patient-visit-and-status`, `checkin-undo`, `audit-followups`).
+- **`therapist-workflow-audit.md`** — full community-therapist journey.
+  Headline: the therapist's weekly training had nowhere to be recorded. It
+  drove the **therapist-signals epic** (capture days/functions/feasibility,
+  surface to physician, GAS-aware rating, status echo, cycle-agnostic
+  suggestions) — **all shipped** (§6, tags `therapist-signals` →
+  `therapist-cycle-agnostic`).
+- **`treatment-companion-visual-coherence-audit.md`** — design-token / visual
+  consistency pass across the app.
+
 ### 5.9 Dev scenario launcher (test environment)
 **DELIVERED (dev-only).** A `/dev/scenarios` page that resets the demo data
 (optional), signs you in as the right account, opens the clinician session
@@ -565,6 +617,95 @@ medication columns must be verified before surfacing them on the patient side
 
 ---
 
+### 5.12 Audit & verification methods (reusable)
+
+How the audits and migration checks in this project are actually done — reuse
+these recipes rather than reinventing them.
+
+**A. End-to-end workflow audit (persona walk).** Used for
+`patient-workflow-audit.md` and `therapist-workflow-audit.md`.
+- Pick ONE concrete persona (e.g. "a brand-new patient"; "a community
+  physiotherapist doing weekly training") and walk the *entire* journey in
+  order: account creation → onboarding → first landing → each core task →
+  resume/exit.
+- Ground every observation in the ACTUAL code — read the routes, components,
+  hooks, and RPCs for each step; do not audit from assumptions or memory.
+- Per step note what works / friction / missing, each tagged **[High] /
+  [Med] / [Low]**. Lead the whole doc with the single headline finding, and
+  close with a short prioritized recommendation list.
+- Honesty rule (non-negotiable): mark anything that needs a rendered build,
+  real device, or live DB/RLS to confirm as **"verify"**, never as done.
+  Distinguish `[verified-in-code]` from `[needs-on-screen-check]`.
+- Deliver as a standalone `.md` (in `docs/audits/`, and to outputs). These are
+  `.md` docs, NOT a code zip.
+
+**B. Per-lens UX doc (six-lens).** Used for the face module and the sample
+patient page. One lens per doc — accessibility, don't-make-me-think, health
+literacy, information architecture, progressive disclosure, trust/credibility.
+Style: **issue → why → specific fix**, severity-ranked, measured where possible,
+`[verified-in-code]` vs `[needs-on-screen-check]` tags.
+
+**C. Visual coherence audit.** Design-token / visual-consistency sweep across
+screens (`treatment-companion-visual-coherence-audit.md`): check spacing,
+type scale, colour-token use, component reuse vs one-offs.
+
+**D. Migration verification via a throwaway local Postgres (NEW — used for
+0086 & 0087).** For any migration with a non-trivial RPC or constraint, verify
+the SQL *before* shipping instead of only reasoning about it:
+1. `apt-get install -y postgresql` (Ubuntu archives are allowlisted), then
+   `initdb` + `pg_ctl start` a throwaway cluster as the `postgres` user (PG
+   won't run as root; use `su postgres -c …`, there's no `sudo`).
+2. Build a **minimal schema harness**: only the enums + tables the migration
+   touches, plus the SECURITY DEFINER helpers stubbed so you can flex them —
+   a mutable `_test_ctx(role, clin, access)` table behind
+   `current_app_role()` / `current_clinician_id()` / `clinician_can_access_patient()`,
+   and an `auth.uid()` stub. Create a `role authenticated` so `grant … to
+   authenticated` succeeds.
+3. Apply the migration **verbatim**, seed a realistic scenario, and exercise
+   the RPC on both the happy path AND every guard (negative cases).
+4. This is not theoretical: it **caught a ship-blocking bug** in 0086 —
+   `lineage_id` was NOT NULL with no default, so the first real goal-approval
+   after the migration would have failed; the fix (a BEFORE INSERT lineage
+   trigger) was found by the test.
+- **Caveat:** the harness stubs RLS/auth, so it proves the SQL logic and the
+  RPC guards, NOT the real RLS policies — those still need checking on the live
+  Supabase. Still the highest-leverage check available without the user's DB.
+
+### 5.13 Physician → therapist handoff note (`physician-therapist-note`, 0088)
+The **one** sanctioned downward channel (clinic → therapist). The treating
+physician can attach, to a cycle's treatment, a short note for the patient's
+weekly community therapist plus a **"did the treatment change this visit?"**
+flag (Adjusted / No change / Not specified). Closes the therapist-audit gaps:
+no feedback on a physician action, and no since-last-session delta.
+
+- **Never patient-visible** is enforced by the data model, not just the UI.
+  The patient already has row-level read on `treatment_session` (treated-muscles
+  pop-up) and Postgres RLS is row- not column-level, so the note **cannot** sit
+  on `treatment_session`. It lives in **`treatment_handoff`** (1:1 with the
+  cycle; §4.2), which has **no patient SELECT policy at all**. Read =
+  `clinician_can_access_patient(patient_id)` (role-agnostic → physician +
+  therapist; patient excluded). Write = `set_treatment_handoff` (SECURITY
+  DEFINER, **clinician-only** — a physiotherapist cannot author it).
+- **Physician UI** — `app/[locale]/clinician/treatment/page.tsx`: a sage "Note
+  for the therapist" panel under Session notes (tri-state flag buttons +
+  short note, maxLength 500, with a "not shown to the patient" hint).
+  `useClinicianPatientData` loads the handoff into `ClinicianTreatmentRecord`
+  (`therapistNote`, `treatmentChanged`) so editing the same-day treatment
+  pre-fills it. Submit captures the cycle id (the new-cycle path returns it;
+  the existing path already has it) and calls `useSetTreatmentHandoff` after
+  the session save. Always called, so clearing the note removes the row.
+- **Therapist UI** — `app/[locale]/physio/patient/page.tsx`: a prominent "Note
+  from the treating clinic" card near the top of the active-cycle content
+  (date line, a change/no-change line, the note). `usePhysioPatientData` adds
+  `handoff` for the **active cycle**, fetched **regardless of the muscle-sharing
+  preference** (it's a deliberate message, not injection detail). Only rendered
+  when a note and/or flag is present.
+- **Verified locally** (§5.12 D): 8 checks incl. the RLS boundary (patient → 0
+  rows; professionals with access → the row). Cleared handoffs delete the row.
+- **Open follow-ups (not built):** the note isn't echoed back to the physician
+  on the clinician patient page (they re-open the treatment form to see/edit
+  it); it is single-shot per cycle (no thread); and it has no read receipt.
+
 ## 6. Build history (tags, oldest → newest)
 
 `copy-to-other-side` → `trim-header-and-meds` → `meds-to-actionrow` →
@@ -666,44 +807,73 @@ goal carries lineageId/version) →
 **`goal-history`** (no migration; per-goal History modal — version timeline by
 lineage with frozen calibration + ratings) →
 **`goal-link`** (0087; link a goal onto an existing lineage as its newest
-version; current).
+version) →
+**`physician-therapist-note`** (0088; first downward clinic→therapist channel —
+`treatment_handoff` table + `set_treatment_handoff` RPC; physician records a
+short note + "treatment changed?" flag, surfaced to the therapist, never
+patient-visible) →
+**`audit-fixes`** (no migration; remediation of the four audit docs — EHR
+wearing-off/sustained/NRS-direction fixes, i18n leaks keyed en+da, cockpit `h1`
++ chart data-table + modal scroll-lock, start-cycle dependency copy; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-goal-link.zip`
-- **Tag:** `goal-link`
-- **Migration:** **0087_link_goal_to_lineage.sql** (run it).
-- **Change:** **Link a goal to an existing lineage (build 2c — completes goal
-  versioning).** Correction action: each goal card gets a **Link** button →
-  `LinkGoalModal`. Pick another active goal of the same measurement kind, and
-  this goal is grafted on as that lineage's newest version (the target's current
-  version is frozen, this goal becomes live). For when a continuation was
-  accidentally started as a separate goal; the two histories merge.
-  - **RPC (0087) `link_goal_to_lineage(source, target)`:** clinician-only, same
-    patient + same kind, source must be live and single-version (so no
-    predecessors are orphaned), source ≠ target lineage. Freeze-then-move keeps
-    the one-live-per-lineage guard satisfied. `useLinkGoalToLineage` invalidates
-    ['clinicianPatient'] + ['goalHistory'].
-- **DB needed:** 0087 (after 0086).
-- **Verified locally:** 0086+0087 applied to throwaway Postgres 16; link merges
-  two NRS lineages (target v1 frozen + successor set, source becomes v2 live),
-  the source's rating follows its row into the merged history, exactly one live
-  remains, and the guards (same-lineage, kind-mismatch, non-live source) all
-  reject.
-- **⚠ QA (can't test here):** create two separate goals; on one, Link → pick the
-  other → they merge into one lineage (History shows both as versions, newest =
-  the linked goal). Confirm a different-kind goal isn't offered as a candidate.
-- **Goal-versioning epic COMPLETE:** 0086 foundation + edit_goal, goal-edit
-  (recalibrate), goal-history (timeline), goal-link (0087). Open by-design idea
-  from earlier: a cross-version *chart* (continuous NRS line / GAS segments) —
-  deferred; the history modal shows per-version chips instead.
+- **Zip:** `treatment-companion-audit-fixes.zip`
+- **Tag:** `audit-fixes`
+- **Migration:** **none** (DB stays at **0088**).
+- **Change:** remediation pass implementing the concrete code/copy findings from
+  four audits (`all-roles-workflow`, `i18n-parity`, `clinician-cockpit-
+  accessibility`, `data-output-correctness` — all in `docs/audits/`). No schema
+  change. Highlights:
+  - **EHR export (`lib/ehrExport.ts`):** fixed the [High] false "clear
+    wearing-off" — the return-to-baseline clause now requires an actual rise
+    (`peak > initial`), so a stable/flat-good series no longer reports
+    wearing-off. "Sustained N weeks" now breaks on calendar gaps as its doc
+    claims. Lower-is-better NRS goals get a "NRS: lower is better" note so the
+    raw value isn't misread. Added a reconciliation line when per-injection
+    doses don't sum to the recorded total. `default` cases on the label
+    switches. `buildGoalSentence` now takes the goal (for kind/direction).
+  - **i18n leaks keyed (en+da):** the physio-suggestion action toasts + buttons
+    + status labels (`clinician/patient`), the whole `ExportModal`
+    (`clinician.export.*`), and `GoalProgressView`'s chart aria-label, legend,
+    and week captions (`a11y.chart*`, `treatment.chart*`). Danish fixes:
+    `visitChanges.checkinCount` plural now translated; `treatment.forPatient` →
+    "Til {name}" (pending native review).
+  - **Accessibility:** cockpit now has an `<h1>` (patient name); each goal chart
+    has a visually-hidden data table via `aria-describedby` (real values for
+    screen readers); `useModalA11y` now locks body scroll for the modal's
+    lifetime.
+  - **Cross-role legibility:** the start-cycle button now states it activates
+    the patient's weekly check-ins and the therapist's progress reporting (the
+    workflow audit's [High] headline).
+- **DB needed:** none.
+- **Verified locally:** `tsc --noEmit` clean; production build OK via the
+  font-stub procedure, **60/60 pages**; en/da catalog parity re-checked (1326
+  keys each side + the 2 `_meta`), **zero ICU-argument mismatches**.
+- **⚠ QA (can't test here):** the `<h1>` + chart data-table need a screen-reader
+  pass; body-scroll-lock and the new copy need an on-device look; confirm the
+  EHR wearing-off wording on a real stable-good patient series.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`physician-therapist-note`** — zip
+  `treatment-companion-physician-therapist-note.zip` (migration **0088**). First
+  downward clinic→therapist channel: a short physician note + "treatment changed
+  this visit?" flag in a dedicated `treatment_handoff` table (no patient SELECT
+  policy → never patient-visible), via the clinician-only `set_treatment_handoff`
+  RPC. Shown to the therapist high on `physio/patient`. Full write-up in §5.13.
+  DB-verified on throwaway PG16.
+
+- **`goal-link`** — zip `treatment-companion-goal-link.zip` (migration 0087).
+  Link a goal onto an existing lineage as its newest version: per-goal **Link**
+  button → `LinkGoalModal`, `link_goal_to_lineage` RPC (clinician-only, same
+  patient + kind, freeze-then-move). Completes the goal-versioning epic
+  (0086 foundation + goal-edit + goal-history + goal-link). A cross-version
+  *chart* remains deferred (history modal shows per-version chips). DB-verified.
 - **`goal-history`** — zip `treatment-companion-goal-history.zip` (no
   migration). Per-goal History modal: version timeline by lineage with frozen
   wording/calibration + patient/therapist rating chips per version
@@ -916,6 +1086,75 @@ version; current).
 ---
 
 ## 8. Pending / next slices
+
+**Audit remediation (`audit-fixes`) — what's now done, what's left.** Four
+audits live in `docs/audits/` (`all-roles-workflow`, `i18n-parity`,
+`clinician-cockpit-accessibility`, `data-output-correctness`). The
+`audit-fixes` build implemented every concrete code/copy finding (EHR
+wearing-off/sustained/NRS-direction, units reconciliation, switch defaults; all
+i18n leaks keyed en+da incl. the chart/legend/caption and `ExportModal`; cockpit
+`<h1>`, chart data-table, modal scroll-lock; start-cycle dependency copy). **Not
+done — these are deliberate decisions / a separate feature, not code I should
+have decided unilaterally:**
+- **Adjustment-request status loop** *(feature, needs a migration)* — give the
+  therapist's "needs treatment adjusted" flag a status the physician sets and
+  the therapist sees echoed (the workflow audit's #2; mirrors how goal/muscle
+  suggestions already echo). Its own slice: status column + RPC + cross-role UI.
+- **REDCap dictionary reconciliation** *(decision)* — the dictionary defines
+  check-in fields the app doesn't collect (`ci_pain/stiffness/spasm_freq/
+  daily_care/side_effects`), exports goal free-text without a PII flag while
+  `tx_notes` was dropped, models guidance per-muscle vs the app's per-session,
+  and exports exact dates + birth_year (quasi-identifiers). All need your /
+  the study team's / the DPO's call before any push is built. The push itself
+  is **not built** — the dictionary is a spec.
+- **EHR-text language** *(decision)* — the EHR paste is English-only (dates
+  localise, prose doesn't). Deliberate clinical shorthand, or should it follow
+  locale? Your call.
+
+
+**Recently completed epics (this session) — context for what's now done:**
+- **Therapist-signals epic — COMPLETE.** Driven by `therapist-workflow-audit.md`.
+  Capture (days auto-register from dated assessments, per-goal "working on" +
+  "needs treatment adjusted" + note; 0083) → surface to physician (visit-day
+  strip, working-on chips, adjustment-requests list) → GAS-aware therapist
+  rating (0084) → suggestion status echo to the therapist → cycle-agnostic
+  therapist suggestions (0085). Low-intensity by design: taps + one short
+  reason, no double documentation (therapists keep their own EMR).
+- **Goal-versioning epic — COMPLETE.** A goal is a *lineage* of frozen
+  versions; editing recalibrates at a visit by creating the next version and
+  freezing the prior (so past ratings stay bound to the calibration they were
+  made under). 0086 foundation (lineage/version/superseded + lineage-default
+  trigger + `edit_goal` + live-version read filter) → `goal-edit` (Recalibrate
+  drawer) → `goal-history` (per-goal version timeline) → `goal-link` / 0087
+  (merge an accidentally-separate goal into a lineage). 0086 & 0087 were
+  DB-verified locally (§5.12 D).
+
+**Open design decisions from this session (decided, mostly NOT built):**
+- **Cycle-agnostic measurements — investigated, decided AGAINST.** Conclusion:
+  after the first injection there is always exactly one active cycle (a cycle
+  is completed only when the next one starts, atomically; the patient check-in
+  completes the *prompt*, not the cycle), and goals are recalibrated per cycle.
+  So "the active cycle" is unambiguous and measurements stay cycle-tied;
+  date-derivation would add risk near the second-active-cycle landmine for no
+  behavioural gain. Do NOT build the nullable-cycle/derive-by-date refactor for
+  measurements. (Suggestions are the exception and are already cycle-agnostic,
+  because a suggestion can precede the first cycle.)
+- **Physician→therapist focus note — ✅ SHIPPED** as `physician-therapist-note`
+  (0088, §5.13). The short physician note + change flag, therapist-only and
+  never patient-visible. Remaining nice-to-haves (not built): echo the note
+  back to the physician on the clinician patient page (today they re-open the
+  treatment form); threading / multiple notes per cycle; a read receipt.
+- **Persistent / recurring therapist access — PROPOSED, not built.** The
+  per-visit code fights a weekly community-therapist relationship (re-unlock
+  every visit, no after-session write-up window). A longer-lived, consent-based
+  therapist↔patient link or roster would fit better, but it touches the consent
+  model — its own careful decision.
+- **Adjustment-request status loop — open.** The therapist's "needs treatment
+  adjusted" flags have no status field, so there's nothing to echo back yet
+  (unlike goal/muscle suggestions, which now echo). Would need a status column.
+- **Cross-version goal chart — deferred.** A single chart across versions
+  (continuous NRS line / per-version GAS segments). The history modal shows
+  per-version rating chips instead; the chart is a clean future enhancement.
 
 - **Access & switching — partly done.** `session-switching` (0073) shipped
   multi-patient switching + same-day reopen, consent gate unchanged. PARKED

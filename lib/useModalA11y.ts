@@ -36,6 +36,12 @@ export function useModalA11y(onClose: () => void) {
     // Remember who was focused before we opened.
     previouslyFocused.current = document.activeElement as HTMLElement | null;
 
+    // Lock background scroll for the modal's lifetime so the page behind
+    // can't wheel/trackpad-scroll under the dialog (a "where am I" hazard
+    // on long pages). The previous inline value is restored on unmount.
+    const prevBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
     const container = containerRef.current;
     if (container) {
       // Apply entrance animation. Start state set as inline style so
@@ -99,6 +105,8 @@ export function useModalA11y(onClose: () => void) {
 
     return () => {
       document.removeEventListener('keydown', handler);
+      // Restore background scroll.
+      document.body.style.overflow = prevBodyOverflow;
       // Restore focus to the trigger element when the modal unmounts.
       // Wrap in setTimeout(0) because the parent component may also
       // be moving focus on close (e.g. router push); we want to be

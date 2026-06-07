@@ -1,37 +1,69 @@
-BUILD: goal-link   (link a goal to an existing lineage — build 2c)
-=========================================================================
-MIGRATION: 0087_link_goal_to_lineage.sql  — RUN THIS (after 0086).
+BUILD: audit-fixes   (remediation of the four audit docs — NO migration)
+==========================================================================
+MIGRATION: none. The database stays at 0088. Nothing to run in Supabase.
 
-WHAT THIS BUILD DOES (completes goal versioning)
-A correction action. Each goal card gets a "Link" button that opens a modal:
-pick another active goal of the same measurement kind, and THIS goal is grafted
-onto that goal's lineage as its newest version (the target's current version is
-frozen; this goal becomes live). Use it when a continuation was accidentally
-started as a separate goal — the two histories then merge into one thread.
+WHAT THIS BUILD DOES
+Implements every concrete code/copy finding from the four audits in
+docs/audits/ (all-roles-workflow, i18n-parity, clinician-cockpit-accessibility,
+data-output-correctness). No schema change, no new behaviour for the DB.
 
-RPC (0087): link_goal_to_lineage(source, target)
-- clinician-only; same patient; same measurement kind; source must be live and
-  a single-version lineage (so no predecessors are orphaned); source and target
-  must be different lineages.
-- Freeze-then-move ordering keeps the one-live-per-lineage guard satisfied.
+DATA-OUTPUT CORRECTNESS (lib/ehrExport.ts)
+- [High] Fixed the false "clear wearing-off": the return-to-baseline clause now
+  requires the patient to have actually risen above baseline first
+  (peak > initial). A stable/flat-good series (e.g. GAS +1 every week) no longer
+  reports wearing-off.
+- "Sustained N weeks" now breaks on a calendar gap (a skipped week), matching
+  its own documented behaviour — it no longer counts across unreported weeks.
+- Lower-is-better NRS goals get a "(NRS: lower is better.)" note so a low raw
+  NRS isn't misread as a poor result.
+- Added a reconciliation line when per-injection doses don't sum to the recorded
+  total ("Note: listed injections sum to X units (recorded total Y).").
+- default cases on sideLabel/guidanceLabel; buildGoalSentence now takes the goal
+  (kind + nrs direction). Stale "single source" comment in lib/types.ts fixed.
+
+I18N LEAKS KEYED (en + da, full parity)
+- Physio-suggestion action components (clinician/patient): toasts, button text,
+  and status labels were hardcoded English -> clinician.patient.suggestion*.
+- ExportModal fully keyed -> clinician.export.* (title/intro/copied/close/copy).
+- GoalProgressView: chart aria-label, legend (Patient/Physiotherapist), and the
+  week captions were hardcoded -> a11y.chart* and treatment.chart*.
+- Danish fixes: visitChanges.checkinCount plural now translated; treatment.
+  forPatient -> "Til {name}" (FLAG: pending native-speaker review).
+
+ACCESSIBILITY (clinician cockpit)
+- The cockpit now has an <h1> (the patient name wraps the existing info button).
+- Each goal chart has a visually-hidden data table (sr-only) referenced by the
+  svg's aria-describedby, so screen-reader users get the actual weekly values.
+- useModalA11y now locks body scroll for a modal's lifetime (restored on close).
+
+CROSS-ROLE LEGIBILITY
+- The "Start a new treatment cycle" button now carries a one-line hint that
+  starting a cycle activates the patient's weekly check-ins and lets the
+  therapist report progress (the workflow audit's headline finding).
 
 VERIFIED LOCALLY
-- 0086 + 0087 applied to a throwaway Postgres 16: link merged two NRS lineages
-  (target v1 frozen with successor, source became v2 live), the source's rating
-  followed its row into the merged history, exactly one live row remained, and
-  the guards (same-lineage, kind-mismatch, non-live source) all rejected.
+- tsc --noEmit clean.
+- Production build OK via the font-stub procedure (fonts stubbed, built,
+  layout.tsx restored byte-for-byte, zero BUILD-STUB remnants). 60/60 pages.
+- en/da catalog: 1326 keys each side (+2 da _meta), 0 missing, 0 ICU-argument
+  mismatches (re-checked after the additions).
 
 DEPLOY
-1. Run 0087 in the Supabase SQL editor (after 0086).
+1. No migration. Do NOT run anything in Supabase.
 2. Unzip; push to GitHub; Vercel builds. Page count 60.
 
 ** QA (please verify — can't be tested here) **
-- Create two separate goals. On one, Link -> pick the other -> they merge into
-  one lineage; History shows both as versions (newest = the linked goal).
-- A goal of a different measurement kind is not offered as a candidate.
+- Screen-reader pass on the cockpit: the patient name reads as a heading; each
+  goal chart exposes its weekly values via the hidden data table.
+- Open any modal (retire goal, start cycle, record goal, export): the page
+  behind no longer scrolls.
+- Switch the app to Danish and check the newly-keyed strings render in Danish:
+  the suggestion action buttons/toasts, the EHR export modal, and the goal-chart
+  legend/captions. (treatment.forPatient "Til {name}" needs a native check.)
+- EHR export wording on a real stable-good patient (GAS steady at +1): should
+  now read "Wearing-off: none." not "Clear wearing-off".
 
-GOAL-VERSIONING EPIC COMPLETE
-- 0086 foundation + edit_goal; goal-edit (recalibrate); goal-history (timeline);
-  goal-link (0087).
-- Deferred by design: a cross-version chart (continuous NRS line / GAS
-  segments). The history modal shows per-version rating chips instead.
+NOT IN THIS BUILD (your decision / separate slice — see HANDOVER §8)
+- Adjustment-request status loop (feature; needs a migration + cross-role UI).
+- REDCap dictionary reconciliation (study-team / DPO decisions).
+- Whether the EHR-paste text should follow locale instead of English.

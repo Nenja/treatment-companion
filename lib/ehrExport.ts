@@ -51,6 +51,12 @@ export interface ExportTreatment {
 export interface ExportGoal {
   id: string;
   patientFacingText: string;
+  /** Goal kind + (for NRS goals) which end of the 0–10 scale is good.
+   *  Lets the summary annotate an otherwise-ambiguous raw NRS value —
+   *  e.g. on a lower-is-better goal "NRS 2/10" is a GOOD result, which
+   *  a reader scanning the note would otherwise misread. */
+  kind?: 'nrs' | 'gas';
+  nrsDirection?: 'higherIsBetter' | 'lowerIsBetter';
 }
 
 export interface ExportCheckin {
@@ -126,6 +132,21 @@ export function buildEhrExport({
     if (treatment.notes) {
       lines.push(`Notes: ${treatment.notes}`);
     }
+    // Reconciliation: the recorded total is printed verbatim above. If the
+    // per-injection doses don't add up to it, surface the discrepancy rather
+    // than letting an internally-inconsistent figure go silently into the
+    // record. Only when there is at least one injection to sum.
+    if (treatment.injections.length > 0) {
+      const injSum = treatment.injections.reduce(
+        (s, i) => s + i.doseUnits,
+        0
+      );
+      if (injSum !== treatment.totalUnits) {
+        lines.push(
+          `Note: listed injections sum to ${injSum} units (recorded total ${treatment.totalUnits}).`
+        );
+      }
+    }
     lines.push('');
   } else {
     lines.push('Treatment: not recorded.');
@@ -137,7 +158,7 @@ export function buildEhrExport({
     lines.push('Goals this cycle:');
     for (const goal of goals) {
       lines.push(`- ${goal.patientFacingText}`);
-      const sentence = buildGoalSentence(goal.id, checkins);
+      const sentence = buildGoalSentence(goal, checkins);
       lines.push(`  ${sentence}`);
     }
     lines.push('');
@@ -178,7 +199,11 @@ export function buildEhrExport({
  * "Sustained" counts CONSECUTIVE reported weeks at GAS ≥0 from the
  * first such week. Skipped weeks break the sustained streak.
  */
-function buildGoalSentence(goalId: string, checkins: ExportCheckin[]): string {
+function buildGoalSentence(
+  goal: ExportGoal,
+  checkins: ExportCheckin[]
+): string {
+  const goalId = goal.id;
   const reports = checkins
     .flatMap((c) => {
       const r = c.ratings.find((rr) => rr.approvedGoalId === goalId);
@@ -201,26 +226,46 @@ function buildGoalSentence(goalId: string, checkins: ExportCheckin[]): string {
   const peakReport = reports.find((r) => r.gas === peak)!;
   const initial = reports[0].gas;
 
-  // GAS ≥0 onset + sustained
+  // GAS ≥0 onset + sustained.
+  // "Sustained" counts CONSECUTIVE CALENDAR weeks at GAS ≥0 from the
+  // first such week. A break in GAS (a reported week <0) ends the
+  // streak; so does a SKIPPED week (a gap in week numbers), because an
+  // unreported week is not evidence of a sustained effect. We therefore
+  // step through the reports from the first ≥0 week and stop as soon as
+  // either the GAS dips below 0 or the week number is not exactly one
+  // more than the previous counted week.
   let zeroPlusClause = 'Did not reach GAS ≥0 this cycle.';
   const firstZeroPlusIdx = reports.findIndex((r) => r.gas >= 0);
   if (firstZeroPlusIdx !== -1) {
     const firstWeek = reports[firstZeroPlusIdx].week;
     let sustained = 0;
+    let prevWeek: number | null = null;
     for (let i = firstZeroPlusIdx; i < reports.length; i++) {
       if (reports[i].gas < 0) break;
+      if (prevWeek !== null && reports[i].week !== prevWeek + 1) break;
       sustained++;
+      prevWeek = reports[i].week;
     }
     zeroPlusClause = `GAS ≥0 from W${firstWeek}, sustained ${sustained} week${
       sustained === 1 ? '' : 's'
     }.`;
   }
 
-  // Wearing-off detection (uses reports AFTER the peak week)
+  // Wearing-off detection (uses reports AFTER the peak week).
+  //
+  // Two ways a post-peak week counts as "clear" wearing-off:
+  //   (a) it drops ≥2 GAS below the peak; or
+  //   (b) it returns to or below the patient's initial level — but ONLY
+  //       if the patient actually rose above that initial level first
+  //       (peak > initial). Without the `peak > initial` guard a stable
+  //       or flat series (e.g. +1 every week, initial = peak = +1) would
+  //       wrongly report "clear wearing-off", because every week is
+  //       trivially ≤ initial. The guard restricts (b) to genuine
+  //       return-to-baseline after a rise.
   const postPeak = reports.filter((r) => r.week > peakReport.week);
   let wearingOff = 'Wearing-off: none.';
   const clearReport = postPeak.find(
-    (r) => peak - r.gas >= 2 || r.gas <= initial
+    (r) => peak - r.gas >= 2 || (peak > initial && r.gas <= initial)
   );
   if (clearReport) {
     wearingOff = `Clear wearing-off from W${clearReport.week}.`;
@@ -242,7 +287,17 @@ function buildGoalSentence(goalId: string, checkins: ExportCheckin[]): string {
       ? `End-cycle GAS ${formatSigned(endCycle.gas)} / NRS ${endCycle.nrs}/10 (W${endCycle.week}).`
       : `End-cycle GAS ${formatSigned(endCycle.gas)} (W${endCycle.week}).`;
 
-  return [peakStr, zeroPlusClause, wearingOff, endStr].join(' ');
+  // On a lower-is-better NRS goal, a low raw NRS (e.g. 2/10) is a GOOD
+  // result. The GAS values above are already direction-normalised, but
+  // the raw NRS printed alongside them is not — so annotate it once to
+  // prevent a misread. Higher-is-better is the intuitive default and
+  // needs no note.
+  const dirNote =
+    goal.kind === 'nrs' && goal.nrsDirection === 'lowerIsBetter'
+      ? ' (NRS: lower is better.)'
+      : '';
+
+  return [peakStr, zeroPlusClause, wearingOff, endStr].join(' ') + dirNote;
 }
 
 // --- Helpers ------------------------------------------------------------
@@ -255,6 +310,8 @@ function sideLabel(side: InjectionSide): string {
       return 'R';
     case 'bilateral':
       return 'B';
+    default:
+      return String(side);
   }
 }
 
@@ -274,6 +331,8 @@ function guidanceLabel(g: GuidanceMethod): string {
       return 'no guidance';
     case 'other':
       return 'other guidance';
+    default:
+      return String(g);
   }
 }
 

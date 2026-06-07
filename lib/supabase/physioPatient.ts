@@ -69,6 +69,19 @@ export interface PhysioPatientData {
     muscles: { muscle: string; side: 'left' | 'right' | 'bilateral' }[];
   } | null;
   /**
+   * The treating physician's handoff note for THIS cycle — the one
+   * clinic → therapist channel. Shown to the therapist regardless of the
+   * muscle-sharing preference (it's an intentional message, not injection
+   * detail), and never visible to the patient (no patient RLS policy on
+   * treatment_handoff). `treatmentChanged`: true = adjusted this visit,
+   * false = no change, null = the physician didn't say. Null when none set.
+   */
+  handoff: {
+    treatmentDate: string | null;
+    note: string | null;
+    treatmentChanged: boolean | null;
+  } | null;
+  /**
    * Past assessments by this therapist (and others) for the patient's
    * active cycle, oldest first. Empty array when none yet. Used by the
    * "history" panel on the therapist page.
@@ -271,6 +284,38 @@ export function usePhysioPatientData(
         }));
       }
 
+      // The treating physician's handoff note for the active cycle. Shown
+      // to the therapist regardless of the muscle-sharing preference — it's
+      // a deliberate message to them, not injection detail. RLS restricts it
+      // to professionals with an active session; the patient has no read
+      // policy on treatment_handoff, so it can never reach them. Only the
+      // active cycle's note is surfaced (the cycle they're working within).
+      let handoff: PhysioPatientData['handoff'] = null;
+      if (cycleRow) {
+        const { data: hoRow, error: hoErr } = await supabase
+          .from('treatment_handoff')
+          .select('note, treatment_changed')
+          .eq('treatment_cycle_id', cycleRow.id as string)
+          .maybeSingle();
+        if (hoErr) throw hoErr;
+        const hoNote = (hoRow?.note as string | null) ?? null;
+        const hoChanged = (hoRow?.treatment_changed as boolean | null) ?? null;
+        if (hoRow && (hoNote || hoChanged !== null)) {
+          // The treatment date for "from the {date} visit". The active
+          // cycle has exactly one treatment_session; fetch just its date.
+          const { data: tsDateRow } = await supabase
+            .from('treatment_session')
+            .select('date')
+            .eq('treatment_cycle_id', cycleRow.id as string)
+            .maybeSingle();
+          handoff = {
+            treatmentDate: (tsDateRow?.date as string | null) ?? null,
+            note: hoNote,
+            treatmentChanged: hoChanged
+          };
+        }
+      }
+
       return {
         patient: {
           id: patientId,
@@ -289,6 +334,7 @@ export function usePhysioPatientData(
           : null,
         goals,
         latestTreatment,
+        handoff,
         assessments,
         checkins
       };
