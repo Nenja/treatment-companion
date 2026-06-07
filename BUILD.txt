@@ -1,42 +1,56 @@
-BUILD: therapist-cycle-agnostic   (cycle-agnostic therapist suggestions)
+BUILD: goal-versioning   (goal versioning — foundation, build 1 of 2)
 =========================================================================
-MIGRATION: 0085_cycle_agnostic_physio_suggestions.sql  — RUN THIS.
+MIGRATION: 0086_goal_versioning.sql  — RUN THIS.
 
-WHAT THIS BUILD DOES (final therapist-audit item)
-A therapist seeing a patient before the first treatment cycle can now suggest a
-goal / flag a muscle, instead of hitting "patient has no active treatment
-cycle". Mirrors the patient-side fix (0081).
+WHAT THIS BUILD DOES
+Lays the foundation for editable, versioned goals. A goal becomes a LINEAGE of
+frozen versions instead of one mutable row. Editing a goal at a visit will
+create a new approved_goal row (same lineage_id, version+1) and freeze the
+previous one. Ratings already point at a specific row, so every historical
+rating stays bound to the calibration it was made under — that is the goal's
+evolution log.
 
-SCHEMA (0085)
-- physio_goal_suggestion + physio_muscle_suggestion: treatment_cycle_id made
-  nullable.
-- Both submit RPCs recreated: resolve the active cycle if present, otherwise
-  insert a null cycle (no raise). Session/consent gate unchanged.
+THIS BUILD HAS NO VISIBLE UI CHANGE. It ships the schema, the edit_goal RPC,
+and the live-version read filter. The treatment-flow "edit goal" entry point
+and the per-goal history view are build 2.
 
-NO BLACK HOLE
-- The physician's read of physio suggestions now matches
-  "treatment_cycle_id = current cycle OR is null" (was cycle-only), so a
-  pre-cycle suggestion shows up in the Therapist-input panel once a cycle
-  exists.
+SCHEMA (0086)
+- approved_goal += lineage_id (backfilled = id, NOT NULL), version (default 1),
+  superseded_at, superseded_by.
+- suggestion_id made nullable (edited versions have no originating suggestion).
+- indexes: lineage_id; partial-unique "one live version per lineage"
+  (where superseded_at is null).
 
-THERAPIST UI
-- The no-cycle view of the therapist page now offers "Suggest a goal" (plus the
-  status echo), so the action is reachable before a cycle. Muscle suggestions
-  remain in the with-cycle action row.
+edit_goal RPC
+- Clones the live version into the patient's active cycle with version+1,
+  applying any edited fields passed (null = keep the old value), then supersedes
+  the prior version. Freeze-then-insert ordering keeps the one-live guard happy.
+- Clinician-only; requires an active session and an active cycle.
+
+LIVE FILTER
+- "Current" goal reads add superseded_at is null: clinician patient page, physio
+  page, patient home, check-in. NOT patientTrend (history keeps all versions).
+
+SAFE BY CONSTRUCTION
+- Backfill makes every existing goal v1/live, so the filter is a no-op on
+  existing data. Daily use is behaviourally identical until the first edit (which
+  can only happen via build 2's UI, or a manual SQL call).
 
 DEPLOY
-1. Run 0085 in the Supabase SQL editor.
+1. Run 0086 in the Supabase SQL editor.
 2. Unzip; push to GitHub; Vercel builds. Page count 60.
 
-** QA (please verify — can't be tested here) **
-- With a patient that has NO active cycle, unlock as a therapist: the no-cycle
-  view offers "Suggest a goal"; submit one with no error.
-- As the physician, create the first cycle: the suggestion appears in the
-  Therapist-input panel.
-- Mark it considered: the therapist's status echo updates accordingly.
+** QA (please verify — SQL-testable now; can't be tested here) **
+- After 0086: every approved_goal has lineage_id = id, version = 1; daily
+  surfaces look unchanged.
+- SQL: select edit_goal('<a live goal id>', p_patient_facing_text => 'New text');
+    -> a new v2 row exists in the active cycle;
+    -> the v1 row now has superseded_at + superseded_by;
+    -> patient/clinician/physio/check-in show only v2;
+    -> v1's existing ratings are untouched.
+- The one-live-per-lineage unique index rejects a second live row in a lineage.
 
-THERAPIST EPIC COMPLETE
-- Shipped: signals capture (0083), physician surfacing, GAS rating (0084),
-  status echo, cycle-agnostic (0085).
-- Open BY DESIGN (proposals, not bugs): persistent/recurring therapist access
-  vs the per-visit code; a status loop for adjustment requests.
+NEXT (build 2)
+- Treatment-flow "edit goal" UI (calls edit_goal); per-goal history timeline
+  (versions by lineage; NRS continuous line, GAS per-version segments); manual
+  "link to an existing goal/lineage" action.

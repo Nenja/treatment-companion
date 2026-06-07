@@ -276,6 +276,7 @@ export function useClinicianPatientData(
               'id, patient_facing_text, smart_text, goal_kind, goal_outcome, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, nrs_baseline_value, nrs_target_value, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2, status, video_enabled, video_task_instruction, video_task_setup, video_task_seconds, baseline_video_path, therapy'
             )
             .eq('treatment_cycle_id', cycle.id)
+            .is('superseded_at', null)
             .order('approved_at', { ascending: true }),
           supabase
             .from('weekly_checkin')

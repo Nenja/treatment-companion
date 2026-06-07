@@ -155,6 +155,7 @@ export function useCheckinData(
         .select('id, patient_facing_text, goal_kind, nrs_question, nrs_direction, nrs_cut_low_low, nrs_cut_low, nrs_cut_zero, nrs_cut_high, anchor_minus2, anchor_minus1, anchor_zero, anchor_plus1, anchor_plus2, video_enabled, video_task_instruction, video_task_setup, video_task_seconds, baseline_video_path, therapy')
         .eq('treatment_cycle_id', cycleId)
         .eq('status', 'active')
+        .is('superseded_at', null)
         .order('approved_at', { ascending: true });
       if (gErr) throw gErr;
 

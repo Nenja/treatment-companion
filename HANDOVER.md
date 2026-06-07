@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `therapist-cycle-agnostic`._
+> _Last updated for build tag: `goal-versioning`._
 
 ---
 
@@ -242,7 +242,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0085**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0086**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -313,7 +313,7 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
   has scored a clip).
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0085 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag, **0081** cycle-agnostic suggestions, **0082** check-in undo, **0083** physio goal signals, **0084** physio GAS value, **0085** cycle-agnostic physio suggestions).
+> If unsure whether the user's DB is current, confirm 0062–0086 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag, **0081** cycle-agnostic suggestions, **0082** check-in undo, **0083** physio goal signals, **0084** physio GAS value, **0085** cycle-agnostic physio suggestions, **0086** goal versioning).
 
 ---
 
@@ -658,46 +658,59 @@ via gas_value; overlays corrected) →
 **`therapist-status-echo`** (no migration; therapist sees physician status on
 their goal/muscle suggestions) →
 **`therapist-cycle-agnostic`** (0085; therapist can suggest pre-cycle; physician
-read widened to null-cycle; current).
+read widened to null-cycle) →
+**`goal-versioning`** (0086; goal lineage/version foundation + edit_goal RPC +
+live-version read filter; UI in build 2; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-therapist-cycle-agnostic.zip`
-- **Tag:** `therapist-cycle-agnostic`
-- **Migration:** **0085_cycle_agnostic_physio_suggestions.sql** (run it).
-- **Change:** **Cycle-agnostic therapist suggestions** (final audit item;
-  mirrors the patient fix 0081). A therapist seeing a patient before the first
-  cycle can now suggest a goal / flag a muscle instead of hitting "no active
-  treatment cycle".
-  - **Schema (0085):** `physio_goal_suggestion` + `physio_muscle_suggestion`
-    `treatment_cycle_id` made **nullable**; both submit RPCs
-    (`submit_physio_goal_suggestion`, `submit_physio_muscle_suggestion`)
-    recreated to resolve the active cycle if present and insert a **null cycle**
-    otherwise (no raise). Session/consent gate unchanged.
-  - **No black hole:** the physician's read of physio suggestions
-    (`useClinicianPatient`) now uses `treatment_cycle_id = cycle OR is null`
-    (was cycle-only), so a pre-cycle suggestion surfaces in the Therapist-input
-    panel once a cycle exists.
-  - **Therapist UI:** the no-cycle branch of the therapist page now offers
-    **Suggest a goal** (+ the status echo), so the action is reachable
-    pre-cycle. (Muscle suggestions stay in the with-cycle action row.)
-- **DB needed:** 0085.
-- **⚠ QA (can't test here):** with a patient that has NO active cycle, unlock as
-  a therapist → the no-cycle view offers Suggest a goal; submit one (no error).
-  Then as the physician create the first cycle → the suggestion appears in the
-  Therapist-input panel; mark it considered → the therapist's status echo
-  updates.
-- **Therapist epic COMPLETE.** All audit follow-ups shipped: signals capture
-  (0083), physician surfacing, GAS rating (0084), status echo, cycle-agnostic
-  (0085). Open by-design items remain (recurring/persistent therapist access vs
-  per-visit code; a status loop for adjustment requests) — proposals, not bugs.
+- **Zip:** `treatment-companion-goal-versioning.zip`
+- **Tag:** `goal-versioning`
+- **Migration:** **0086_goal_versioning.sql** (run it).
+- **Change:** **Goal versioning — foundation (build 1 of 2).** A goal becomes a
+  *lineage* of frozen versions instead of a single mutable row. Editing a goal
+  at a visit will create a new `approved_goal` row (same `lineage_id`,
+  `version`+1) and freeze the previous one; ratings already point at a specific
+  row, so historical ratings stay bound to the calibration they were made
+  under. This build lays the schema + the `edit_goal` RPC + the live-version
+  read filter; **no visible UI change yet** (the treatment-flow edit entry point
+  and the per-goal history view are build 2).
+- **Schema (0086):** `approved_goal` += `lineage_id` (backfilled = id, NOT
+  NULL), `version` (default 1), `superseded_at`, `superseded_by`. `suggestion_id`
+  made nullable (edited versions have no originating suggestion). Indexes:
+  `lineage_id`; partial-unique **one live version per lineage**
+  (`where superseded_at is null`).
+- **`edit_goal` RPC:** clones the live version into the patient's active cycle
+  with `version`+1, applying any edited fields (null = keep), then supersedes
+  the prior version (freeze-then-insert order so the one-live guard never sees
+  two live rows). Clinician-only, requires session + active cycle.
+- **Live filter:** "current" goal reads now add `superseded_at is null` —
+  clinician patient page, physio page, patient home, check-in. **Deliberately
+  NOT** on `patientTrend` (the cross-cycle history surface keeps all versions).
+- **Safe by construction:** backfill makes every existing goal v1/live, so the
+  live filter is a **no-op on existing data** — daily use is behaviourally
+  identical until an edit creates the first superseded row (build 2).
+- **DB needed:** 0086.
+- **⚠ QA (can't test here — SQL-testable now):** run 0086; confirm all goals get
+  `lineage_id=id, version=1`; daily surfaces unchanged. Then SQL-call
+  `edit_goal('<live goal id>', p_patient_facing_text => 'X')` → a v2 row appears
+  in the active cycle, the v1 row gets `superseded_at`/`superseded_by`, the
+  patient/clinician/physio/check-in views show only v2, and v1's old ratings are
+  intact. Verify the one-live-per-lineage index rejects a second live row.
+- **Next (build 2):** treatment-flow "edit goal" UI (calls `edit_goal`), the
+  per-goal history timeline (versions by lineage; NRS continuous, GAS per-version
+  segments), and the manual "link to existing lineage" action.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`therapist-cycle-agnostic`** — zip
+  `treatment-companion-therapist-cycle-agnostic.zip` (migration 0085). Therapist
+  can suggest a goal before the first cycle; physio-suggestion submit RPCs no
+  longer require an active cycle; physician read widened to null-cycle.
 - **`therapist-status-echo`** — zip `treatment-companion-therapist-status-echo.zip`
   (no migration). Therapist sees the physician's status (awaiting / will take
   forward / considered / not this time) on their goal + muscle suggestions,

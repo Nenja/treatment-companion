@@ -151,6 +151,7 @@ export function usePhysioPatientData(
           )
           .eq('treatment_cycle_id', cycleRow.id as string)
           .eq('status', 'active')
+          .is('superseded_at', null)
           .order('approved_at', { ascending: true });
         if (gErr) throw gErr;
         goals = (goalRows ?? []).map((g) => ({

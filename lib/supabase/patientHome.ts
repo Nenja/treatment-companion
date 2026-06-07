@@ -177,6 +177,7 @@ export function usePatientHomeData(
         .select('id, patient_facing_text, goal_kind, nrs_direction')
         .eq('treatment_cycle_id', cycle.id)
         .eq('status', 'active')
+        .is('superseded_at', null)
         .order('approved_at', { ascending: true });
       if (gErr) throw gErr;
 
