@@ -18,6 +18,7 @@ interface ExportModalProps {
  */
 export function ExportModal({ initialText, onClose }: ExportModalProps) {
   const tA11y = useTranslations('a11y');
+  const t = useTranslations('clinician.export');
   const [text, setText] = useState(initialText);
   const [copied, setCopied] = useState(false);
 
@@ -59,7 +60,7 @@ export function ExportModal({ initialText, onClose }: ExportModalProps) {
       >
         <div className="flex items-center justify-between border-b border-stone/70 px-5 py-3">
           <h2 id="export-modal-title" className="font-display text-[18px] text-ink">
-            Export for EHR
+            {t('title')}
           </h2>
           <button
             type="button"
@@ -73,8 +74,7 @@ export function ExportModal({ initialText, onClose }: ExportModalProps) {
 
         <div className="flex flex-1 flex-col gap-3 p-5">
           <p className="text-[14px] text-ink-muted">
-            Edit if needed, then copy. Nothing here is sent anywhere — copy
-            it into your EHR yourself.
+            {t('intro')}
           </p>
           <textarea
             id="export-text"
@@ -89,7 +89,7 @@ export function ExportModal({ initialText, onClose }: ExportModalProps) {
               className={`text-[14px] font-semibold ${copied ? 'text-sage-deep' : 'text-transparent'}`}
               aria-live="polite"
             >
-              {copied ? 'Copied to clipboard' : 'placeholder'}
+              {copied ? t('copied') : '\u00A0'}
             </span>
             <div className="flex gap-2">
               <button
@@ -97,14 +97,14 @@ export function ExportModal({ initialText, onClose }: ExportModalProps) {
                 onClick={onClose}
                 className="flex h-11 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
               >
-                Close
+                {t('close')}
               </button>
               <button
                 type="button"
                 onClick={copy}
                 className="flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
               >
-                Copy
+                {t('copy')}
               </button>
             </div>
           </div>

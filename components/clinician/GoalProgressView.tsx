@@ -100,9 +100,11 @@ export function GoalProgressView({
   doseMarkers = []
 }: GoalProgressViewProps) {
   const t = useTranslations('treatment');
+  const tA11y = useTranslations('a11y');
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   // Unique id so multiple charts on one page don't share a <linearGradient>.
   const gradId = `nrs-good-${useId().replace(/:/g, '')}`;
+  const tableId = `chart-data-${useId().replace(/:/g, '')}`;
 
   // NRS goals plot the raw 0–10 value on a 0–10 axis; GAS goals plot the
   // −2..+2 level on the banded axis. plotVal picks the right field.
@@ -316,11 +318,14 @@ export function GoalProgressView({
         role="img"
         aria-label={
           showNrsDir
-            ? `Weekly ratings chart for: ${goalText} (${
-                higherBetter ? 'higher is better' : 'lower is better'
+            ? `${tA11y('chartLabel', { goal: goalText })} (${
+                higherBetter
+                  ? tA11y('chartHigherBetter')
+                  : tA11y('chartLowerBetter')
               })`
-            : `Weekly ratings chart for: ${goalText}`
+            : tA11y('chartLabel', { goal: goalText })
         }
+        aria-describedby={tableId}
       >
         {/* Background. GAS: five muted directional bands. NRS: faint
             gridlines at 0 / 5 / 10 on the plain card. */}
@@ -743,7 +748,44 @@ export function GoalProgressView({
         })}
       </svg>
 
-      {/* Legend — shown when there's a second/third series to explain. */}
+      {/* Visually-hidden data table: the non-visual equivalent of the
+          chart, referenced by the svg's aria-describedby. A screen-reader
+          user gets the actual weekly values, not just the chart's title.
+          Only reported weeks are listed. */}
+      <table id={tableId} className="sr-only">
+        <caption>{tA11y('chartTableCaption', { goal: goalText })}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{tA11y('chartColWeek')}</th>
+            <th scope="col">{tA11y('chartColRating')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ratings.filter((r) => r.reported).length === 0 ? (
+            <tr>
+              <td colSpan={2}>{tA11y('chartNoData')}</td>
+            </tr>
+          ) : (
+            ratings
+              .filter((r) => r.reported)
+              .map((r) => (
+                <tr key={r.weekNumber}>
+                  <td>{r.weekNumber}</td>
+                  <td>
+                    {isNrs
+                      ? r.nrs != null
+                        ? `NRS ${r.nrs}/10`
+                        : '—'
+                      : r.value != null
+                        ? `GAS ${formatGas(r.value)}`
+                        : '—'}
+                  </td>
+                </tr>
+              ))
+          )}
+        </tbody>
+      </table>
+
       {(physioWeeks.length > 0 || clinicWeeks.length > 0) && (
         <div className="mt-1 flex flex-wrap gap-4 text-[13px] text-ink-muted">
           <span className="flex items-center gap-1.5">
@@ -752,7 +794,7 @@ export function GoalProgressView({
               className="inline-block h-2 w-4 rounded-full"
               style={{ background: 'var(--color-sage-deep)' }}
             />
-            Patient
+            {t('chartLegendPatient')}
           </span>
           {physioWeeks.length > 0 && (
             <span className="flex items-center gap-1.5">
@@ -761,7 +803,7 @@ export function GoalProgressView({
                 className="inline-block h-2 w-2 rotate-45"
                 style={{ background: 'var(--color-amber-deep)' }}
               />
-              Physiotherapist
+              {t('chartLegendPhysio')}
             </span>
           )}
           {clinicWeeks.length > 0 && (
@@ -784,7 +826,7 @@ export function GoalProgressView({
         {selected && selected.reported ? (
           <>
             <p className="text-ink-soft">
-              Week {selected.weekNumber}:{' '}
+              {t('chartWeekLabel', { week: selected.weekNumber })}{' '}
               {isNrs ? (
                 <span className="font-semibold text-ink">
                   NRS {selected.nrs}/10
@@ -807,7 +849,7 @@ export function GoalProgressView({
             {selectedPhysio && (
               <p className="text-ink-soft">
                 <span style={{ color: 'var(--color-amber-deep)' }}>
-                  Physiotherapist:
+                  {t('chartLegendPhysio')}:
                 </span>{' '}
                 <span className="font-semibold text-ink">
                   {physioValue(selectedPhysio)}
@@ -817,7 +859,7 @@ export function GoalProgressView({
             {selectedPhysio?.note && (
               <p className="rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1.5 text-[14px] leading-relaxed text-ink">
                 <span className="text-ink-muted">
-                  Physiotherapist note:{' '}
+                  {t('chartPhysioNote')}{' '}
                 </span>
                 {selectedPhysio.note}
               </p>
@@ -828,7 +870,7 @@ export function GoalProgressView({
           <>
             <p className="text-ink-soft">
               <span style={{ color: 'var(--color-amber-deep)' }}>
-                Physiotherapist:
+                {t('chartLegendPhysio')}:
               </span>{' '}
               <span className="font-semibold text-ink">
                 {physioValue(selectedPhysio)}
@@ -837,7 +879,7 @@ export function GoalProgressView({
             {selectedPhysio.note && (
               <p className="rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1.5 text-[14px] leading-relaxed text-ink">
                 <span className="text-ink-muted">
-                  Physiotherapist note:{' '}
+                  {t('chartPhysioNote')}{' '}
                 </span>
                 {selectedPhysio.note}
               </p>
@@ -845,7 +887,7 @@ export function GoalProgressView({
           </>
         ) : selectedWeek !== null && !selected?.reported ? (
           <p className="text-ink-soft">
-            Week {selectedWeek}: not reported
+            {t('chartWeekNotReported', { week: selectedWeek })}
           </p>
         ) : (
           <p className="text-ink-soft">{t('tapPointForDetails')}</p>
