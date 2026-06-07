@@ -25,6 +25,7 @@ import {
 } from '@/lib/supabase/clinicianPatient';
 import { EditGoalDrawer } from '@/components/clinician/EditGoalDrawer';
 import { GoalHistoryModal } from '@/components/clinician/GoalHistoryModal';
+import { LinkGoalModal } from '@/components/clinician/LinkGoalModal';
 import { formatLongDate } from '@/lib/dates';
 import { nrsToGas, injectionSideLabel, type GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
@@ -144,6 +145,8 @@ export default function ClinicianPatientPage() {
   const [editGoalTarget, setEditGoalTarget] =
     useState<ClinicianPatientGoal | null>(null);
   const [historyTarget, setHistoryTarget] =
+    useState<ClinicianPatientGoal | null>(null);
+  const [linkTarget, setLinkTarget] =
     useState<ClinicianPatientGoal | null>(null);
   const [videoEditorGoal, setVideoEditorGoal] = useState<{
     id: string;
@@ -1433,6 +1436,13 @@ export default function ClinicianPatientPage() {
                     >
                       {t('goalHistoryCta')}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setLinkTarget(g)}
+                      className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
+                    >
+                      {t('goalLinkCta')}
+                    </button>
                   </div>
                   {workingOnGoalIds.has(g.id) && (
                     <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep">
@@ -1626,6 +1636,13 @@ export default function ClinicianPatientPage() {
                       >
                         {t('goalHistoryCta')}
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setLinkTarget(g)}
+                        className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
+                      >
+                        {t('goalLinkCta')}
+                      </button>
                     </div>
                     {workingOnGoalIds.has(g.id) && (
                       <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep">
@@ -1798,6 +1815,18 @@ export default function ClinicianPatientPage() {
           lineageId={historyTarget.lineageId}
           goalLabel={historyTarget.patientFacingText}
           onClose={() => setHistoryTarget(null)}
+        />
+      )}
+      {linkTarget && (
+        <LinkGoalModal
+          sourceGoal={linkTarget}
+          candidates={activeGoals.filter(
+            (x) =>
+              x.id !== linkTarget.id &&
+              x.kind === linkTarget.kind &&
+              x.lineageId !== linkTarget.lineageId
+          )}
+          onClose={() => setLinkTarget(null)}
         />
       )}
 
