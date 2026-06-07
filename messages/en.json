@@ -379,7 +379,15 @@
       "editGoalCta": "Recalibrate",
       "goalVersionLabel": "v{version}",
       "goalHistoryCta": "History",
-      "goalLinkCta": "Link"
+      "goalLinkCta": "Link",
+      "startNewCycleActivates": "Starting a cycle activates this patient's weekly check-ins and lets their therapist report progress.",
+      "suggestionStatusConsidered": "Considered",
+      "suggestionStatusDismissed": "Dismissed",
+      "suggestionMarkedConsidered": "Marked considered",
+      "suggestionDismissedToast": "Suggestion dismissed",
+      "suggestionUpdateError": "Could not update the suggestion.",
+      "suggestionActionConsider": "Mark considered",
+      "suggestionActionDismiss": "Dismiss"
     },
     "review": {
       "title": "Review suggestion",
@@ -577,6 +585,13 @@
       "saveDone": "Save & done",
       "saving": "Saving…",
       "done": "Done"
+    },
+    "export": {
+      "title": "Export for EHR",
+      "intro": "Edit if needed, then copy. Nothing here is sent anywhere — copy it into your EHR yourself.",
+      "copied": "Copied to clipboard",
+      "close": "Close",
+      "copy": "Copy"
     }
   },
   "intro": {
@@ -877,7 +892,11 @@
     "statusReviewed": "Considered for injection planning",
     "statusDismissed": "Not this time",
     "preCycleSuggestTitle": "Suggest a goal for the physician",
-    "preCycleSuggestHint": "You can suggest a goal now, before the first treatment cycle. It reaches the physician to weigh at the first injection visit."
+    "preCycleSuggestHint": "You can suggest a goal now, before the first treatment cycle. It reaches the physician to weigh at the first injection visit.",
+    "clinicNoteHeading": "Note from the treating clinic",
+    "clinicNoteFrom": "From the treatment on {date}.",
+    "clinicNoteChanged": "Treatment adjusted this visit",
+    "clinicNoteUnchanged": "No change to treatment this visit"
   },
   "profile": {
     "title": "Your profile",
@@ -1059,7 +1078,20 @@
     },
     "nrsStartTick": "start",
     "nrsTargetTick": "target",
-    "clinicVideoLine": "Clinic video"
+    "clinicVideoLine": "Clinic video",
+    "handoffTitle": "Note for the therapist",
+    "handoffHint": "Shared with the patient’s therapist to guide their work between visits. Not shown to the patient.",
+    "handoffChangedLabel": "Did you change the treatment this visit?",
+    "handoffChangedYes": "Adjusted",
+    "handoffChangedNo": "No change",
+    "handoffChangedUnset": "Not specified",
+    "handoffNoteLabel": "Focus note",
+    "handoffNotePlaceholder": "e.g. Reduced calf dose — ease off heavy loading for now.",
+    "chartLegendPatient": "Patient",
+    "chartLegendPhysio": "Physiotherapist",
+    "chartWeekLabel": "Week {week}:",
+    "chartPhysioNote": "Physiotherapist note:",
+    "chartWeekNotReported": "Week {week}: not reported"
   },
   "goalVideo": {
     "introTitle": "Record a short video (optional)",
@@ -1262,7 +1294,14 @@
     "accountMenu": "Account menu",
     "patientActions": "Patient actions",
     "dosePerMuscle": "Dose per muscle across cycles",
-    "readAloud": "Read aloud"
+    "readAloud": "Read aloud",
+    "chartLabel": "Weekly ratings chart for: {goal}",
+    "chartHigherBetter": "higher is better",
+    "chartLowerBetter": "lower is better",
+    "chartTableCaption": "Weekly ratings data for {goal}",
+    "chartColWeek": "Week",
+    "chartColRating": "Rating",
+    "chartNoData": "No ratings reported yet."
   },
   "accountMenu": {
     "adminLink": "Admin",

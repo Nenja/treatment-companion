@@ -441,6 +441,41 @@ export default function PhysioPatientPage() {
               </div>
             )}
 
+            {/* Note from the treating clinic — the physician's handoff for
+                this cycle. The one downward channel: shown prominently (not
+                behind a panel) so the therapist sees what the physician did
+                and whether anything changed, before planning their work.
+                Only rendered when a note and/or a change flag is present. */}
+            {patientData.data.handoff && (
+              <section className="mt-5 rounded-[var(--radius-card)] border border-sage-soft bg-sage-soft/30 p-4">
+                <h2 className="text-[11px] font-semibold uppercase tracking-wider text-sage-deep">
+                  {t('clinicNoteHeading')}
+                </h2>
+                {patientData.data.handoff.treatmentDate && (
+                  <p className="mt-1 text-[12px] text-ink-muted">
+                    {t('clinicNoteFrom', {
+                      date: formatLongDate(
+                        patientData.data.handoff.treatmentDate,
+                        locale
+                      )
+                    })}
+                  </p>
+                )}
+                {patientData.data.handoff.treatmentChanged !== null && (
+                  <p className="mt-2 text-[14px] font-semibold text-ink">
+                    {patientData.data.handoff.treatmentChanged
+                      ? `↻ ${t('clinicNoteChanged')}`
+                      : `→ ${t('clinicNoteUnchanged')}`}
+                  </p>
+                )}
+                {patientData.data.handoff.note && (
+                  <p className="mt-2 whitespace-pre-wrap text-[14px] leading-relaxed text-ink">
+                    {patientData.data.handoff.note}
+                  </p>
+                )}
+              </section>
+            )}
+
             {/* Patient's voice — comments from the last 14 days of
                 check-ins. Quoted with light styling so the therapist
                 reads them in the patient's own words. Hidden when

@@ -686,21 +686,22 @@ export default function ClinicianPatientPage() {
               clinical summary sits on its own line beneath the name. */}
           <div className="flex items-center gap-2">
             <BrandMark showName={false} />
-            <button
-              type="button"
-              onClick={() =>
-                router.push(
-                  locale === 'en'
-                    ? '/patient-info'
-                    : `/${locale}/patient-info`
-                )
-              }
-              aria-label={tInfo('openInfo', { name: patient.displayName })}
-              className="group flex min-w-0 flex-1 items-center gap-1 text-left"
-            >
-              <span className="truncate font-display text-[20px] leading-tight text-ink group-hover:text-sage-deep">
-                {patient.displayName}
-              </span>
+            <h1 className="m-0 flex min-w-0 flex-1 font-display text-[20px] font-normal leading-tight">
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    locale === 'en'
+                      ? '/patient-info'
+                      : `/${locale}/patient-info`
+                  )
+                }
+                aria-label={tInfo('openInfo', { name: patient.displayName })}
+                className="group flex w-full min-w-0 items-center gap-1 text-left"
+              >
+                <span className="truncate font-display text-[20px] leading-tight text-ink group-hover:text-sage-deep">
+                  {patient.displayName}
+                </span>
               <span
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-muted group-hover:text-sage-deep"
                 aria-hidden
@@ -721,6 +722,7 @@ export default function ClinicianPatientPage() {
                 </svg>
               </span>
             </button>
+            </h1>
             <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
@@ -847,6 +849,9 @@ export default function ClinicianPatientPage() {
           </svg>
           {t('startNewCycle')}
         </button>
+        <p className="mb-3 -mt-1 max-w-prose text-[13px] leading-relaxed text-ink-muted">
+          {t('startNewCycleActivates')}
+        </p>
         {/* Action row — always-visible entry points with live counts.
             On the wide layout this is replaced at lg by the header
             toolbar (below the patient name); on narrow/compact it stays
@@ -1767,7 +1772,9 @@ export default function ClinicianPatientPage() {
               : undefined,
             goals: [...activeGoals, ...archivedGoals].map((g) => ({
               id: g.id,
-              patientFacingText: g.patientFacingText
+              patientFacingText: g.patientFacingText,
+              kind: g.kind,
+              nrsDirection: g.nrs?.direction
             })),
             checkins: checkins.map((c) => ({
               weekNumber: c.weekNumber,
@@ -2116,11 +2123,14 @@ function PhysioGoalSuggestionActions({
 }) {
   const setStatus = useSetPhysioGoalSuggestionStatus();
   const toast = useToast();
+  const t = useTranslations('clinician.patient');
 
   if (status !== 'needsReview') {
     return (
       <p className="mt-3 text-[13px] uppercase tracking-wider text-ink-muted">
-        {status === 'accepted' ? 'Considered' : 'Dismissed'}
+        {status === 'accepted'
+          ? t('suggestionStatusConsidered')
+          : t('suggestionStatusDismissed')}
       </p>
     );
   }
@@ -2130,11 +2140,11 @@ function PhysioGoalSuggestionActions({
       await setStatus.mutateAsync({ suggestionId, status: next });
       toast.success(
         next === 'accepted'
-          ? 'Marked considered'
-          : 'Suggestion dismissed'
+          ? t('suggestionMarkedConsidered')
+          : t('suggestionDismissedToast')
       );
     } catch {
-      toast.error('Could not update the suggestion.');
+      toast.error(t('suggestionUpdateError'));
     }
   };
 
@@ -2146,7 +2156,7 @@ function PhysioGoalSuggestionActions({
         disabled={setStatus.isPending}
         className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
       >
-        Mark considered
+        {t('suggestionActionConsider')}
       </button>
       <button
         type="button"
@@ -2154,7 +2164,7 @@ function PhysioGoalSuggestionActions({
         disabled={setStatus.isPending}
         className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft disabled:opacity-50"
       >
-        Dismiss
+        {t('suggestionActionDismiss')}
       </button>
     </div>
   );
@@ -2174,11 +2184,14 @@ function PhysioMuscleSuggestionActions({
 }) {
   const setStatus = useSetPhysioMuscleSuggestionStatus();
   const toast = useToast();
+  const t = useTranslations('clinician.patient');
 
   if (status !== 'needsReview') {
     return (
       <p className="mt-3 text-[13px] uppercase tracking-wider text-ink-muted">
-        {status === 'reviewed' ? 'Considered' : 'Dismissed'}
+        {status === 'reviewed'
+          ? t('suggestionStatusConsidered')
+          : t('suggestionStatusDismissed')}
       </p>
     );
   }
@@ -2187,10 +2200,12 @@ function PhysioMuscleSuggestionActions({
     try {
       await setStatus.mutateAsync({ suggestionId, status: next });
       toast.success(
-        next === 'reviewed' ? 'Marked considered' : 'Suggestion dismissed'
+        next === 'reviewed'
+          ? t('suggestionMarkedConsidered')
+          : t('suggestionDismissedToast')
       );
     } catch {
-      toast.error('Could not update the suggestion.');
+      toast.error(t('suggestionUpdateError'));
     }
   };
 
@@ -2202,7 +2217,7 @@ function PhysioMuscleSuggestionActions({
         disabled={setStatus.isPending}
         className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
       >
-        Mark considered
+        {t('suggestionActionConsider')}
       </button>
       <button
         type="button"
@@ -2210,7 +2225,7 @@ function PhysioMuscleSuggestionActions({
         disabled={setStatus.isPending}
         className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft disabled:opacity-50"
       >
-        Dismiss
+        {t('suggestionActionDismiss')}
       </button>
     </div>
   );

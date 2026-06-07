@@ -12,6 +12,7 @@ import {
 import {
   useClinicianPatientData,
   useSaveTreatmentSession,
+  useSetTreatmentHandoff,
   useStartCycleWithTreatment,
   usePreviousTreatment,
   type ClinicianTreatmentRecord,
@@ -119,6 +120,7 @@ function TreatmentRecordInner() {
     sessionQuery.data?.patientId ?? null
   );
   const save = useSaveTreatmentSession();
+  const setHandoff = useSetTreatmentHandoff();
   const startCycleWithTreatment = useStartCycleWithTreatment();
   const touchSession = useTouchClinicianSession();
   const toast = useToast();
@@ -230,6 +232,14 @@ function TreatmentRecordInner() {
   const [dilution, setDilution] = useState('');
   const [guidance, setGuidance] = useState<GuidanceMethod>('ultrasound');
   const [notes, setNotes] = useState('');
+  // Physician → therapist handoff for this cycle (the one downward channel,
+  // therapist-only and never patient-visible). The note is the physician's
+  // short focus message; treatmentChanged answers "did treatment change this
+  // visit?" — true (adjusted) / false (no change) / null (not stated).
+  const [therapistNote, setTherapistNote] = useState('');
+  const [treatmentChanged, setTreatmentChanged] = useState<boolean | null>(
+    null
+  );
   const [injections, setInjections] = useState<InjectionDraft[]>([
     emptyInjection()
   ]);
@@ -271,6 +281,8 @@ function TreatmentRecordInner() {
       setDilution(existing.dilution ?? '');
       setGuidance(existing.guidance as GuidanceMethod);
       setNotes(existing.notes ?? '');
+      setTherapistNote(existing.therapistNote ?? '');
+      setTreatmentChanged(existing.treatmentChanged ?? null);
       // Option A: standard injections have no position; face marks carry
       // a normalised pos_x/pos_y. Split the cycle's injections so the
       // muscle list and the face map each hydrate from their own.
@@ -515,7 +527,12 @@ function TreatmentRecordInner() {
   }
 
   const submit = async () => {
-    if (!canSubmit || save.isPending || startCycleWithTreatment.isPending) {
+    if (
+      !canSubmit ||
+      save.isPending ||
+      startCycleWithTreatment.isPending ||
+      setHandoff.isPending
+    ) {
       return;
     }
     const injectionsPayload = validInjections.map((i) => ({
@@ -531,10 +548,11 @@ function TreatmentRecordInner() {
     const standardInjectionsPayload = includesStandard ? injectionsPayload : [];
     const faceMarksPayload = includesFace ? faceMarks : [];
     try {
+      let handoffCycleId: string;
       if (isNewCycle) {
         // Create the new cycle AND record the treatment atomically.
         // The cycle did not exist until this moment.
-        await startCycleWithTreatment.mutateAsync({
+        handoffCycleId = await startCycleWithTreatment.mutateAsync({
           patientId: patient.id,
           date,
           drugProduct,
@@ -563,7 +581,17 @@ function TreatmentRecordInner() {
           faceDisplayMode,
           faceMarks: faceMarksPayload
         });
+        handoffCycleId = cycle.id;
       }
+      // Save (or clear) the physician → therapist handoff for this cycle.
+      // Always called: an empty note + null flag clears any prior handoff,
+      // so editing can remove it. Cycle-keyed, so the new-cycle id (returned
+      // above) and the existing cycle id both work.
+      await setHandoff.mutateAsync({
+        cycleId: handoffCycleId,
+        note: therapistNote,
+        treatmentChanged
+      });
       touchSession.mutate();
       toast.success(tFeedback('successTreatment'));
       back();
@@ -1088,6 +1116,74 @@ function TreatmentRecordInner() {
           />
         </Field>
 
+        {/* Note for the therapist — the one downward (clinic → therapist)
+            channel. Therapist-only and never patient-visible; set apart with
+            a sage panel so it doesn't read like another clinic-internal note.
+            Optional. Closes the therapist's "what did the physician do / has
+            anything changed" gap between visits. */}
+        <div className="mt-6 rounded-[var(--radius-card)] border border-sage-soft bg-sage-soft/20 p-4">
+          <h3 className="font-display text-[15px] text-ink">
+            {t('handoffTitle')}
+          </h3>
+          <p className="mt-0.5 text-[13px] leading-snug text-ink-muted">
+            {t('handoffHint')}
+          </p>
+
+          <div className="mt-3">
+            <span className="block text-[14px] font-semibold text-ink">
+              {t('handoffChangedLabel')}
+            </span>
+            <div className="mt-1.5 flex flex-wrap gap-2">
+              {(
+                [
+                  { val: true as boolean | null, label: t('handoffChangedYes') },
+                  { val: false as boolean | null, label: t('handoffChangedNo') },
+                  {
+                    val: null as boolean | null,
+                    label: t('handoffChangedUnset')
+                  }
+                ] as const
+              ).map((opt) => {
+                const active = treatmentChanged === opt.val;
+                return (
+                  <button
+                    key={String(opt.val)}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setTreatmentChanged(opt.val)}
+                    className={
+                      active
+                        ? 'rounded-[var(--radius-button)] border border-sage-deep bg-sage-deep px-3 py-2 text-[14px] font-semibold text-on-accent'
+                        : 'rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink-soft hover:bg-stone-soft'
+                    }
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label
+              htmlFor="therapist-note"
+              className="block text-[14px] font-semibold text-ink"
+            >
+              {t('handoffNoteLabel')}
+            </label>
+            <p className="mt-0.5 text-[14px] text-ink-muted">{t('optional')}</p>
+            <textarea
+              id="therapist-note"
+              value={therapistNote}
+              onChange={(e) => setTherapistNote(e.target.value)}
+              rows={3}
+              maxLength={500}
+              placeholder={t('handoffNotePlaceholder')}
+              className={inputClasses}
+            />
+          </div>
+        </div>
+
         {/* Locked: an old treatment record can't be edited (only
             same-day typo fixes are allowed). Explain why and point to
             the right action. */}
@@ -1128,11 +1224,14 @@ function TreatmentRecordInner() {
               disabled={
                 !canSubmit ||
                 save.isPending ||
-                startCycleWithTreatment.isPending
+                startCycleWithTreatment.isPending ||
+                setHandoff.isPending
               }
               className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-soft"
             >
-              {save.isPending || startCycleWithTreatment.isPending
+              {save.isPending ||
+              startCycleWithTreatment.isPending ||
+              setHandoff.isPending
                 ? '…'
                 : t('save')}
             </button>

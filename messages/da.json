@@ -383,7 +383,15 @@
       "editGoalCta": "Rekalibrér",
       "goalVersionLabel": "v{version}",
       "goalHistoryCta": "Historik",
-      "goalLinkCta": "Sammenkæd"
+      "goalLinkCta": "Sammenkæd",
+      "startNewCycleActivates": "Når du starter et forløb, aktiveres patientens ugentlige status, og deres terapeut kan rapportere fremskridt.",
+      "suggestionStatusConsidered": "Overvejet",
+      "suggestionStatusDismissed": "Afvist",
+      "suggestionMarkedConsidered": "Markeret som overvejet",
+      "suggestionDismissedToast": "Forslag afvist",
+      "suggestionUpdateError": "Kunne ikke opdatere forslaget.",
+      "suggestionActionConsider": "Markér som overvejet",
+      "suggestionActionDismiss": "Afvis"
     },
     "review": {
       "title": "Gennemgå forslag",
@@ -581,6 +589,13 @@
       "saveDone": "Gem & færdig",
       "saving": "Gemmer…",
       "done": "Færdig"
+    },
+    "export": {
+      "title": "Eksport til journal",
+      "intro": "Rediger om nødvendigt, og kopiér derefter. Intet sendes nogen steder — du kopierer det selv ind i journalen.",
+      "copied": "Kopieret til udklipsholder",
+      "close": "Luk",
+      "copy": "Kopiér"
     }
   },
   "intro": {
@@ -881,7 +896,11 @@
     "statusReviewed": "Indgår i injektionsplanlægningen",
     "statusDismissed": "Ikke denne gang",
     "preCycleSuggestTitle": "Foreslå et mål til lægen",
-    "preCycleSuggestHint": "Du kan foreslå et mål allerede nu, inden den første behandlingscyklus. Det når lægen, som kan tage det med ved det første injektionsbesøg."
+    "preCycleSuggestHint": "Du kan foreslå et mål allerede nu, inden den første behandlingscyklus. Det når lægen, som kan tage det med ved det første injektionsbesøg.",
+    "clinicNoteHeading": "Besked fra den behandlende klinik",
+    "clinicNoteFrom": "Fra behandlingen den {date}.",
+    "clinicNoteChanged": "Behandlingen blev justeret ved dette besøg",
+    "clinicNoteUnchanged": "Ingen ændring af behandlingen ved dette besøg"
   },
   "profile": {
     "title": "Din profil",
@@ -1039,7 +1058,7 @@
     "needFaceMark": "mindst én ansigtsmarkering med muskel og dosis",
     "areasTitle": "Behandlingsområder",
     "recordTitle": "Behandlingsjournal",
-    "forPatient": "For {name}",
+    "forPatient": "Til {name}",
     "areasSubtitle": "Vælg mindst ét.",
     "areaStandard": "Krop og nakke",
     "areaFace": "Ansigt",
@@ -1063,7 +1082,20 @@
     },
     "nrsStartTick": "start",
     "nrsTargetTick": "mål",
-    "clinicVideoLine": "Klinikvideo"
+    "clinicVideoLine": "Klinikvideo",
+    "handoffTitle": "Besked til terapeuten",
+    "handoffHint": "Deles med patientens terapeut for at vejlede arbejdet mellem besøg. Vises ikke til patienten.",
+    "handoffChangedLabel": "Ændrede du behandlingen ved dette besøg?",
+    "handoffChangedYes": "Justeret",
+    "handoffChangedNo": "Ingen ændring",
+    "handoffChangedUnset": "Ikke angivet",
+    "handoffNoteLabel": "Fokusnote",
+    "handoffNotePlaceholder": "f.eks. Reduceret dosis i lægmuskel — gå let til tung belastning indtil videre.",
+    "chartLegendPatient": "Patient",
+    "chartLegendPhysio": "Fysioterapeut",
+    "chartWeekLabel": "Uge {week}:",
+    "chartPhysioNote": "Fysioterapeutnote:",
+    "chartWeekNotReported": "Uge {week}: ikke registreret"
   },
   "goalVideo": {
     "introTitle": "Optag en kort video (valgfrit)",
@@ -1266,7 +1298,14 @@
     "accountMenu": "Kontomenu",
     "patientActions": "Patienthandlinger",
     "dosePerMuscle": "Dosis pr. muskel på tværs af forløb",
-    "readAloud": "Læs højt"
+    "readAloud": "Læs højt",
+    "chartLabel": "Diagram over ugentlige vurderinger for: {goal}",
+    "chartHigherBetter": "højere er bedre",
+    "chartLowerBetter": "lavere er bedre",
+    "chartTableCaption": "Ugentlige vurderingsdata for {goal}",
+    "chartColWeek": "Uge",
+    "chartColRating": "Vurdering",
+    "chartNoData": "Ingen vurderinger registreret endnu."
   },
   "accountMenu": {
     "adminLink": "Administration",
@@ -1324,7 +1363,7 @@
     "subTreatment": "Siden sidste behandling · {date}",
     "subCycle": "Siden denne cyklus begyndte · {date}",
     "empty": "Ingen nye check-ins siden sidste besøg.",
-    "checkinCount": "{count, plural, one {# check-in} other {# check-ins}}",
+    "checkinCount": "{count, plural, one {# status} other {# statusser}}",
     "everyWeek": "tjekket ind hver uge",
     "missedWeeks": "{count, plural, one {sprang uge {weeks} over} other {sprang ugerne {weeks} over}}",
     "noGoalMovement": "Endnu ingen målvurderinger registreret.",
