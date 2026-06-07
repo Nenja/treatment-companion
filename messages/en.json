@@ -378,7 +378,8 @@
       "physioWorkingOnTag": "Therapist working on this",
       "editGoalCta": "Recalibrate",
       "goalVersionLabel": "v{version}",
-      "goalHistoryCta": "History"
+      "goalHistoryCta": "History",
+      "goalLinkCta": "Link"
     },
     "review": {
       "title": "Review suggestion",
@@ -1401,5 +1402,18 @@
     "nrsCalibration": "Baseline {baseline} → target {target}",
     "patientRatings": "{count, plural, =0 {No patient ratings} one {# patient rating} other {# patient ratings}}",
     "therapistRatings": "{count, plural, =0 {No therapist ratings} one {# therapist rating} other {# therapist ratings}}"
+  },
+  "linkGoal": {
+    "eyebrow": "Link goal",
+    "title": "Link this goal to another",
+    "intro": "Link “{goal}” as the latest version of an existing goal — use this if it was started as a new goal but really continues one you already track.",
+    "noCandidates": "No eligible goals to link to. A target must be another active goal of the same measurement type.",
+    "note": "The chosen goal's current version becomes history, and this goal becomes its latest version. Ratings stay with the version they were made under.",
+    "cancel": "Cancel",
+    "confirm": "Link goals",
+    "saving": "Linking…",
+    "saved": "Goals linked.",
+    "error": "Couldn't link the goals. Please try again.",
+    "errorShort": "Couldn't link — please check the selection."
   }
 }

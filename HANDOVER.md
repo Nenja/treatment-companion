@@ -9,7 +9,7 @@
 > schema, conventions, or a feature's state changed. Treat this as part of the
 > deliverable, not an afterthought.
 >
-> _Last updated for build tag: `goal-history`._
+> _Last updated for build tag: `goal-link`._
 
 ---
 
@@ -242,7 +242,7 @@ Width tokens: `--max-w-page-narrow` **480px**, `--max-w-page-mid` **720px**,
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0086**) plus the
+`supabase/migrations/` holds the numbered migrations (through **0087**) plus the
 non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
@@ -313,7 +313,7 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
   has scored a clip).
   `add column if not exists`, safe to re-run.
 
-> If unsure whether the user's DB is current, confirm 0062–0086 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag, **0081** cycle-agnostic suggestions, **0082** check-in undo, **0083** physio goal signals, **0084** physio GAS value, **0085** cycle-agnostic physio suggestions, **0086** goal versioning).
+> If unsure whether the user's DB is current, confirm 0062–0087 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag, **0081** cycle-agnostic suggestions, **0082** check-in undo, **0083** physio goal signals, **0084** physio GAS value, **0085** cycle-agnostic physio suggestions, **0086** goal versioning, **0087** link goal to lineage).
 
 ---
 
@@ -664,39 +664,50 @@ live-version read filter) →
 **`goal-edit`** (no migration; Recalibrate button + EditGoalDrawer call edit_goal;
 goal carries lineageId/version) →
 **`goal-history`** (no migration; per-goal History modal — version timeline by
-lineage with frozen calibration + ratings; current).
+lineage with frozen calibration + ratings) →
+**`goal-link`** (0087; link a goal onto an existing lineage as its newest
+version; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-goal-history.zip`
-- **Tag:** `goal-history`
-- **Migration:** none (reads existing tables; ensure 0086 is applied).
-- **Change:** **Per-goal history view (build 2b of goal versioning).** Each goal
-  card on the clinician patient page now has a **History** button →
-  `GoalHistoryModal`: a timeline of the goal's versions (oldest first) by
-  lineage. Each version shows its number + cycle + a Current badge, the wording
-  and calibration frozen at the time (NRS baseline→target; GAS the five
-  anchors), and the **patient + therapist ratings recorded under it** as value
-  chips. NRS values 0–10; GAS shown as the −2..+2 level (versions kept
-  separate, not one continuous line, because anchors reset per version).
-  - New `useGoalHistory(lineageId)` hook reads all versions for the lineage and
-    their ratings (`weekly_goal_rating` → patient: nrs_value, or rating_value
-    for GAS; `physio_goal_rating` → therapist: nrs_value/gas_value), grouped by
-    version. Read-only; RLS scopes to accessible patients.
-- **DB needed:** none new (0086).
-- **⚠ QA (can't test here):** open History on a goal that's been recalibrated →
-  see v1, v2… each with its frozen wording/calibration and the ratings made
-  under it; the live version shows the Current badge. Confirm a goal with one
-  version shows just v1.
-- **Next:** build 2c — manual **link to an existing lineage** action (graft a
-  separately-created goal onto an existing goal's lineage).
+- **Zip:** `treatment-companion-goal-link.zip`
+- **Tag:** `goal-link`
+- **Migration:** **0087_link_goal_to_lineage.sql** (run it).
+- **Change:** **Link a goal to an existing lineage (build 2c — completes goal
+  versioning).** Correction action: each goal card gets a **Link** button →
+  `LinkGoalModal`. Pick another active goal of the same measurement kind, and
+  this goal is grafted on as that lineage's newest version (the target's current
+  version is frozen, this goal becomes live). For when a continuation was
+  accidentally started as a separate goal; the two histories merge.
+  - **RPC (0087) `link_goal_to_lineage(source, target)`:** clinician-only, same
+    patient + same kind, source must be live and single-version (so no
+    predecessors are orphaned), source ≠ target lineage. Freeze-then-move keeps
+    the one-live-per-lineage guard satisfied. `useLinkGoalToLineage` invalidates
+    ['clinicianPatient'] + ['goalHistory'].
+- **DB needed:** 0087 (after 0086).
+- **Verified locally:** 0086+0087 applied to throwaway Postgres 16; link merges
+  two NRS lineages (target v1 frozen + successor set, source becomes v2 live),
+  the source's rating follows its row into the merged history, exactly one live
+  remains, and the guards (same-lineage, kind-mismatch, non-live source) all
+  reject.
+- **⚠ QA (can't test here):** create two separate goals; on one, Link → pick the
+  other → they merge into one lineage (History shows both as versions, newest =
+  the linked goal). Confirm a different-kind goal isn't offered as a candidate.
+- **Goal-versioning epic COMPLETE:** 0086 foundation + edit_goal, goal-edit
+  (recalibrate), goal-history (timeline), goal-link (0087). Open by-design idea
+  from earlier: a cross-version *chart* (continuous NRS line / GAS segments) —
+  deferred; the history modal shows per-version chips instead.
 
 ---
 
 ## 7b. Previous delivered builds
 
+- **`goal-history`** — zip `treatment-companion-goal-history.zip` (no
+  migration). Per-goal History modal: version timeline by lineage with frozen
+  wording/calibration + patient/therapist rating chips per version
+  (`useGoalHistory`).
 - **`goal-edit`** — zip `treatment-companion-goal-edit.zip` (no migration).
   Recalibrate button + EditGoalDrawer call edit_goal to create a new goal
   version at a visit; goal carries lineageId/version.

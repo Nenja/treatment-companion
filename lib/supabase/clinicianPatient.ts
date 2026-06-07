@@ -777,6 +777,34 @@ export function useEditGoal() {
   });
 }
 
+/**
+ * Link a freshly-created goal onto an existing goal's lineage as its newest
+ * version (server-side `link_goal_to_lineage`), for when a continuation was
+ * accidentally started as a new goal. Source and target must be the same
+ * patient and measurement kind; the source must be a single-version goal.
+ */
+export function useLinkGoalToLineage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      sourceGoalId: string;
+      targetGoalId: string;
+    }): Promise<string> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc('link_goal_to_lineage', {
+        p_source_goal_id: input.sourceGoalId,
+        p_target_goal_id: input.targetGoalId
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+      qc.invalidateQueries({ queryKey: ['goalHistory'] });
+    }
+  });
+}
+
 /** Tag a goal's therapy ('bont' | 'itb'). */
 export function useSetGoalTherapy() {
   const qc = useQueryClient();

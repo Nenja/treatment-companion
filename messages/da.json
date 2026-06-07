@@ -382,7 +382,8 @@
       "physioWorkingOnTag": "Terapeut arbejder med dette",
       "editGoalCta": "Rekalibrér",
       "goalVersionLabel": "v{version}",
-      "goalHistoryCta": "Historik"
+      "goalHistoryCta": "Historik",
+      "goalLinkCta": "Sammenkæd"
     },
     "review": {
       "title": "Gennemgå forslag",
@@ -1405,5 +1406,18 @@
     "nrsCalibration": "Udgangspunkt {baseline} → mål {target}",
     "patientRatings": "{count, plural, =0 {Ingen patientvurderinger} one {# patientvurdering} other {# patientvurderinger}}",
     "therapistRatings": "{count, plural, =0 {Ingen terapeutvurderinger} one {# terapeutvurdering} other {# terapeutvurderinger}}"
+  },
+  "linkGoal": {
+    "eyebrow": "Sammenkæd mål",
+    "title": "Sammenkæd dette mål med et andet",
+    "intro": "Sammenkæd “{goal}” som den nyeste version af et eksisterende mål — brug dette, hvis det blev oprettet som et nyt mål, men i virkeligheden fortsætter et, du allerede følger.",
+    "noCandidates": "Ingen egnede mål at sammenkæde med. Målet skal være et andet aktivt mål af samme måletype.",
+    "note": "Det valgte måls nuværende version bliver til historik, og dette mål bliver dets nyeste version. Vurderinger bliver hos den version, de blev lavet under.",
+    "cancel": "Annullér",
+    "confirm": "Sammenkæd mål",
+    "saving": "Sammenkæder…",
+    "saved": "Mål sammenkædet.",
+    "error": "Kunne ikke sammenkæde målene. Prøv igen.",
+    "errorShort": "Kunne ikke sammenkæde — tjek valget."
   }
 }

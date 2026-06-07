@@ -1,37 +1,37 @@
-BUILD: goal-history   (per-goal history view — build 2b of goal versioning)
+BUILD: goal-link   (link a goal to an existing lineage — build 2c)
 =========================================================================
-NO MIGRATION — reads existing tables. Ensure 0086 is applied.
+MIGRATION: 0087_link_goal_to_lineage.sql  — RUN THIS (after 0086).
 
-WHAT THIS BUILD DOES
-Each goal card on the clinician patient page gets a "History" button that opens
-a per-goal timeline of its versions (oldest first), by lineage. Each version
-shows:
-- version number + cycle + a "Current" badge on the live one;
-- the wording and calibration frozen at that version (NRS baseline->target; GAS
-  the five anchors);
-- the patient and therapist ratings recorded UNDER that version, as value chips
-  (NRS 0-10; GAS as the -2..+2 level).
+WHAT THIS BUILD DOES (completes goal versioning)
+A correction action. Each goal card gets a "Link" button that opens a modal:
+pick another active goal of the same measurement kind, and THIS goal is grafted
+onto that goal's lineage as its newest version (the target's current version is
+frozen; this goal becomes live). Use it when a continuation was accidentally
+started as a separate goal — the two histories then merge into one thread.
 
-Versions are shown as separate segments rather than one continuous line,
-because GAS anchors (and NRS targets) reset per version — values are only
-comparable within the version they were rated against.
+RPC (0087): link_goal_to_lineage(source, target)
+- clinician-only; same patient; same measurement kind; source must be live and
+  a single-version lineage (so no predecessors are orphaned); source and target
+  must be different lineages.
+- Freeze-then-move ordering keeps the one-live-per-lineage guard satisfied.
 
-FILES
-- lib/supabase/goalHistory.ts: useGoalHistory(lineageId) — all versions of a
-  lineage + their ratings (patient from weekly_goal_rating, therapist from
-  physio_goal_rating), grouped by version. Read-only.
-- components/clinician/GoalHistoryModal.tsx: the timeline modal.
-- clinician patient page: "History" button on bont + itb goal cards; modal.
+VERIFIED LOCALLY
+- 0086 + 0087 applied to a throwaway Postgres 16: link merged two NRS lineages
+  (target v1 frozen with successor, source became v2 live), the source's rating
+  followed its row into the merged history, exactly one live row remained, and
+  the guards (same-lineage, kind-mismatch, non-live source) all rejected.
 
 DEPLOY
-- Unzip; push to GitHub; Vercel builds. Page count 60. No SQL.
+1. Run 0087 in the Supabase SQL editor (after 0086).
+2. Unzip; push to GitHub; Vercel builds. Page count 60.
 
 ** QA (please verify — can't be tested here) **
-- Recalibrate a goal (build 2a) so it has 2+ versions, then open History:
-  see each version with its frozen wording/calibration and the ratings made
-  under it; the live version shows "Current".
-- A goal with a single version shows just v1.
+- Create two separate goals. On one, Link -> pick the other -> they merge into
+  one lineage; History shows both as versions (newest = the linked goal).
+- A goal of a different measurement kind is not offered as a candidate.
 
-NEXT
-- build 2c: manual "link to an existing lineage" action (graft a
-  separately-created goal onto an existing goal's lineage).
+GOAL-VERSIONING EPIC COMPLETE
+- 0086 foundation + edit_goal; goal-edit (recalibrate); goal-history (timeline);
+  goal-link (0087).
+- Deferred by design: a cross-version chart (continuous NRS line / GAS
+  segments). The history modal shows per-version rating chips instead.
