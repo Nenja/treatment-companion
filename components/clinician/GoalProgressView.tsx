@@ -104,7 +104,6 @@ export function GoalProgressView({
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   // Unique id so multiple charts on one page don't share a <linearGradient>.
   const gradId = `nrs-good-${useId().replace(/:/g, '')}`;
-  const tableId = `chart-data-${useId().replace(/:/g, '')}`;
 
   // NRS goals plot the raw 0–10 value on a 0–10 axis; GAS goals plot the
   // −2..+2 level on the banded axis. plotVal picks the right field.
@@ -325,7 +324,6 @@ export function GoalProgressView({
               })`
             : tA11y('chartLabel', { goal: goalText })
         }
-        aria-describedby={tableId}
       >
         {/* Background. GAS: five muted directional bands. NRS: faint
             gridlines at 0 / 5 / 10 on the plain card. */}
@@ -748,43 +746,6 @@ export function GoalProgressView({
         })}
       </svg>
 
-      {/* Visually-hidden data table: the non-visual equivalent of the
-          chart, referenced by the svg's aria-describedby. A screen-reader
-          user gets the actual weekly values, not just the chart's title.
-          Only reported weeks are listed. */}
-      <table id={tableId} className="sr-only">
-        <caption>{tA11y('chartTableCaption', { goal: goalText })}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{tA11y('chartColWeek')}</th>
-            <th scope="col">{tA11y('chartColRating')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ratings.filter((r) => r.reported).length === 0 ? (
-            <tr>
-              <td colSpan={2}>{tA11y('chartNoData')}</td>
-            </tr>
-          ) : (
-            ratings
-              .filter((r) => r.reported)
-              .map((r) => (
-                <tr key={r.weekNumber}>
-                  <td>{r.weekNumber}</td>
-                  <td>
-                    {isNrs
-                      ? r.nrs != null
-                        ? `NRS ${r.nrs}/10`
-                        : '—'
-                      : r.value != null
-                        ? `GAS ${formatGas(r.value)}`
-                        : '—'}
-                  </td>
-                </tr>
-              ))
-          )}
-        </tbody>
-      </table>
 
       {(physioWeeks.length > 0 || clinicWeeks.length > 0) && (
         <div className="mt-1 flex flex-wrap gap-4 text-[13px] text-ink-muted">
