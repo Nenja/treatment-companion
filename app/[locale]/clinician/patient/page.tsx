@@ -684,8 +684,7 @@ export default function ClinicianPatientPage() {
               clinical summary sits on its own line beneath the name. */}
           <div className="flex items-center gap-2">
             <BrandMark showName={false} />
-            <div className="min-w-0 flex-1">
-            <h1 className="m-0 flex min-w-0 font-display text-[20px] font-normal leading-tight">
+            <h1 className="m-0 flex min-w-0 flex-1 font-display text-[20px] font-normal leading-tight">
               <button
                 type="button"
                 onClick={() =>
@@ -722,12 +721,6 @@ export default function ClinicianPatientPage() {
               </span>
             </button>
             </h1>
-              {patientSummary && (
-                <p className="mt-0.5 text-[13px] leading-snug text-ink-soft">
-                  {patientSummary}
-                </p>
-              )}
-            </div>
             <div className="flex shrink-0 items-center gap-2">
               {/* Primary action of an injection visit — the page's lead
                   CTA, in the header so it's reachable from any layout. */}
@@ -1030,16 +1023,11 @@ export default function ClinicianPatientPage() {
             )}
           </CockpitPanelDrawer>
         )}
-        {/* On the wide layout the goals column opens with a header band
-            (the "Active goals" title + its buttons). Give this context line a
-            matching min-height + vertical centring on lg so the "since last
-            visit" panel below lines up with the first goal graph, not sit
-            slightly above it. The 2.25rem ≈ the buttons' height — tunable if the
-            header height changes. */}
-        <div className="lg:flex lg:min-h-[2.25rem] lg:items-center">
-          <PatientBanner modalityLabel={tModality(cycle.modality)} />
-        </div>
-        <div className="mt-4 lg:mt-3">
+        <PatientBanner
+          summary={patientSummary}
+          modalityLabel={tModality(cycle.modality)}
+        />
+        <div className="mt-4">
           <VisitChanges
             lastTreatmentDate={treatment?.date ?? null}
             cycleStartDate={cycle.startDate}
@@ -1256,27 +1244,6 @@ export default function ClinicianPatientPage() {
                   {workingOnGoalIds.has(g.id) && (
                     <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep">
                       {t('physioWorkingOnTag')}
-                    </p>
-                  )}
-                  {g.videoEnabled && (
-                    <p className="mt-1.5 ml-2 inline-flex items-center gap-1.5 rounded-full border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-ink-soft">
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden
-                      >
-                        <rect x="2" y="6" width="14" height="12" rx="2" />
-                        <path d="M16 10l6-3v10l-6-3z" />
-                      </svg>
-                      {g.baselineVideoPath
-                        ? t('videoTagBaselineSet')
-                        : t('videoTagBaselineNeeded')}
                     </p>
                   )}
                   {(clinicVideoByGoal.get(g.id) ?? []).length > 0 && (

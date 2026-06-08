@@ -1,28 +1,38 @@
-BUILD: simplify-cockpit-23   (demographics line moved under the patient name — NO migration)
+BUILD: simplify-cockpit-26   (overlap trim — "Option A": graph owns the per-goal numbers — NO migration)
 ==========================================================================
 MIGRATION: none. DB stays at 0090. Nothing to run in Supabase.
 
+CONTEXT
+- The "since last visit" card and the goal graphs were double-reporting each
+  goal's outcome. We decided the raw numbers are the informative part and the
+  "improved/declined" word is the lossy summary, so: numbers move to the graph,
+  the card stops per-goal reporting.
+
 DONE
-- The patient demographics line ("41 years · Traumatic brain injury · Left ·
-  With aid") was floating in the body context line after the Option A
-  restructure — disconnected from the name (in the header) and the card below,
-  so it read as orphaned. The header comment already said the summary should
-  "sit on its own line beneath the name", so this restores that:
-  * The demographics summary now renders as a sub-line directly UNDER the
-    patient name in the page header.
-  * PatientBanner is now just the modality pill (the summary prop was removed).
-    The lone pill still fills the wide-layout top-alignment band, so the
-    "since last visit" / first-graph alignment from build 22 is preserved.
-- No new i18n keys.
+- components/clinician/VisitChanges.tsx
+  * Removed the per-goal rows (goal name + max-effect/most-recent + verdict chip)
+    AND the now-dead computation behind them (GoalRow, the verdict loop, gasLabel,
+    chipClass/glyph/verdict).
+  * The card is now a pure visit-context strip: anchor date + adherence,
+    training, wearable trend, patient video clips, medication footer.
+- components/clinician/GoalProgressView.tsx
+  * Added direction-aware "best" + "now" value labels on the patient self-report
+    series. best = peak (max for higher-is-better, min for lower-is-better; +2
+    for GAS). now = latest reported point. If the latest IS the best, only "now"
+    shows. Labels reuse the chart's 9px ink-muted text with a sage-deep number.
+  * i18n: treatment.chartBest / treatment.chartNow (en + da).
+- Orphaned-but-harmless visitChanges i18n keys (improved/declined/chipNoChange/
+  peakLabel/recentLabel/noGoalMovement/archived/gasP2..gasM2) left in place.
 
 VERIFIED LOCALLY
 - tsc --noEmit clean.
+- i18n parity: 0 key mismatches, 0 ICU mismatches.
 - Production build OK via the font-stub procedure. 60/60 pages.
 
 DEPLOY: no migration; unzip / push / Vercel builds. Page count 60.
 
-** QA (desktop) **
-- The demographics line sits right under the patient name in the header.
-- The body context column shows only the "Botulinum toxin" pill above
-  "since last visit".
-- The "since last visit" card top still lines up with the first goal graph.
+** QA **
+- "Since last visit" shows no per-goal numbers or improved/declined chips.
+- Each goal graph shows "best N" near the peak and "now N" at the latest point
+  (NRS 0-10, GAS +/-2).
+- On a lower-is-better NRS goal, "best" should sit on the LOWEST point.

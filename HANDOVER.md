@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-23` (no migration — moved the patient demographics line back under the name in the header so it no longer looks orphaned; PatientBanner is now just the modality pill; DB 0090; backlog in §8)._
+> _Last updated for build tag: `simplify-cockpit-20` (no migration — goal-calibration forms now explain a disabled Save with a 'what's still needed' list, on both new-goal and approve; DB 0090; backlog in §8)._
 
 ---
 
@@ -842,81 +842,15 @@ last treatment) →
 **`simplify-cockpit-17`** (no migration; lightened goal-Edit copy) →
 **`simplify-cockpit-18`** (no migration; wearable import reorder) →
 **`simplify-cockpit-19`** (no migration; 'Session setup' heading) →
-**`simplify-cockpit-20`** (no migration; 'what's still needed' helper) →
-**`simplify-cockpit-21`** (no migration; Video-task chip + always-on checklist) →
-**`simplify-cockpit-22`** (no migration; aligned 'since last visit' top with the
-first goal graph) → **`simplify-cockpit-23`** (no migration; demographics line
-moved back under the patient name in the header; PatientBanner is just the
-modality pill now; current).
+**`simplify-cockpit-20`** (no migration; 'what's still needed' helper on the
+new-goal + approve calibration forms; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-simplify-cockpit-23.zip`
-- **Tag:** `simplify-cockpit-23`
-- **Migration:** **none** (DB stays at **0090**).
-- **Demographics line no longer orphaned.** After the Option A restructure the
-  patient demographics ("41 years · Traumatic brain injury · Left · With aid")
-  was floating in the body context line, disconnected from the name (which is up
-  in the header) and the card below — even though the header comment said the
-  summary "sits on its own line beneath the name." Restored that:
-    - The demographics summary (`patientSummary`) now renders as a sub-line
-      directly **under the patient name in the page header**, where the identity
-      lives. Wrapped the name `<h1>` + summary in a `min-w-0 flex-1` column.
-    - **`PatientBanner` is now just the modality pill** (`summary` prop removed;
-      component + doc simplified). The lone pill still populates the wide-layout
-      top-alignment band, so the "since last visit" / first-graph alignment from
-      build 22 is preserved.
-- **Verified locally:** tsc clean; font-stub 60/60. (No new i18n keys.)
-- **⚠ QA (desktop):** the demographics line sits right under the patient name in
-  the header; the body context column shows only the "Botulinum toxin" pill above
-  "since last visit"; the since-last-visit top still lines up with the first graph.
-
-### `simplify-cockpit-22` (previous; no migration)
-- **Zip:** `treatment-companion-simplify-cockpit-22.zip`. Aligned the
-  "since last visit" top with the first goal graph (desktop). **Tag:**
-  `simplify-cockpit-22`
-- **Migration:** **none** (DB stays at **0090**).
-- **Aligned the tops of "since last visit" and the goal graphs (desktop).** On
-  the wide layout the goals column opens with a taller header band ("Active
-  goals" + its buttons) while the left column opened with just the one-line
-  patient context, so the first graph sat slightly below "since last visit".
-  Wrapped the context line in `lg:flex lg:min-h-[2.25rem] lg:items-center` (≈ the
-  header band height) and set the since-last-visit wrapper to `lg:mt-3` (matching
-  the goals `<ul>`'s `mt-3`), so the panel top now lines up with the first graph.
-  - **TUNABLE:** if they're a hair off live, the one number is `min-h-[2.25rem]`
-    on the context-line wrapper (~line 1026 of `clinician/patient/page.tsx`).
-    Only affects `lg`+; mobile (stacked) is untouched.
-- **Verified locally:** tsc clean; font-stub 60/60.
-- **⚠ QA (desktop):** the "since last visit" card top and the first goal graph
-  card top sit on the same line.
-
-### `simplify-cockpit-21` (previous; no migration)
-- **Zip:** `treatment-companion-simplify-cockpit-21.zip`. Video-task chip +
-  always-on needs checklist. **Tag:** `simplify-cockpit-21`
-- **Migration:** **none** (DB stays at **0090**).
-- **Video-enabled is now visible at a glance.** Previously the only tells were
-  the presence of the baseline button or opening the Video task editor. Added a
-  quiet **"Video task" chip** on each video-enabled goal card (next to the
-  working-on chip), with baseline status: `videoTagBaselineSet` ("Video task ·
-  baseline set") vs `videoTagBaselineNeeded` ("Video task · baseline needed").
-  Keys under `clinician.patient` (en+da). Driven by `g.videoEnabled` +
-  `g.baselineVideoPath`.
-- **Disabled Save now explains itself from the start.** The "what's still needed"
-  helper (build 20) was gated on the clinician having started typing, so a
-  pristine new-goal/approve form showed a greyed button with no reason. Removed
-  that gate (and the unused `started`/`approveStarted` consts) — the checklist
-  now shows whenever Save/Approve is disabled, including on an empty form.
-- **Verified locally:** tsc clean; i18n parity (0 mismatches); font-stub 60/60.
-- **⚠ QA:** (1) a video-enabled goal shows a "Video task · baseline set/needed"
-  chip on its card; a non-video goal shows none. (2) Open "Record a goal" with
-  nothing filled → the "Before you can save:" checklist is visible immediately,
-  next to the greyed Save.
-
-### `simplify-cockpit-20` (previous; no migration)
-- **Zip:** `treatment-companion-simplify-cockpit-20.zip`. "What's still needed"
-  helper on the calibration forms. **Tag:** `simplify-cockpit-20`
+- **Zip:** `treatment-companion-simplify-cockpit-20.zip`
+- **Tag:** `simplify-cockpit-20`
 - **Migration:** **none** (DB stays at **0090**).
 - **Goal-calibration forms now explain a disabled Save.** The audit's "NRS
   cut-off entry" item turned out moot — the clinician never enters cut-offs
