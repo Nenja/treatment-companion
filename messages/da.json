@@ -439,7 +439,12 @@
       "modelNrs": "0–10-skala",
       "modelGas": "Beskrivende niveauer",
       "nrsSetupHeading": "NRS-vurdering",
-      "nrsScaleIntro": "Patienten vurderer dette mål på en 0–10-skala hver uge."
+      "nrsScaleIntro": "Patienten vurderer dette mål på en 0–10-skala hver uge.",
+      "stillNeededTitle": "Før du kan godkende:",
+      "needGoalText": "Det patienten vil se",
+      "needSmart": "SMART-versionen",
+      "needNrsQuestion": "Det ugentlige NRS-spørgsmål",
+      "needAnchors": "Alle fem ankerbeskrivelser"
     },
     "faceMap": {
       "marksLabel": "Markeringer:",
@@ -1029,6 +1034,8 @@
     "copyLastHelper": "Udfylder alle felter fra sidste gang. Du kan derefter justere doser og muskler, før du gemmer.",
     "copyIntoPlan": "Kopiér ind i den nye plan",
     "fieldDate": "Dato",
+    "sessionSetupTitle": "Sessionsopsætning",
+    "sessionSetupSubtitle": "Oplysninger for dette besøg.",
     "fieldDrugProduct": "Præparat",
     "drugProductPlaceholder": "f.eks. Botox",
     "fieldDilution": "Fortynding",
@@ -1233,7 +1240,13 @@
     "nrsRangeLabel": "Udgangspunkt og mål",
     "nrsRangeHelp": "Aftal begge 0–10-værdier med patienten.",
     "nrsBaselineLabel": "Nu (0–10)",
-    "nrsTargetLabel": "Mål (0–10)"
+    "nrsTargetLabel": "Mål (0–10)",
+    "stillNeededTitle": "Før du kan gemme:",
+    "needGoalText": "Målet i patientens egne ord",
+    "needSmart": "SMART-beskrivelsen",
+    "needNrsQuestion": "Det ugentlige spørgsmål, patienten ser",
+    "needNrsRange": "Et udgangspunkt og et mål (0–10)",
+    "needAnchors": "Alle fem udfaldsniveauer"
   },
   "physioForms": {
     "loading": "Indlæser…",

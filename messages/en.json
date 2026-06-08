@@ -435,7 +435,12 @@
       "modelNrs": "0–10 scale",
       "modelGas": "Descriptive levels",
       "nrsSetupHeading": "NRS rating setup",
-      "nrsScaleIntro": "The patient rates this goal on a 0–10 scale each week."
+      "nrsScaleIntro": "The patient rates this goal on a 0–10 scale each week.",
+      "stillNeededTitle": "Before you can approve:",
+      "needGoalText": "What the patient will see",
+      "needSmart": "The SMART version",
+      "needNrsQuestion": "The weekly NRS question",
+      "needAnchors": "All five anchor descriptions"
     },
     "faceMap": {
       "marksLabel": "Marks:",
@@ -1025,6 +1030,8 @@
     "copyLastHelper": "Fills every field from last time. You can then adjust doses and muscles before saving.",
     "copyIntoPlan": "Copy into the new plan",
     "fieldDate": "Date",
+    "sessionSetupTitle": "Session setup",
+    "sessionSetupSubtitle": "Details for this visit.",
     "fieldDrugProduct": "Drug product",
     "drugProductPlaceholder": "e.g. Botox",
     "fieldDilution": "Dilution",
@@ -1229,7 +1236,13 @@
     "nrsRangeLabel": "Starting point and target",
     "nrsRangeHelp": "Agree both 0–10 values with the patient.",
     "nrsBaselineLabel": "Now (0–10)",
-    "nrsTargetLabel": "Target (0–10)"
+    "nrsTargetLabel": "Target (0–10)",
+    "stillNeededTitle": "Before you can save:",
+    "needGoalText": "The goal in the patient's words",
+    "needSmart": "The SMART description",
+    "needNrsQuestion": "The weekly question the patient sees",
+    "needNrsRange": "A starting point and target (0–10)",
+    "needAnchors": "All five outcome levels"
   },
   "physioForms": {
     "loading": "Loading…",
