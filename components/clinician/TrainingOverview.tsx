@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useId, useState } from 'react';
+import { Fragment } from 'react';
 import { useTranslations } from 'next-intl';
 
 /** Short-label keys for Monday..Sunday (ISO weekday 1..7). */
@@ -40,8 +40,6 @@ export function TrainingOverview({
   daysByWeek
 }: TrainingOverviewProps) {
   const t = useTranslations('training');
-  const [open, setOpen] = useState(false);
-  const panelId = useId();
 
   const latestReported = daysByWeek.size
     ? Math.max(...Array.from(daysByWeek.keys()))
@@ -67,45 +65,18 @@ export function TrainingOverview({
 
   return (
     <article className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-controls={panelId}
-        className="flex w-full items-baseline justify-between gap-2 rounded-[var(--radius-card)] p-4 text-left hover:bg-stone-soft/60"
-      >
-        <span className="flex items-center gap-2">
-          <svg
-            aria-hidden
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            className={`shrink-0 text-ink-muted transition-transform ${
-              open ? 'rotate-90' : ''
-            }`}
-          >
-            <path
-              d="M6 4 L10 8 L6 12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <span className="font-display text-[16px] leading-snug text-ink">
-            {t('overviewTitle')}
-          </span>
+      <div className="flex items-baseline justify-between gap-2 p-4">
+        <span className="font-display text-[16px] leading-snug text-ink">
+          {t('overviewTitle')}
         </span>
         <span className="text-[13px] text-ink-muted">
           {homeAvg !== null
             ? t('overviewSummary', { avg: homeAvg, ther: therTotal })
             : t('overviewNone')}
         </span>
-      </button>
+      </div>
 
-      {open && (
-        <div id={panelId} className="px-4 pb-4">
+      <div className="px-4 pb-4">
           <div
             className="grid items-center gap-[5px]"
             style={{ gridTemplateColumns: `24px repeat(${totalWeeks}, 1fr)` }}
@@ -187,7 +158,6 @@ export function TrainingOverview({
             <span className="ml-auto text-ink-muted">{t('legendWeek')}</span>
           </div>
         </div>
-      )}
     </article>
   );
 }

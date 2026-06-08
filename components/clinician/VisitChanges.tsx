@@ -115,7 +115,11 @@ interface GoalRow {
   text: string;
   archived: boolean;
   kind: 'nrs' | 'gas';
+  /** Most recent measurement since the anchor. */
   last: number;
+  /** Best (max-effect) measurement since the anchor — direction-aware:
+   *  the highest value when higher-is-better, the lowest when lower-is-better. */
+  peak: number;
   trend: Trend;
 }
 
@@ -215,12 +219,16 @@ export function VisitChanges({
     }
     let trend: Trend = 'flat';
     if (last !== first) trend = last > first === betterWhenHigher ? 'up' : 'down';
+    const peak = betterWhenHigher
+      ? Math.max(...series)
+      : Math.min(...series);
     rows.push({
       goalId: goal.id,
       text: goal.patientFacingText,
       archived: goal.status !== 'active',
       kind,
       last,
+      peak,
       trend
     });
   }
@@ -352,18 +360,42 @@ export function VisitChanges({
                     )}
                   </span>
 
-                  <span className="flex shrink-0 items-center gap-2">
-                    <span className="text-[16px] font-semibold text-ink tabular-nums">
-                      {m.kind === 'gas' ? (
-                        gasLabel(m.last)
-                      ) : (
-                        <>
-                          {m.last}
-                          <span className="text-[12px] font-normal text-ink-muted">
-                            /10
-                          </span>
-                        </>
-                      )}
+                  <span className="flex shrink-0 flex-col items-end gap-1.5">
+                    <span className="flex items-baseline gap-3">
+                      <span className="text-right">
+                        <span className="block text-[10px] uppercase tracking-wide text-ink-muted">
+                          {t('peakLabel')}
+                        </span>
+                        <span className="text-[16px] font-semibold text-ink tabular-nums">
+                          {m.kind === 'gas' ? (
+                            gasLabel(m.peak)
+                          ) : (
+                            <>
+                              {m.peak}
+                              <span className="text-[12px] font-normal text-ink-muted">
+                                /10
+                              </span>
+                            </>
+                          )}
+                        </span>
+                      </span>
+                      <span className="text-right">
+                        <span className="block text-[10px] uppercase tracking-wide text-ink-muted">
+                          {t('recentLabel')}
+                        </span>
+                        <span className="text-[16px] font-semibold text-ink tabular-nums">
+                          {m.kind === 'gas' ? (
+                            gasLabel(m.last)
+                          ) : (
+                            <>
+                              {m.last}
+                              <span className="text-[12px] font-normal text-ink-muted">
+                                /10
+                              </span>
+                            </>
+                          )}
+                        </span>
+                      </span>
                     </span>
                     <span
                       className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[12px] ${chipClass(

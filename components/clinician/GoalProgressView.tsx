@@ -313,7 +313,7 @@ export function GoalProgressView({
 
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="mt-3 block w-full"
+        className="mt-3 block w-full max-w-[360px]"
         role="img"
         aria-label={
           showNrsDir

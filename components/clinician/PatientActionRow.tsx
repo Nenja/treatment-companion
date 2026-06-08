@@ -125,7 +125,6 @@ export function PatientActionRow({
   const tA11y = useTranslations('a11y');
   const items: { id: PatientActionId; count?: number }[] = [
     { id: 'training' },
-    { id: 'physio', count: physioCount },
     { id: 'history' },
     { id: 'export' }
   ];
