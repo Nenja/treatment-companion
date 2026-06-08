@@ -388,9 +388,7 @@
       "suggestionDismissedToast": "Suggestion dismissed",
       "suggestionUpdateError": "Could not update the suggestion.",
       "suggestionActionConsider": "Mark considered",
-      "suggestionActionDismiss": "Dismiss",
-      "videoTagBaselineSet": "Video task · baseline set",
-      "videoTagBaselineNeeded": "Video task · baseline needed"
+      "suggestionActionDismiss": "Dismiss"
     },
     "review": {
       "title": "Review suggestion",
@@ -1113,7 +1111,9 @@
     "chartWeekLabel": "Week {week}:",
     "chartPhysioNote": "Physiotherapist note:",
     "chartWeekNotReported": "Week {week}: not reported",
-    "therapistInputButton": "Therapist input"
+    "therapistInputButton": "Therapist input",
+    "chartBest": "best",
+    "chartNow": "now"
   },
   "goalVideo": {
     "introTitle": "Record a short video (optional)",
