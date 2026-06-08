@@ -29,17 +29,6 @@ interface VisitChangesProps {
   /** Opens the "last treatment" dialog. Only wired when a treatment is
    *  recorded for the cycle; the button is hidden otherwise. */
   onShowLastTreatment?: () => void;
-  /** Current medication / assistive devices — shown in a quiet footer so the
-   *  basics live alongside the visit summary rather than in a separate card. */
-  medication?: string | null;
-  devices?: string | null;
-  onEditMedication?: () => void;
-  medLabels?: {
-    medication: string;
-    devices: string;
-    edit: string;
-    medicationNone: string;
-  };
 }
 
 type Trend = 'up' | 'down' | 'flat';
@@ -121,15 +110,27 @@ function Sparkline({ points }: { points: number[] }) {
   );
 }
 
+interface GoalRow {
+  goalId: string;
+  text: string;
+  archived: boolean;
+  kind: 'nrs' | 'gas';
+  /** Most recent measurement since the anchor. */
+  last: number;
+  /** Best (max-effect) measurement since the anchor — direction-aware:
+   *  the highest value when higher-is-better, the lowest when lower-is-better. */
+  peak: number;
+  trend: Trend;
+}
+
 /**
- * Read-only visit-context strip for the period since the patient was last seen
- * (anchored to the last treatment): the anchor date and adherence, home/therapist
- * training, any wearable trend, patient video clips, and a medication footer.
- *
- * Per-goal outcomes are intentionally NOT reported here — each goal's best and
- * latest values live on its own progress graph (GoalProgressView), so the numbers
- * appear once, next to the trajectory that gives them meaning, rather than twice.
- * Computed from loaded data; nothing is editable.
+ * Auto-generated, read-only summary of what changed since the patient was last
+ * seen (anchored to the last treatment). One row per goal showing the
+ * direction-aware max-effect value (the peak response this cycle) — the dosing
+ * anchor for the clinician. The trajectory and current value live on each goal's
+ * graph, and patient background + medication live in the separate Background
+ * card, so nothing is double-reported. Then a compact strip for adherence,
+ * training, wearable trend and videos. Computed from loaded data; not editable.
  */
 export function VisitChanges({
   lastTreatmentDate,
@@ -137,11 +138,7 @@ export function VisitChanges({
   checkins,
   goals,
   patientId,
-  onShowLastTreatment,
-  medication,
-  devices,
-  onEditMedication,
-  medLabels
+  onShowLastTreatment
 }: VisitChangesProps) {
   const t = useTranslations('visitChanges');
   const tLast = useTranslations('lastTreatment');
@@ -181,6 +178,59 @@ export function VisitChanges({
         new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime() ||
         a.weekNumber - b.weekNumber
     );
+
+  const gasLabel = (v: number): string => {
+    switch (v) {
+      case 2:
+        return t('gasP2');
+      case 1:
+        return t('gasP1');
+      case 0:
+        return t('gas0');
+      case -1:
+        return t('gasM1');
+      case -2:
+        return t('gasM2');
+      default:
+        return String(v);
+    }
+  };
+
+  // --- Per-goal verdict ----------------------------------------------------
+  const rows: GoalRow[] = [];
+  for (const goal of goals) {
+    const kind = goal.kind;
+    const series: number[] = [];
+    for (const c of since) {
+      const r = c.ratings.find((x) => x.approvedGoalId === goal.id);
+      if (!r) continue;
+      const v = kind === 'nrs' ? r.nrsValue : r.ratingValue;
+      if (typeof v === 'number') series.push(v);
+    }
+    if (series.length === 0) continue;
+    const first = series[0];
+    const last = series[series.length - 1];
+    // Direction-aware: "up" = clinically better. GAS is higher-is-better; NRS
+    // depends on the goal's configured direction.
+    let betterWhenHigher = true;
+    if (kind === 'nrs' && goal.nrs) {
+      betterWhenHigher = goal.nrs.direction === 'higherIsBetter';
+    }
+    let trend: Trend = 'flat';
+    if (last !== first) trend = last > first === betterWhenHigher ? 'up' : 'down';
+    const peak = betterWhenHigher
+      ? Math.max(...series)
+      : Math.min(...series);
+    rows.push({
+      goalId: goal.id,
+      text: goal.patientFacingText,
+      archived: goal.status !== 'active',
+      kind,
+      last,
+      peak,
+      trend
+    });
+  }
 
   // --- Adherence -----------------------------------------------------------
   const weeks = since.map((c) => c.weekNumber).sort((a, b) => a - b);
@@ -283,6 +333,43 @@ export function VisitChanges({
         <p className="mt-3 text-[15px] text-ink-soft">{t('empty')}</p>
       ) : (
         <>
+          {rows.length > 0 && (
+            <ul className="mt-4 space-y-2.5">
+              {rows.map((m) => (
+                <li
+                  key={m.goalId}
+                  className="flex items-center justify-between gap-3"
+                >
+                  <span className="min-w-0 flex-1 text-[15px] font-semibold text-ink">
+                    {m.text}
+                    {m.archived && (
+                      <span className="ml-1 text-[12px] font-normal text-ink-muted">
+                        · {t('archived')}
+                      </span>
+                    )}
+                  </span>
+                  <span className="shrink-0 text-right">
+                    <span className="block text-[10px] tracking-wide text-ink-muted">
+                      {t('peakLabel')}
+                    </span>
+                    <span className="text-[16px] font-semibold text-ink tabular-nums">
+                      {m.kind === 'gas' ? (
+                        gasLabel(m.peak)
+                      ) : (
+                        <>
+                          {m.peak}
+                          <span className="text-[12px] font-normal text-ink-muted">
+                            /10
+                          </span>
+                        </>
+                      )}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+
           <div className="mt-4 flex flex-wrap gap-2 border-t border-stone pt-3">
             {hasTraining ? (
               <>
@@ -378,39 +465,6 @@ export function VisitChanges({
             </div>
           )}
         </>
-      )}
-      {medLabels && onEditMedication && (
-        <div className="mt-4 flex flex-col gap-1.5 border-t border-stone pt-3">
-          <div className="flex items-start justify-between gap-2 text-[13px]">
-            <span className="min-w-0">
-              <span className="font-semibold text-ink-soft">
-                {medLabels.medication}
-              </span>{' '}
-              {medication ? (
-                <span className="text-ink-soft">{medication}</span>
-              ) : (
-                <span className="text-ink-muted">
-                  {medLabels.medicationNone}
-                </span>
-              )}
-            </span>
-            <button
-              type="button"
-              onClick={onEditMedication}
-              className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-sage-deep hover:bg-stone-soft"
-            >
-              {medLabels.edit}
-            </button>
-          </div>
-          {devices && (
-            <div className="flex gap-2 text-[13px]">
-              <span className="shrink-0 font-semibold text-ink-soft">
-                {medLabels.devices}
-              </span>
-              <span className="text-ink-soft">{devices}</span>
-            </div>
-          )}
-        </div>
       )}
       {video && (
         <VideoPlayerModal

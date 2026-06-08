@@ -208,42 +208,6 @@ export function GoalProgressView({
     }
   }
 
-  // --- "best" + "now" value labels (the per-goal numbers, moved here) -------
-  // These used to live in the "since last visit" card. They now sit on the
-  // trajectory where they carry meaning. "best" marks the direction-aware peak
-  // (max when higher-is-better, min when lower-is-better; GAS treats +2 as
-  // best); "now" marks the latest reported point. When the latest IS the best,
-  // only "now" is shown.
-  const reportedPts: { week: number; val: number }[] = [];
-  for (let i = 0; i < byWeek.length; i++) {
-    const e = byWeek[i];
-    const v = plotVal(e);
-    if (e?.reported && typeof v === 'number') {
-      reportedPts.push({ week: i + 1, val: v });
-    }
-  }
-  const betterHigh = isNrs ? nrsDirection !== 'lowerIsBetter' : true;
-  const annLast =
-    reportedPts.length > 0 ? reportedPts[reportedPts.length - 1] : null;
-  const annPeak =
-    reportedPts.length > 0
-      ? reportedPts.reduce((best, pt) =>
-          betterHigh
-            ? pt.val > best.val
-              ? pt
-              : best
-            : pt.val < best.val
-              ? pt
-              : best
-        )
-      : null;
-  const annText = (v: number) =>
-    isNrs ? String(v) : formatGas(v as -2 | -1 | 0 | 1 | 2);
-  // Keep the label inside the plot: above the dot, or below if it's too near
-  // the top edge.
-  const annLabelY = (v: number) =>
-    yFor(v) - 7 < padTop + 2 ? yFor(v) + 14 : yFor(v) - 7;
-
   // Physio ratings, deduped by snapped week (if two assessments snap to
   // the same week, the later one — last in the date-sorted input —
   // wins). Then a week-indexed lookup and connecting segments, same
@@ -714,39 +678,6 @@ export function GoalProgressView({
             </g>
           );
         })}
-        {/* "best" + "now" value labels for the patient self-report series —
-            the per-goal numbers, on the trajectory instead of duplicated in
-            the visit card. */}
-        {annPeak && annLast && annPeak.week !== annLast.week && (
-          <text
-            x={xFor(annPeak.week)}
-            y={annLabelY(annPeak.val)}
-            textAnchor="middle"
-            fontSize={9}
-            className="fill-ink-muted"
-            style={{ pointerEvents: 'none' }}
-          >
-            {t('chartBest')}{' '}
-            <tspan className="fill-sage-deep" fontWeight={700}>
-              {annText(annPeak.val)}
-            </tspan>
-          </text>
-        )}
-        {annLast && (
-          <text
-            x={xFor(annLast.week)}
-            y={annLabelY(annLast.val)}
-            textAnchor={annLast.week >= totalWeeks ? 'end' : 'middle'}
-            fontSize={9}
-            className="fill-ink-muted"
-            style={{ pointerEvents: 'none' }}
-          >
-            {t('chartNow')}{' '}
-            <tspan className="fill-sage-deep" fontWeight={700}>
-              {annText(annLast.val)}
-            </tspan>
-          </text>
-        )}
         {/* Physiotherapist line + dots — amber, dashed, to distinguish
             from the patient's sage self-report line. Drawn on top so
             it's visible where the two overlap. */}

@@ -182,16 +182,19 @@ export function AccountMenu() {
               <p className="text-[13px] font-semibold text-ink-soft">
                 {tAppearance('layoutLabel')}
               </p>
-              <div className="mt-2 flex gap-1.5">
-                <LayoutButton
-                  preference="wide"
-                  label={tAppearance('layoutWide')}
-                />
-                <LayoutButton
-                  preference="compact"
-                  label={tAppearance('layoutCompact')}
-                />
-              </div>
+              {/* Compact option hidden for clinicians for now. */}
+              {profile.role !== 'clinician' && (
+                <div className="mt-2 flex gap-1.5">
+                  <LayoutButton
+                    preference="wide"
+                    label={tAppearance('layoutWide')}
+                  />
+                  <LayoutButton
+                    preference="compact"
+                    label={tAppearance('layoutCompact')}
+                  />
+                </div>
+              )}
               <div className="mt-3">
                 <NavStyleChooser compact />
               </div>

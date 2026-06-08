@@ -380,7 +380,7 @@ export function OnboardingWizard({
           />
           {/* Layout preference only matters on large screens, and only
               for professionals (patients never get a wide layout). */}
-          {isProfessional && (
+          {isProfessional && role !== 'clinician' && (
             <div className="hidden lg:block">
               <ComfortLayout
                 label={t('comfortLayout')}
