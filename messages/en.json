@@ -376,7 +376,7 @@
       "physioAdjustmentsHeading": "Adjustment requests",
       "physioAdjustmentGoalGone": "(goal no longer active)",
       "physioWorkingOnTag": "Therapist working on this",
-      "editGoalCta": "Recalibrate",
+      "editGoalCta": "Edit",
       "goalVersionLabel": "v{version}",
       "goalHistoryCta": "History",
       "goalLinkCta": "Link",
@@ -1408,8 +1408,8 @@
     "error": "Something went wrong. Please try again."
   },
   "editGoal": {
-    "eyebrow": "Recalibrate goal",
-    "title": "Recalibrate this goal",
+    "eyebrow": "Edit goal",
+    "title": "Edit this goal",
     "intro": "Saving creates version {next} of this goal in the current cycle and keeps version {version} as history. Past ratings stay with the version they were made under.",
     "patientText": "Goal, in the patient's words",
     "smartText": "SMART description",

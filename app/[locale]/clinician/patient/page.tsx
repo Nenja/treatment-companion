@@ -43,6 +43,7 @@ import { PatientBanner } from '@/components/clinician/PatientBanner';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
 import { RecordGoalDrawer } from '@/components/clinician/RecordGoalDrawer';
+import { CockpitPanelDrawer } from '@/components/clinician/CockpitPanelDrawer';
 import {
   PatientActionRow,
   type PatientActionId
@@ -864,7 +865,7 @@ export default function ClinicianPatientPage() {
             Read-only until Edit; Save persists via set_patient_medication
             and returns to the read view. */}
         {openPanel === 'medication' && (
-          <section className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+          <CockpitPanelDrawer onClose={() => setOpenPanel(null)}>
             <div className="flex items-baseline justify-between gap-2">
               <h2 className="font-display text-[18px] leading-tight text-ink">
                 {t('medTitle')}
@@ -988,7 +989,7 @@ export default function ClinicianPatientPage() {
                 </div>
               </div>
             )}
-          </section>
+          </CockpitPanelDrawer>
         )}
 
         {/* (Patient suggestions panel now renders in the goals section,
@@ -996,7 +997,7 @@ export default function ClinicianPatientPage() {
 
         {/* Therapist input panel — opens from the action row. */}
         {openPanel === 'physio' && (
-          <section className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3.5">
+          <CockpitPanelDrawer onClose={() => setOpenPanel(null)}>
             <h2 className="font-display text-[15px] leading-tight text-ink">
               {t('physioInputHeading')}
             </h2>
@@ -1166,13 +1167,13 @@ export default function ClinicianPatientPage() {
             </>
           )}
             </div>
-          </section>
+          </CockpitPanelDrawer>
         )}
 
         {/* Training panel — opens from the action row. Shows the weekly
             training-days overview (moved here from an always-on section). */}
         {openPanel === 'training' && (
-          <section className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+          <CockpitPanelDrawer onClose={() => setOpenPanel(null)}>
             <h2 className="font-display text-[18px] leading-tight text-ink">
               {t('trainingPanelTitle')}
             </h2>
@@ -1188,7 +1189,7 @@ export default function ClinicianPatientPage() {
                 {t('trainingPanelEmpty')}
               </p>
             )}
-          </section>
+          </CockpitPanelDrawer>
         )}
         <PatientBanner
           name={patient.displayName}
@@ -1414,15 +1415,6 @@ export default function ClinicianPatientPage() {
                     clinicPoints={clinicPointsByGoal.get(g.id) ?? []}
                     onExpand={() => setEnlargedGoalId(g.id)}
                   />
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setEditGoalTarget(g)}
-                      className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
-                    >
-                      {t('editGoalCta')}
-                    </button>
-                  </div>
                   {workingOnGoalIds.has(g.id) && (
                     <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep">
                       {t('physioWorkingOnTag')}
@@ -1449,7 +1441,28 @@ export default function ClinicianPatientPage() {
                   {/* Retire action — retires a goal (achieved /
                       partial / no longer suitable). History is kept;
                       the goal leaves the patient's future check-ins. */}
-                  <div className="mt-1.5 flex justify-end gap-2">
+                  <div className="mt-1.5 flex flex-wrap justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditGoalTarget(g)}
+                      className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
+                    >
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z" />
+                      </svg>
+                      {t('editGoalCta')}
+                    </button>
                     {g.videoEnabled && (
                       <button
                         type="button"

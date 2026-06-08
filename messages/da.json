@@ -380,7 +380,7 @@
       "physioAdjustmentsHeading": "Anmodninger om justering",
       "physioAdjustmentGoalGone": "(mål ikke længere aktivt)",
       "physioWorkingOnTag": "Terapeut arbejder med dette",
-      "editGoalCta": "Rekalibrér",
+      "editGoalCta": "Rediger",
       "goalVersionLabel": "v{version}",
       "goalHistoryCta": "Historik",
       "goalLinkCta": "Sammenkæd",
@@ -1412,8 +1412,8 @@
     "error": "Noget gik galt. Prøv igen."
   },
   "editGoal": {
-    "eyebrow": "Rekalibrér mål",
-    "title": "Rekalibrér dette mål",
+    "eyebrow": "Rediger mål",
+    "title": "Rediger dette mål",
     "intro": "Når du gemmer, oprettes version {next} af målet i den nuværende cyklus, og version {version} bevares som historik. Tidligere vurderinger bliver hos den version, de blev lavet under.",
     "patientText": "Målet med patientens egne ord",
     "smartText": "SMART-beskrivelse",
