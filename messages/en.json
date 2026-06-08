@@ -1091,7 +1091,8 @@
     "chartLegendPhysio": "Physiotherapist",
     "chartWeekLabel": "Week {week}:",
     "chartPhysioNote": "Physiotherapist note:",
-    "chartWeekNotReported": "Week {week}: not reported"
+    "chartWeekNotReported": "Week {week}: not reported",
+    "therapistInputButton": "Therapist input"
   },
   "goalVideo": {
     "introTitle": "Record a short video (optional)",
@@ -1380,7 +1381,9 @@
     "videosHeading": "Videos",
     "videoLabel": "{goal} · Week {week}",
     "videoTitle": "{goal} — Week {week}",
-    "wearableHeading": "Wearable trend"
+    "wearableHeading": "Wearable trend",
+    "peakLabel": "Max effect",
+    "recentLabel": "Most recent"
   },
   "itb": {
     "title": "Intrathecal baclofen",

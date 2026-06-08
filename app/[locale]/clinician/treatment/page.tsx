@@ -30,6 +30,8 @@ import {
 import { useToast } from '@/components/feedback/Toast';
 import { useModalA11y } from '@/lib/useModalA11y';
 import { useWideLayout } from '@/lib/useWideLayout';
+import { CockpitPanelDrawer } from '@/components/clinician/CockpitPanelDrawer';
+import { TherapistInputPanel } from '@/components/clinician/TherapistInputPanel';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
 import { FaceMap } from '@/components/clinician/FaceMap';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
@@ -185,6 +187,7 @@ function TreatmentRecordInner() {
   );
 
   const [showCopyConfirm, setShowCopyConfirm] = useState(false);
+  const [showTherapist, setShowTherapist] = useState(false);
 
   // Last-treatment details modal — shown when the compact summary
   // line is tapped.
@@ -333,7 +336,23 @@ function TreatmentRecordInner() {
     return <div className="min-h-dvh bg-cream" />;
   }
 
-  const { patient, cycle, treatment: existing } = dataQuery.data;
+  const {
+    patient,
+    cycle,
+    treatment: existing,
+    activeGoals,
+    physioAssessments,
+    physioGoalSuggestions,
+    physioMuscleSuggestions
+  } = dataQuery.data;
+  const therapistSuggestionCount =
+    physioGoalSuggestions.length + physioMuscleSuggestions.length;
+  // Therapist modules (the input button + the physician->therapist handoff
+  // panel) only become active once a therapist has actually engaged this
+  // cycle — an evaluation (assessment) or a suggestion. Until then the
+  // physician sees no therapist UI for this patient.
+  const therapistHasEngaged =
+    physioAssessments.length > 0 || therapistSuggestionCount > 0;
 
   // The treatment shown as "reference" and used by "copy from previous".
   // In new-cycle mode the most recent treatment is the CURRENT cycle's
@@ -634,6 +653,51 @@ function TreatmentRecordInner() {
         <p className="mt-1 text-[14px] text-ink-soft">
           {t('forPatient', { name: patient.displayName })}
         </p>
+
+        {/* Therapist input — relocated here from the cockpit. A counted
+            button (badge = number of therapist suggestions) opens the
+            physiotherapist's activity + goal/muscle suggestions. */}
+        {therapistHasEngaged && (
+        <button
+          type="button"
+          onClick={() => setShowTherapist(true)}
+          className="mt-3 inline-flex items-center gap-2 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M9 2h6a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" />
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+            <path d="M9 12h6M9 16h4" />
+          </svg>
+          {t('therapistInputButton')}
+          {therapistSuggestionCount > 0 && (
+            <span className="inline-flex h-[20px] min-w-[20px] items-center justify-center rounded-full bg-amber-deep px-1.5 text-[11px] font-bold text-on-accent">
+              {therapistSuggestionCount}
+            </span>
+          )}
+        </button>
+        )}
+
+        {showTherapist && (
+          <CockpitPanelDrawer onClose={() => setShowTherapist(false)}>
+            <TherapistInputPanel
+              physioAssessments={physioAssessments}
+              activeGoals={activeGoals}
+              physioGoalSuggestions={physioGoalSuggestions}
+              physioMuscleSuggestions={physioMuscleSuggestions}
+              locale={locale}
+            />
+          </CockpitPanelDrawer>
+        )}
 
         {/* Session-expiry warning. The unlock lasts one hour from the
             last activity; typing in this form extends it, but if the
@@ -1121,6 +1185,7 @@ function TreatmentRecordInner() {
             a sage panel so it doesn't read like another clinic-internal note.
             Optional. Closes the therapist's "what did the physician do / has
             anything changed" gap between visits. */}
+        {therapistHasEngaged && (
         <div className="mt-6 rounded-[var(--radius-card)] border border-sage-soft bg-sage-soft/20 p-4">
           <h3 className="font-display text-[15px] text-ink">
             {t('handoffTitle')}
@@ -1183,6 +1248,7 @@ function TreatmentRecordInner() {
             />
           </div>
         </div>
+        )}
 
         {/* Locked: an old treatment record can't be edited (only
             same-day typo fixes are allowed). Explain why and point to

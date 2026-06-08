@@ -1095,7 +1095,8 @@
     "chartLegendPhysio": "Fysioterapeut",
     "chartWeekLabel": "Uge {week}:",
     "chartPhysioNote": "Fysioterapeutnote:",
-    "chartWeekNotReported": "Uge {week}: ikke registreret"
+    "chartWeekNotReported": "Uge {week}: ikke registreret",
+    "therapistInputButton": "Terapeutinput"
   },
   "goalVideo": {
     "introTitle": "Optag en kort video (valgfrit)",
@@ -1384,7 +1385,9 @@
     "videosHeading": "Videoer",
     "videoLabel": "{goal} · Uge {week}",
     "videoTitle": "{goal} — Uge {week}",
-    "wearableHeading": "Data fra bærbar enhed"
+    "wearableHeading": "Data fra bærbar enhed",
+    "peakLabel": "Maks. effekt",
+    "recentLabel": "Seneste"
   },
   "itb": {
     "title": "Intratekal baclofen",

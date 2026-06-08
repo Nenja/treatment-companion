@@ -62,8 +62,6 @@ import { useNavStyle } from '@/lib/useNavStyle';
 import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { buildEhrExport, type ExportTranslator } from '@/lib/ehrExport';
 import { useToast } from '@/components/feedback/Toast';
-import { useSetPhysioGoalSuggestionStatus } from '@/lib/supabase/physioGoalSuggestion';
-import { useSetPhysioMuscleSuggestionStatus } from '@/lib/supabase/physioMuscleSuggestion';
 
 export default function ClinicianPatientPage() {
   const router = useRouter();
@@ -162,7 +160,7 @@ export default function ClinicianPatientPage() {
   const [showLastTreatment, setShowLastTreatment] = useState(false);
   const [showRecordItbGoal, setShowRecordItbGoal] = useState(false);  // Which inline action panel is open under the action row, if any.
   // History and export are not panels — they navigate / open a modal.
-  const [openPanel, setOpenPanel] = useState<'medication' | 'physio' | 'training' | null>(
+  const [openPanel, setOpenPanel] = useState<'medication' | 'training' | null>(
     null
   );
   // Patient suggestions moved out of the action row to sit beside
@@ -661,9 +659,8 @@ export default function ClinicianPatientPage() {
       );
     } else if (id === 'export') {
       setShowExport(true);
-    } else {
-      // Toggle the inline panel (medication | physio | training).
-      setOpenPanel((cur) => (cur === id ? null : id));
+    } else if (id === 'training') {
+      setOpenPanel((cur) => (cur === 'training' ? null : 'training'));
     }
   };
 
@@ -992,179 +989,6 @@ export default function ClinicianPatientPage() {
             directly beneath the Suggestions button — see below.) */}
 
         {/* Therapist input panel — opens from the action row. */}
-        {openPanel === 'physio' && (
-          <CockpitPanelDrawer onClose={() => setOpenPanel(null)}>
-            <h2 className="font-display text-[15px] leading-tight text-ink">
-              {t('physioInputHeading')}
-            </h2>
-            <p className="mt-0.5 text-[12px] text-ink-muted">
-              {t('physioInputSubtitle')}
-            </p>
-            <div className="mt-2.5">
-          {/* Therapist activity — visit days + adjustment requests. */}
-          {hasTherapistActivity && (
-            <div className="mb-4 space-y-3">
-              {therapyVisitCount > 0 && (
-                <div className="rounded-[var(--radius-button)] border border-stone/70 bg-cream p-2.5">
-                  <h3 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
-                    {t('physioVisitsHeading')}
-                  </h3>
-                  <p className="mt-1 text-[14px] text-ink">
-                    {t('physioVisitsCount', { count: therapyVisitCount })}
-                  </p>
-                  <div
-                    className="mt-2 flex gap-1"
-                    aria-label={t('physioWeekdaysAria')}
-                  >
-                    {dayShortKeys.map((key, i) => {
-                      const iso = i + 1;
-                      const on = therapyWeekdaysIso.has(iso);
-                      return (
-                        <span
-                          key={key}
-                          className={`flex h-7 w-9 items-center justify-center rounded-md text-[12px] font-semibold ${
-                            on
-                              ? 'bg-sage-deep text-on-accent'
-                              : 'bg-stone-soft text-ink-muted'
-                          }`}
-                        >
-                          {tTraining(key)}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              {adjustmentRequests.length > 0 && (
-                <div>
-                  <h3 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
-                    {t('physioAdjustmentsHeading')}
-                  </h3>
-                  <ul className="mt-2 space-y-2">
-                    {adjustmentRequests.map((req, idx) => {
-                      const g = activeGoals.find((x) => x.id === req.goalId);
-                      return (
-                        <li
-                          key={`${req.goalId}-${idx}`}
-                          className="rounded-[var(--radius-button)] border border-amber-deep/40 bg-amber-soft p-2.5"
-                        >
-                          <p className="text-[14px] font-semibold leading-snug text-ink">
-                            {g ? g.patientFacingText : t('physioAdjustmentGoalGone')}
-                          </p>
-                          {req.note && (
-                            <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">
-                              {req.note}
-                            </p>
-                          )}
-                          <p className="mt-1 text-[12px] text-ink-muted">
-                            {formatLongDate(req.date, locale)}
-                          </p>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-          {physioGoalSuggestions.length === 0 &&
-          physioMuscleSuggestions.length === 0 ? (
-            hasTherapistActivity ? null : (
-              <p className="text-[13px] text-ink-muted">
-                {t('physioInputNone')}
-              </p>
-            )
-          ) : (
-            <>
-              {/* Goal suggestions from the therapist. */}
-              <div>
-                <h3 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
-                  {t('physioSuggestedGoals')}
-                </h3>
-                {physioGoalSuggestions.length === 0 ? (
-                  <p className="mt-1.5 text-[13px] text-ink-muted">
-                    {t('physioGoalsEmpty')}
-                  </p>
-                ) : (
-                  <ul className="mt-2 space-y-2">
-                    {physioGoalSuggestions.map((s) => (
-                      <li
-                        key={s.id}
-                        className="rounded-[var(--radius-button)] border border-stone/70 bg-cream p-2.5"
-                      >
-                        <p className="text-[14px] font-semibold leading-snug text-ink">
-                          {s.suggestedGoal}
-                        </p>
-                        <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">
-                          <span className="text-ink-muted">
-                            {t('rationaleLabel')}:{' '}
-                          </span>
-                          {s.rationale}
-                        </p>
-                        <PhysioGoalSuggestionActions
-                          suggestionId={s.id}
-                          status={s.status}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              {/* Muscles flagged by the therapist. */}
-              <div className="mt-4">
-                <h3 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
-                  {t('physioFlaggedMuscles')}
-                </h3>
-                {physioMuscleSuggestions.length === 0 ? (
-                  <p className="mt-1.5 text-[13px] text-ink-muted">
-                    {t('physioMusclesEmpty')}
-                  </p>
-                ) : (
-                  <ul className="mt-2 space-y-2">
-                    {physioMuscleSuggestions.map((s) => {
-                      const linkedGoal = activeGoals.find(
-                        (g) => g.id === s.relatedGoalId
-                      );
-                      const sideLabel = injectionSideLabel(s.side);
-                      return (
-                        <li
-                          key={s.id}
-                          className="rounded-[var(--radius-button)] border border-stone/70 bg-cream p-2.5"
-                        >
-                          <p className="text-[14px] font-semibold leading-snug text-ink">
-                            {s.muscle}{' '}
-                            <span className="text-ink-muted">
-                              · {sideLabel}
-                            </span>
-                          </p>
-                          <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">
-                            <span className="text-ink-muted">
-                              {t('rationaleLabel')}:{' '}
-                            </span>
-                            {s.rationale}
-                          </p>
-                          {linkedGoal && (
-                            <p className="mt-1 text-[12px] text-ink-muted">
-                              {t('relatedGoalLabel')}:{' '}
-                              {linkedGoal.patientFacingText}
-                            </p>
-                          )}
-                          <PhysioMuscleSuggestionActions
-                            suggestionId={s.id}
-                            status={s.status}
-                          />
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            </>
-          )}
-            </div>
-          </CockpitPanelDrawer>
-        )}
 
         {/* Training panel — opens from the action row. Shows the weekly
             training-days overview (moved here from an always-on section). */}
@@ -1953,119 +1777,9 @@ function EndSessionConfirmDialog({
  * physician's intent to take the goal forward — the actual goal
  * approval still happens via the normal goal-approval flow.
  */
-function PhysioGoalSuggestionActions({
-  suggestionId,
-  status
-}: {
-  suggestionId: string;
-  status: string;
-}) {
-  const setStatus = useSetPhysioGoalSuggestionStatus();
-  const toast = useToast();
-  const t = useTranslations('clinician.patient');
-
-  if (status !== 'needsReview') {
-    return (
-      <p className="mt-3 text-[13px] uppercase tracking-wider text-ink-muted">
-        {status === 'accepted'
-          ? t('suggestionStatusConsidered')
-          : t('suggestionStatusDismissed')}
-      </p>
-    );
-  }
-
-  const act = async (next: 'accepted' | 'dismissed') => {
-    try {
-      await setStatus.mutateAsync({ suggestionId, status: next });
-      toast.success(
-        next === 'accepted'
-          ? t('suggestionMarkedConsidered')
-          : t('suggestionDismissedToast')
-      );
-    } catch {
-      toast.error(t('suggestionUpdateError'));
-    }
-  };
-
-  return (
-    <div className="mt-3 flex gap-2">
-      <button
-        type="button"
-        onClick={() => act('accepted')}
-        disabled={setStatus.isPending}
-        className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
-      >
-        {t('suggestionActionConsider')}
-      </button>
-      <button
-        type="button"
-        onClick={() => act('dismissed')}
-        disabled={setStatus.isPending}
-        className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft disabled:opacity-50"
-      >
-        {t('suggestionActionDismiss')}
-      </button>
-    </div>
-  );
-}
 
 /**
  * Action row for a physiotherapist muscle suggestion. "Mark considered"
  * records that the physician has factored this muscle into injection
  * planning; "Dismiss" marks it not relevant.
  */
-function PhysioMuscleSuggestionActions({
-  suggestionId,
-  status
-}: {
-  suggestionId: string;
-  status: string;
-}) {
-  const setStatus = useSetPhysioMuscleSuggestionStatus();
-  const toast = useToast();
-  const t = useTranslations('clinician.patient');
-
-  if (status !== 'needsReview') {
-    return (
-      <p className="mt-3 text-[13px] uppercase tracking-wider text-ink-muted">
-        {status === 'reviewed'
-          ? t('suggestionStatusConsidered')
-          : t('suggestionStatusDismissed')}
-      </p>
-    );
-  }
-
-  const act = async (next: 'reviewed' | 'dismissed') => {
-    try {
-      await setStatus.mutateAsync({ suggestionId, status: next });
-      toast.success(
-        next === 'reviewed'
-          ? t('suggestionMarkedConsidered')
-          : t('suggestionDismissedToast')
-      );
-    } catch {
-      toast.error(t('suggestionUpdateError'));
-    }
-  };
-
-  return (
-    <div className="mt-3 flex gap-2">
-      <button
-        type="button"
-        onClick={() => act('reviewed')}
-        disabled={setStatus.isPending}
-        className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
-      >
-        {t('suggestionActionConsider')}
-      </button>
-      <button
-        type="button"
-        onClick={() => act('dismissed')}
-        disabled={setStatus.isPending}
-        className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft disabled:opacity-50"
-      >
-        {t('suggestionActionDismiss')}
-      </button>
-    </div>
-  );
-}
