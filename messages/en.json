@@ -1427,7 +1427,8 @@
     "saving": "Saving…",
     "saved": "New goal version saved.",
     "error": "Couldn't save the new version. Please try again.",
-    "errorShort": "Couldn't save — please check the values."
+    "errorShort": "Couldn't save — please check the values.",
+    "videoTaskButton": "Video task"
   },
   "goalHistory": {
     "eyebrow": "Goal history",
@@ -1498,5 +1499,9 @@
     "nrsLowerBetterNote": "(NRS: lower is better.)",
     "commentsHeading": "Patient comments:",
     "commentLine": "Week {week}: {comment}"
+  },
+  "lastTreatment": {
+    "title": "Last treatment",
+    "button": "Show last treatment"
   }
 }

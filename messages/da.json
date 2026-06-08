@@ -1431,7 +1431,8 @@
     "saving": "Gemmer…",
     "saved": "Ny målversion gemt.",
     "error": "Kunne ikke gemme den nye version. Prøv igen.",
-    "errorShort": "Kunne ikke gemme — tjek venligst værdierne."
+    "errorShort": "Kunne ikke gemme — tjek venligst værdierne.",
+    "videoTaskButton": "Videoopgave"
   },
   "goalHistory": {
     "eyebrow": "Målhistorik",
@@ -1502,5 +1503,9 @@
     "nrsLowerBetterNote": "(NRS: lavere er bedre.)",
     "commentsHeading": "Patientkommentarer:",
     "commentLine": "Uge {week}: {comment}"
+  },
+  "lastTreatment": {
+    "title": "Seneste behandling",
+    "button": "Vis seneste behandling"
   }
 }
