@@ -16,12 +16,19 @@ import { PALETTES, resolvePaletteId, type Palette } from '@/lib/palettes';
  * a copy in the menu and another on the profile page.
  */
 export function AppearanceSettings() {
+  const { profile } = useAuth();
+  // Read-aloud is a patient-facing reading aid. The toggle only belongs in a
+  // patient's appearance settings — not a clinician's or therapist's, who get
+  // no read-aloud feature on their pages.
+  const isPatient = profile?.role === 'patient';
   return (
     <div>
       <NightModeToggle />
-      <div className="mt-2">
-        <ReadAloudToggle />
-      </div>
+      {isPatient && (
+        <div className="mt-2">
+          <ReadAloudToggle />
+        </div>
+      )}
       <div className="mt-2 grid grid-cols-2 gap-1.5">
         {PALETTES.map((p) => (
           <PaletteButton key={p.id} palette={p} />
