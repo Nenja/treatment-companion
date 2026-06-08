@@ -973,6 +973,60 @@ export function useSetTreatmentHandoff() {
   });
 }
 
+/**
+ * Per-goal physician -> therapist handoff notes for a cycle, as a
+ * Map<approvedGoalId, note>. Readable by the physician (to author) and the
+ * therapist (to read) — RLS is role-agnostic; never returns anything to a
+ * patient. Absent goal = no note.
+ */
+export function useGoalHandoffNotes(cycleId: string | null) {
+  return useQuery({
+    queryKey: ['goalHandoffNotes', cycleId],
+    enabled: !!cycleId,
+    queryFn: async (): Promise<Map<string, string>> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase
+        .from('goal_handoff_note')
+        .select('approved_goal_id, note')
+        .eq('treatment_cycle_id', cycleId as string);
+      if (error) throw error;
+      const map = new Map<string, string>();
+      for (const row of data ?? []) {
+        const id = row.approved_goal_id as string | null;
+        const note = row.note as string | null;
+        if (id && note) map.set(id, note);
+      }
+      return map;
+    }
+  });
+}
+
+/**
+ * Upsert (or clear) a goal-specific physician -> therapist note for a cycle.
+ * Empty note clears it. Server-enforced physician-only + access.
+ */
+export function useSetGoalHandoffNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      cycleId: string;
+      goalId: string;
+      note: string;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_goal_handoff_note', {
+        p_cycle_id: input.cycleId,
+        p_goal_id: input.goalId,
+        p_note: input.note
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['goalHandoffNotes'] });
+    }
+  });
+}
+
 export function useSetGoalVideoEnabled() {
   const qc = useQueryClient();
   return useMutation({

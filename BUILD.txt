@@ -1,37 +1,32 @@
-BUILD: simplify-cockpit-11   (#11 therapist modules gated on engagement — NO migration)
+BUILD: simplify-cockpit-17   (lighter goal-Edit copy — versioning kept, ceremony dropped)
 ==========================================================================
-MIGRATION: none. DB stays at 0088. Nothing to run in Supabase.
-Batch 11 of cockpit simplification. Backlog + status in HANDOVER §8.
+MIGRATION: none. DB stays at 0090. Nothing to run in Supabase.
 
-DONE — #11: only show therapist information once a therapist has engaged.
-- Cockpit (per goal): ALREADY gated by data — a goal shows the therapist overlay
-  (physio ratings) / working-on tag only once a therapist has evaluated that
-  goal. No change needed.
-- Treatment page: the "Therapist input" button and the physician->therapist
-  handoff panel (title + "treatment changed?" toggle + note) now render only when
-  therapistHasEngaged = physioAssessments.length > 0 || therapistSuggestionCount
-  > 0 (the therapist has evaluated or suggested this cycle). Until then the
-  physician sees no therapist UI for the patient.
+WHY: the versioning UX felt heavy. The versioning DATA MODEL (0086) stays — it
+keeps every historical rating bound to the exact calibration it was scored
+under, which matters for the record and the study. What felt heavy was the Edit
+drawer announcing it. So this is a copy/UX change only.
 
-GRANULARITY NOTE
-- The handoff note is a PER-CYCLE field (treatment_handoff), so it activates once
-  the therapist engages with the cycle (any goal), not strictly per-goal. A true
-  per-goal handoff note would need a schema change (migration). Say the word if
-  you want per-goal notes and I'll plan that migration.
+DONE
+- Edit drawer no longer talks about versions:
+  - intro: "Saving creates version N ... keeps version M as history" -> "Your
+    changes apply from here on. Past check-ins keep the exact wording and scale
+    they were recorded under, so nothing already scored changes meaning." (No
+    more {version}/{next} interpolation; the call is now t('intro').)
+  - "Save new version" -> "Save changes"; "New goal version saved." -> "Goal
+    updated."; error + carry-forward note de-jargoned.
+- Nothing else surfaced versioning to the clinician: the v{version} badge isn't
+  rendered anywhere, and the goal-history / link-goal modals aren't opened from
+  the cockpit (removed in batch 5). Left in the tree, harmless.
+- en + da both updated; i18n parity 0 mismatches.
 
 VERIFIED LOCALLY
 - tsc --noEmit clean.
-- Production build OK via the font-stub procedure (restored byte-for-byte, zero
-  BUILD-STUB remnants). 60/60 pages.
+- Production build OK via the font-stub procedure. 60/60 pages.
 
-DEPLOY: no migration; unzip, push, Vercel builds. Page count 60.
+DEPLOY: no migration; unzip / push / Vercel builds. Page count 60.
 
 ** QA **
-- A patient with NO therapist activity: treatment page shows no Therapist-input
-  button and no handoff panel. After a therapist evaluates or suggests, both
-  appear. Cockpit goals only show therapist overlay/working-on for goals the
-  therapist evaluated.
-
-BACKLOG REMAINING (HANDOVER §8): #4 muscle->function (parked, draft ready);
-per-goal handoff note (migration, only if wanted); adjustment-request status
-loop (migration); REDCap / EHR-content decisions.
+- Edit a goal: the drawer reads like a normal edit; button says "Save changes";
+  success says "Goal updated." No "version" wording is visible to the clinician.
+  (Underneath, a frozen version is still created — past ratings stay intact.)

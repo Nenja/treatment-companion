@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-11` (no migration; #11 — therapist modules on the treatment page (input button + handoff panel) now appear only once a therapist has engaged this cycle; backlog in §8)._
+> _Last updated for build tag: `simplify-cockpit-17` (no migration — lightened the goal-Edit copy so versioning no longer reads as a ceremony; data model unchanged at 0090; backlog in §8)._
 
 ---
 
@@ -833,15 +833,174 @@ last treatment) →
 **`simplify-cockpit-8`** (no migration; graph width cap + last-visit max-effect) →
 **`simplify-cockpit-9`** (no migration; #9b therapist input → treatment page) →
 **`simplify-cockpit-10`** (no migration; training day-list shows directly) →
-**`simplify-cockpit-11`** (no migration; #11 therapist modules on the treatment
-page gated on therapist engagement; current).
+**`simplify-cockpit-11`** (no migration; #11 therapist gating) →
+**`simplify-cockpit-12`** (no migration; video button back; subtle link) →
+**`simplify-cockpit-13`** (no migration; goal graph fills its card) →
+**`simplify-cockpit-14`** (no migration; Option A restructure) →
+**`simplify-cockpit-15`** (migration 0089; clip deletion) →
+**`simplify-cockpit-16`** (migration 0090; per-goal handoff notes) →
+**`simplify-cockpit-17`** (no migration; lightened goal-Edit copy — versioning
+no longer reads as a ceremony; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-simplify-cockpit-11.zip`
-- **Tag:** `simplify-cockpit-11`
+- **Zip:** `treatment-companion-simplify-cockpit-17.zip`
+- **Tag:** `simplify-cockpit-17`
+- **Migration:** **none** (DB stays at **0090**). Pure copy/UX change.
+- **Lightened the goal versioning UX** (keep the data model, drop the ceremony).
+  Versioning (0086) is doing real work — every historical rating stays bound to
+  the exact calibration it was scored under — so the lineage stays. What felt
+  heavy was the Edit drawer *announcing* it. Changed:
+    - `editGoal.intro` no longer says "creates version N / keeps version M as
+      history" (and no longer interpolates `{version}`/`{next}` — the call is now
+      `t('intro')`). It reads: changes apply from here on; past check-ins keep the
+      wording + scale they were recorded under, so nothing already scored changes
+      meaning. (Honest reassurance, no version ceremony.)
+    - `editGoal.save` "Save new version" → "Save changes"; `saved` → "Goal
+      updated."; `error` reworded; `carryForwardNote` de-jargoned.
+  - Already invisible to the clinician (no change needed): the `v{version}` badge
+    (`goalVersionLabel`) is rendered nowhere; the per-goal `GoalHistoryModal` and
+    `LinkGoalModal` exist but aren't opened from the cockpit (those buttons were
+    removed back in batch 5).
+- **Verified locally:** tsc clean; i18n parity (0 mismatches); font-stub 60/60.
+- **⚠ QA:** Edit a goal → the drawer reads like a normal edit; the button says
+  "Save changes"; on save it says "Goal updated." No "version" wording anywhere
+  the clinician can see. (Under the hood it still creates a frozen version.)
+
+### `simplify-cockpit-16` (previous; migration 0090)
+- **Zip:** `treatment-companion-simplify-cockpit-16.zip`. Per-goal physician→
+  therapist handoff note. **Tag:** `simplify-cockpit-16`
+- **Migration:** **0090_goal_handoff_note.sql** — DB moves **0089 → 0090**.
+  **Run 0089 then 0090** in the Supabase SQL editor (0089 is safe to re-run if
+  already applied from build 15; both are idempotent).
+- **Per-goal physician → therapist handoff note** (the second "missing area").
+  Adds an optional, short note per (cycle, goal) alongside the per-cycle note
+  from 0088 — same narrow downward channel, **never patient-visible** (RLS on
+  `goal_handoff_note` has no patient policy by design; reads are role-agnostic
+  for an active session; writes are physician-only via `set_goal_handoff_note`).
+  - **Author (physician):** treatment page → handoff sage panel → "Goal-specific
+    notes" — a short textarea per goal the **therapist has evaluated** this cycle
+    (gated on `therapistEvaluatedGoalIds`, matching the #11/#5 rule). Saves on
+    blur; emptying clears the row.
+  - **Read (therapist):** physio patient page shows the note under each goal
+    ("Note from the treating physician").
+  - **Hooks:** `useGoalHandoffNotes(cycleId)` (read map, used by both pages) and
+    `useSetGoalHandoffNote()` (write). New component `GoalHandoffNotes`. New
+    i18n namespace `clinician.goalHandoff` (heading/hint/placeholder/
+    fromPhysician, en+da).
+  - **Known limitation:** the note is keyed by (cycle, goal-version id). If a
+    goal is re-versioned mid-cycle the note stays on the version it was written
+    against; acceptable for v1 (flagged).
+- **Verified locally:** tsc clean; i18n parity (0 mismatches); font-stub 60/60.
+- **⚠ QA:** as physician, evaluate a goal as the therapist first (or use a goal
+  the therapist already rated) → on the treatment page the handoff panel shows a
+  note box for that goal → type + blur → switch to the therapist view → the note
+  appears under that goal. Confirm the patient never sees it.
+
+### `simplify-cockpit-15` (previous; migration 0089)
+- **Zip:** `treatment-companion-simplify-cockpit-15.zip`. Clinician clip deletion
+  (`clear_goal_rating_video` + storage DELETE policy). **Tag:** `simplify-cockpit-15`
+- **Migration:** **0089_goal_video_delete.sql** — DB moves **0088 → 0089**.
+  **Run this one in the Supabase SQL editor before/with deploy.**
+- **Clinician can delete a saved goal-video clip** (the #4 gap). Until now a
+  saved clip could be viewed but never removed by the clinic. Now the video
+  player (the check-in/peak clip view, which has the rating id) has a quiet
+  "Delete clip" link with a confirm step. On confirm it removes the Storage
+  object and clears the rating's `video_path` (and its now-orphaned clinic
+  score) via the new `clear_goal_rating_video` RPC.
+  - **Migration adds:** `clear_goal_rating_video(uuid)` RPC (access-checked like
+    `set_clinic_video_score`) + a Storage **DELETE** policy on `goal-videos`
+    scoped to patients the clinician can access (same predicate as the 0062 read
+    policy). Patient keeps full manage of their own folder. Baseline clips can be
+    cleared via the existing `set_goal_baseline_video(goal, '')` + this policy.
+  - New i18n: `clinician.video.delete / deleteConfirm / deleteConfirmCta /
+    deleteCancel / deleting` (en+da).
+- **Verified locally:** tsc clean; i18n parity (0 key/ICU mismatches); font-stub
+  build 60/60.
+- **⚠ QA:** open a saved check-in clip → "Delete clip" → confirm → the clip
+  disappears from the visit strip / score queue / clinic series; the Storage
+  object is gone. Try as a clinician with an active session.
+
+### `simplify-cockpit-14` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-14.zip`. **Option A** restructure
+  (header lead CTA, slim banner, medication in visit footer). **Tag:** `simplify-cockpit-14`
+- **Migration:** **none** (DB stays at **0088**).
+- **Start new treatment is now the header lead action.** Moved from the top of
+  the left context column into the page header's right cluster as a sage-filled
+  primary button (icon-only on mobile, icon + "New treatment" on ≥sm), with a
+  divider before the switch/end/help/account controls. The header is rendered in
+  every layout (wide+top, wide+side, narrow), so the CTA is reachable regardless
+  of `navStyle`/`wide`. Still opens `NewCycleDialog` (confirm step intact). New
+  key `clinician.patient.startNewTreatmentShort` (en "New treatment" / da "Ny
+  behandling").
+- **Patient banner slimmed to a one-line context.** `PatientBanner` is now just
+  demographics + modality badge (no card chrome). Removed the duplicated
+  treatment date (it lives in the Since-last-visit anchor) and the
+  medication/devices block.
+- **Medication + devices moved into the Since-last-visit footer.** `VisitChanges`
+  gained optional `medication` / `devices` / `onEditMedication` / `medLabels`
+  props and renders a quiet footer (medication + Edit, devices) under the visit
+  summary. Edit still opens the medication drawer.
+- **Hierarchy:** left column now reads slim context → Since-last-visit
+  (prominent) → look-up tools; goals fill the right column.
+- The look-up row (history/training/export) is unchanged — it already relocates
+  per `navStyle` (header toolbar at top, side rail, or body row).
+- **Unused-but-harmless keys:** `startNewCycleActivates`, `startNewCycleHint`,
+  `treatmentDate` are no longer referenced (kept in both locales; parity intact).
+- **DB needed:** none.
+- **Verified locally:** tsc clean; i18n parity (0 key/ICU mismatches); font-stub
+  build 60/60.
+- **⚠ QA (please eyeball live):**
+  - Header: "New treatment" sage button leads the right controls (desktop label,
+    mobile icon-only); opens the new-cycle dialog.
+  - Patient row is a single quiet line (demographics · modality), no box.
+  - "Since last visit" carries Max-effect/Most-recent and now a medication +
+    devices footer with an Edit link.
+  - Check the header isn't crowded on a narrow phone (5 right-side controls).
+
+### `simplify-cockpit-13` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-13.zip`. Goal graph fills its
+  card; card width-bounded (`max-w-[520px]`, tunable). **Tag:** `simplify-cockpit-13`
+- **Migration:** **none** (DB stays at **0088**).
+- **Goal graph / card width fix.** The earlier 360px cap was on the SVG itself,
+  so the chart sat small inside a full-width card with dead space to its right.
+  Fix: removed the SVG cap (`max-w-[360px]` → `w-full`) so the graph fills its
+  card, and bounded the whole goal card + action row together via
+  `max-w-[520px]` on the active-goal `<li>` (so chart, card and the
+  Edit/baseline/Video/Retire row share one width). The expand/enlarge modal is
+  uncapped, so it still shows a full-size chart.
+  - **TUNABLE:** the single number is `max-w-[520px]` on the `<li key={g.id}>` in
+    `app/[locale]/clinician/patient/page.tsx` (~line 1231). Lower it (e.g. 440)
+    for a more compact card; raise it (e.g. 600) to keep the action row on one
+    line. The chart follows the card automatically now.
+- **DB needed:** none.
+- **Verified locally:** tsc clean; font-stub build 60/60.
+- **⚠ QA:** active-goal cards are bounded (~520px); the chart fills the card with
+  no empty gutter; expand still opens a large chart.
+
+### `simplify-cockpit-12` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-12.zip`. Video task button back
+  on the goal card; subtle last-treatment link. **Tag:** `simplify-cockpit-12`
+- **Migration:** **none** (DB stays at **0088**).
+- **Video task button moved back to the goal card** (reverts the cockpit-6
+  #5-video move). It now sits in the goal action row next to Retire
+  (Edit · baseline · Video task · Retire) and opens `VideoProtocolEditor` via the
+  restored page-level `videoEditorGoal` state. Removed the Video-task button +
+  nested editor from `EditGoalDrawer`. (`editGoal.videoTaskButton` key now unused
+  but left in place, parity intact.)
+- **"Show last treatment" is now a subtle link** (was a bordered button) in the
+  VisitChanges header — small sage text, underline on hover.
+- **DB needed:** none.
+- **Verified locally:** tsc clean; font-stub build 60/60.
+- **⚠ QA:** goal action row = Edit · (baseline) · Video task · Retire; the video
+  task button opens the protocol editor. Edit drawer no longer has a video task
+  button. "Show last treatment" reads as a quiet link.
+
+### `simplify-cockpit-11` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-11.zip`. #11 therapist gating.
+  **Tag:** `simplify-cockpit-11`
 - **Migration:** **none** (DB stays at **0088**).
 - **#11 — therapist modules gated on therapist engagement.**
   - **Cockpit (per goal):** already gated by data — a goal only shows the
