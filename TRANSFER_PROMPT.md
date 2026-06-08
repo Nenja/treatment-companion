@@ -72,22 +72,25 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-5` — **no migration**. DB stays at **0088**.
-- **Just shipped:** #6 — removed the stray screen-reader data table that was
-  rendering visibly under the goal graph (it collided with "Tap a point for
-  details"). And renamed the goal-card "Recalibrate" button to "Edit" and
-  regrouped it with the video-task + Retire buttons.
+- **Latest build:** `simplify-cockpit-7` — **no migration**. DB stays at **0088**.
+- **Just shipped:** drawers now close on backdrop click; patient-background field
+  cleaned up (removed the duplicate patient name; medication shown there with an
+  Edit button; removed the medication button from the action row).
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
-  audit remediation; EHR localisation; cockpit simplification batches 1–5.
+  audit remediation; EHR localisation; cockpit simplification batches 1–7.
 
 **What's likely next** *(simplification backlog — `HANDOVER.md` §8)*
-- **#5** move the video-task config under Edit goal (drop the separate video
-  button on the card); **#9b** relocate therapist input to the treatment page
-  (needs a placement decision); **#8** show-last-treatment dialog; **#11** gate
-  the therapist note on therapist activity (per-cycle today vs per-goal ask).
-  **#4** muscle→function parked (draft in `docs/`).
-- **Then:** adjustment-request status loop (migration); REDCap/EHR-content
-  decisions.
+- **#9b + therapist-button removal (paired):** remove the therapist button from
+  the cockpit AND add a counted, Suggestions-style button on the TREATMENT page
+  that opens the therapist suggestions. (Decided; build together so therapist
+  input isn't stranded.)
+- **Training day-list:** make it a pop-up instead of a collapsible nested inside
+  the training drawer (TrainingOverview rework).
+- **Goal graphs:** possibly too wide on the front page — cap chart width (user
+  unsure; confirm before constraining).
+- **#11** gate therapist note on therapist activity (per-cycle vs per-goal).
+  **#4** muscle→function parked.
+- **Then:** adjustment-request status loop (migration); REDCap/EHR-content.
 
 **Your first reply:** confirm you've read `HANDOVER.md`, state the current build
 + migration in a line or two, and either wait for my “go” or ask the one thing

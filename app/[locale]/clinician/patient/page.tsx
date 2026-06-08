@@ -28,7 +28,6 @@ import { formatLongDate } from '@/lib/dates';
 import { nrsToGas, injectionSideLabel, type GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { GoalGraphModal } from '@/components/clinician/GoalGraphModal';
-import { VideoProtocolEditor } from '@/components/clinician/VideoProtocolEditor';
 import { BaselineRecorderModal } from '@/components/clinician/BaselineRecorderModal';
 import {
   VideoScoreQueue,
@@ -39,6 +38,10 @@ import { usePatientObservations } from '@/lib/supabase/observations';
 import { ItbTrack } from '@/components/clinician/ItbTrack';
 import { useItbTherapy } from '@/lib/supabase/itb';
 import { VisitChanges } from '@/components/clinician/VisitChanges';
+import {
+  LastTreatmentModal,
+  type LastTreatment
+} from '@/components/clinician/LastTreatmentModal';
 import { PatientBanner } from '@/components/clinician/PatientBanner';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
@@ -144,14 +147,6 @@ export default function ClinicianPatientPage() {
   const [enlargedGoalId, setEnlargedGoalId] = useState<string | null>(null);
   const [editGoalTarget, setEditGoalTarget] =
     useState<ClinicianPatientGoal | null>(null);
-  const [videoEditorGoal, setVideoEditorGoal] = useState<{
-    id: string;
-    text: string;
-    enabled: boolean;
-    instruction: string | null;
-    setup: string | null;
-    seconds: number | null;
-  } | null>(null);
   const [baselineGoal, setBaselineGoal] = useState<{
     id: string;
     text: string;
@@ -164,6 +159,7 @@ export default function ClinicianPatientPage() {
   const [showExport, setShowExport] = useState(false);
   const [showNewCycle, setShowNewCycle] = useState(false);
   const [showRecordGoal, setShowRecordGoal] = useState(false);
+  const [showLastTreatment, setShowLastTreatment] = useState(false);
   const [showRecordItbGoal, setShowRecordItbGoal] = useState(false);  // Which inline action panel is open under the action row, if any.
   // History and export are not panels — they navigate / open a modal.
   const [openPanel, setOpenPanel] = useState<'medication' | 'physio' | 'training' | null>(
@@ -1192,13 +1188,6 @@ export default function ClinicianPatientPage() {
           </CockpitPanelDrawer>
         )}
         <PatientBanner
-          name={patient.displayName}
-          onOpenInfo={() =>
-            router.push(
-              locale === 'en' ? '/patient-info' : `/${locale}/patient-info`
-            )
-          }
-          openInfoAria={tInfo('openInfo', { name: patient.displayName })}
           summary={patientSummary}
           treatmentDateText={t('treatmentDate', {
             date: formatLongDate(cycle.startDate, locale)
@@ -1210,9 +1199,12 @@ export default function ClinicianPatientPage() {
             patient.physioAssistiveDevices ??
             null
           }
+          onEditMedication={() => setOpenPanel('medication')}
           labels={{
             medication: t('banner.medication'),
-            devices: t('banner.devices')
+            devices: t('banner.devices'),
+            edit: t('medEdit'),
+            medicationNone: t('medNotRecordedYet')
           }}
         />
         <div className="mt-4">
@@ -1222,6 +1214,7 @@ export default function ClinicianPatientPage() {
             checkins={checkins}
             goals={[...activeGoals, ...archivedGoals]}
             patientId={patient.id}
+            onShowLastTreatment={() => setShowLastTreatment(true)}
           />
         </div>
 
@@ -1502,37 +1495,6 @@ export default function ClinicianPatientPage() {
                       type="button"
                       onClick={() => {
                         touch();
-                        setVideoEditorGoal({
-                          id: g.id,
-                          text: g.patientFacingText,
-                          enabled: g.videoEnabled,
-                          instruction: g.videoTaskInstruction,
-                          setup: g.videoTaskSetup,
-                          seconds: g.videoTaskSeconds
-                        });
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
-                    >
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden
-                      >
-                        <rect x="2" y="6" width="14" height="12" rx="2" />
-                        <path d="M16 10l6-3v10l-6-3z" />
-                      </svg>
-                      {tVideoProtocol('open')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        touch();
                         setGoalToArchive({
                           id: g.id,
                           text: g.patientFacingText
@@ -1701,6 +1663,30 @@ export default function ClinicianPatientPage() {
         />
       )}
 
+      {showLastTreatment && treatment && (
+        <LastTreatmentModal
+          locale={locale}
+          onClose={() => setShowLastTreatment(false)}
+          treatment={
+            {
+              date: treatment.date,
+              drugProduct: treatment.drugProduct,
+              totalUnits: treatment.totalUnits,
+              dilution: treatment.dilution ?? undefined,
+              guidance: treatment.guidance as LastTreatment['guidance'],
+              injections: treatment.injections.map((i) => ({
+                muscle: i.muscle,
+                side: i.side,
+                doseUnits: i.doseUnits,
+                note: i.note ?? undefined,
+                isFace: i.posX != null
+              })),
+              notes: treatment.notes ?? undefined
+            } satisfies LastTreatment
+          }
+        />
+      )}
+
       {confirmEnd && (
         <EndSessionConfirmDialog
           keepLabel={tSession('endSessionConfirmKeep')}
@@ -1741,17 +1727,6 @@ export default function ClinicianPatientPage() {
             />
           );
         })()}
-      {videoEditorGoal && (
-        <VideoProtocolEditor
-          goalId={videoEditorGoal.id}
-          goalText={videoEditorGoal.text}
-          initialEnabled={videoEditorGoal.enabled}
-          initialInstruction={videoEditorGoal.instruction}
-          initialSetup={videoEditorGoal.setup}
-          initialSeconds={videoEditorGoal.seconds}
-          onClose={() => setVideoEditorGoal(null)}
-        />
-      )}
 
       {baselineGoal && (
         <BaselineRecorderModal

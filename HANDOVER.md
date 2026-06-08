@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-5` (no migration; #6 fixed — removed the stray visible data table under the goal graph; goal-card 'Recalibrate' button renamed 'Edit' and regrouped with video + retire; backlog in §8)._
+> _Last updated for build tag: `simplify-cockpit-7` (no migration; drawers close on backdrop click; patient-background field cleaned up — name restatement removed, medication shown there with an Edit button, medication action-row button removed; backlog in §8)._
 
 ---
 
@@ -826,14 +826,69 @@ palette so the saved night value sticks) →
 **`simplify-cockpit-4`** (no migration; #9a/#10 — medication/training/therapist
 panels now open as side drawers via CockpitPanelDrawer) →
 **`simplify-cockpit-5`** (no migration; #6 stray data-table under the graph
-removed; goal 'Recalibrate'→'Edit' regrouped with video + retire; current).
+removed; goal 'Recalibrate'→'Edit' regrouped) →
+**`simplify-cockpit-6`** (no migration; #5 video task under Edit goal; #8 show
+last treatment) →
+**`simplify-cockpit-7`** (no migration; drawers close on backdrop click; patient
+background field cleanup — no name restatement, medication+Edit moved there,
+medication action button removed; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-simplify-cockpit-5.zip`
-- **Tag:** `simplify-cockpit-5`
+- **Zip:** `treatment-companion-simplify-cockpit-7.zip`
+- **Tag:** `simplify-cockpit-7`
+- **Migration:** **none** (DB stays at **0088**).
+- **Drawers/modals now close on backdrop click.** `useModalA11y` only handled
+  Escape; added an `onClick` backdrop handler (`e.target === e.currentTarget →
+  onClose`) to CockpitPanelDrawer, RecordGoalDrawer, EditGoalDrawer,
+  LastTreatmentModal and TreatedMusclesModal. (VideoProtocolEditor already did
+  this via onClick+stopPropagation.)
+- **Patient-background field (`PatientBanner`) cleaned up.**
+  - Removed the patient-name restatement (and its open-info button) — the name
+    already sits in the page header. Dropped `name`/`onOpenInfo`/`openInfoAria`.
+  - **Medication moved here**: the banner always shows the medication line with
+    an **Edit** button (opens the existing medication drawer via
+    `onEditMedication`), and the **medication button was removed from the action
+    row**. Reused `medEdit` / `medNotRecordedYet` labels.
+- **DB needed:** none.
+- **Verified locally:** tsc clean; font-stub build 60/60; en/da parity intact.
+- **⚠ QA:** click outside any drawer (e.g. Training) → it closes. The background
+  field shows demographics + modality + treatment date + medication(+Edit)
+  +devices, with NO duplicated patient name. Edit opens the medication drawer.
+
+### `simplify-cockpit-6` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-6.zip`. #5 video-under-Edit + #8
+  show-last-treatment. **Tag:** `simplify-cockpit-6`
+- **Migration:** **none** (DB stays at **0088**).
+- **#5 video task → under Edit goal.** The goal card's separate "video protocol"
+  button is gone. `EditGoalDrawer` now has a **Video task** button that opens the
+  existing `VideoProtocolEditor` (nested over the edit drawer); it still operates
+  on the current goal id, so no change to goal-versioning behaviour. Removed from
+  `clinician/patient/page.tsx`: the card video button, the page-level
+  `videoEditorGoal` state + `VideoProtocolEditor` render + import. (The baseline
+  RECORD button stays on the card — it's a recording action, not task config.)
+  New key `editGoal.videoTaskButton` (en+da).
+- **#8 "Show last treatment" dialog.** The "since last treatment" section
+  (`VisitChanges`) now shows a **Show last treatment** button when a treatment is
+  recorded for the cycle. New `LastTreatmentModal` renders that treatment
+  read-only (date · drug · units · guidance, standard + face injection lists,
+  notes), reusing the `ehrExport` label vocabulary so wording matches the export.
+  Wiring: `VisitChanges` gets an optional `onShowLastTreatment`; the cockpit holds
+  `showLastTreatment` state and maps its `treatment` object to the `LastTreatment`
+  shape (isFace = posX != null). New `lastTreatment` namespace (title, button).
+- **DB needed:** none.
+- **Verified locally:** tsc clean; font-stub build 60/60; en/da parity + 0 ICU
+  mismatches.
+- **⚠ QA:** (#5) open a goal's **Edit** → **Video task** opens the protocol
+  editor; the card no longer has its own video button. (#8) in the
+  since-last-treatment section, **Show last treatment** opens a dialog with the
+  injection record; hidden when no treatment is recorded.
+
+### `simplify-cockpit-5` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-5.zip`. #6 overlap fix + goal
+  'Edit' regroup. **Tag:** `simplify-cockpit-5`
 - **Migration:** **none** (DB stays at **0088**).
 - **#6 overlap FIXED.** The screen-reader data table added in `audit-fixes`
   (GoalProgressView, `className="sr-only"`) was rendering VISIBLY in production
@@ -1251,25 +1306,37 @@ trimming. ✅ done · ◑ partial · ☐ todo · 💬 needs a decision/draft fro
 4. ⏸ **Patient-facing muscle names → function language** — PARKED at Nikolaj's
    request. DRAFT ready (`docs/muscle-function-mapping-DRAFT.md`) for when we
    return; body muscles are free text → needs a structured catalogue.
-5. ◑ **Goal-graph actions** — ✅ history + link removed; ✅ the "Recalibrate"
-   button renamed "Edit" and regrouped with video + retire in the goal action
-   row. ☐ still: move the video-task config under "Edit goal" (verify
-   EditGoalDrawer holds it, then drop the card's separate video button).
+5. ✅ **Goal-graph actions** — history + link removed; "Recalibrate"→"Edit"
+   regrouped; video-task config moved under Edit goal (card's separate video
+   button dropped; Edit drawer has a "Video task" button opening the protocol
+   editor). Baseline-record button intentionally left on the card.
 6. ✅ **Overlapping text under the goal graph** — was the `audit-fixes`
    screen-reader data table rendering visibly (sr-only not hiding it); removed
    it. (Chart aria-label retained for basic a11y.)
 7. ✅ **ITB off the front page** — removed from cockpit; functionality kept.
-8. ☐ **"Show last treatment" button** in the "since last treatment" field →
-   opens a dialog with the previous injection's treatment record.
-9. ◑ **Action panels → side drawers** — ✅ #9a the medication/training/therapist
-   panels now open as side drawers (CockpitPanelDrawer), not centre panels.
-   ☐ #9b still: move therapist input OFF the cockpit onto the treatment page
-   (kept as a drawer in the interim; needs a placement decision on the
-   treatment page).
+8. ✅ **"Show last treatment"** — button in the since-last-treatment section
+   opens `LastTreatmentModal` (read-only injection record). Hidden when no
+   treatment recorded.
+9. ◑ **Action panels → side drawers** — ✅ #9a drawers; ✅ drawers now close on
+   backdrop click. ☐ #9b: move therapist input OFF the cockpit ONTO the
+   treatment page. **Decided:** a button like the front-page Suggestions button
+   (count badge) that opens the therapist suggestions. Therapist button still on
+   the cockpit until the treatment-page home is built (so it isn't stranded).
 10. ✅ **Medication** — now opens as a side drawer (CockpitPanelDrawer) instead
     of a centre panel in the left column.
 11. ☐ **"Note for the therapist"** should only be active when a therapist is
     actually reporting on that goal (gate on therapist activity for the goal).
+
+### Front-page refinements (from session feedback)
+- ✅ Drawers close on click-outside.
+- ✅ Background field: no name restatement; medication shown with Edit; med
+  action-row button removed.
+- ☐ **Therapist action button** still to be removed from the cockpit (paired
+  with #9b treatment-page button).
+- ☐ **Training day-list**: don't nest a collapsible menu inside the training
+  drawer — make the day-list a pop-up instead (needs TrainingOverview rework).
+- ☐ **Goal graphs may be too wide** on the front page — consider capping the
+  chart width (user unsure; confirm before constraining).
 
 ### Other open items (pre-existing)
 

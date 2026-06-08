@@ -1,34 +1,37 @@
-BUILD: simplify-cockpit-5   (#6 overlap fix + goal 'Edit' button regroup — NO migration)
+BUILD: simplify-cockpit-7   (drawer backdrop-close + background-field cleanup — NO migration)
 ==========================================================================
 MIGRATION: none. DB stays at 0088. Nothing to run in Supabase.
-Batch 5 of cockpit simplification. Backlog + status in HANDOVER §8.
+Batch 7 of cockpit simplification. Backlog + status in HANDOVER §8.
 
-DONE
-- #6 OVERLAP FIXED. The stray "Weekly ratings data for … / Week / Rating" text
-  under each goal graph was a screen-reader data table I added in audit-fixes
-  (GoalProgressView, className="sr-only"). .sr-only is present in the built CSS
-  but was NOT hiding it in production, so it rendered visibly and collided with
-  "Tap a point for details." Removed the table + its tableId + the svg's
-  aria-describedby. The chart keeps its descriptive aria-label (basic a11y).
-- GOAL-CARD BUTTON: "Recalibrate" -> "Edit", regrouped. editGoalCta and the
-  EditGoalDrawer eyebrow/title renamed Recalibrate->Edit (en+da). The Edit
-  button moved from its own row above the chart into the goal action row, next
-  to the video-task button and Retire (now: Edit · video · Retire).
+DONE (refinements from your feedback)
+- DRAWERS CLOSE ON BACKDROP CLICK. useModalA11y only handled Escape; added an
+  onClick backdrop handler to CockpitPanelDrawer, RecordGoalDrawer,
+  EditGoalDrawer, LastTreatmentModal, TreatedMusclesModal. (VideoProtocolEditor
+  already closed on backdrop.) Click anywhere outside a drawer/modal to dismiss.
+- PATIENT BACKGROUND FIELD (PatientBanner):
+  * Removed the patient NAME restatement (it's already in the page header).
+  * MEDICATION moved here: the field always shows the medication line with an
+    Edit button (opens the medication drawer); the MEDICATION button was removed
+    from the action row.
 
 VERIFIED LOCALLY
 - tsc --noEmit clean.
+- en/da parity intact (reused existing labels; no new keys).
 - Production build OK via the font-stub procedure (restored byte-for-byte, zero
   BUILD-STUB remnants). 60/60 pages.
 
 DEPLOY: no migration; unzip, push, Vercel builds. Page count 60.
 
 ** QA **
-- Under each goal graph: NO stray "Weekly ratings data…/Week/Rating" text; the
-  "Tap a point for details" caption sits alone.
-- Goal action row reads: Edit · (Record/Set baseline + video task) · Retire.
-  The Edit button (pencil) opens the same edit drawer as before.
+- Open Training (or any) drawer -> click the dimmed area outside it -> it closes.
+- Background field: shows demographics + modality + treatment date + medication
+  (with Edit) + devices, and NO duplicated patient name. Edit opens the
+  medication editor; Save/Cancel still work.
+- Action row no longer has a Medication button.
 
-BACKLOG REMAINING (HANDOVER §8): #5 move video-task config under Edit (drop the
-separate video button); #9b relocate therapist input to the treatment page;
-#8 show-last-treatment dialog; #11 gate handoff note on therapist activity.
-(#4 muscle mapping parked.)
+NOT YET DONE (next batch)
+- Therapist action button removal + #9b treatment-page button (a counted,
+  Suggestions-style button that opens the therapist suggestions). Kept on the
+  cockpit for now so therapist input isn't stranded.
+- Training: make the day-list a pop-up instead of a collapsible-in-drawer.
+- Goal graphs possibly too wide -> consider capping chart width (confirm first).
