@@ -1,32 +1,28 @@
-BUILD: simplify-cockpit-20   (goal-calibration forms explain a disabled Save — NO migration)
+BUILD: simplify-cockpit-23   (demographics line moved under the patient name — NO migration)
 ==========================================================================
 MIGRATION: none. DB stays at 0090. Nothing to run in Supabase.
 
-CONTEXT: the audit's "NRS cut-off stepper" item turned out MOOT — the clinician
-never enters cut-offs (they're fixed server-side defaults; cutoffError is an
-orphaned, unused string). The real friction in that flow was that both
-goal-calibration forms simply greyed out Save with no explanation.
-
-DONE — a "what's still needed" helper (mirrors the treatment form) on BOTH
-calibration surfaces, shown only once the clinician has started:
-- new-goal (RecordGoalForm): lists whichever of these is missing — goal text,
-  SMART description, weekly NRS question, starting-point + target, or all five
-  outcome levels. Keys under newGoal.
-- approve (/clinician/suggestion): same, keys under clinician.approve.
+DONE
+- The patient demographics line ("41 years · Traumatic brain injury · Left ·
+  With aid") was floating in the body context line after the Option A
+  restructure — disconnected from the name (in the header) and the card below,
+  so it read as orphaned. The header comment already said the summary should
+  "sit on its own line beneath the name", so this restores that:
+  * The demographics summary now renders as a sub-line directly UNDER the
+    patient name in the page header.
+  * PatientBanner is now just the modality pill (the summary prop was removed).
+    The lone pill still fills the wide-layout top-alignment band, so the
+    "since last visit" / first-graph alignment from build 22 is preserved.
+- No new i18n keys.
 
 VERIFIED LOCALLY
 - tsc --noEmit clean.
-- i18n parity: 0 key mismatches, 0 ICU mismatches.
 - Production build OK via the font-stub procedure. 60/60 pages.
 
 DEPLOY: no migration; unzip / push / Vercel builds. Page count 60.
 
-** QA **
-- Start a new goal or approve a suggestion, leave a required field blank: a
-  "Before you can save/approve:" list names exactly what's missing. Fill them
-  and the list disappears and Save/Approve enables.
-
-AUDIT STATUS: the cheap/contained "don't make me think" items are now done or
-were already handled in the codebase. What remains is judgment-call polish best
-driven by a live moderated test (3 per role; patients on phone,
-clinicians/therapists on desktop).
+** QA (desktop) **
+- The demographics line sits right under the patient name in the header.
+- The body context column shows only the "Botulinum toxin" pill above
+  "since last visit".
+- The "since last visit" card top still lines up with the first goal graph.
