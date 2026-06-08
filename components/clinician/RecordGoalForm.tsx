@@ -95,7 +95,19 @@ export function RecordGoalForm({
     !createGas.isPending;
 
   // A plain list of what's still missing, so a disabled Save explains itself
-  // from the start (mirrors the treatment form's "what's still needed").
+  // (mirrors the treatment form's "what's still needed"). Only shown once the
+  // clinician has started, so a pristine form isn't nagged.
+  const started =
+    patientText.trim() !== '' ||
+    smartText.trim() !== '' ||
+    nrsQuestion.trim() !== '' ||
+    nrsBaseline.trim() !== '' ||
+    nrsTarget.trim() !== '' ||
+    anchorMinus2.trim() !== '' ||
+    anchorMinus1.trim() !== '' ||
+    anchorZero.trim() !== '' ||
+    anchorPlus1.trim() !== '' ||
+    anchorPlus2.trim() !== '';
   const missing: string[] = [];
   if (!patientText.trim()) missing.push(t('needGoalText'));
   if (!smartText.trim()) missing.push(t('needSmart'));
@@ -447,7 +459,7 @@ export function RecordGoalForm({
         )}
       </div>
 
-      {!canSubmit && missing.length > 0 && (
+      {!canSubmit && started && missing.length > 0 && (
         <div className="mt-6 rounded-[var(--radius-button)] border border-stone bg-cream px-4 py-3">
           <p className="text-[13px] font-semibold text-ink-soft">
             {t('stillNeededTitle')}
