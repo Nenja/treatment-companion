@@ -9,11 +9,24 @@ import { formatLongDate } from './dates';
 // "successful" / "failed", no recommendations. The clinician edits it
 // in a textarea before copying.
 //
+// LOCALISED: every label and sentence fragment comes from the `ehrExport`
+// message namespace via the `t` translator passed in by the (client) call
+// site, so the note follows the app locale rather than being English-only.
+// Dates are localised via formatLongDate(locale). The builder itself stays
+// a pure, framework-free function (testable, usable from any call site) —
+// the caller owns the translator.
+//
 // Inputs use small purpose-built shapes (defined below) rather than the
-// full entity types. That way both prototype call sites and Supabase
-// call sites can pass only the fields the export actually consumes,
-// without having to fabricate values for fields the export doesn't use.
+// full entity types, so call sites pass only the fields the export
+// consumes.
 // ---------------------------------------------------------------------------
+
+/** Minimal translator shape: next-intl's `useTranslations(...)` return value
+ *  is structurally compatible (the caller casts to this). */
+export type ExportTranslator = (
+  key: string,
+  values?: Record<string, string | number>
+) => string;
 
 export interface ExportPatient {
   displayName: string;
@@ -76,6 +89,8 @@ interface BuildExportArgs {
   goals: ExportGoal[];
   checkins: ExportCheckin[];
   locale: string;
+  /** Translator scoped to the `ehrExport` namespace. */
+  t: ExportTranslator;
 }
 
 export function buildEhrExport({
@@ -84,81 +99,83 @@ export function buildEhrExport({
   treatment,
   goals,
   checkins,
-  locale
+  locale,
+  t
 }: BuildExportArgs): string {
   const lines: string[] = [];
 
   // Header ----------------------------------------------------------------
-  lines.push(`Treatment companion summary — ${patient.displayName}`);
+  lines.push(t('summaryTitle', { name: patient.displayName }));
   lines.push(
-    `Cycle ${cycle.cycleNumber} · Treatment date ${formatLongDate(cycle.startDate, locale)}`
+    t('cycleLine', {
+      cycle: cycle.cycleNumber,
+      date: formatLongDate(cycle.startDate, locale)
+    })
   );
   if (cycle.modality && cycle.modality !== 'botulinum_toxin') {
-    const modalityLabel: Record<TreatmentModality, string> = {
-      botulinum_toxin: 'Botulinum toxin',
-      baclofen_pump: 'Baclofen pump',
-      surgery: 'Surgery',
-      other: 'Other'
-    };
-    lines.push(`Treatment modality: ${modalityLabel[cycle.modality]}`);
+    lines.push(
+      t('modalityLine', { modality: modalityLabel(cycle.modality, t) })
+    );
   }
   lines.push('');
 
   // Treatment session -----------------------------------------------------
   if (treatment) {
-    lines.push('Treatment');
+    lines.push(t('treatmentHeading'));
     const headerParts = [
-      `Date: ${formatLongDate(treatment.date, locale)}`,
+      t('treatmentDate', { date: formatLongDate(treatment.date, locale) }),
       treatment.drugProduct,
-      `${treatment.totalUnits} units total`
+      t('unitsTotal', { units: treatment.totalUnits })
     ];
-    if (treatment.dilution) headerParts.push(`Dilution: ${treatment.dilution}`);
-    headerParts.push(`Guidance: ${guidanceLabel(treatment.guidance)}`);
+    if (treatment.dilution)
+      headerParts.push(t('dilution', { dilution: treatment.dilution }));
+    headerParts.push(t('guidance', { guidance: guidanceLabel(treatment.guidance, t) }));
     lines.push(headerParts.join(' · '));
     const standardInjections = treatment.injections.filter((i) => !i.isFace);
     const faceInjections = treatment.injections.filter((i) => i.isFace);
-    const renderInjection = (inj: ExportInjection): string => {
-      const noteSuffix = inj.note ? ` — ${inj.note}` : '';
-      return `- ${inj.muscle} (${sideLabel(inj.side)}) — ${inj.doseUnits} units${noteSuffix}`;
-    };
+    const renderInjection = (inj: ExportInjection): string =>
+      t('injectionLine', {
+        muscle: inj.muscle,
+        side: sideLabel(inj.side, t),
+        units: inj.doseUnits,
+        // Note suffix is punctuation + free text, locale-neutral.
+        note: inj.note ? ` — ${inj.note}` : ''
+      });
     if (standardInjections.length > 0) {
-      lines.push('Injections:');
+      lines.push(t('injectionsHeading'));
       for (const inj of standardInjections) lines.push(renderInjection(inj));
     }
     if (faceInjections.length > 0) {
-      lines.push('Face injections:');
+      lines.push(t('faceInjectionsHeading'));
       for (const inj of faceInjections) lines.push(renderInjection(inj));
     }
     if (treatment.notes) {
-      lines.push(`Notes: ${treatment.notes}`);
+      lines.push(t('notes', { notes: treatment.notes }));
     }
     // Reconciliation: the recorded total is printed verbatim above. If the
     // per-injection doses don't add up to it, surface the discrepancy rather
     // than letting an internally-inconsistent figure go silently into the
     // record. Only when there is at least one injection to sum.
     if (treatment.injections.length > 0) {
-      const injSum = treatment.injections.reduce(
-        (s, i) => s + i.doseUnits,
-        0
-      );
+      const injSum = treatment.injections.reduce((s, i) => s + i.doseUnits, 0);
       if (injSum !== treatment.totalUnits) {
         lines.push(
-          `Note: listed injections sum to ${injSum} units (recorded total ${treatment.totalUnits}).`
+          t('reconciliation', { sum: injSum, total: treatment.totalUnits })
         );
       }
     }
     lines.push('');
   } else {
-    lines.push('Treatment: not recorded.');
+    lines.push(t('treatmentNotRecorded'));
     lines.push('');
   }
 
   // Goals + reported ratings ----------------------------------------------
   if (goals.length > 0) {
-    lines.push('Goals this cycle:');
+    lines.push(t('goalsHeading'));
     for (const goal of goals) {
       lines.push(`- ${goal.patientFacingText}`);
-      const sentence = buildGoalSentence(goal, checkins);
+      const sentence = buildGoalSentence(goal, checkins, t);
       lines.push(`  ${sentence}`);
     }
     lines.push('');
@@ -169,9 +186,11 @@ export function buildEhrExport({
     .filter((c) => c.comment?.trim())
     .sort((a, b) => a.weekNumber - b.weekNumber);
   if (comments.length > 0) {
-    lines.push('Patient comments:');
+    lines.push(t('commentsHeading'));
     for (const c of comments) {
-      lines.push(`Week ${c.weekNumber}: ${c.comment!.trim()}`);
+      lines.push(
+        t('commentLine', { week: c.weekNumber, comment: c.comment!.trim() })
+      );
     }
     lines.push('');
   }
@@ -184,24 +203,27 @@ export function buildEhrExport({
 /**
  * Builds the one-line summary sentence for a goal across a cycle.
  *
- * Pattern:
+ * Pattern (localised):
  *   "Peak GAS [x] / NRS [n]/10 (W[x]). GAS ≥0 from W[x], sustained [n] weeks.
  *    Wearing-off [none / possible from W[x] / clear from W[x]].
- *    End-cycle GAS [x] / NRS [n]/10 (W[x])."
+ *    End-cycle GAS [x] / NRS [n]/10 (W[x]).  [(NRS: lower is better.)]"
  *
  * Wearing-off detection (on GAS):
- *   - "possible from W[x]" if any post-peak rating drops by ≥1 from
- *     the peak GAS value;
- *   - "clear from W[x]" if any post-peak rating drops by ≥2 from peak,
- *     OR returns to the patient's initial (first) GAS;
+ *   - "possible from W[x]" if any post-peak rating drops by ≥1 from peak;
+ *   - "clear from W[x]" if any post-peak rating drops by ≥2 from peak, OR
+ *     returns to/below the initial GAS *and the patient rose above it first*
+ *     (peak > initial) — so a stable/flat-good series isn't reported as
+ *     wearing off;
  *   - "none" otherwise.
  *
- * "Sustained" counts CONSECUTIVE reported weeks at GAS ≥0 from the
- * first such week. Skipped weeks break the sustained streak.
+ * "Sustained" counts CONSECUTIVE CALENDAR weeks at GAS ≥0 from the first
+ * such week; a GAS dip <0 OR a skipped week (a gap in week numbers) ends
+ * the streak.
  */
 function buildGoalSentence(
   goal: ExportGoal,
-  checkins: ExportCheckin[]
+  checkins: ExportCheckin[],
+  t: ExportTranslator
 ): string {
   const goalId = goal.id;
   const reports = checkins
@@ -219,22 +241,15 @@ function buildGoalSentence(
     .sort((a, b) => a.week - b.week);
 
   if (reports.length === 0) {
-    return 'No ratings reported this cycle.';
+    return t('noRatings');
   }
 
   const peak = reports.reduce((m, r) => Math.max(m, r.gas), -Infinity);
   const peakReport = reports.find((r) => r.gas === peak)!;
   const initial = reports[0].gas;
 
-  // GAS ≥0 onset + sustained.
-  // "Sustained" counts CONSECUTIVE CALENDAR weeks at GAS ≥0 from the
-  // first such week. A break in GAS (a reported week <0) ends the
-  // streak; so does a SKIPPED week (a gap in week numbers), because an
-  // unreported week is not evidence of a sustained effect. We therefore
-  // step through the reports from the first ≥0 week and stop as soon as
-  // either the GAS dips below 0 or the week number is not exactly one
-  // more than the previous counted week.
-  let zeroPlusClause = 'Did not reach GAS ≥0 this cycle.';
+  // GAS ≥0 onset + sustained (consecutive calendar weeks).
+  let zeroPlusClause = t('notReachedZero');
   const firstZeroPlusIdx = reports.findIndex((r) => r.gas >= 0);
   if (firstZeroPlusIdx !== -1) {
     const firstWeek = reports[firstZeroPlusIdx].week;
@@ -246,33 +261,22 @@ function buildGoalSentence(
       sustained++;
       prevWeek = reports[i].week;
     }
-    zeroPlusClause = `GAS ≥0 from W${firstWeek}, sustained ${sustained} week${
-      sustained === 1 ? '' : 's'
-    }.`;
+    zeroPlusClause = t('reachedZero', { week: firstWeek, count: sustained });
   }
 
-  // Wearing-off detection (uses reports AFTER the peak week).
-  //
-  // Two ways a post-peak week counts as "clear" wearing-off:
-  //   (a) it drops ≥2 GAS below the peak; or
-  //   (b) it returns to or below the patient's initial level — but ONLY
-  //       if the patient actually rose above that initial level first
-  //       (peak > initial). Without the `peak > initial` guard a stable
-  //       or flat series (e.g. +1 every week, initial = peak = +1) would
-  //       wrongly report "clear wearing-off", because every week is
-  //       trivially ≤ initial. The guard restricts (b) to genuine
-  //       return-to-baseline after a rise.
+  // Wearing-off detection (post-peak weeks); the return-to-baseline clause
+  // is gated on an actual rise (peak > initial).
   const postPeak = reports.filter((r) => r.week > peakReport.week);
-  let wearingOff = 'Wearing-off: none.';
+  let wearingOff = t('wearingNone');
   const clearReport = postPeak.find(
     (r) => peak - r.gas >= 2 || (peak > initial && r.gas <= initial)
   );
   if (clearReport) {
-    wearingOff = `Clear wearing-off from W${clearReport.week}.`;
+    wearingOff = t('wearingClear', { week: clearReport.week });
   } else {
     const possibleReport = postPeak.find((r) => peak - r.gas >= 1);
     if (possibleReport) {
-      wearingOff = `Possible wearing-off from W${possibleReport.week}.`;
+      wearingOff = t('wearingPossible', { week: possibleReport.week });
     }
   }
 
@@ -280,21 +284,26 @@ function buildGoalSentence(
 
   const peakStr =
     peakReport.nrs !== null
-      ? `Peak GAS ${formatSigned(peak)} / NRS ${peakReport.nrs}/10 (W${peakReport.week}).`
-      : `Peak GAS ${formatSigned(peak)} (W${peakReport.week}).`;
+      ? t('peakWithNrs', {
+          gas: formatSigned(peak),
+          nrs: peakReport.nrs,
+          week: peakReport.week
+        })
+      : t('peakNoNrs', { gas: formatSigned(peak), week: peakReport.week });
   const endStr =
     endCycle.nrs !== null
-      ? `End-cycle GAS ${formatSigned(endCycle.gas)} / NRS ${endCycle.nrs}/10 (W${endCycle.week}).`
-      : `End-cycle GAS ${formatSigned(endCycle.gas)} (W${endCycle.week}).`;
+      ? t('endWithNrs', {
+          gas: formatSigned(endCycle.gas),
+          nrs: endCycle.nrs,
+          week: endCycle.week
+        })
+      : t('endNoNrs', { gas: formatSigned(endCycle.gas), week: endCycle.week });
 
-  // On a lower-is-better NRS goal, a low raw NRS (e.g. 2/10) is a GOOD
-  // result. The GAS values above are already direction-normalised, but
-  // the raw NRS printed alongside them is not — so annotate it once to
-  // prevent a misread. Higher-is-better is the intuitive default and
-  // needs no note.
+  // On a lower-is-better NRS goal, a low raw NRS is GOOD; the GAS values are
+  // already direction-normalised but the raw NRS is not, so annotate once.
   const dirNote =
     goal.kind === 'nrs' && goal.nrsDirection === 'lowerIsBetter'
-      ? ' (NRS: lower is better.)'
+      ? ' ' + t('nrsLowerBetterNote')
       : '';
 
   return [peakStr, zeroPlusClause, wearingOff, endStr].join(' ') + dirNote;
@@ -302,37 +311,52 @@ function buildGoalSentence(
 
 // --- Helpers ------------------------------------------------------------
 
-function sideLabel(side: InjectionSide): string {
+function sideLabel(side: InjectionSide, t: ExportTranslator): string {
   switch (side) {
     case 'left':
-      return 'L';
+      return t('side_left');
     case 'right':
-      return 'R';
+      return t('side_right');
     case 'bilateral':
-      return 'B';
+      return t('side_bilateral');
     default:
       return String(side);
   }
 }
 
-function guidanceLabel(g: GuidanceMethod): string {
+function guidanceLabel(g: GuidanceMethod, t: ExportTranslator): string {
   switch (g) {
     case 'emg':
-      return 'EMG';
+      return t('guidance_emg');
     case 'ultrasound':
-      return 'ultrasound';
+      return t('guidance_ultrasound');
     case 'usEmg':
-      return 'ultrasound + EMG';
+      return t('guidance_usEmg');
     case 'electricalStimulation':
-      return 'electrical stimulation';
+      return t('guidance_electricalStimulation');
     case 'anatomicalLandmarks':
-      return 'anatomical landmarks';
+      return t('guidance_anatomicalLandmarks');
     case 'none':
-      return 'no guidance';
+      return t('guidance_none');
     case 'other':
-      return 'other guidance';
+      return t('guidance_other');
     default:
       return String(g);
+  }
+}
+
+function modalityLabel(m: TreatmentModality, t: ExportTranslator): string {
+  switch (m) {
+    case 'botulinum_toxin':
+      return t('modality_botulinum_toxin');
+    case 'baclofen_pump':
+      return t('modality_baclofen_pump');
+    case 'surgery':
+      return t('modality_surgery');
+    case 'other':
+      return t('modality_other');
+    default:
+      return String(m);
   }
 }
 
