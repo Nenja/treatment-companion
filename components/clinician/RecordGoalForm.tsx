@@ -94,6 +94,30 @@ export function RecordGoalForm({
     !create.isPending &&
     !createGas.isPending;
 
+  // A plain list of what's still missing, so a disabled Save explains itself
+  // (mirrors the treatment form's "what's still needed"). Only shown once the
+  // clinician has started, so a pristine form isn't nagged.
+  const started =
+    patientText.trim() !== '' ||
+    smartText.trim() !== '' ||
+    nrsQuestion.trim() !== '' ||
+    nrsBaseline.trim() !== '' ||
+    nrsTarget.trim() !== '' ||
+    anchorMinus2.trim() !== '' ||
+    anchorMinus1.trim() !== '' ||
+    anchorZero.trim() !== '' ||
+    anchorPlus1.trim() !== '' ||
+    anchorPlus2.trim() !== '';
+  const missing: string[] = [];
+  if (!patientText.trim()) missing.push(t('needGoalText'));
+  if (!smartText.trim()) missing.push(t('needSmart'));
+  if (goalKind === 'nrs') {
+    if (!nrsQuestion.trim()) missing.push(t('needNrsQuestion'));
+    if (!nrsValuesValid) missing.push(t('needNrsRange'));
+  } else if (!anchorsValid) {
+    missing.push(t('needAnchors'));
+  }
+
   const onSubmit = async () => {
     if (!canSubmit || !patientId) return;
     try {
@@ -435,6 +459,18 @@ export function RecordGoalForm({
         )}
       </div>
 
+      {!canSubmit && started && missing.length > 0 && (
+        <div className="mt-6 rounded-[var(--radius-button)] border border-stone bg-cream px-4 py-3">
+          <p className="text-[13px] font-semibold text-ink-soft">
+            {t('stillNeededTitle')}
+          </p>
+          <ul className="mt-1 list-disc pl-5 text-[13px] text-ink-soft">
+            {missing.map((m, i) => (
+              <li key={i}>{m}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="mt-8 flex gap-3">
         <button
           type="button"
