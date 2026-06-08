@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-7` (no migration; drawers close on backdrop click; patient-background field cleaned up — name restatement removed, medication shown there with an Edit button, medication action-row button removed; backlog in §8)._
+> _Last updated for build tag: `simplify-cockpit-11` (no migration; #11 — therapist modules on the treatment page (input button + handoff panel) now appear only once a therapist has engaged this cycle; backlog in §8)._
 
 ---
 
@@ -829,16 +829,103 @@ panels now open as side drawers via CockpitPanelDrawer) →
 removed; goal 'Recalibrate'→'Edit' regrouped) →
 **`simplify-cockpit-6`** (no migration; #5 video task under Edit goal; #8 show
 last treatment) →
-**`simplify-cockpit-7`** (no migration; drawers close on backdrop click; patient
-background field cleanup — no name restatement, medication+Edit moved there,
-medication action button removed; current).
+**`simplify-cockpit-7`** (no migration; backdrop-close + bg-field cleanup) →
+**`simplify-cockpit-8`** (no migration; graph width cap + last-visit max-effect) →
+**`simplify-cockpit-9`** (no migration; #9b therapist input → treatment page) →
+**`simplify-cockpit-10`** (no migration; training day-list shows directly) →
+**`simplify-cockpit-11`** (no migration; #11 therapist modules on the treatment
+page gated on therapist engagement; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-simplify-cockpit-7.zip`
-- **Tag:** `simplify-cockpit-7`
+- **Zip:** `treatment-companion-simplify-cockpit-11.zip`
+- **Tag:** `simplify-cockpit-11`
+- **Migration:** **none** (DB stays at **0088**).
+- **#11 — therapist modules gated on therapist engagement.**
+  - **Cockpit (per goal):** already gated by data — a goal only shows the
+    therapist overlay (physioRatings) / working-on tag once a therapist has
+    evaluated *that* goal. No change needed.
+  - **Treatment page:** the **Therapist input** button and the physician→
+    therapist **handoff panel** (title + "treatment changed?" + note) now render
+    only when `therapistHasEngaged = physioAssessments.length > 0 ||
+    therapistSuggestionCount > 0` (the therapist has evaluated or suggested this
+    cycle). Until then the physician sees no therapist UI for the patient.
+  - **Granularity note:** the handoff note is a **per-cycle** field
+    (`treatment_handoff`), so it activates once the therapist engages with the
+    cycle (any goal), not strictly per-goal. A true **per-goal** handoff note
+    would need a schema change (migration) — flagged for Nikolaj if he wants it.
+- **DB needed:** none.
+- **Verified locally:** tsc clean; font-stub build 60/60.
+- **⚠ QA:** a patient with no therapist activity shows NO therapist input button
+  and NO handoff panel on the treatment page; once a therapist evaluates or
+  suggests, both appear.
+
+### `simplify-cockpit-10` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-10.zip`. Training day-list shows
+  directly in the drawer. **Tag:** `simplify-cockpit-10`
+- **Migration:** **none** (DB stays at **0088**).
+- **Training day-list no longer nested-collapsible.** `TrainingOverview` was a
+  collapsible card; inside the training drawer that was a menu-in-a-menu. Made it
+  non-collapsible — the week×day grid (and legend) now render directly under a
+  static summary header, so opening the Training drawer shows the day-list at
+  once. Removed the toggle button/chevron/`open` state/`useId`. (Used only in the
+  cockpit training drawer, so no other call site affected.)
+- **DB needed:** none.
+- **Verified locally:** tsc clean; font-stub build 60/60.
+- **⚠ QA:** open the Training drawer → the day grid shows immediately (no
+  expand/collapse step).
+
+### `simplify-cockpit-9` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-9.zip`. #9b therapist→treatment
+  page. **Tag:** `simplify-cockpit-9`
+- **Migration:** **none** (DB stays at **0088**).
+- **#9b — therapist input relocated to the treatment page.** New
+  `components/clinician/TherapistInputPanel.tsx` holds the therapist activity
+  (visit days + adjustment requests) and the goal/muscle suggestions with the
+  consider/dismiss actions (the two `Physio*SuggestionActions` helpers moved into
+  it). On the **treatment page** a counted, Suggestions-style button
+  (badge = `physioGoalSuggestions.length + physioMuscleSuggestions.length`) opens
+  it in a `CockpitPanelDrawer`. Data comes from the `useClinicianPatientData` the
+  treatment page already loads — no new query. New key
+  `treatment.therapistInputButton` (en+da).
+- **Removed from the cockpit:** the therapist (physio) action-row button, the
+  physio panel, the two suggestion-action helpers, and `'physio'` from the
+  `openPanel` type. `onActionSelect` narrowed (only Training opens a panel now;
+  medication is edited from the background field, physio is on the treatment
+  page). The `physio` icon/id remain in PatientActionRow (harmless, unused).
+- **DB needed:** none.
+- **Verified locally:** tsc clean; font-stub build 60/60; en/da parity intact.
+- **⚠ QA:** cockpit action row = Training · History · Export (no therapist
+  button). On the treatment page, the **Therapist input** button shows a count
+  badge when suggestions exist and opens the panel (activity + suggestions, with
+  consider/dismiss working). Drawer closes on backdrop click.
+
+### `simplify-cockpit-8` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-8.zip`. Graph width cap +
+  last-visit max-effect. **Tag:** `simplify-cockpit-8`
+- **Migration:** **none** (DB stays at **0088**).
+- **Goal graph width capped.** `GoalProgressView`'s SVG was `w-full` and scaled
+  UP on the wide desktop column (native viewBox is 360×160), making it oversized.
+  Added `max-w-[360px]` so it renders at native size on desktop and still shrinks
+  on narrow screens. (The enlarged view uses a separate `GoalGraphModal`, so it's
+  unaffected.)
+- **Last-visit section shows Max effect + Most recent.** `VisitChanges` per-goal
+  row previously showed only the most recent measurement; now it shows both the
+  **peak (max effect)** and the **most recent**, with labels. Peak is
+  direction-aware (max when higher-is-better, min when lower-is-better — GAS and
+  NRS directions respected). New keys `visitChanges.peakLabel` /
+  `visitChanges.recentLabel` (en+da).
+- **DB needed:** none.
+- **Verified locally:** tsc clean; font-stub build 60/60; en/da parity + 0 ICU
+  mismatches.
+- **⚠ QA:** desktop goal graphs are no longer stretched. The since-last-treatment
+  rows show two values (Max effect, Most recent) plus the trend chip.
+
+### `simplify-cockpit-7` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-7.zip`. Backdrop-close + bg-field
+  cleanup. **Tag:** `simplify-cockpit-7`
 - **Migration:** **none** (DB stays at **0088**).
 - **Drawers/modals now close on backdrop click.** `useModalA11y` only handled
   Escape; added an `onClick` backdrop handler (`e.target === e.currentTarget →
@@ -1317,26 +1404,27 @@ trimming. ✅ done · ◑ partial · ☐ todo · 💬 needs a decision/draft fro
 8. ✅ **"Show last treatment"** — button in the since-last-treatment section
    opens `LastTreatmentModal` (read-only injection record). Hidden when no
    treatment recorded.
-9. ◑ **Action panels → side drawers** — ✅ #9a drawers; ✅ drawers now close on
-   backdrop click. ☐ #9b: move therapist input OFF the cockpit ONTO the
-   treatment page. **Decided:** a button like the front-page Suggestions button
-   (count badge) that opens the therapist suggestions. Therapist button still on
-   the cockpit until the treatment-page home is built (so it isn't stranded).
+9. ✅ **Action panels → side drawers** — #9a drawers; drawers close on backdrop
+   click; #9b therapist input moved OFF the cockpit ONTO the treatment page as a
+   counted, Suggestions-style button opening `TherapistInputPanel`.
 10. ✅ **Medication** — now opens as a side drawer (CockpitPanelDrawer) instead
     of a centre panel in the left column.
-11. ☐ **"Note for the therapist"** should only be active when a therapist is
-    actually reporting on that goal (gate on therapist activity for the goal).
+11. ✅ **Therapist modules gated on engagement** — cockpit per-goal display was
+    already data-gated; the treatment-page Therapist-input button + handoff panel
+    now show only once a therapist has evaluated/suggested this cycle. (Handoff
+    note is per-cycle; true per-goal note would need a migration — see §7.)
 
 ### Front-page refinements (from session feedback)
 - ✅ Drawers close on click-outside.
 - ✅ Background field: no name restatement; medication shown with Edit; med
   action-row button removed.
-- ☐ **Therapist action button** still to be removed from the cockpit (paired
-  with #9b treatment-page button).
-- ☐ **Training day-list**: don't nest a collapsible menu inside the training
-  drawer — make the day-list a pop-up instead (needs TrainingOverview rework).
-- ☐ **Goal graphs may be too wide** on the front page — consider capping the
-  chart width (user unsure; confirm before constraining).
+- ✅ **Therapist action button** removed from the cockpit; therapist input now on
+  the treatment page (counted button).
+- ✅ **Training day-list** now shows directly in the training drawer
+  (TrainingOverview made non-collapsible) — no menu-in-a-menu.
+- ✅ **Goal graphs too wide on desktop** — capped GoalProgressView SVG at
+  `max-w-[360px]` (native size).
+- ✅ **Last-visit section** now shows Max effect (peak) + Most recent per goal.
 
 ### Other open items (pre-existing)
 

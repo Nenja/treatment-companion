@@ -1,37 +1,37 @@
-BUILD: simplify-cockpit-7   (drawer backdrop-close + background-field cleanup — NO migration)
+BUILD: simplify-cockpit-11   (#11 therapist modules gated on engagement — NO migration)
 ==========================================================================
 MIGRATION: none. DB stays at 0088. Nothing to run in Supabase.
-Batch 7 of cockpit simplification. Backlog + status in HANDOVER §8.
+Batch 11 of cockpit simplification. Backlog + status in HANDOVER §8.
 
-DONE (refinements from your feedback)
-- DRAWERS CLOSE ON BACKDROP CLICK. useModalA11y only handled Escape; added an
-  onClick backdrop handler to CockpitPanelDrawer, RecordGoalDrawer,
-  EditGoalDrawer, LastTreatmentModal, TreatedMusclesModal. (VideoProtocolEditor
-  already closed on backdrop.) Click anywhere outside a drawer/modal to dismiss.
-- PATIENT BACKGROUND FIELD (PatientBanner):
-  * Removed the patient NAME restatement (it's already in the page header).
-  * MEDICATION moved here: the field always shows the medication line with an
-    Edit button (opens the medication drawer); the MEDICATION button was removed
-    from the action row.
+DONE — #11: only show therapist information once a therapist has engaged.
+- Cockpit (per goal): ALREADY gated by data — a goal shows the therapist overlay
+  (physio ratings) / working-on tag only once a therapist has evaluated that
+  goal. No change needed.
+- Treatment page: the "Therapist input" button and the physician->therapist
+  handoff panel (title + "treatment changed?" toggle + note) now render only when
+  therapistHasEngaged = physioAssessments.length > 0 || therapistSuggestionCount
+  > 0 (the therapist has evaluated or suggested this cycle). Until then the
+  physician sees no therapist UI for the patient.
+
+GRANULARITY NOTE
+- The handoff note is a PER-CYCLE field (treatment_handoff), so it activates once
+  the therapist engages with the cycle (any goal), not strictly per-goal. A true
+  per-goal handoff note would need a schema change (migration). Say the word if
+  you want per-goal notes and I'll plan that migration.
 
 VERIFIED LOCALLY
 - tsc --noEmit clean.
-- en/da parity intact (reused existing labels; no new keys).
 - Production build OK via the font-stub procedure (restored byte-for-byte, zero
   BUILD-STUB remnants). 60/60 pages.
 
 DEPLOY: no migration; unzip, push, Vercel builds. Page count 60.
 
 ** QA **
-- Open Training (or any) drawer -> click the dimmed area outside it -> it closes.
-- Background field: shows demographics + modality + treatment date + medication
-  (with Edit) + devices, and NO duplicated patient name. Edit opens the
-  medication editor; Save/Cancel still work.
-- Action row no longer has a Medication button.
+- A patient with NO therapist activity: treatment page shows no Therapist-input
+  button and no handoff panel. After a therapist evaluates or suggests, both
+  appear. Cockpit goals only show therapist overlay/working-on for goals the
+  therapist evaluated.
 
-NOT YET DONE (next batch)
-- Therapist action button removal + #9b treatment-page button (a counted,
-  Suggestions-style button that opens the therapist suggestions). Kept on the
-  cockpit for now so therapist input isn't stranded.
-- Training: make the day-list a pop-up instead of a collapsible-in-drawer.
-- Goal graphs possibly too wide -> consider capping chart width (confirm first).
+BACKLOG REMAINING (HANDOVER §8): #4 muscle->function (parked, draft ready);
+per-goal handoff note (migration, only if wanted); adjustment-request status
+loop (migration); REDCap / EHR-content decisions.

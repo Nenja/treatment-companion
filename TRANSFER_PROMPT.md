@@ -72,25 +72,22 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-7` — **no migration**. DB stays at **0088**.
-- **Just shipped:** drawers now close on backdrop click; patient-background field
-  cleaned up (removed the duplicate patient name; medication shown there with an
-  Edit button; removed the medication button from the action row).
+- **Latest build:** `simplify-cockpit-11` — **no migration**. DB stays at **0088**.
+- **Just shipped:** training day-list shows directly in the drawer (no nested
+  collapsible, batch 10); #11 — therapist modules on the treatment page (input
+  button + handoff panel) now appear only once a therapist has engaged this
+  cycle (cockpit per-goal display was already data-gated).
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
-  audit remediation; EHR localisation; cockpit simplification batches 1–7.
+  audit remediation; EHR localisation; cockpit simplification batches 1–11.
+  The original 11-item simplification list is complete (bar #4, parked).
 
-**What's likely next** *(simplification backlog — `HANDOVER.md` §8)*
-- **#9b + therapist-button removal (paired):** remove the therapist button from
-  the cockpit AND add a counted, Suggestions-style button on the TREATMENT page
-  that opens the therapist suggestions. (Decided; build together so therapist
-  input isn't stranded.)
-- **Training day-list:** make it a pop-up instead of a collapsible nested inside
-  the training drawer (TrainingOverview rework).
-- **Goal graphs:** possibly too wide on the front page — cap chart width (user
-  unsure; confirm before constraining).
-- **#11** gate therapist note on therapist activity (per-cycle vs per-goal).
-  **#4** muscle→function parked.
-- **Then:** adjustment-request status loop (migration); REDCap/EHR-content.
+**What's likely next**
+- **#4 muscle→function** (parked) — clinician-verifiable draft in `docs/`;
+  needs Nikolaj's markup + the structured-catalogue decision.
+- **Per-goal handoff note** (optional) — the note is per-cycle today; a true
+  per-goal note needs a migration. Only if Nikolaj wants it.
+- **Then:** adjustment-request status loop (migration); REDCap dictionary
+  reconciliation + EHR-content reshaping (decisions for the study team/DPO).
 
 **Your first reply:** confirm you've read `HANDOVER.md`, state the current build
 + migration in a line or two, and either wait for my “go” or ask the one thing
