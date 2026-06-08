@@ -25,7 +25,11 @@ export function RecordGoalDrawer({
   const containerRef = useModalA11y(onClose);
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-ink/40">
+    <div className="fixed inset-0 z-50 flex justify-end bg-ink/40"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div
         ref={containerRef}
         role="dialog"

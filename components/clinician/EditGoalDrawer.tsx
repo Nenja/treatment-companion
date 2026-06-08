@@ -7,6 +7,7 @@ import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
 import { useEditGoal } from '@/lib/supabase/clinicianPatient';
 import type { ClinicianPatientGoal } from '@/lib/supabase/clinicianPatient';
+import { VideoProtocolEditor } from './VideoProtocolEditor';
 
 const inputClasses =
   'mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none';
@@ -46,6 +47,7 @@ export function EditGoalDrawer({
   const [z0, setZ0] = useState(goal.gas?.zero ?? '');
   const [p1, setP1] = useState(goal.gas?.plus1 ?? '');
   const [p2, setP2] = useState(goal.gas?.plus2 ?? '');
+  const [videoOpen, setVideoOpen] = useState(false);
 
   const isGas = goal.kind === 'gas';
   const numOrNull = (s: string) => (s.trim() === '' ? null : Number(s));
@@ -86,7 +88,12 @@ export function EditGoalDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-ink/40">
+    <>
+    <div className="fixed inset-0 z-50 flex justify-end bg-ink/40"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div
         ref={containerRef}
         role="dialog"
@@ -196,6 +203,32 @@ export function EditGoalDrawer({
             {t('carryForwardNote')}
           </p>
 
+          {/* Video task lives with the goal setup — configure it here rather
+              than as a separate button on the goal card. */}
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => setVideoOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <rect x="2" y="6" width="14" height="12" rx="2" />
+                <path d="M16 10l6-3v10l-6-3z" />
+              </svg>
+              {t('videoTaskButton')}
+            </button>
+          </div>
+
           <div className="mt-6 flex gap-3">
             <button
               type="button"
@@ -216,5 +249,17 @@ export function EditGoalDrawer({
         </div>
       </div>
     </div>
+    {videoOpen && (
+      <VideoProtocolEditor
+        goalId={goal.id}
+        goalText={goal.patientFacingText}
+        initialEnabled={goal.videoEnabled}
+        initialInstruction={goal.videoTaskInstruction}
+        initialSetup={goal.videoTaskSetup}
+        initialSeconds={goal.videoTaskSeconds}
+        onClose={() => setVideoOpen(false)}
+      />
+    )}
+    </>
   );
 }

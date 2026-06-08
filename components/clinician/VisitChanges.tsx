@@ -26,6 +26,9 @@ interface VisitChangesProps {
   /** Patient id — drives the conditional wearable trend (only shown when
    *  the patient actually has observations). */
   patientId: string;
+  /** Opens the "last treatment" dialog. Only wired when a treatment is
+   *  recorded for the cycle; the button is hidden otherwise. */
+  onShowLastTreatment?: () => void;
 }
 
 type Trend = 'up' | 'down' | 'flat';
@@ -131,9 +134,11 @@ export function VisitChanges({
   cycleStartDate,
   checkins,
   goals,
-  patientId
+  patientId,
+  onShowLastTreatment
 }: VisitChangesProps) {
   const t = useTranslations('visitChanges');
+  const tLast = useTranslations('lastTreatment');
   const tv = useTranslations('clinician.video');
   const locale = useLocale();
   const setClinicScore = useSetClinicVideoScore();
@@ -306,11 +311,22 @@ export function VisitChanges({
         <h2 className="font-display text-[18px] leading-tight text-ink">
           {t('title')}
         </h2>
-        {since.length > 0 && (
-          <span className="shrink-0 text-[12px] text-ink-muted">
-            {t('checkinCount', { count: since.length })}
-          </span>
-        )}
+        <div className="flex shrink-0 items-baseline gap-3">
+          {onShowLastTreatment && anchoredToTreatment && (
+            <button
+              type="button"
+              onClick={onShowLastTreatment}
+              className="self-center rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-stone-soft"
+            >
+              {tLast('button')}
+            </button>
+          )}
+          {since.length > 0 && (
+            <span className="text-[12px] text-ink-muted">
+              {t('checkinCount', { count: since.length })}
+            </span>
+          )}
+        </div>
       </div>
       <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">
         {since.length === 0 ? anchorPhrase : `${anchorPhrase} · ${adherencePhrase}`}
