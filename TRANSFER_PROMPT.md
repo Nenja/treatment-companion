@@ -72,35 +72,34 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `audit-fixes` — **no migration**. DB stays at **0088** (0066
-  is dev-only).
-- **Just shipped:** remediation of the four audit docs in `docs/audits/`
-  (all-roles-workflow, i18n-parity, clinician-cockpit-accessibility,
-  data-output-correctness). Code/copy only, no schema change: fixed the EHR
-  export's false "clear wearing-off" + sustained-streak + NRS-direction note +
-  units reconciliation; keyed every i18n leak found (suggestion actions, the EHR
-  export modal, the goal-chart legend/captions/aria) en+da; added a cockpit
-  `<h1>`, a hidden chart data-table, and modal body-scroll-lock; and made the
-  start-cycle button state it activates the patient/therapist. tsc clean, build
-  60/60, catalog parity re-checked (0 ICU mismatches).
+- **Latest build:** `ehr-localized` — **no migration**. DB stays at **0088**.
+  Cumulative on top of `audit-fixes`.
+- **Just shipped:** the EHR-paste export is now **fully localised**. It used to
+  be English-only (only dates followed locale); `buildEhrExport` now takes a
+  translator and renders the whole note from a new `ehrExport` namespace (42
+  keys, en+da) — ICU plurals, week markers, units, side codes, the GAS/NRS
+  sentence all switch with the locale. Danish is a first pass (native review
+  pending). The prior `audit-fixes` layer (EHR correctness, i18n leaks, cockpit
+  a11y, start-cycle copy) is included.
 - **Epics complete:** goal-versioning; therapist-signals; physician->therapist
-  handoff note (0088). The audit/remediation pass sits on top.
+  handoff note (0088). Audit remediation + EHR localisation sit on top.
 
 **What's likely next** *(update each delivery - see `HANDOVER.md` §8)*
-- **Adjustment-request status loop** - the one audit fix NOT yet built: give the
-  therapist's "needs adjusting" flag a status so the physician's response echoes
-  back (needs a status column -> a small new migration + cross-role UI).
-- **REDCap dictionary reconciliation (my decision)** - the dictionary defines
-  check-in fields the app doesn't collect, exports goal free-text unflagged,
-  models guidance per-muscle vs per-session, and exports exact dates +
-  birth_year. Settle with the study team / DPO before any push is built (the
-  push itself isn't built - the dictionary is a spec).
-- **EHR-text language (my decision)** - the EHR paste is English-only; decide if
-  it should follow locale.
-- **Open policy calls (need my decision first):** persistent/recurring therapist
-  access (touches the consent model); between-cycle observations.
-- **Bigger infra (more the incoming developer's domain):** wearable vendor
-  adapters; the treatment-modality WP4 backbone. Leave unless I ask.
+- **EHR-text CONTENT (my decision, in progress):** localisation is done; the
+  *content/structure* of the note still needs work — what fields it should
+  carry (baseline->target, SMART text, retired-goal outcomes, therapist input,
+  clinic-video, ITB) and whether the GAS/NRS shorthand should be plainer. I owe
+  a direction here.
+- **Adjustment-request status loop** - audit finding not yet built: status
+  column + RPC + cross-role UI so the therapist's "needs adjusting" flag echoes
+  the physician's response.
+- **REDCap dictionary reconciliation (my decision)** - phantom check-in fields,
+  free-text PII, per-muscle vs per-session guidance, exact-date quasi-IDs;
+  settle with study team / DPO before any push (the push isn't built).
+- **Open policy calls:** persistent/recurring therapist access; between-cycle
+  observations.
+- **Bigger infra (incoming developer):** wearable adapters; WP4 modality
+  backbone. Leave unless I ask.
 
 **Your first reply:** confirm you've read `HANDOVER.md`, state the current build
 + migration in a line or two, and either wait for my “go” or ask the one thing

@@ -1,69 +1,55 @@
-BUILD: audit-fixes   (remediation of the four audit docs — NO migration)
+BUILD: ehr-localized   (EHR-paste export fully localised — NO migration)
 ==========================================================================
 MIGRATION: none. The database stays at 0088. Nothing to run in Supabase.
+This zip is CUMULATIVE on top of `audit-fixes` (same working tree).
 
-WHAT THIS BUILD DOES
-Implements every concrete code/copy finding from the four audits in
-docs/audits/ (all-roles-workflow, i18n-parity, clinician-cockpit-accessibility,
-data-output-correctness). No schema change, no new behaviour for the DB.
+WHAT THIS BUILD ADDS (on top of audit-fixes)
+The EHR-paste export (lib/ehrExport.ts) is now fully localised. Before, only
+the dates followed the app locale; every label and sentence fragment was
+hardcoded English. Now:
+- buildEhrExport takes a translator (ExportTranslator) and renders the whole
+  note from a new `ehrExport` message namespace (42 keys, en + da).
+- ICU plurals localise ("# week"/"# weeks" -> "# uge"/"# uger"), as do week
+  markers (W -> uge), units (units -> enheder), side codes (L/R/B -> V/H/B),
+  guidance methods, modality labels, and the GAS/NRS goal sentence.
+- The call site (clinician/patient) passes useTranslations('ehrExport').
+- All the audit-fixes correctness behaviour is preserved (wearing-off guard,
+  sustained gap-break, NRS-direction note, units reconciliation, switch
+  defaults).
 
-DATA-OUTPUT CORRECTNESS (lib/ehrExport.ts)
-- [High] Fixed the false "clear wearing-off": the return-to-baseline clause now
-  requires the patient to have actually risen above baseline first
-  (peak > initial). A stable/flat-good series (e.g. GAS +1 every week) no longer
-  reports wearing-off.
-- "Sustained N weeks" now breaks on a calendar gap (a skipped week), matching
-  its own documented behaviour — it no longer counts across unreported weeks.
-- Lower-is-better NRS goals get a "(NRS: lower is better.)" note so a low raw
-  NRS isn't misread as a poor result.
-- Added a reconciliation line when per-injection doses don't sum to the recorded
-  total ("Note: listed injections sum to X units (recorded total Y).").
-- default cases on sideLabel/guidanceLabel; buildGoalSentence now takes the goal
-  (kind + nrs direction). Stale "single source" comment in lib/types.ts fixed.
+DANISH IS A FIRST PASS — FLAG FOR NATIVE REVIEW
+Especially: the GAS/NRS sentence wording, side codes (V/H for venstre/højre),
+and whether "Peak" should be translated. The rest of the audit-fixes Danish
+(treatment.forPatient "Til {name}", etc.) is also pending review.
 
-I18N LEAKS KEYED (en + da, full parity)
-- Physio-suggestion action components (clinician/patient): toasts, button text,
-  and status labels were hardcoded English -> clinician.patient.suggestion*.
-- ExportModal fully keyed -> clinician.export.* (title/intro/copied/close/copy).
-- GoalProgressView: chart aria-label, legend (Patient/Physiotherapist), and the
-  week captions were hardcoded -> a11y.chart* and treatment.chart*.
-- Danish fixes: visitChanges.checkinCount plural now translated; treatment.
-  forPatient -> "Til {name}" (FLAG: pending native-speaker review).
-
-ACCESSIBILITY (clinician cockpit)
-- The cockpit now has an <h1> (the patient name wraps the existing info button).
-- Each goal chart has a visually-hidden data table (sr-only) referenced by the
-  svg's aria-describedby, so screen-reader users get the actual weekly values.
-- useModalA11y now locks body scroll for a modal's lifetime (restored on close).
-
-CROSS-ROLE LEGIBILITY
-- The "Start a new treatment cycle" button now carries a one-line hint that
-  starting a cycle activates the patient's weekly check-ins and lets the
-  therapist report progress (the workflow audit's headline finding).
+ALSO INCLUDED (from audit-fixes — see HANDOVER §7b / git)
+EHR wearing-off/sustained/NRS-direction fixes; i18n leaks keyed en+da
+(suggestion actions, export modal, goal-chart legend/captions/aria); cockpit
+<h1>; hidden per-chart data table; modal body-scroll-lock; start-cycle
+dependency copy.
 
 VERIFIED LOCALLY
 - tsc --noEmit clean.
 - Production build OK via the font-stub procedure (fonts stubbed, built,
   layout.tsx restored byte-for-byte, zero BUILD-STUB remnants). 60/60 pages.
-- en/da catalog: 1326 keys each side (+2 da _meta), 0 missing, 0 ICU-argument
-  mismatches (re-checked after the additions).
+- en/da catalog: 1368 keys each side (+2 da _meta), 0 missing, 0 ICU-argument
+  mismatches.
+- New ICU strings smoke-formatted in both locales (plurals + interpolation
+  render correctly).
 
 DEPLOY
 1. No migration. Do NOT run anything in Supabase.
 2. Unzip; push to GitHub; Vercel builds. Page count 60.
 
 ** QA (please verify — can't be tested here) **
-- Screen-reader pass on the cockpit: the patient name reads as a heading; each
-  goal chart exposes its weekly values via the hidden data table.
-- Open any modal (retire goal, start cycle, record goal, export): the page
-  behind no longer scrolls.
-- Switch the app to Danish and check the newly-keyed strings render in Danish:
-  the suggestion action buttons/toasts, the EHR export modal, and the goal-chart
-  legend/captions. (treatment.forPatient "Til {name}" needs a native check.)
-- EHR export wording on a real stable-good patient (GAS steady at +1): should
-  now read "Wearing-off: none." not "Clear wearing-off".
+- Switch the app to Danish, open a patient with a recorded cycle + check-ins,
+  open "Export for EHR": the whole note should be in Danish (header, treatment,
+  injection lines, the goal sentence, comments). Read it for wording.
+- An English-locale export should read exactly as before audit-fixes, plus the
+  audit-fixes content corrections.
 
-NOT IN THIS BUILD (your decision / separate slice — see HANDOVER §8)
+STILL OPEN — YOUR DECISION (see HANDOVER §8)
+- EHR-text CONTENT/structure (what fields the note should carry, tone). Awaiting
+  your direction before reshaping the builder.
 - Adjustment-request status loop (feature; needs a migration + cross-role UI).
 - REDCap dictionary reconciliation (study-team / DPO decisions).
-- Whether the EHR-paste text should follow locale instead of English.

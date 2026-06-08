@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `audit-fixes` (no migration; remediation of the four audit docs in `docs/audits/` — EHR-export logic, i18n leaks, cockpit accessibility, cross-role legibility — §3, §7)._
+> _Last updated for build tag: `ehr-localized` (no migration; the EHR-paste export is now fully localised via the `ehrExport` message namespace; sits on top of `audit-fixes` — §7, §8)._
 
 ---
 
@@ -814,15 +814,39 @@ short note + "treatment changed?" flag, surfaced to the therapist, never
 patient-visible) →
 **`audit-fixes`** (no migration; remediation of the four audit docs — EHR
 wearing-off/sustained/NRS-direction fixes, i18n leaks keyed en+da, cockpit `h1`
-+ chart data-table + modal scroll-lock, start-cycle dependency copy; current).
++ chart data-table + modal scroll-lock, start-cycle dependency copy) →
+**`ehr-localized`** (no migration; EHR-paste export fully localised via the
+`ehrExport` namespace, en+da; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-audit-fixes.zip`
-- **Tag:** `audit-fixes`
-- **Migration:** **none** (DB stays at **0088**).
+- **Zip:** `treatment-companion-ehr-localized.zip`
+- **Tag:** `ehr-localized`
+- **Migration:** **none** (DB stays at **0088**). Cumulative on top of
+  `audit-fixes` (same working tree; that build is summarised in §7b).
+- **Change:** the EHR-paste export (`lib/ehrExport.ts`) is now **fully
+  localised**. Previously only the dates followed locale; every label and
+  sentence fragment was hardcoded English. `buildEhrExport` now takes a
+  translator (`ExportTranslator`) and renders the whole note from the new
+  **`ehrExport`** message namespace (42 keys, en+da). ICU plurals
+  (`# week`/`# weeks` → `# uge`/`# uger`), week markers (`W` → `uge`), units,
+  side codes (L/R/B → V/H/B) and the GAS/NRS sentence all switch with the app
+  locale. The call site (`clinician/patient`) passes `useTranslations('ehrExport')`.
+  Danish is a first pass — **flag for native-speaker review** (esp. the GAS/NRS
+  sentence wording, side codes V/H, and "Peak").
+- **DB needed:** none.
+- **Verified locally:** `tsc --noEmit` clean; production build OK via the
+  font-stub procedure, **60/60 pages**; en/da parity re-checked (1368 keys/side
+  + 2 da `_meta`), **0 ICU-argument mismatches**; the new ICU strings
+  smoke-formatted in both locales (plurals + interpolation render correctly).
+- **⚠ QA / open:** **content** of the EHR note still needs work (your call — see
+  §8). Skim a Danish-locale export for wording. The Danish strings are a first
+  pass.
+
+### `audit-fixes` (previous; no migration)
+- **Zip:** `treatment-companion-audit-fixes.zip`. **Migration:** none.
 - **Change:** remediation pass implementing the concrete code/copy findings from
   four audits (`all-roles-workflow`, `i18n-parity`, `clinician-cockpit-
   accessibility`, `data-output-correctness` — all in `docs/audits/`). No schema
@@ -1107,9 +1131,15 @@ have decided unilaterally:**
   and exports exact dates + birth_year (quasi-identifiers). All need your /
   the study team's / the DPO's call before any push is built. The push itself
   is **not built** — the dictionary is a spec.
-- **EHR-text language** *(decision)* — the EHR paste is English-only (dates
-  localise, prose doesn't). Deliberate clinical shorthand, or should it follow
-  locale? Your call.
+- **EHR-text language** — ✅ RESOLVED in `ehr-localized`: the export now follows
+  the app locale (en/da) via the `ehrExport` namespace. Danish is a first pass,
+  pending native review.
+- **EHR-text content** *(your call — open)* — the *content/structure* of the
+  note still needs work. Candidates surfaced (data exists, not yet shown): goal
+  baseline→target + SMART text + how retired goals ended; therapist input
+  (visit days / worked-on / adjustment requests); clinic-video results; ITB
+  dose changes; and whether the dense GAS/NRS shorthand should read as plainer
+  prose. Awaiting direction before reshaping the builder.
 
 
 **Recently completed epics (this session) — context for what's now done:**

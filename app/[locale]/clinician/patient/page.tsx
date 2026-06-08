@@ -58,7 +58,7 @@ import { useModalA11y } from '@/lib/useModalA11y';
 import { useWideLayout } from '@/lib/useWideLayout';
 import { useNavStyle } from '@/lib/useNavStyle';
 import { PageHelpButton } from '@/components/feedback/PageHelpButton';
-import { buildEhrExport } from '@/lib/ehrExport';
+import { buildEhrExport, type ExportTranslator } from '@/lib/ehrExport';
 import { useToast } from '@/components/feedback/Toast';
 import { useSetPhysioGoalSuggestionStatus } from '@/lib/supabase/physioGoalSuggestion';
 import { useSetPhysioMuscleSuggestionStatus } from '@/lib/supabase/physioMuscleSuggestion';
@@ -68,6 +68,7 @@ export default function ClinicianPatientPage() {
   const locale = useLocale();
   const t = useTranslations('clinician.patient');
   const tA11y = useTranslations('a11y');
+  const tExport = useTranslations('ehrExport');
   const tSession = useTranslations('clinician.session');
   const tInfo = useTranslations('patientInfo');
   const tEt = useTranslations('etiology');
@@ -1785,7 +1786,8 @@ export default function ClinicianPatientPage() {
                 nrsValue: r.nrsValue
               }))
             })),
-            locale
+            locale,
+            t: tExport as unknown as ExportTranslator
           })}
           onClose={() => setShowExport(false)}
         />
