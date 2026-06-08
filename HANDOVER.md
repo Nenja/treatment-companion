@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-27` — CUMULATIVE rebuild (no migration; DB 0090). Supersedes the inconsistent 21–26 zips; see §7._
+> _Last updated for build tag: `simplify-cockpit-28` (no migration; DB 0090). Cumulative; supersedes 21–27. Latest change: removed the empty top-of-left-column alignment band; see §7._
 
 ---
 
@@ -849,7 +849,15 @@ new-goal + approve calibration forms; current).
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-simplify-cockpit-27.zip`
+- **Zip:** `treatment-companion-simplify-cockpit-28.zip`
+- **Tag:** `simplify-cockpit-28`  ·  **Migration:** none (DB **0090**).
+- **Cumulative** (same full set as cockpit-27 below). **Latest change:** removed
+  the empty `lg:min-h-[39px]` alignment band at the top of the context column —
+  once the modality pill moved into the Background card it left an empty gap.
+  "Since last visit" now leads the context column flush (`mt-4 lg:mt-0`), so its
+  top sits level with the "Active goals" heading opposite; the first graph sits
+  below that heading as normal. (If graph-level alignment is ever wanted again,
+  it would require a non-empty band, which is what caused the gap.)
 - **Tag:** `simplify-cockpit-27`  ·  **Migration:** none (DB **0090**).
 - **⚠ Why this is a cumulative rebuild.** The build sandbox reset itself between
   builds during the prior session, so the zips tagged 21–26 were each built on a

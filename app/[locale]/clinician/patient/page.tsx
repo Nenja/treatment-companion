@@ -1023,11 +1023,11 @@ export default function ClinicianPatientPage() {
             )}
           </CockpitPanelDrawer>
         )}
-        {/* Empty alignment band: the goals column opens with a ~39px header
-            (Active goals + buttons), so reserve the same height here on the wide
-            layout to keep "since last visit" level with the first goal graph. */}
-        <div className="lg:min-h-[39px]" aria-hidden />
-        <div className="mt-4 lg:mt-3">
+        {/* "Since last visit" leads the context column flush at the top, so
+            its top sits level with the "Active goals" heading opposite. (No empty
+            alignment band — that read as a gap once the modality pill moved into
+            the Background card.) */}
+        <div className="mt-4 lg:mt-0">
           <VisitChanges
             lastTreatmentDate={treatment?.date ?? null}
             cycleStartDate={cycle.startDate}
