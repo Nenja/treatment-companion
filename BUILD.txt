@@ -1,35 +1,19 @@
-BUILD: simplify-cockpit-2   (read-aloud bug fix + night-mode investigation + #4 draft — NO migration)
+BUILD: simplify-cockpit-5   (#6 overlap fix + goal 'Edit' button regroup — NO migration)
 ==========================================================================
 MIGRATION: none. DB stays at 0088. Nothing to run in Supabase.
-Batch 2 of the cockpit-simplification effort. Backlog + status in HANDOVER §8.
+Batch 5 of cockpit simplification. Backlog + status in HANDOVER §8.
 
 DONE
-- #2a READ-ALOUD FIXED. The toggle wrote read_aloud to the DB but called
-  invalidateQueries(['auth']) — and the profile lives in AuthProvider's
-  useState, not a react-query cache, so that was a no-op: the preference never
-  refreshed in memory and the speaker button never appeared until a full
-  reload. Now uses refreshProfile() like the palette/night setters. One file:
-  lib/supabase/readAloud.ts.
-
-INVESTIGATED, NO FIX YET (need input)
-- #3 NIGHT-MODE. Traced the whole path: night_mode round-trips through the
-  profile correctly; resolveColors returns proper dark palettes; the compiled
-  utilities use var(--color-*) (verified .bg-cream{background-color:var(--color-cream)}
-  in the built CSS, so runtime overrides DO apply); no stray non-token colours
-  on the main surfaces. I could NOT reproduce "doesn't work properly" from the
-  code. Please tell me the exact symptom:
-    (a) nothing visibly changes when you toggle, or
-    (b) most of the app changes but some areas stay light, or
-    (c) it changes then reverts / flashes light on reload.
-  Each points to a different fix.
-
-DRAFT FOR YOUR REVIEW
-- #4 muscle -> patient-function mapping: docs/muscle-function-mapping-DRAFT.md.
-  Finding: body muscles are FREE TEXT (no catalogue), so this needs a structured
-  muscle catalogue with patient-function labels. The draft is that catalogue's
-  first cut (upper/lower limb, en + da). Please correct the function column;
-  then I'll build the picker + switch the patient "treated muscles" pop-up to
-  show the function (with a fallback to raw text for legacy entries).
+- #6 OVERLAP FIXED. The stray "Weekly ratings data for … / Week / Rating" text
+  under each goal graph was a screen-reader data table I added in audit-fixes
+  (GoalProgressView, className="sr-only"). .sr-only is present in the built CSS
+  but was NOT hiding it in production, so it rendered visibly and collided with
+  "Tap a point for details." Removed the table + its tableId + the svg's
+  aria-describedby. The chart keeps its descriptive aria-label (basic a11y).
+- GOAL-CARD BUTTON: "Recalibrate" -> "Edit", regrouped. editGoalCta and the
+  EditGoalDrawer eyebrow/title renamed Recalibrate->Edit (en+da). The Edit
+  button moved from its own row above the chart into the goal action row, next
+  to the video-task button and Retire (now: Edit · video · Retire).
 
 VERIFIED LOCALLY
 - tsc --noEmit clean.
@@ -39,11 +23,12 @@ VERIFIED LOCALLY
 DEPLOY: no migration; unzip, push, Vercel builds. Page count 60.
 
 ** QA **
-- Turn read-aloud ON in a PATIENT's Appearance settings, then look at patient
-  text: the speaker button should appear immediately, no reload. Tap it: the
-  device reads the text (on-device speech; needs a browser/OS voice installed).
+- Under each goal graph: NO stray "Weekly ratings data…/Week/Rating" text; the
+  "Tap a point for details" caption sits alone.
+- Goal action row reads: Edit · (Record/Set baseline + video task) · Retire.
+  The Edit button (pencil) opens the same edit drawer as before.
 
-BACKLOG REMAINING (HANDOVER §8): #3 (awaiting symptom), #4 (awaiting your
-markup), #5 video-under-Edit, #6 overlap, #8 show-last-treatment dialog,
-#9 action icons -> side drawer + therapist input to treatment page,
-#10 medication non-intrusive, #11 gate handoff note on therapist activity.
+BACKLOG REMAINING (HANDOVER §8): #5 move video-task config under Edit (drop the
+separate video button); #9b relocate therapist input to the treatment page;
+#8 show-last-treatment dialog; #11 gate handoff note on therapist activity.
+(#4 muscle mapping parked.)

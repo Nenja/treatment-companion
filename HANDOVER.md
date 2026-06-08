@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-2` (no migration; #2a read-aloud refresh bug fixed; #3 night-mode investigated — code sound, needs a symptom; #4 muscle→function mapping DRAFT delivered for review; backlog in §8)._
+> _Last updated for build tag: `simplify-cockpit-5` (no migration; #6 fixed — removed the stray visible data table under the goal graph; goal-card 'Recalibrate' button renamed 'Edit' and regrouped with video + retire; backlog in §8)._
 
 ---
 
@@ -820,14 +820,85 @@ wearing-off/sustained/NRS-direction fixes, i18n leaks keyed en+da, cockpit `h1`
 **`simplify-cockpit-1`** (no migration; declutter batch 1 — read-aloud scoped to
 patients, goal-card history/link removed, ITB off the front page) →
 **`simplify-cockpit-2`** (no migration; #2a read-aloud refresh fix; #3 night-mode
-investigated; #4 muscle→function DRAFT; current).
+investigated; #4 muscle→function DRAFT) →
+**`simplify-cockpit-3`** (no migration; #3 night-mode FIXED — toggle commits a
+palette so the saved night value sticks) →
+**`simplify-cockpit-4`** (no migration; #9a/#10 — medication/training/therapist
+panels now open as side drawers via CockpitPanelDrawer) →
+**`simplify-cockpit-5`** (no migration; #6 stray data-table under the graph
+removed; goal 'Recalibrate'→'Edit' regrouped with video + retire; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-simplify-cockpit-2.zip`
-- **Tag:** `simplify-cockpit-2`
+- **Zip:** `treatment-companion-simplify-cockpit-5.zip`
+- **Tag:** `simplify-cockpit-5`
+- **Migration:** **none** (DB stays at **0088**).
+- **#6 overlap FIXED.** The screen-reader data table added in `audit-fixes`
+  (GoalProgressView, `className="sr-only"`) was rendering VISIBLY in production
+  and colliding with "Tap a point for details." (`.sr-only` is emitted in the
+  built CSS but wasn't hiding it reliably.) Removed the table, its `tableId`,
+  and the svg's `aria-describedby`. The chart keeps its descriptive aria-label,
+  so basic screen-reader support remains. (The four now-unused `a11y.chart*`
+  table keys are left in the catalogue — harmless, parity intact.)
+- **Goal-card button: "Recalibrate" → "Edit", regrouped.** `editGoalCta` (and
+  the EditGoalDrawer eyebrow/title) renamed Recalibrate→Edit (en+da). The Edit
+  button was a standalone row above the chart; it now sits in the goal's action
+  row alongside the video-task and Retire buttons (Edit · video · retire).
+- **DB needed:** none.
+- **Verified locally:** tsc clean; font-stub build 60/60.
+- **⚠ QA:** under each goal graph there should be NO stray "Weekly ratings
+  data…/Week/Rating" text. The goal action row reads Edit · (video) · Retire.
+
+### `simplify-cockpit-4` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-4.zip`. Action panels → side
+  drawers. **Tag:** `simplify-cockpit-4`
+- **Migration:** **none** (DB stays at **0088**).
+- **#9a + #10 — action panels → side drawers.** The medication, training and
+  therapist-input panels used to open as inline `<section>`s in the left column
+  ("in the middle of everything"). New shared `CockpitPanelDrawer` (mirrors
+  `RecordGoalDrawer`: overlay + right slide-over + focus trap + scroll) now
+  hosts all three. Converted in place — each panel's content/heading is
+  unchanged, just wrapped in the drawer and lifted out of the column flow
+  (position:fixed). The action-row buttons open the drawer; close returns.
+  - #10 medication: now a drawer (non-intrusive). ✅
+  - #9a training: now a drawer. ✅
+  - physio/therapist input: now a drawer too (no longer center-panel). The
+    REMAINING part of #9 — relocating therapist input OFF the cockpit ONTO the
+    treatment page — is still to do (#9b); kept as a drawer in the interim so
+    the clinician doesn't lose visibility of adjustment requests.
+- **DB needed:** none.
+- **Verified locally:** tsc clean; font-stub build 60/60.
+- **⚠ QA (visual — can't test here):** open each action-row item (medication,
+  training, therapist input) → it should slide in from the right as a drawer,
+  not push a panel into the left column. Check the medication edit/save flow and
+  the training overview render correctly inside the 520px drawer.
+
+### `simplify-cockpit-3` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-3.zip`. #3 night-mode fix.
+  **Tag:** `simplify-cockpit-3`
+- **Migration:** **none** (DB stays at **0088**).
+- **#3 night-mode FIXED.** Root cause: `ThemeApplier` only honours a saved
+  `night_mode` once a palette has been explicitly chosen
+  (`hasSavedChoice = colorScheme != null`). A user who never opened the palette
+  picker would toggle night → optimistic apply flashes it on → `refreshProfile`
+  re-runs ThemeApplier → `hasSavedChoice` still false → it falls back to the OS
+  preference and reverts. Net effect: "nothing changes" (the reported symptom).
+  Fix: `useSetNightMode` now persists a concrete palette
+  (`resolvePaletteId(currentPalette)`, default 'green') alongside `night_mode`,
+  so the choice sticks and ThemeApplier respects it. (Picking a palette already
+  set `color_scheme`, so that path was unaffected; only the night-only path was
+  dead.) One file: `lib/supabase/colorScheme.ts`.
+- **DB needed:** none.
+- **Verified locally:** tsc clean; font-stub build 60/60.
+- **⚠ QA:** with the OS in light mode and no palette ever picked, toggle night —
+  the app should go dark and STAY dark (and survive a reload). Toggle back →
+  day.
+
+### `simplify-cockpit-2` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-2.zip`. #2a read-aloud refresh
+  fix; #4 muscle→function DRAFT. **Tag:** `simplify-cockpit-2`
 - **Migration:** **none** (DB stays at **0088**). Batch 2 of cockpit
   simplification (backlog + status in §8).
   - **#2a read-aloud FIXED:** `useSetReadAloud` was calling
@@ -1174,27 +1245,29 @@ trimming. ✅ done · ◑ partial · ☐ todo · 💬 needs a decision/draft fro
 2. ✅ **Read-aloud** — #2b toggle patient-only; #2a FIXED (the toggle used a
    no-op `invalidateQueries` instead of `refreshProfile`, so it never took
    effect without a reload).
-3. 💬 **Night-mode "doesn't work properly"** — INVESTIGATED: code is sound
-   (round-trip ✓, dark sets ✓, var()-based utilities ✓, no stray colours).
-   Can't reproduce from code — need the exact symptom from Nikolaj.
-4. 💬 **Patient-facing muscle names → function language** — DRAFT delivered
-   (`docs/muscle-function-mapping-DRAFT.md`). Body muscles are free text → needs
-   a structured catalogue. Awaiting Nikolaj's correction of the mapping + a
-   decision on the catalogue approach, then wire into `TreatedMusclesModal`.
-5. ◑ **Goal-graph actions** — ✅ history + link removed from the page (history
-   "belongs in a different section" — not yet built); ☐ move the video-task
-   config under "Edit goal" (verify EditGoalDrawer holds it, then drop the
-   card's video buttons).
-6. ☐ **Overlapping text under the goal graph** — layout fix in GoalProgressView
-   (need to identify which labels overlap: axis / week caption / baseline-target).
+3. ✅ **Night-mode** — FIXED. Symptom was "nothing changes" for users who never
+   picked a palette: ThemeApplier ignored saved night_mode (fell back to OS) so
+   the toggle reverted. `useSetNightMode` now commits the resolved palette too.
+4. ⏸ **Patient-facing muscle names → function language** — PARKED at Nikolaj's
+   request. DRAFT ready (`docs/muscle-function-mapping-DRAFT.md`) for when we
+   return; body muscles are free text → needs a structured catalogue.
+5. ◑ **Goal-graph actions** — ✅ history + link removed; ✅ the "Recalibrate"
+   button renamed "Edit" and regrouped with video + retire in the goal action
+   row. ☐ still: move the video-task config under "Edit goal" (verify
+   EditGoalDrawer holds it, then drop the card's separate video button).
+6. ✅ **Overlapping text under the goal graph** — was the `audit-fixes`
+   screen-reader data table rendering visibly (sr-only not hiding it); removed
+   it. (Chart aria-label retained for basic a11y.)
 7. ✅ **ITB off the front page** — removed from cockpit; functionality kept.
 8. ☐ **"Show last treatment" button** in the "since last treatment" field →
    opens a dialog with the previous injection's treatment record.
-9. ☐ **Training / therapist action icons** open a centre panel; make them open a
-   **side drawer** like Record-goal. AND **move therapist input off the cockpit
-   to the treatment page** (not relevant on the cockpit).
-10. ☐ **Medication button** opens a centre panel in the left column → find a
-    non-intrusive display.
+9. ◑ **Action panels → side drawers** — ✅ #9a the medication/training/therapist
+   panels now open as side drawers (CockpitPanelDrawer), not centre panels.
+   ☐ #9b still: move therapist input OFF the cockpit onto the treatment page
+   (kept as a drawer in the interim; needs a placement decision on the
+   treatment page).
+10. ✅ **Medication** — now opens as a side drawer (CockpitPanelDrawer) instead
+    of a centre panel in the left column.
 11. ☐ **"Note for the therapist"** should only be active when a therapist is
     actually reporting on that goal (gate on therapist activity for the goal).
 

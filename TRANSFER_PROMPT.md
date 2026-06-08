@@ -72,25 +72,20 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-2` — **no migration**. DB stays at **0088**.
-- **Just shipped:** #2a read-aloud FIXED (it used a no-op `invalidateQueries`
-  instead of `refreshProfile`, so the toggle never took effect without a
-  reload). #3 night-mode investigated — code is sound, can't reproduce from
-  code, needs the exact symptom. #4 muscle→function mapping DRAFT delivered
-  (`docs/muscle-function-mapping-DRAFT.md`) — body muscles are free text, so it
-  needs a structured catalogue; awaiting Nikolaj's clinical markup.
+- **Latest build:** `simplify-cockpit-5` — **no migration**. DB stays at **0088**.
+- **Just shipped:** #6 — removed the stray screen-reader data table that was
+  rendering visibly under the goal graph (it collided with "Tap a point for
+  details"). And renamed the goal-card "Recalibrate" button to "Edit" and
+  regrouped it with the video-task + Retire buttons.
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
-  audit remediation; EHR localisation; cockpit simplification batches 1–2.
+  audit remediation; EHR localisation; cockpit simplification batches 1–5.
 
 **What's likely next** *(simplification backlog — `HANDOVER.md` §8)*
-- **#3 night-mode:** awaiting the exact symptom from Nikolaj.
-- **#4 muscle catalogue:** awaiting Nikolaj's markup of the draft, then build the
-  picker + switch the patient pop-up to function language.
-- **#5** video task under Edit goal; **#6** overlapping text under the goal
-  graph; **#8** "show last treatment" dialog; **#9** action icons → side drawer
-  + therapist input to the treatment page; **#10** medication non-intrusive;
-  **#11** gate "note for the therapist" on actual therapist activity (note: it's
-  currently per-cycle, the ask is per-goal — small model question).
+- **#5** move the video-task config under Edit goal (drop the separate video
+  button on the card); **#9b** relocate therapist input to the treatment page
+  (needs a placement decision); **#8** show-last-treatment dialog; **#11** gate
+  the therapist note on therapist activity (per-cycle today vs per-goal ask).
+  **#4** muscle→function parked (draft in `docs/`).
 - **Then:** adjustment-request status loop (migration); REDCap/EHR-content
   decisions.
 

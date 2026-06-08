@@ -3,7 +3,11 @@
 import { useMutation } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from './browser';
 import { useAuth } from './auth';
-import { resolveColors, type PaletteId } from '@/lib/palettes';
+import {
+  resolveColors,
+  resolvePaletteId,
+  type PaletteId
+} from '@/lib/palettes';
 
 /**
  * Appearance setters.
@@ -63,9 +67,20 @@ export function useSetNightMode() {
 
       applyAppearance(input.currentPalette, input.night);
 
+      // Persist a CONCRETE palette id alongside night_mode. ThemeApplier only
+      // honours a saved night_mode once a palette has been chosen
+      // (`hasSavedChoice = colorScheme != null`); without this, a user who
+      // never opened the palette picker would toggle night, see it flash on,
+      // then have ThemeApplier fall back to the OS preference and revert —
+      // i.e. "nothing changes". Toggling night IS an explicit appearance
+      // choice, so we record the resolved palette (default 'green') to make
+      // the choice stick.
       const { error } = await supabase
         .from('profile')
-        .update({ night_mode: input.night })
+        .update({
+          night_mode: input.night,
+          color_scheme: resolvePaletteId(input.currentPalette)
+        })
         .eq('id', userResp.user.id);
       if (error) throw error;
     },
