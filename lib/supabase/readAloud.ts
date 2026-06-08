@@ -1,16 +1,21 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from './browser';
+import { useAuth } from './auth';
 
 /**
  * Saves the read-aloud accessibility opt-in to the user's profile row.
  * RLS allows self-update on profile (same path as text scale / palette).
- * The AuthProvider re-fetches on success so every consumer — the
- * settings toggle and the read-aloud buttons themselves — sees it.
+ *
+ * On success it calls refreshProfile() so every consumer — the settings
+ * toggle and the read-aloud buttons themselves — sees the new value
+ * immediately. (The profile lives in AuthProvider's own state, not a
+ * react-query cache, so invalidating a query key would do nothing —
+ * the toggle would only take effect after a full reload.)
  */
 export function useSetReadAloud() {
-  const qc = useQueryClient();
+  const { refreshProfile } = useAuth();
   return useMutation({
     mutationFn: async (enabled: boolean): Promise<void> => {
       const supabase = createSupabaseBrowserClient();
@@ -24,7 +29,7 @@ export function useSetReadAloud() {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['auth'] });
+      void refreshProfile();
     }
   });
 }
