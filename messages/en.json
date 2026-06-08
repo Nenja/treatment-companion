@@ -331,6 +331,7 @@
       "rationaleLabel": "Rationale",
       "relatedGoalLabel": "Related goal",
       "startNewCycle": "Start a new treatment cycle",
+      "startNewTreatmentShort": "New treatment",
       "startNewCycleHint": "Begin here at each injection visit.",
       "newCycleDialogTitle": "Start a new treatment cycle",
       "newCycleDialogBody": "This closes the current cycle and creates a new one with the treatment date you choose. The current cycle's data is preserved.",
@@ -541,7 +542,12 @@
         "badgeScored": "Clinic {n}",
         "badgeUnusable": "Unusable",
         "badgePending": "Not scored"
-      }
+      },
+      "delete": "Delete clip",
+      "deleteConfirm": "Delete this clip? This can't be undone.",
+      "deleteConfirmCta": "Delete",
+      "deleteCancel": "Cancel",
+      "deleting": "Deleting…"
     },
     "videoProtocol": {
       "open": "Video task",
@@ -592,6 +598,12 @@
       "copied": "Copied to clipboard",
       "close": "Close",
       "copy": "Copy"
+    },
+    "goalHandoff": {
+      "heading": "Goal-specific notes for the therapist",
+      "hint": "Optional, per goal — only shown to the therapist, never the patient.",
+      "placeholder": "e.g. raised dose for this goal — push range of motion",
+      "fromPhysician": "Note from the treating physician"
     }
   },
   "intro": {
@@ -1413,7 +1425,7 @@
   "editGoal": {
     "eyebrow": "Edit goal",
     "title": "Edit this goal",
-    "intro": "Saving creates version {next} of this goal in the current cycle and keeps version {version} as history. Past ratings stay with the version they were made under.",
+    "intro": "Your changes apply from here on. Past check-ins keep the exact wording and scale they were recorded under, so nothing already scored changes meaning.",
     "patientText": "Goal, in the patient's words",
     "smartText": "SMART description",
     "anchorsLegend": "Goal Attainment levels",
@@ -1424,12 +1436,12 @@
     "anchorMinus2": "−2 — much less than expected",
     "baseline": "Baseline (0–10)",
     "target": "Target (0–10)",
-    "carryForwardNote": "Video task and therapy settings carry forward unchanged. To start a brand-new goal instead, use “Record a goal”.",
+    "carryForwardNote": "Video task and therapy settings stay the same. To start a brand-new goal instead, use “Record a goal”.",
     "cancel": "Cancel",
-    "save": "Save new version",
+    "save": "Save changes",
     "saving": "Saving…",
-    "saved": "New goal version saved.",
-    "error": "Couldn't save the new version. Please try again.",
+    "saved": "Goal updated.",
+    "error": "Couldn’t save your changes. Please try again.",
     "errorShort": "Couldn't save — please check the values.",
     "videoTaskButton": "Video task"
   },

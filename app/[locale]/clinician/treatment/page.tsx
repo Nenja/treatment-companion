@@ -32,6 +32,7 @@ import { useModalA11y } from '@/lib/useModalA11y';
 import { useWideLayout } from '@/lib/useWideLayout';
 import { CockpitPanelDrawer } from '@/components/clinician/CockpitPanelDrawer';
 import { TherapistInputPanel } from '@/components/clinician/TherapistInputPanel';
+import { GoalHandoffNotes } from '@/components/clinician/GoalHandoffNotes';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
 import { FaceMap } from '@/components/clinician/FaceMap';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
@@ -353,6 +354,15 @@ function TreatmentRecordInner() {
   // physician sees no therapist UI for this patient.
   const therapistHasEngaged =
     physioAssessments.length > 0 || therapistSuggestionCount > 0;
+  // Goals a therapist has actually evaluated this cycle — the only goals that
+  // get a per-goal handoff note input (therapist modules activate per goal on
+  // evaluation).
+  const therapistEvaluatedGoalIds = new Set<string>(
+    physioAssessments.flatMap((a) => a.ratings.map((r) => r.approvedGoalId))
+  );
+  const handoffNoteGoals = activeGoals
+    .filter((g) => therapistEvaluatedGoalIds.has(g.id))
+    .map((g) => ({ id: g.id, text: g.patientFacingText }));
 
   // The treatment shown as "reference" and used by "copy from previous".
   // In new-cycle mode the most recent treatment is the CURRENT cycle's
@@ -1247,6 +1257,8 @@ function TreatmentRecordInner() {
               className={inputClasses}
             />
           </div>
+
+          <GoalHandoffNotes cycleId={cycle.id} goals={handoffNoteGoals} />
         </div>
         )}
 

@@ -46,6 +46,7 @@ import { PatientBanner } from '@/components/clinician/PatientBanner';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
 import { RecordGoalDrawer } from '@/components/clinician/RecordGoalDrawer';
+import { VideoProtocolEditor } from '@/components/clinician/VideoProtocolEditor';
 import { CockpitPanelDrawer } from '@/components/clinician/CockpitPanelDrawer';
 import {
   PatientActionRow,
@@ -145,6 +146,14 @@ export default function ClinicianPatientPage() {
   const [enlargedGoalId, setEnlargedGoalId] = useState<string | null>(null);
   const [editGoalTarget, setEditGoalTarget] =
     useState<ClinicianPatientGoal | null>(null);
+  const [videoEditorGoal, setVideoEditorGoal] = useState<{
+    id: string;
+    text: string;
+    enabled: boolean;
+    instruction: string | null;
+    setup: string | null;
+    seconds: number | null;
+  } | null>(null);
   const [baselineGoal, setBaselineGoal] = useState<{
     id: string;
     text: string;
@@ -713,6 +722,40 @@ export default function ClinicianPatientPage() {
             </button>
             </h1>
             <div className="flex shrink-0 items-center gap-2">
+              {/* Primary action of an injection visit — the page's lead
+                  CTA, in the header so it's reachable from any layout. */}
+              <button
+                type="button"
+                onClick={() => {
+                  touch();
+                  setShowNewCycle(true);
+                }}
+                aria-label={t('startNewCycle')}
+                title={t('startNewCycle')}
+                className="flex h-11 w-11 items-center justify-center gap-1.5 rounded-full bg-sage-deep text-[13px] font-semibold text-on-accent hover:bg-ink-soft sm:w-auto sm:rounded-[var(--radius-button)] sm:px-3"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                  className="shrink-0"
+                >
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                <span className="hidden sm:inline">
+                  {t('startNewTreatmentShort')}
+                </span>
+              </button>
+              <span
+                className="mx-0.5 hidden h-6 w-px bg-stone/70 sm:block"
+                aria-hidden
+              />
               <button
                 type="button"
                 onClick={() =>
@@ -810,37 +853,6 @@ export default function ClinicianPatientPage() {
             the look-up panels, and the new-cycle action. The narrower
             of the two columns on the wide layout. */}
         <div className={preGoalsWidthClass}>
-        {/* Start a new treatment cycle — the first action of an injection
-            visit, so it sits at the top of the context column rather than
-            buried below it. Kept to a normal-size primary button (not a
-            full-width block) so it leads without shouting over the patient
-            name. NewCycleDialog still confirms before anything happens. */}
-        <button
-          type="button"
-          onClick={() => {
-            touch();
-            setShowNewCycle(true);
-          }}
-          className="mb-3 inline-flex items-center gap-2 rounded-[var(--radius-button)] bg-sage-deep px-4 py-2.5 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          {t('startNewCycle')}
-        </button>
-        <p className="mb-3 -mt-1 max-w-prose text-[13px] leading-relaxed text-ink-muted">
-          {t('startNewCycleActivates')}
-        </p>
         {/* Action row — always-visible entry points with live counts.
             On the wide layout this is replaced at lg by the header
             toolbar (below the patient name); on narrow/compact it stays
@@ -1013,23 +1025,7 @@ export default function ClinicianPatientPage() {
         )}
         <PatientBanner
           summary={patientSummary}
-          treatmentDateText={t('treatmentDate', {
-            date: formatLongDate(cycle.startDate, locale)
-          })}
           modalityLabel={tModality(cycle.modality)}
-          medication={patient.currentMedication}
-          devices={
-            patientInfo.data?.assistiveDevices ??
-            patient.physioAssistiveDevices ??
-            null
-          }
-          onEditMedication={() => setOpenPanel('medication')}
-          labels={{
-            medication: t('banner.medication'),
-            devices: t('banner.devices'),
-            edit: t('medEdit'),
-            medicationNone: t('medNotRecordedYet')
-          }}
         />
         <div className="mt-4">
           <VisitChanges
@@ -1039,6 +1035,19 @@ export default function ClinicianPatientPage() {
             goals={[...activeGoals, ...archivedGoals]}
             patientId={patient.id}
             onShowLastTreatment={() => setShowLastTreatment(true)}
+            medication={patient.currentMedication}
+            devices={
+              patientInfo.data?.assistiveDevices ??
+              patient.physioAssistiveDevices ??
+              null
+            }
+            onEditMedication={() => setOpenPanel('medication')}
+            medLabels={{
+              medication: t('banner.medication'),
+              devices: t('banner.devices'),
+              edit: t('medEdit'),
+              medicationNone: t('medNotRecordedYet')
+            }}
           />
         </div>
 
@@ -1219,7 +1228,7 @@ export default function ClinicianPatientPage() {
           ) : (
             <ul className={goalsListClass}>
               {bontGoals.map((g) => (
-                <li key={g.id}>
+                <li key={g.id} className="max-w-[520px]">
                   <GoalProgressView
                     goalText={g.patientFacingText}
                     kind={g.kind}
@@ -1315,6 +1324,37 @@ export default function ClinicianPatientPage() {
                           : tVideoProtocol('baselineRecord')}
                       </button>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        touch();
+                        setVideoEditorGoal({
+                          id: g.id,
+                          text: g.patientFacingText,
+                          enabled: g.videoEnabled,
+                          instruction: g.videoTaskInstruction,
+                          setup: g.videoTaskSetup,
+                          seconds: g.videoTaskSeconds
+                        });
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
+                    >
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <rect x="2" y="6" width="14" height="12" rx="2" />
+                        <path d="M16 10l6-3v10l-6-3z" />
+                      </svg>
+                      {tVideoProtocol('open')}
+                    </button>
                     <button
                       type="button"
                       onClick={() => {
@@ -1551,6 +1591,18 @@ export default function ClinicianPatientPage() {
             />
           );
         })()}
+
+      {videoEditorGoal && (
+        <VideoProtocolEditor
+          goalId={videoEditorGoal.id}
+          goalText={videoEditorGoal.text}
+          initialEnabled={videoEditorGoal.enabled}
+          initialInstruction={videoEditorGoal.instruction}
+          initialSetup={videoEditorGoal.setup}
+          initialSeconds={videoEditorGoal.seconds}
+          onClose={() => setVideoEditorGoal(null)}
+        />
+      )}
 
       {baselineGoal && (
         <BaselineRecorderModal

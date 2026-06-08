@@ -335,6 +335,7 @@
       "rationaleLabel": "Begrundelse",
       "relatedGoalLabel": "Relateret mål",
       "startNewCycle": "Start en ny behandlingscyklus",
+      "startNewTreatmentShort": "Ny behandling",
       "startNewCycleHint": "Begynd her ved hvert injektionsbesøg.",
       "newCycleDialogTitle": "Start en ny behandlingscyklus",
       "newCycleDialogBody": "Dette afslutter den nuværende cyklus og opretter en ny med den behandlingsdato, du vælger. Den nuværende cyklus' data bevares.",
@@ -545,7 +546,12 @@
         "badgeScored": "Klinik {n}",
         "badgeUnusable": "Ubrugelig",
         "badgePending": "Ikke bedømt"
-      }
+      },
+      "delete": "Slet klip",
+      "deleteConfirm": "Slet dette klip? Dette kan ikke fortrydes.",
+      "deleteConfirmCta": "Slet",
+      "deleteCancel": "Annuller",
+      "deleting": "Sletter…"
     },
     "videoProtocol": {
       "open": "Videoopgave",
@@ -596,6 +602,12 @@
       "copied": "Kopieret til udklipsholder",
       "close": "Luk",
       "copy": "Kopiér"
+    },
+    "goalHandoff": {
+      "heading": "Målspecifikke noter til terapeuten",
+      "hint": "Valgfrit, per mål — vises kun til terapeuten, aldrig til patienten.",
+      "placeholder": "f.eks. øget dosis for dette mål — arbejd med bevægeudslag",
+      "fromPhysician": "Note fra den behandlende læge"
     }
   },
   "intro": {
@@ -1417,7 +1429,7 @@
   "editGoal": {
     "eyebrow": "Rediger mål",
     "title": "Rediger dette mål",
-    "intro": "Når du gemmer, oprettes version {next} af målet i den nuværende cyklus, og version {version} bevares som historik. Tidligere vurderinger bliver hos den version, de blev lavet under.",
+    "intro": "Dine ændringer gælder fra nu af. Tidligere registreringer bevarer den ordlyd og skala, de blev registreret under, så intet, der allerede er scoret, ændrer betydning.",
     "patientText": "Målet med patientens egne ord",
     "smartText": "SMART-beskrivelse",
     "anchorsLegend": "Niveauer for målopnåelse",
@@ -1428,12 +1440,12 @@
     "anchorMinus2": "−2 — meget mindre end forventet",
     "baseline": "Udgangspunkt (0–10)",
     "target": "Mål (0–10)",
-    "carryForwardNote": "Videoopgave og terapiindstillinger føres videre uændret. For at oprette et helt nyt mål skal du bruge “Registrér et mål”.",
+    "carryForwardNote": "Videoopgave og terapiindstillinger forbliver de samme. Hvis du vil starte et helt nyt mål i stedet, skal du bruge “Registrér et mål”.",
     "cancel": "Annullér",
-    "save": "Gem ny version",
+    "save": "Gem ændringer",
     "saving": "Gemmer…",
-    "saved": "Ny målversion gemt.",
-    "error": "Kunne ikke gemme den nye version. Prøv igen.",
+    "saved": "Målet er opdateret.",
+    "error": "Kunne ikke gemme dine ændringer. Prøv igen.",
     "errorShort": "Kunne ikke gemme — tjek venligst værdierne.",
     "videoTaskButton": "Videoopgave"
   },

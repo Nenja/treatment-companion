@@ -10,6 +10,7 @@ import {
   useEndClinicianSession
 } from '@/lib/supabase/clinicianSession';
 import { usePhysioPatientData } from '@/lib/supabase/physioPatient';
+import { useGoalHandoffNotes } from '@/lib/supabase/clinicianPatient';
 import { usePhysioGoalSuggestions } from '@/lib/supabase/physioGoalSuggestion';
 import { usePhysioMuscleSuggestions } from '@/lib/supabase/physioMuscleSuggestion';
 import {
@@ -51,6 +52,7 @@ export default function PhysioPatientPage() {
   const locale = useLocale();
   const t = useTranslations('physio');
   const tA11y = useTranslations('a11y');
+  const tHandoff = useTranslations('clinician.goalHandoff');
   const tInfo = useTranslations('patientInfo');
   const tEt = useTranslations('etiology');
   const tSide = useTranslations('side');
@@ -94,6 +96,9 @@ export default function PhysioPatientPage() {
   const goalSuggestions = usePhysioGoalSuggestions(
     sessionQuery.data?.patientId ?? null,
     !!sessionQuery.data
+  );
+  const goalHandoffNotes = useGoalHandoffNotes(
+    patientData.data?.cycle?.id ?? null
   );
   const muscleSuggestions = usePhysioMuscleSuggestions(
     sessionQuery.data?.patientId ?? null,
@@ -715,6 +720,16 @@ export default function PhysioPatientPage() {
                         physioRatings={physioRatingsByGoal.get(g.id) ?? []}
                         nrsDirection={g.nrsDirection}
                       />
+                      {goalHandoffNotes.data?.get(g.id) && (
+                        <div className="mt-2 rounded-[var(--radius-button)] border border-sage-soft bg-sage-soft/20 px-3 py-2">
+                          <p className="text-[12px] font-semibold text-sage-deep">
+                            {tHandoff('fromPhysician')}
+                          </p>
+                          <p className="mt-0.5 whitespace-pre-line text-[13px] leading-relaxed text-ink-soft">
+                            {goalHandoffNotes.data.get(g.id)}
+                          </p>
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>
