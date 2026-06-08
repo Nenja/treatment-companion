@@ -392,7 +392,11 @@
       "suggestionDismissedToast": "Forslag afvist",
       "suggestionUpdateError": "Kunne ikke opdatere forslaget.",
       "suggestionActionConsider": "Markér som overvejet",
-      "suggestionActionDismiss": "Afvis"
+      "suggestionActionDismiss": "Afvis",
+      "videoTagBaselineSet": "Videoopgave · baseline registreret",
+      "videoTagBaselineNeeded": "Videoopgave · baseline mangler",
+      "backgroundTitle": "Baggrund",
+      "backgroundTreatment": "Behandling"
     },
     "review": {
       "title": "Gennemgå forslag",
@@ -1115,9 +1119,7 @@
     "chartWeekLabel": "Uge {week}:",
     "chartPhysioNote": "Fysioterapeutnote:",
     "chartWeekNotReported": "Uge {week}: ikke registreret",
-    "therapistInputButton": "Terapeutinput",
-    "chartBest": "bedst",
-    "chartNow": "nu"
+    "therapistInputButton": "Terapeutinput"
   },
   "goalVideo": {
     "introTitle": "Optag en kort video (valgfrit)",

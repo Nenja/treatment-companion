@@ -42,7 +42,7 @@ import {
   LastTreatmentModal,
   type LastTreatment
 } from '@/components/clinician/LastTreatmentModal';
-import { PatientBanner } from '@/components/clinician/PatientBanner';
+import { BackgroundCard } from '@/components/clinician/BackgroundCard';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
 import { RecordGoalDrawer } from '@/components/clinician/RecordGoalDrawer';
@@ -1023,11 +1023,11 @@ export default function ClinicianPatientPage() {
             )}
           </CockpitPanelDrawer>
         )}
-        <PatientBanner
-          summary={patientSummary}
-          modalityLabel={tModality(cycle.modality)}
-        />
-        <div className="mt-4">
+        {/* Empty alignment band: the goals column opens with a ~39px header
+            (Active goals + buttons), so reserve the same height here on the wide
+            layout to keep "since last visit" level with the first goal graph. */}
+        <div className="lg:min-h-[39px]" aria-hidden />
+        <div className="mt-4 lg:mt-3">
           <VisitChanges
             lastTreatmentDate={treatment?.date ?? null}
             cycleStartDate={cycle.startDate}
@@ -1035,6 +1035,12 @@ export default function ClinicianPatientPage() {
             goals={[...activeGoals, ...archivedGoals]}
             patientId={patient.id}
             onShowLastTreatment={() => setShowLastTreatment(true)}
+          />
+        </div>
+        <div className="mt-4">
+          <BackgroundCard
+            summary={patientSummary}
+            treatmentTypeLabel={tModality(cycle.modality)}
             medication={patient.currentMedication}
             devices={
               patientInfo.data?.assistiveDevices ??
@@ -1042,7 +1048,9 @@ export default function ClinicianPatientPage() {
               null
             }
             onEditMedication={() => setOpenPanel('medication')}
-            medLabels={{
+            labels={{
+              title: t('backgroundTitle'),
+              treatment: t('backgroundTreatment'),
               medication: t('banner.medication'),
               devices: t('banner.devices'),
               edit: t('medEdit'),
@@ -1244,6 +1252,27 @@ export default function ClinicianPatientPage() {
                   {workingOnGoalIds.has(g.id) && (
                     <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep">
                       {t('physioWorkingOnTag')}
+                    </p>
+                  )}
+                  {g.videoEnabled && (
+                    <p className="mt-1.5 ml-2 inline-flex items-center gap-1.5 rounded-full border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-ink-soft">
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <rect x="2" y="6" width="14" height="12" rx="2" />
+                        <path d="M16 10l6-3v10l-6-3z" />
+                      </svg>
+                      {g.baselineVideoPath
+                        ? t('videoTagBaselineSet')
+                        : t('videoTagBaselineNeeded')}
                     </p>
                   )}
                   {(clinicVideoByGoal.get(g.id) ?? []).length > 0 && (
