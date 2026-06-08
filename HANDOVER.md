@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `ehr-localized` (no migration; the EHR-paste export is now fully localised via the `ehrExport` message namespace; sits on top of `audit-fixes` — §7, §8)._
+> _Last updated for build tag: `simplify-cockpit-2` (no migration; #2a read-aloud refresh bug fixed; #3 night-mode investigated — code sound, needs a symptom; #4 muscle→function mapping DRAFT delivered for review; backlog in §8)._
 
 ---
 
@@ -816,14 +816,68 @@ patient-visible) →
 wearing-off/sustained/NRS-direction fixes, i18n leaks keyed en+da, cockpit `h1`
 + chart data-table + modal scroll-lock, start-cycle dependency copy) →
 **`ehr-localized`** (no migration; EHR-paste export fully localised via the
-`ehrExport` namespace, en+da; current).
+`ehrExport` namespace, en+da) →
+**`simplify-cockpit-1`** (no migration; declutter batch 1 — read-aloud scoped to
+patients, goal-card history/link removed, ITB off the front page) →
+**`simplify-cockpit-2`** (no migration; #2a read-aloud refresh fix; #3 night-mode
+investigated; #4 muscle→function DRAFT; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-ehr-localized.zip`
-- **Tag:** `ehr-localized`
+- **Zip:** `treatment-companion-simplify-cockpit-2.zip`
+- **Tag:** `simplify-cockpit-2`
+- **Migration:** **none** (DB stays at **0088**). Batch 2 of cockpit
+  simplification (backlog + status in §8).
+  - **#2a read-aloud FIXED:** `useSetReadAloud` was calling
+    `invalidateQueries(['auth'])`, but the profile lives in AuthProvider's
+    `useState`, not a react-query cache — so the toggle persisted to the DB but
+    never refreshed in memory (button never appeared until a full reload). Now
+    uses `refreshProfile()` like the palette/night setters.
+  - **#3 night-mode INVESTIGATED, no fix yet:** the logic is sound —
+    `night_mode` round-trips through the profile correctly, `resolveColors`
+    returns proper dark sets, the compiled utilities use `var(--color-*)` (so
+    runtime overrides DO apply — verified in the built CSS), and there are no
+    stray non-token colours on the main surfaces. Could not reproduce
+    "doesn't work properly" from the code. **Needs the specific symptom from
+    Nikolaj** (nothing changes / some areas stay light / flashes or reverts on
+    reload) before a correct fix.
+  - **#4 muscle→function mapping DRAFT** delivered at
+    `docs/muscle-function-mapping-DRAFT.md`. Key finding: body muscles are
+    **free text** (no catalogue), so this needs a structured muscle catalogue
+    with patient-function labels. Draft is for Nikolaj's clinical correction;
+    once verified it becomes the catalogue + treatment-page picker, and
+    `TreatedMusclesModal` switches to the function text.
+- **DB needed:** none.
+- **Verified locally:** tsc clean; font-stub build 60/60; confirmed
+  `.bg-cream{background-color:var(--color-cream)}` in the built CSS.
+- **⚠ QA:** turn read-aloud on in a patient's Appearance settings → the speaker
+  button should now appear on patient text WITHOUT a reload.
+
+### `simplify-cockpit-1` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-1.zip`. **Tag:** `simplify-cockpit-1`
+- **Migration:** **none** (DB stays at **0088**). Batch 1 of the cockpit
+  simplification (see §8 "Simplification backlog" for the full 11-item list +
+  status). Low-risk declutter only:
+  - **#1** sex vs gender: "sex" confirmed correct and already used everywhere —
+    no change.
+  - **#2b** read-aloud toggle now renders only for patients (Appearance
+    settings); clinicians/therapists don't see it.
+  - **#5** goal cards: removed Goal-history + Goal-link buttons + version label
+    (and their dead modals/state/imports). Edit + retire remain. History/Link
+    components kept in the tree. (Video-task-under-Edit still pending.)
+  - **#7** ITB removed from the cockpit (track + goals section + record drawer).
+    `ItbTrack`/hooks stay in the tree — functionality intact, just not shown.
+- **DB needed:** none.
+- **Verified locally:** tsc clean; font-stub build 60/60.
+- **⚠ QA:** goal cards show only Edit + retire; no ITB UI on the cockpit and ITB
+  goals don't leak into the main list; patient Appearance has read-aloud,
+  clinician/therapist don't.
+
+### `ehr-localized` (previous; no migration)
+- **Zip:** `treatment-companion-ehr-localized.zip`. EHR-paste export fully
+  localised via the `ehrExport` namespace (en+da). **Tag:** `ehr-localized`
 - **Migration:** **none** (DB stays at **0088**). Cumulative on top of
   `audit-fixes` (same working tree; that build is summarised in §7b).
 - **Change:** the EHR-paste export (`lib/ehrExport.ts`) is now **fully
@@ -1110,6 +1164,41 @@ wearing-off/sustained/NRS-direction fixes, i18n leaks keyed en+da, cockpit `h1`
 ---
 
 ## 8. Pending / next slices
+
+### Simplification backlog (the 11-item declutter list — track here)
+Status as of `simplify-cockpit-1`. "We expanded too much" — this list drives the
+trimming. ✅ done · ◑ partial · ☐ todo · 💬 needs a decision/draft from Nikolaj.
+
+1. ✅ **Sex vs gender** — "sex" is correct (biological/clinical) and already used
+   throughout; no "gender" leak.
+2. ✅ **Read-aloud** — #2b toggle patient-only; #2a FIXED (the toggle used a
+   no-op `invalidateQueries` instead of `refreshProfile`, so it never took
+   effect without a reload).
+3. 💬 **Night-mode "doesn't work properly"** — INVESTIGATED: code is sound
+   (round-trip ✓, dark sets ✓, var()-based utilities ✓, no stray colours).
+   Can't reproduce from code — need the exact symptom from Nikolaj.
+4. 💬 **Patient-facing muscle names → function language** — DRAFT delivered
+   (`docs/muscle-function-mapping-DRAFT.md`). Body muscles are free text → needs
+   a structured catalogue. Awaiting Nikolaj's correction of the mapping + a
+   decision on the catalogue approach, then wire into `TreatedMusclesModal`.
+5. ◑ **Goal-graph actions** — ✅ history + link removed from the page (history
+   "belongs in a different section" — not yet built); ☐ move the video-task
+   config under "Edit goal" (verify EditGoalDrawer holds it, then drop the
+   card's video buttons).
+6. ☐ **Overlapping text under the goal graph** — layout fix in GoalProgressView
+   (need to identify which labels overlap: axis / week caption / baseline-target).
+7. ✅ **ITB off the front page** — removed from cockpit; functionality kept.
+8. ☐ **"Show last treatment" button** in the "since last treatment" field →
+   opens a dialog with the previous injection's treatment record.
+9. ☐ **Training / therapist action icons** open a centre panel; make them open a
+   **side drawer** like Record-goal. AND **move therapist input off the cockpit
+   to the treatment page** (not relevant on the cockpit).
+10. ☐ **Medication button** opens a centre panel in the left column → find a
+    non-intrusive display.
+11. ☐ **"Note for the therapist"** should only be active when a therapist is
+    actually reporting on that goal (gate on therapist activity for the goal).
+
+### Other open items (pre-existing)
 
 **Audit remediation (`audit-fixes`) — what's now done, what's left.** Four
 audits live in `docs/audits/` (`all-roles-workflow`, `i18n-parity`,

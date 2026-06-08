@@ -1,55 +1,49 @@
-BUILD: ehr-localized   (EHR-paste export fully localised — NO migration)
+BUILD: simplify-cockpit-2   (read-aloud bug fix + night-mode investigation + #4 draft — NO migration)
 ==========================================================================
-MIGRATION: none. The database stays at 0088. Nothing to run in Supabase.
-This zip is CUMULATIVE on top of `audit-fixes` (same working tree).
+MIGRATION: none. DB stays at 0088. Nothing to run in Supabase.
+Batch 2 of the cockpit-simplification effort. Backlog + status in HANDOVER §8.
 
-WHAT THIS BUILD ADDS (on top of audit-fixes)
-The EHR-paste export (lib/ehrExport.ts) is now fully localised. Before, only
-the dates followed the app locale; every label and sentence fragment was
-hardcoded English. Now:
-- buildEhrExport takes a translator (ExportTranslator) and renders the whole
-  note from a new `ehrExport` message namespace (42 keys, en + da).
-- ICU plurals localise ("# week"/"# weeks" -> "# uge"/"# uger"), as do week
-  markers (W -> uge), units (units -> enheder), side codes (L/R/B -> V/H/B),
-  guidance methods, modality labels, and the GAS/NRS goal sentence.
-- The call site (clinician/patient) passes useTranslations('ehrExport').
-- All the audit-fixes correctness behaviour is preserved (wearing-off guard,
-  sustained gap-break, NRS-direction note, units reconciliation, switch
-  defaults).
+DONE
+- #2a READ-ALOUD FIXED. The toggle wrote read_aloud to the DB but called
+  invalidateQueries(['auth']) — and the profile lives in AuthProvider's
+  useState, not a react-query cache, so that was a no-op: the preference never
+  refreshed in memory and the speaker button never appeared until a full
+  reload. Now uses refreshProfile() like the palette/night setters. One file:
+  lib/supabase/readAloud.ts.
 
-DANISH IS A FIRST PASS — FLAG FOR NATIVE REVIEW
-Especially: the GAS/NRS sentence wording, side codes (V/H for venstre/højre),
-and whether "Peak" should be translated. The rest of the audit-fixes Danish
-(treatment.forPatient "Til {name}", etc.) is also pending review.
+INVESTIGATED, NO FIX YET (need input)
+- #3 NIGHT-MODE. Traced the whole path: night_mode round-trips through the
+  profile correctly; resolveColors returns proper dark palettes; the compiled
+  utilities use var(--color-*) (verified .bg-cream{background-color:var(--color-cream)}
+  in the built CSS, so runtime overrides DO apply); no stray non-token colours
+  on the main surfaces. I could NOT reproduce "doesn't work properly" from the
+  code. Please tell me the exact symptom:
+    (a) nothing visibly changes when you toggle, or
+    (b) most of the app changes but some areas stay light, or
+    (c) it changes then reverts / flashes light on reload.
+  Each points to a different fix.
 
-ALSO INCLUDED (from audit-fixes — see HANDOVER §7b / git)
-EHR wearing-off/sustained/NRS-direction fixes; i18n leaks keyed en+da
-(suggestion actions, export modal, goal-chart legend/captions/aria); cockpit
-<h1>; hidden per-chart data table; modal body-scroll-lock; start-cycle
-dependency copy.
+DRAFT FOR YOUR REVIEW
+- #4 muscle -> patient-function mapping: docs/muscle-function-mapping-DRAFT.md.
+  Finding: body muscles are FREE TEXT (no catalogue), so this needs a structured
+  muscle catalogue with patient-function labels. The draft is that catalogue's
+  first cut (upper/lower limb, en + da). Please correct the function column;
+  then I'll build the picker + switch the patient "treated muscles" pop-up to
+  show the function (with a fallback to raw text for legacy entries).
 
 VERIFIED LOCALLY
 - tsc --noEmit clean.
-- Production build OK via the font-stub procedure (fonts stubbed, built,
-  layout.tsx restored byte-for-byte, zero BUILD-STUB remnants). 60/60 pages.
-- en/da catalog: 1368 keys each side (+2 da _meta), 0 missing, 0 ICU-argument
-  mismatches.
-- New ICU strings smoke-formatted in both locales (plurals + interpolation
-  render correctly).
+- Production build OK via the font-stub procedure (restored byte-for-byte, zero
+  BUILD-STUB remnants). 60/60 pages.
 
-DEPLOY
-1. No migration. Do NOT run anything in Supabase.
-2. Unzip; push to GitHub; Vercel builds. Page count 60.
+DEPLOY: no migration; unzip, push, Vercel builds. Page count 60.
 
-** QA (please verify — can't be tested here) **
-- Switch the app to Danish, open a patient with a recorded cycle + check-ins,
-  open "Export for EHR": the whole note should be in Danish (header, treatment,
-  injection lines, the goal sentence, comments). Read it for wording.
-- An English-locale export should read exactly as before audit-fixes, plus the
-  audit-fixes content corrections.
+** QA **
+- Turn read-aloud ON in a PATIENT's Appearance settings, then look at patient
+  text: the speaker button should appear immediately, no reload. Tap it: the
+  device reads the text (on-device speech; needs a browser/OS voice installed).
 
-STILL OPEN — YOUR DECISION (see HANDOVER §8)
-- EHR-text CONTENT/structure (what fields the note should carry, tone). Awaiting
-  your direction before reshaping the builder.
-- Adjustment-request status loop (feature; needs a migration + cross-role UI).
-- REDCap dictionary reconciliation (study-team / DPO decisions).
+BACKLOG REMAINING (HANDOVER §8): #3 (awaiting symptom), #4 (awaiting your
+markup), #5 video-under-Edit, #6 overlap, #8 show-last-treatment dialog,
+#9 action icons -> side drawer + therapist input to treatment page,
+#10 medication non-intrusive, #11 gate handoff note on therapist activity.

@@ -24,8 +24,6 @@ import {
   type ClinicianPatientGoal
 } from '@/lib/supabase/clinicianPatient';
 import { EditGoalDrawer } from '@/components/clinician/EditGoalDrawer';
-import { GoalHistoryModal } from '@/components/clinician/GoalHistoryModal';
-import { LinkGoalModal } from '@/components/clinician/LinkGoalModal';
 import { formatLongDate } from '@/lib/dates';
 import { nrsToGas, injectionSideLabel, type GuidanceMethod } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
@@ -144,10 +142,6 @@ export default function ClinicianPatientPage() {
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [enlargedGoalId, setEnlargedGoalId] = useState<string | null>(null);
   const [editGoalTarget, setEditGoalTarget] =
-    useState<ClinicianPatientGoal | null>(null);
-  const [historyTarget, setHistoryTarget] =
-    useState<ClinicianPatientGoal | null>(null);
-  const [linkTarget, setLinkTarget] =
     useState<ClinicianPatientGoal | null>(null);
   const [videoEditorGoal, setVideoEditorGoal] = useState<{
     id: string;
@@ -1264,10 +1258,6 @@ export default function ClinicianPatientPage() {
           </section>
         )}
 
-        {/* Intrathecal baclofen track — continuous, titrated therapy running
-            in parallel with the BoNT cycle. Shows the dose-titration log, or
-            a compact start affordance when there's no active ITB therapy. */}
-        <ItbTrack patientId={patient.id} onActivity={() => touch()} />
         </div>
 
         {/* Right column: the goals — the primary work surface. On the
@@ -1432,23 +1422,6 @@ export default function ClinicianPatientPage() {
                     >
                       {t('editGoalCta')}
                     </button>
-                    <span className="text-[12px] text-ink-muted">
-                      {t('goalVersionLabel', { version: g.version })}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setHistoryTarget(g)}
-                      className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
-                    >
-                      {t('goalHistoryCta')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLinkTarget(g)}
-                      className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
-                    >
-                      {t('goalLinkCta')}
-                    </button>
                   </div>
                   {workingOnGoalIds.has(g.id) && (
                     <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep">
@@ -1579,103 +1552,6 @@ export default function ClinicianPatientPage() {
           )}
         </section>
 
-        {/* ITB goals — tagged for the intrathecal-baclofen therapy. They
-            share the weekly check-in with the BoNT goals (same cycle), so
-            the patient rates them in one go; here they're grouped under
-            their own heading. Shown when there's an active ITB therapy or
-            any ITB goal already exists. */}
-        {(itbTherapyQuery.data || itbGoals.length > 0) && (
-          <section className="mt-10">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-[20px] leading-tight text-ink">
-                {t('itbGoalsTitle')}
-              </h2>
-              {itbTherapyQuery.data && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    touch();
-                    setShowRecordItbGoal(true);
-                  }}
-                  className="shrink-0 rounded-[var(--radius-button)] border border-sage/50 bg-cream-soft px-3 py-2 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
-                >
-                  {t('itbRecordGoal')}
-                </button>
-              )}
-            </div>
-            {itbGoals.length === 0 ? (
-              <p className="mt-3 text-[14px] text-ink-muted">
-                {t('itbGoalsEmpty')}
-              </p>
-            ) : (
-              <ul className={goalsListClass}>
-                {itbGoals.map((g) => (
-                  <li key={g.id}>
-                    <GoalProgressView
-                      goalText={g.patientFacingText}
-                      kind={g.kind}
-                      currentWeek={weekNumber}
-                      ratings={ratingsByGoal.get(g.id) ?? []}
-                      physioRatings={physioRatingsByGoal.get(g.id) ?? []}
-                      nrsDirection={g.nrs?.direction}
-                      nrsBaseline={g.nrs?.baselineValue ?? null}
-                      nrsTarget={g.nrs?.targetValue ?? null}
-                      clinicPoints={clinicPointsByGoal.get(g.id) ?? []}
-                      doseMarkers={itbDoseMarkers}
-                      onExpand={() => setEnlargedGoalId(g.id)}
-                    />
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setEditGoalTarget(g)}
-                        className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
-                      >
-                        {t('editGoalCta')}
-                      </button>
-                      <span className="text-[12px] text-ink-muted">
-                        {t('goalVersionLabel', { version: g.version })}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setHistoryTarget(g)}
-                        className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
-                      >
-                        {t('goalHistoryCta')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setLinkTarget(g)}
-                        className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
-                      >
-                        {t('goalLinkCta')}
-                      </button>
-                    </div>
-                    {workingOnGoalIds.has(g.id) && (
-                      <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep">
-                        {t('physioWorkingOnTag')}
-                      </p>
-                    )}
-                    <div className="mt-1.5 flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          touch();
-                          setGoalToArchive({
-                            id: g.id,
-                            text: g.patientFacingText
-                          });
-                        }}
-                        className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
-                      >
-                        {t('retireGoal')}
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
 
         {/* Earlier goals — retired this cycle, with how each ended.
             Shows the climb (achieved goals) and course-corrections
@@ -1805,37 +1681,10 @@ export default function ClinicianPatientPage() {
           onClose={() => setShowRecordGoal(false)}
         />
       )}
-      {showRecordItbGoal && (
-        <RecordGoalDrawer
-          patientId={patient.id}
-          therapy="itb"
-          onClose={() => setShowRecordItbGoal(false)}
-        />
-      )}
-
       {editGoalTarget && (
         <EditGoalDrawer
           goal={editGoalTarget}
           onClose={() => setEditGoalTarget(null)}
-        />
-      )}
-      {historyTarget && (
-        <GoalHistoryModal
-          lineageId={historyTarget.lineageId}
-          goalLabel={historyTarget.patientFacingText}
-          onClose={() => setHistoryTarget(null)}
-        />
-      )}
-      {linkTarget && (
-        <LinkGoalModal
-          sourceGoal={linkTarget}
-          candidates={activeGoals.filter(
-            (x) =>
-              x.id !== linkTarget.id &&
-              x.kind === linkTarget.kind &&
-              x.lineageId !== linkTarget.lineageId
-          )}
-          onClose={() => setLinkTarget(null)}
         />
       )}
 

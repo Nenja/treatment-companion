@@ -72,34 +72,27 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `ehr-localized` — **no migration**. DB stays at **0088**.
-  Cumulative on top of `audit-fixes`.
-- **Just shipped:** the EHR-paste export is now **fully localised**. It used to
-  be English-only (only dates followed locale); `buildEhrExport` now takes a
-  translator and renders the whole note from a new `ehrExport` namespace (42
-  keys, en+da) — ICU plurals, week markers, units, side codes, the GAS/NRS
-  sentence all switch with the locale. Danish is a first pass (native review
-  pending). The prior `audit-fixes` layer (EHR correctness, i18n leaks, cockpit
-  a11y, start-cycle copy) is included.
-- **Epics complete:** goal-versioning; therapist-signals; physician->therapist
-  handoff note (0088). Audit remediation + EHR localisation sit on top.
+- **Latest build:** `simplify-cockpit-2` — **no migration**. DB stays at **0088**.
+- **Just shipped:** #2a read-aloud FIXED (it used a no-op `invalidateQueries`
+  instead of `refreshProfile`, so the toggle never took effect without a
+  reload). #3 night-mode investigated — code is sound, can't reproduce from
+  code, needs the exact symptom. #4 muscle→function mapping DRAFT delivered
+  (`docs/muscle-function-mapping-DRAFT.md`) — body muscles are free text, so it
+  needs a structured catalogue; awaiting Nikolaj's clinical markup.
+- **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
+  audit remediation; EHR localisation; cockpit simplification batches 1–2.
 
-**What's likely next** *(update each delivery - see `HANDOVER.md` §8)*
-- **EHR-text CONTENT (my decision, in progress):** localisation is done; the
-  *content/structure* of the note still needs work — what fields it should
-  carry (baseline->target, SMART text, retired-goal outcomes, therapist input,
-  clinic-video, ITB) and whether the GAS/NRS shorthand should be plainer. I owe
-  a direction here.
-- **Adjustment-request status loop** - audit finding not yet built: status
-  column + RPC + cross-role UI so the therapist's "needs adjusting" flag echoes
-  the physician's response.
-- **REDCap dictionary reconciliation (my decision)** - phantom check-in fields,
-  free-text PII, per-muscle vs per-session guidance, exact-date quasi-IDs;
-  settle with study team / DPO before any push (the push isn't built).
-- **Open policy calls:** persistent/recurring therapist access; between-cycle
-  observations.
-- **Bigger infra (incoming developer):** wearable adapters; WP4 modality
-  backbone. Leave unless I ask.
+**What's likely next** *(simplification backlog — `HANDOVER.md` §8)*
+- **#3 night-mode:** awaiting the exact symptom from Nikolaj.
+- **#4 muscle catalogue:** awaiting Nikolaj's markup of the draft, then build the
+  picker + switch the patient pop-up to function language.
+- **#5** video task under Edit goal; **#6** overlapping text under the goal
+  graph; **#8** "show last treatment" dialog; **#9** action icons → side drawer
+  + therapist input to the treatment page; **#10** medication non-intrusive;
+  **#11** gate "note for the therapist" on actual therapist activity (note: it's
+  currently per-cycle, the ask is per-goal — small model question).
+- **Then:** adjustment-request status loop (migration); REDCap/EHR-content
+  decisions.
 
 **Your first reply:** confirm you've read `HANDOVER.md`, state the current build
 + migration in a line or two, and either wait for my “go” or ask the one thing
