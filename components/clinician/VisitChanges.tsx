@@ -29,6 +29,17 @@ interface VisitChangesProps {
   /** Opens the "last treatment" dialog. Only wired when a treatment is
    *  recorded for the cycle; the button is hidden otherwise. */
   onShowLastTreatment?: () => void;
+  /** Current medication / assistive devices — shown in a quiet footer so the
+   *  basics live alongside the visit summary rather than in a separate card. */
+  medication?: string | null;
+  devices?: string | null;
+  onEditMedication?: () => void;
+  medLabels?: {
+    medication: string;
+    devices: string;
+    edit: string;
+    medicationNone: string;
+  };
 }
 
 type Trend = 'up' | 'down' | 'flat';
@@ -139,7 +150,11 @@ export function VisitChanges({
   checkins,
   goals,
   patientId,
-  onShowLastTreatment
+  onShowLastTreatment,
+  medication,
+  devices,
+  onEditMedication,
+  medLabels
 }: VisitChangesProps) {
   const t = useTranslations('visitChanges');
   const tLast = useTranslations('lastTreatment');
@@ -324,7 +339,7 @@ export function VisitChanges({
             <button
               type="button"
               onClick={onShowLastTreatment}
-              className="self-center rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-stone-soft"
+              className="self-center text-[12px] font-medium text-sage-deep underline-offset-2 hover:underline"
             >
               {tLast('button')}
             </button>
@@ -508,6 +523,39 @@ export function VisitChanges({
             </div>
           )}
         </>
+      )}
+      {medLabels && onEditMedication && (
+        <div className="mt-4 flex flex-col gap-1.5 border-t border-stone pt-3">
+          <div className="flex items-start justify-between gap-2 text-[13px]">
+            <span className="min-w-0">
+              <span className="font-semibold text-ink-soft">
+                {medLabels.medication}
+              </span>{' '}
+              {medication ? (
+                <span className="text-ink-soft">{medication}</span>
+              ) : (
+                <span className="text-ink-muted">
+                  {medLabels.medicationNone}
+                </span>
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={onEditMedication}
+              className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-sage-deep hover:bg-stone-soft"
+            >
+              {medLabels.edit}
+            </button>
+          </div>
+          {devices && (
+            <div className="flex gap-2 text-[13px]">
+              <span className="shrink-0 font-semibold text-ink-soft">
+                {medLabels.devices}
+              </span>
+              <span className="text-ink-soft">{devices}</span>
+            </div>
+          )}
+        </div>
       )}
       {video && (
         <VideoPlayerModal

@@ -3,7 +3,10 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useModalA11y } from '@/lib/useModalA11y';
-import { useGoalVideoUrl } from '@/lib/supabase/goalVideo';
+import {
+  useGoalVideoUrl,
+  useDeleteGoalRatingVideo
+} from '@/lib/supabase/goalVideo';
 import type { GasAnchors } from '@/lib/supabase/clinicianPatient';
 
 export interface VideoScoring {
@@ -92,6 +95,13 @@ export function VideoPlayerModal({
           )}
         </div>
         {scoring && <ScorePanel scoring={scoring} onDone={onClose} />}
+        {scoring && (
+          <DeleteClipControl
+            ratingId={scoring.ratingId}
+            path={path}
+            onDeleted={onClose}
+          />
+        )}
       </div>
     </div>
   );
@@ -194,6 +204,65 @@ function ScorePanel({
           className="rounded-[var(--radius-button)] bg-sage-deep px-5 py-2 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
         >
           {saving ? t('score.saving') : t('score.save')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DeleteClipControl({
+  ratingId,
+  path,
+  onDeleted
+}: {
+  ratingId: string;
+  path: string;
+  onDeleted: () => void;
+}) {
+  const t = useTranslations('clinician.video');
+  const [confirming, setConfirming] = useState(false);
+  const del = useDeleteGoalRatingVideo();
+
+  if (!confirming) {
+    return (
+      <div className="mt-4 flex justify-end border-t border-stone pt-3">
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="text-[13px] font-semibold text-amber-deep underline-offset-2 hover:underline"
+        >
+          {t('delete')}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 border-t border-stone pt-3">
+      <p className="text-[13px] text-ink-soft">{t('deleteConfirm')}</p>
+      <div className="mt-2 flex items-center gap-3">
+        <button
+          type="button"
+          disabled={del.isPending}
+          onClick={async () => {
+            try {
+              await del.mutateAsync({ ratingId, path });
+              onDeleted();
+            } catch {
+              /* leave the dialog open so the clinician can retry */
+            }
+          }}
+          className="rounded-[var(--radius-button)] bg-amber-deep px-4 py-2 text-[13px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
+        >
+          {del.isPending ? t('deleting') : t('deleteConfirmCta')}
+        </button>
+        <button
+          type="button"
+          disabled={del.isPending}
+          onClick={() => setConfirming(false)}
+          className="text-[13px] font-semibold text-ink-soft hover:text-ink"
+        >
+          {t('deleteCancel')}
         </button>
       </div>
     </div>
