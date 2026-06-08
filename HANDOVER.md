@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-20` (no migration — goal-calibration forms now explain a disabled Save with a 'what's still needed' list, on both new-goal and approve; DB 0090; backlog in §8)._
+> _Last updated for build tag: `simplify-cockpit-27` — CUMULATIVE rebuild (no migration; DB 0090). Supersedes the inconsistent 21–26 zips; see §7._
 
 ---
 
@@ -848,6 +848,49 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Zip:** `treatment-companion-simplify-cockpit-27.zip`
+- **Tag:** `simplify-cockpit-27`  ·  **Migration:** none (DB **0090**).
+- **⚠ Why this is a cumulative rebuild.** The build sandbox reset itself between
+  builds during the prior session, so the zips tagged 21–26 were each built on a
+  reverted base and are **not cumulative** (each is missing pieces of the
+  others). This build re-applies the full intended set onto the known-good
+  build-20 base in one pass. **Deploy this zip; discard 21–26.**
+- **What's in it (the agreed consolidated set):**
+  1. "What's still needed" checklist on the new-goal + approve calibration forms,
+     shown from the start (no "started" gate). (`RecordGoalForm`, `suggestion`.)
+  2. "Video task" chip on video-enabled goal cards
+     (`videoTagBaselineSet`/`videoTagBaselineNeeded`, `clinician.patient`).
+  3. Compact layout option hidden for **clinicians** (forced wide in
+     `useWideLayout`; toggle hidden in `AccountMenu` + `OnboardingWizard`).
+     Therapists (`physiotherapist`) unchanged.
+  4. Top alignment: empty `lg:min-h-[39px]` band atop the context column keeps
+     "since last visit" level with the first goal graph (~line 1026 of
+     `clinician/patient/page.tsx`).
+  5. **"Since last visit" lists each goal's max-effect only** (goal name + one
+     value; GAS shows ±2). No most-recent, no improved/declined verdict.
+     (`VisitChanges` rows reshaped; verdict helpers + medication footer removed.)
+  6. **Goal graphs stay clean** — no value labels on the line.
+  7. **New `BackgroundCard`** below "since last visit": demographics + treatment
+     type + medication. The demographics no longer sits in the header sub-line,
+     the modality pill is gone from the top of the column, and medication moved
+     out of the visit-card footer — all consolidated here. (`PatientBanner` is
+     now unused.)
+- **Orphaned-but-harmless i18n** (left in place): `visitChanges` `recentLabel`,
+  `improved`, `declined`, `chipNoChange`, `noGoalMovement`, plus the unused
+  `PatientBanner.tsx` component.
+- **Verified locally:** tsc clean; i18n parity (0 mismatches); font-stub 60/60.
+- **⚠ QA:** clinician account menu has no wide/compact toggle and the cockpit is
+  always two-pane; each video-enabled goal shows a "Video task" chip; the
+  calibration forms show the checklist on a blank form; "since last visit" shows
+  goal + max effect only with the graphs clean; a Background card sits below it
+  with demographics/treatment/medication.
+
+---
+
+### Earlier (pre-rebuild) build sections below are historical — the 21–26 zips are NOT cumulative; prefer cockpit-27.
+
+## 7-old. Latest delivered build
 
 - **Zip:** `treatment-companion-simplify-cockpit-20.zip`
 - **Tag:** `simplify-cockpit-20`

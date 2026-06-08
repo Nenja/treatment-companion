@@ -1,38 +1,37 @@
-BUILD: simplify-cockpit-26   (overlap trim — "Option A": graph owns the per-goal numbers — NO migration)
+BUILD: simplify-cockpit-27   (CUMULATIVE rebuild — NO migration; DB stays 0090)
 ==========================================================================
-MIGRATION: none. DB stays at 0090. Nothing to run in Supabase.
+WHY CUMULATIVE: the build sandbox reset itself between builds last session, so
+the zips tagged 21-26 were each built on a reverted base and are NOT cumulative
+(each missing pieces of the others). This zip re-applies the full intended set
+onto the known-good build-20 base in one pass.
 
-CONTEXT
-- The "since last visit" card and the goal graphs were double-reporting each
-  goal's outcome. We decided the raw numbers are the informative part and the
-  "improved/declined" word is the lossy summary, so: numbers move to the graph,
-  the card stops per-goal reporting.
+** DEPLOY THIS ZIP. DISCARD 21-26. ** No migration; unzip / push / Vercel builds.
 
-DONE
-- components/clinician/VisitChanges.tsx
-  * Removed the per-goal rows (goal name + max-effect/most-recent + verdict chip)
-    AND the now-dead computation behind them (GoalRow, the verdict loop, gasLabel,
-    chipClass/glyph/verdict).
-  * The card is now a pure visit-context strip: anchor date + adherence,
-    training, wearable trend, patient video clips, medication footer.
-- components/clinician/GoalProgressView.tsx
-  * Added direction-aware "best" + "now" value labels on the patient self-report
-    series. best = peak (max for higher-is-better, min for lower-is-better; +2
-    for GAS). now = latest reported point. If the latest IS the best, only "now"
-    shows. Labels reuse the chart's 9px ink-muted text with a sage-deep number.
-  * i18n: treatment.chartBest / treatment.chartNow (en + da).
-- Orphaned-but-harmless visitChanges i18n keys (improved/declined/chipNoChange/
-  peakLabel/recentLabel/noGoalMovement/archived/gasP2..gasM2) left in place.
+WHAT'S IN IT
+1. "What's still needed" checklist on new-goal + approve calibration forms,
+   shown from the start (no "started" gate).
+2. "Video task" chip on video-enabled goal cards (baseline set/needed).
+3. Compact layout option hidden for CLINICIANS (forced wide; toggle hidden in
+   account menu + onboarding). Therapists unchanged.
+4. Top alignment: empty lg:min-h-[39px] band keeps "since last visit" level with
+   the first goal graph.
+5. "Since last visit" lists each goal's MAX EFFECT only (goal name + one value;
+   GAS shows +/-2). No most-recent, no improved/declined verdict.
+6. Goal graphs stay clean (no value labels on the line).
+7. New Background card below "since last visit": demographics + treatment type +
+   medication. Demographics left the header, the modality pill left the top of
+   the column, medication left the visit footer -- all consolidated here.
 
 VERIFIED LOCALLY
 - tsc --noEmit clean.
 - i18n parity: 0 key mismatches, 0 ICU mismatches.
 - Production build OK via the font-stub procedure. 60/60 pages.
 
-DEPLOY: no migration; unzip / push / Vercel builds. Page count 60.
-
 ** QA **
-- "Since last visit" shows no per-goal numbers or improved/declined chips.
-- Each goal graph shows "best N" near the peak and "now N" at the latest point
-  (NRS 0-10, GAS +/-2).
-- On a lower-is-better NRS goal, "best" should sit on the LOWEST point.
+- As a clinician: account menu has no wide/compact toggle; cockpit always
+  two-pane. As a therapist: the toggle still appears.
+- Each video-enabled goal card shows a "Video task" chip.
+- Open "Record a goal" with nothing filled: the checklist shows immediately.
+- "Since last visit" shows goal name + max effect only; graphs have no labels.
+- A "Background" card sits below "since last visit" with demographics, treatment
+  type and medication (with Edit).

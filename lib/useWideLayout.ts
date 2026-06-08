@@ -24,5 +24,10 @@ import { useAuth } from './supabase/auth';
  */
 export function useWideLayout(): boolean {
   const { profile } = useAuth();
+  // For now the compact option is hidden for clinicians, so the clinician
+  // cockpit always uses the wide (two-pane) layout — force it regardless of any
+  // stored preference so no clinician is stranded in compact. (Therapists keep
+  // their choice.)
+  if (profile?.role === 'clinician') return true;
   return (profile?.layoutPreference ?? 'wide') === 'wide';
 }
