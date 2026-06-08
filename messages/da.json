@@ -392,7 +392,9 @@
       "suggestionDismissedToast": "Forslag afvist",
       "suggestionUpdateError": "Kunne ikke opdatere forslaget.",
       "suggestionActionConsider": "Markér som overvejet",
-      "suggestionActionDismiss": "Afvis"
+      "suggestionActionDismiss": "Afvis",
+      "videoTagBaselineSet": "Videoopgave · baseline registreret",
+      "videoTagBaselineNeeded": "Videoopgave · baseline mangler"
     },
     "review": {
       "title": "Gennemgå forslag",

@@ -388,7 +388,9 @@
       "suggestionDismissedToast": "Suggestion dismissed",
       "suggestionUpdateError": "Could not update the suggestion.",
       "suggestionActionConsider": "Mark considered",
-      "suggestionActionDismiss": "Dismiss"
+      "suggestionActionDismiss": "Dismiss",
+      "videoTagBaselineSet": "Video task · baseline set",
+      "videoTagBaselineNeeded": "Video task · baseline needed"
     },
     "review": {
       "title": "Review suggestion",
