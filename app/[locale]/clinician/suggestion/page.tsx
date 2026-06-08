@@ -217,6 +217,24 @@ function Inner() {
       anchorPlus2.trim()
   );
 
+  const approveStarted =
+    patientText.trim() !== '' ||
+    smartText.trim() !== '' ||
+    nrsQuestion.trim() !== '' ||
+    anchorMinus2.trim() !== '' ||
+    anchorMinus1.trim() !== '' ||
+    anchorZero.trim() !== '' ||
+    anchorPlus1.trim() !== '' ||
+    anchorPlus2.trim() !== '';
+  const approveMissing: string[] = [];
+  if (!patientText.trim()) approveMissing.push(tApprove('needGoalText'));
+  if (!smartText.trim()) approveMissing.push(tApprove('needSmart'));
+  if (goalKind === 'nrs') {
+    if (!nrsQuestion.trim()) approveMissing.push(tApprove('needNrsQuestion'));
+  } else if (!anchorsValid) {
+    approveMissing.push(tApprove('needAnchors'));
+  }
+
   const canSubmitApprove = Boolean(
     patientText.trim() &&
       smartText.trim() &&
@@ -482,6 +500,18 @@ function Inner() {
               </Field>
             )}
 
+            {!canSubmitApprove && approveStarted && approveMissing.length > 0 && (
+              <div className="mt-6 rounded-[var(--radius-button)] border border-stone bg-cream px-4 py-3">
+                <p className="text-[13px] font-semibold text-ink-soft">
+                  {tApprove('stillNeededTitle')}
+                </p>
+                <ul className="mt-1 list-disc pl-5 text-[13px] text-ink-soft">
+                  {approveMissing.map((m, i) => (
+                    <li key={i}>{m}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="mt-8 flex gap-3">
               <button
                 type="button"

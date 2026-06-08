@@ -1,32 +1,32 @@
-BUILD: simplify-cockpit-17   (lighter goal-Edit copy — versioning kept, ceremony dropped)
+BUILD: simplify-cockpit-20   (goal-calibration forms explain a disabled Save — NO migration)
 ==========================================================================
 MIGRATION: none. DB stays at 0090. Nothing to run in Supabase.
 
-WHY: the versioning UX felt heavy. The versioning DATA MODEL (0086) stays — it
-keeps every historical rating bound to the exact calibration it was scored
-under, which matters for the record and the study. What felt heavy was the Edit
-drawer announcing it. So this is a copy/UX change only.
+CONTEXT: the audit's "NRS cut-off stepper" item turned out MOOT — the clinician
+never enters cut-offs (they're fixed server-side defaults; cutoffError is an
+orphaned, unused string). The real friction in that flow was that both
+goal-calibration forms simply greyed out Save with no explanation.
 
-DONE
-- Edit drawer no longer talks about versions:
-  - intro: "Saving creates version N ... keeps version M as history" -> "Your
-    changes apply from here on. Past check-ins keep the exact wording and scale
-    they were recorded under, so nothing already scored changes meaning." (No
-    more {version}/{next} interpolation; the call is now t('intro').)
-  - "Save new version" -> "Save changes"; "New goal version saved." -> "Goal
-    updated."; error + carry-forward note de-jargoned.
-- Nothing else surfaced versioning to the clinician: the v{version} badge isn't
-  rendered anywhere, and the goal-history / link-goal modals aren't opened from
-  the cockpit (removed in batch 5). Left in the tree, harmless.
-- en + da both updated; i18n parity 0 mismatches.
+DONE — a "what's still needed" helper (mirrors the treatment form) on BOTH
+calibration surfaces, shown only once the clinician has started:
+- new-goal (RecordGoalForm): lists whichever of these is missing — goal text,
+  SMART description, weekly NRS question, starting-point + target, or all five
+  outcome levels. Keys under newGoal.
+- approve (/clinician/suggestion): same, keys under clinician.approve.
 
 VERIFIED LOCALLY
 - tsc --noEmit clean.
+- i18n parity: 0 key mismatches, 0 ICU mismatches.
 - Production build OK via the font-stub procedure. 60/60 pages.
 
 DEPLOY: no migration; unzip / push / Vercel builds. Page count 60.
 
 ** QA **
-- Edit a goal: the drawer reads like a normal edit; button says "Save changes";
-  success says "Goal updated." No "version" wording is visible to the clinician.
-  (Underneath, a frozen version is still created — past ratings stay intact.)
+- Start a new goal or approve a suggestion, leave a required field blank: a
+  "Before you can save/approve:" list names exactly what's missing. Fill them
+  and the list disappears and Save/Approve enables.
+
+AUDIT STATUS: the cheap/contained "don't make me think" items are now done or
+were already handled in the codebase. What remains is judgment-call polish best
+driven by a live moderated test (3 per role; patients on phone,
+clinicians/therapists on desktop).

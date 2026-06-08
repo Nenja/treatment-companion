@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-17` (no migration — lightened the goal-Edit copy so versioning no longer reads as a ceremony; data model unchanged at 0090; backlog in §8)._
+> _Last updated for build tag: `simplify-cockpit-20` (no migration — goal-calibration forms now explain a disabled Save with a 'what's still needed' list, on both new-goal and approve; DB 0090; backlog in §8)._
 
 ---
 
@@ -839,15 +839,95 @@ last treatment) →
 **`simplify-cockpit-14`** (no migration; Option A restructure) →
 **`simplify-cockpit-15`** (migration 0089; clip deletion) →
 **`simplify-cockpit-16`** (migration 0090; per-goal handoff notes) →
-**`simplify-cockpit-17`** (no migration; lightened goal-Edit copy — versioning
-no longer reads as a ceremony; current).
+**`simplify-cockpit-17`** (no migration; lightened goal-Edit copy) →
+**`simplify-cockpit-18`** (no migration; wearable import reorder) →
+**`simplify-cockpit-19`** (no migration; 'Session setup' heading) →
+**`simplify-cockpit-20`** (no migration; 'what's still needed' helper on the
+new-goal + approve calibration forms; current).
 
 ---
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-simplify-cockpit-17.zip`
-- **Tag:** `simplify-cockpit-17`
+- **Zip:** `treatment-companion-simplify-cockpit-20.zip`
+- **Tag:** `simplify-cockpit-20`
+- **Migration:** **none** (DB stays at **0090**).
+- **Goal-calibration forms now explain a disabled Save.** The audit's "NRS
+  cut-off entry" item turned out moot — the clinician never enters cut-offs
+  (fixed server-side defaults; `cutoffError` is an orphaned string). The real
+  friction was that both calibration forms just greyed out Save with no reason.
+  Added a **"what's still needed"** list (mirrors the treatment form) on:
+    - **new-goal** (`RecordGoalForm`): lists goal text / SMART / weekly question /
+      starting-point+target / all five outcome levels — whatever's missing.
+      Keys under `newGoal`: `stillNeededTitle`, `needGoalText`, `needSmart`,
+      `needNrsQuestion`, `needNrsRange`, `needAnchors`.
+    - **approve** (`/clinician/suggestion`): same idea, keys under
+      `clinician.approve` (`stillNeededTitle`, `needGoalText`, `needSmart`,
+      `needNrsQuestion`, `needAnchors`).
+  - Only shows once the clinician has started (a pristine form isn't nagged).
+- **Verified locally:** tsc clean; i18n parity (0 mismatches); font-stub 60/60.
+- **⚠ QA:** start a goal (new-goal or approving a suggestion), leave a required
+  field blank → a "Before you can save/approve:" list names what's missing;
+  fill them and it disappears and Save enables.
+- **Audit status:** the cheap/contained items are now done or were already
+  handled. Remaining is judgment-call polish only; the highest-value next step is
+  a live moderated test (3 per role; patients on phone, clinicians/therapists on
+  desktop).
+
+### `simplify-cockpit-19` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-19.zip`. "Session setup" heading
+  on the record-treatment form. **Tag:** `simplify-cockpit-19`
+- **Migration:** **none** (DB stays at **0090**).
+- **Record-treatment page — reads the structure first, then a light fix.** On
+  inspection the page is well-organised already: two-pane desktop layout
+  (reference left / form right), an **area selector that gates which sections
+  render** (standard injections vs face vs both), copy-from-last-treatment,
+  per-muscle notes behind tap-to-reveal, and a "what's still needed" helper when
+  Save is disabled. So it did **not** need a restructure — only a scannability
+  gap: the first four fields (date/drug/dilution/guidance) had no group heading
+  while every later block did. Added a **"Session setup"** heading + subtitle so
+  the form now reads as labelled groups (Session setup → Injections → Total →
+  Notes → Note for therapist). New keys `treatment.sessionSetupTitle/
+  sessionSetupSubtitle` (en+da).
+- **Verified locally:** tsc clean; i18n parity (0 mismatches); font-stub 60/60.
+- **⚠ QA:** on the treatment form the date/drug/dilution/guidance block now sits
+  under a "Session setup" heading, matching the Muscles/Total/Notes sections.
+- **Audit items still open (recommend dedicated handling):** NRS cut-off entry
+  in goal approval (make it stepwise / impossible to enter wrong). The
+  record-treatment page is otherwise in good shape; revisit only if live testing
+  flags a specific step.
+
+### `simplify-cockpit-18` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-18.zip`. Wearable import leads
+  with manual add; CSV under 'advanced'. **Tag:** `simplify-cockpit-18`
+- **Migration:** **none** (DB stays at **0090**).
+- **Usability-audit follow-through (platform split: clinician/therapist = desktop,
+  patient = phone).** Findings from reading the components (not just copy):
+    - Goal calibration (`RecordGoalForm`) ALREADY does progressive disclosure —
+      model picker, then only the chosen model's fields. No change needed.
+    - The patient NRS scale (`GoalRatingPicker`) shows endpoint meanings by
+      default; `patient.checkin.scaleTapPrompt` is an orphaned/unused string, so
+      the "tap to reveal" friction I'd flagged doesn't actually exist.
+    - Mobile cockpit-header density is moot (clinicians/therapists are desktop).
+  - **Shipped:** the wearable/observations import (`/clinician/observations`)
+    no longer opens with a technical CSV wall. The **simple "Add one
+    measurement" form now leads**; the CSV importer moved into a collapsed
+    `<details>` (advanced) below it. No copy keys added (summary reuses
+    `csvHeading`).
+- **Still open from the audit (not done this build):**
+    - **Record-treatment page** (`/clinician/treatment`, ~1.5k lines) — the one
+      surface that warrants a dedicated structural pass (sectioning / staging,
+      clear face-module separation, find-the-save). Too big for a safe blind edit
+      at the tail of a long session; recommend its own session.
+    - **NRS cut-off entry** in goal approval — make it stepwise/impossible-to-
+      enter-wrong instead of free-entry-then-reject. Moderate.
+- **Verified locally:** tsc clean; font-stub build 60/60.
+- **⚠ QA:** open a patient's wearable/observations page → the manual add form is
+  first; "Import a CSV" is a collapsed disclosure below it.
+
+### `simplify-cockpit-17` (previous; no migration)
+- **Zip:** `treatment-companion-simplify-cockpit-17.zip`. Lightened goal-Edit copy
+  (versioning ceremony removed; data model intact). **Tag:** `simplify-cockpit-17`
 - **Migration:** **none** (DB stays at **0090**). Pure copy/UX change.
 - **Lightened the goal versioning UX** (keep the data model, drop the ceremony).
   Versioning (0086) is doing real work — every historical rating stays bound to

@@ -206,50 +206,6 @@ export default function ClinicianObservationsPage() {
           </div>
         )}
 
-        {/* CSV import */}
-        <section className={`mt-6 ${cardClass}`}>
-          <h2 className="font-display text-[18px] leading-tight text-ink">
-            {t('csvHeading')}
-          </h2>
-          <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">
-            {t('csvHint')}
-          </p>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".csv,text/csv"
-            onChange={(e) => onPickFile(e.target.files?.[0])}
-            className="mt-3 block w-full text-[13px] text-ink-soft file:mr-3 file:rounded-[var(--radius-button)] file:border file:border-stone file:bg-cream file:px-3 file:py-1.5 file:text-[13px] file:font-semibold file:text-sage-deep"
-          />
-          <textarea
-            value={csvText}
-            onChange={(e) => setCsvText(e.target.value)}
-            rows={5}
-            placeholder={t('csvPlaceholder')}
-            className={`${inputClass} mt-3 font-mono text-[12px]`}
-          />
-          <div className="mt-3 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onImportCsv}
-              disabled={importObs.isPending || csvText.trim().length === 0}
-              className={btnPrimary}
-            >
-              {importObs.isPending ? t('importing') : t('importButton')}
-            </button>
-          </div>
-          {parseErrors.length > 0 && (
-            <div className="mt-3 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2">
-              <p className={labelClass}>{t('skippedHeading')}</p>
-              <ul className="mt-1 list-disc pl-5 text-[12px] text-ink-soft">
-                {parseErrors.slice(0, 12).map((e, i) => (
-                  <li key={i}>{e}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </section>
-
         {/* Manual single add */}
         <section className={`mt-6 ${cardClass}`}>
           <h2 className="font-display text-[18px] leading-tight text-ink">
@@ -334,6 +290,53 @@ export default function ClinicianObservationsPage() {
             {t('addButton')}
           </button>
         </section>
+
+        {/* CSV import — advanced, collapsed by default so the page doesn't
+            open with a technical wall; the simple manual add leads instead. */}
+        <details className="mt-6">
+          <summary className="cursor-pointer list-none font-display text-[16px] leading-tight text-sage-deep underline-offset-2 hover:underline">
+            {t('csvHeading')}
+          </summary>
+          <section className={`mt-3 ${cardClass}`}>
+          <p className="text-[13px] leading-relaxed text-ink-muted">
+            {t('csvHint')}
+          </p>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv,text/csv"
+            onChange={(e) => onPickFile(e.target.files?.[0])}
+            className="mt-3 block w-full text-[13px] text-ink-soft file:mr-3 file:rounded-[var(--radius-button)] file:border file:border-stone file:bg-cream file:px-3 file:py-1.5 file:text-[13px] file:font-semibold file:text-sage-deep"
+          />
+          <textarea
+            value={csvText}
+            onChange={(e) => setCsvText(e.target.value)}
+            rows={5}
+            placeholder={t('csvPlaceholder')}
+            className={`${inputClass} mt-3 font-mono text-[12px]`}
+          />
+          <div className="mt-3 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onImportCsv}
+              disabled={importObs.isPending || csvText.trim().length === 0}
+              className={btnPrimary}
+            >
+              {importObs.isPending ? t('importing') : t('importButton')}
+            </button>
+          </div>
+          {parseErrors.length > 0 && (
+            <div className="mt-3 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2">
+              <p className={labelClass}>{t('skippedHeading')}</p>
+              <ul className="mt-1 list-disc pl-5 text-[12px] text-ink-soft">
+                {parseErrors.slice(0, 12).map((e, i) => (
+                  <li key={i}>{e}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+        </details>
 
         {/* Recent */}
         <section className="mt-6">

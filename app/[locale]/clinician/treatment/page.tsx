@@ -857,12 +857,18 @@ function TreatmentRecordInner() {
 
           {/* Right pane: the actual treatment form. */}
           <div>
-        {/* Row 1: Date + Drug product — session setup fields entered
-            before the per-muscle work begins. Total units has moved
-            below the muscle list, since the physician records it once
-            the injections are chosen (it's the conclusion, not the
-            starting point). */}
-        <div className="mt-6 grid grid-cols-2 gap-3">
+        {/* Session setup — date/drug/dilution/guidance for this visit.
+            Given its own heading so the long form reads as labelled groups
+            (Session setup → Injections → Total → Notes), matching the other
+            sections. Total units has moved below the muscle list, since the
+            physician records it once the injections are chosen. */}
+        <h2 className="mt-6 font-display text-[18px] text-ink">
+          {t('sessionSetupTitle')}
+        </h2>
+        <p className="mt-1 text-[14px] text-ink-muted">
+          {t('sessionSetupSubtitle')}
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-3">
           <Field label={t('fieldDate')} inline>
             <input
               type="date"
