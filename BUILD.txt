@@ -1,11 +1,11 @@
-BUILD: simplify-cockpit-29   (cumulative; column headers Overview + Tools — NO migration; DB 0090)
+BUILD: simplify-cockpit-30   (cumulative; New treatment -> Overview header + goal-card row aligned — NO migration; DB 0090)
 ==========================================================================
 WHY CUMULATIVE: the build sandbox reset itself between builds last session, so
 the zips tagged 21-26 were each built on a reverted base and are NOT cumulative
 (each missing pieces of the others). This zip re-applies the full intended set
 onto the known-good build-20 base in one pass.
 
-** DEPLOY THIS ZIP. DISCARD 21-28. **  Latest: added "Overview" (context column) and "Tools" (sidebar rail) headers so all three cockpit columns are headed and their tops align.
+** DEPLOY THIS ZIP. DISCARD 21-29. **  Latest: New treatment moved into the Overview header (so both columns have a header button and align); goal-card chip + action buttons now on one justify-between row.
 
 WHAT'S IN IT
 1. "What's still needed" checklist on new-goal + approve calibration forms,

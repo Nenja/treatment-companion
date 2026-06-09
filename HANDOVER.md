@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-29` (no migration; DB 0090). Cumulative; supersedes 21–28. Latest: column headers (Overview / Tools) added so all three columns are headed; see §7._
+> _Last updated for build tag: `simplify-cockpit-30` (no migration; DB 0090). Cumulative; supersedes 21–29. Latest: moved New treatment into the Overview header (column alignment) + goal-card chip/buttons on one row; see §7._
 
 ---
 
@@ -849,7 +849,29 @@ new-goal + approve calibration forms; current).
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-simplify-cockpit-29.zip`
+- **Zip:** `treatment-companion-simplify-cockpit-30.zip`
+- **Tag:** `simplify-cockpit-30`  ·  **Migration:** none (DB **0090**).
+- **Cumulative.** Latest changes (29→30):
+    - **Column alignment via matching headers.** The "Active goals" header has
+      buttons (Suggestions / Record a goal) so it was taller than the plain
+      "Overview" header, leaving the left card higher. Moved **"New treatment"
+      out of the top page header into the Overview header** (right side, same
+      `py-2 text-[14px]` button as the goals header). Both headers now have a
+      button → equal height → "Since last visit" lines up with the first goal
+      graph by structure, not a magic min-height. The top header now holds only
+      name / Switch patient / End session / help / account.
+    - **Goal-card action row aligned.** The "Video task · baseline …" chip was a
+      standalone left-aligned line above a right-aligned button row. Now the
+      action row is one `justify-between` flex row: the chip on the left, the
+      Edit / Record baseline / Video task / Retire buttons grouped on the right.
+- **Verified locally:** tsc clean; i18n parity (unchanged); font-stub 60/60.
+- **⚠ ENV NOTE:** the build sandbox reverted again this session (lost cockpit-27→29
+  working state + node_modules); recovered by re-extracting the cockpit-29 zip and
+  `npm ci`. The outputs zips persist and are cumulative — always restore from the
+  latest zip, not the working dir, at session start.
+- **⚠ QA:** "New treatment" now sits in the Overview header (not the top bar);
+  "Since last visit" top lines up with the first goal graph; the goal-card chip
+  and action buttons sit on one row (chip left, buttons right).
 - **Tag:** `simplify-cockpit-29`  ·  **Migration:** none (DB **0090**).
 - **Cumulative.** Latest changes (28→29): every cockpit column now has a header,
   so they read as parallel and their content tops align via a shared

@@ -722,40 +722,6 @@ export default function ClinicianPatientPage() {
             </button>
             </h1>
             <div className="flex shrink-0 items-center gap-2">
-              {/* Primary action of an injection visit — the page's lead
-                  CTA, in the header so it's reachable from any layout. */}
-              <button
-                type="button"
-                onClick={() => {
-                  touch();
-                  setShowNewCycle(true);
-                }}
-                aria-label={t('startNewCycle')}
-                title={t('startNewCycle')}
-                className="flex h-11 w-11 items-center justify-center gap-1.5 rounded-full bg-sage-deep text-[13px] font-semibold text-on-accent hover:bg-ink-soft sm:w-auto sm:rounded-[var(--radius-button)] sm:px-3"
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                  className="shrink-0"
-                >
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-                <span className="hidden sm:inline">
-                  {t('startNewTreatmentShort')}
-                </span>
-              </button>
-              <span
-                className="mx-0.5 hidden h-6 w-px bg-stone/70 sm:block"
-                aria-hidden
-              />
               <button
                 type="button"
                 onClick={() =>
@@ -1037,10 +1003,39 @@ export default function ClinicianPatientPage() {
             header band (the Active-goals title + buttons), so "since last visit"
             lines up with the first goal graph — and because the header has its
             own text it doesn't read as an empty gap. */}
-        <div className="flex items-center lg:min-h-[39px]">
+        <div className="flex items-center justify-between gap-3 lg:min-h-[39px]">
           <h2 className="font-display text-[20px] leading-tight text-ink">
             {t('overviewTitle')}
           </h2>
+          {/* New treatment lives here so the context column has a header button
+              like the goals column — the two headers match height and the cards
+              below line up — and because starting a cycle belongs with the
+              patient overview. */}
+          <button
+            type="button"
+            onClick={() => {
+              touch();
+              setShowNewCycle(true);
+            }}
+            aria-label={t('startNewCycle')}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-button)] bg-sage-deep px-3 py-2 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
+          >
+            <svg
+              width="17"
+              height="17"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+              className="shrink-0"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            {t('startNewTreatmentShort')}
+          </button>
         </div>
         <div className="mt-4 lg:mt-3">
           <VisitChanges
@@ -1269,27 +1264,6 @@ export default function ClinicianPatientPage() {
                       {t('physioWorkingOnTag')}
                     </p>
                   )}
-                  {g.videoEnabled && (
-                    <p className="mt-1.5 ml-2 inline-flex items-center gap-1.5 rounded-full border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-ink-soft">
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden
-                      >
-                        <rect x="2" y="6" width="14" height="12" rx="2" />
-                        <path d="M16 10l6-3v10l-6-3z" />
-                      </svg>
-                      {g.baselineVideoPath
-                        ? t('videoTagBaselineSet')
-                        : t('videoTagBaselineNeeded')}
-                    </p>
-                  )}
                   {(clinicVideoByGoal.get(g.id) ?? []).length > 0 && (
                     <div className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3">
                       <p className="text-[12px] font-semibold text-ink-soft">
@@ -1311,7 +1285,31 @@ export default function ClinicianPatientPage() {
                   {/* Retire action — retires a goal (achieved /
                       partial / no longer suitable). History is kept;
                       the goal leaves the patient's future check-ins. */}
-                  <div className="mt-1.5 flex flex-wrap justify-end gap-2">
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center">
+                      {g.videoEnabled && (
+                        <p className="inline-flex items-center gap-1.5 rounded-full border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-ink-soft">
+                          <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden
+                          >
+                            <rect x="2" y="6" width="14" height="12" rx="2" />
+                            <path d="M16 10l6-3v10l-6-3z" />
+                          </svg>
+                          {g.baselineVideoPath
+                            ? t('videoTagBaselineSet')
+                            : t('videoTagBaselineNeeded')}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => setEditGoalTarget(g)}
@@ -1428,6 +1426,7 @@ export default function ClinicianPatientPage() {
                       </svg>
                       {t('retireGoal')}
                     </button>
+                    </div>
                   </div>
                 </li>
               ))}
