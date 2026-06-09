@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-31` (no migration; DB 0090). Cumulative; supersedes 21–30. Fixes the real alignment bug: removed a redundant `mt-10` on the VisitChanges section (the unexplained float) and capped the Active-goals header to the 520px card width so its buttons sit on the card's right border. See §7._
+> _Last updated for build tag: `simplify-cockpit-36` (no migration; DB 0092). Cumulative; supersedes 21–35. Per-goal video consolidation: the goal card's two video buttons (Record baseline + Video task) are now one **Video** button opening a per-goal overview (protocol + baseline playback + pointers to check-in clips and the archive). See §7._
 
 ---
 
@@ -849,7 +849,130 @@ new-goal + approve calibration forms; current).
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-simplify-cockpit-31.zip`
+- **Zip:** `treatment-companion-simplify-cockpit-36.zip`
+- **Tag:** `simplify-cockpit-36`  ·  **Migration: none (DB 0092).** UI-only.
+- **Cumulative.** Per-goal video consolidation (the last item of the video work):
+    - The goal-card action row's two video buttons — **Record baseline** and
+      **Video task** — are replaced by a single **Video** button.
+    - New `components/clinician/GoalVideoModal.tsx`: a per-goal video overview
+      with (1) the task protocol (instruction/setup/length, or a "set up video"
+      prompt when not enabled) + **Edit task**; (2) the baseline clip with inline
+      playback + **Manage** (record/replace/archive/delete); (3) a note that
+      check-in clips are reviewed under "Since last visit" + an **Archived videos**
+      link. It REUSES the proven editors: its actions hand off to the existing
+      `VideoProtocolEditor` / `BaselineRecorderModal` / archive (the hub closes and
+      the focused editor opens — no modal stacking, no stale snapshot), so the
+      tested flows are untouched.
+    - i18n: new `clinician.videoHub` namespace + `clinician.videoProtocol.hubButton`
+      (EN + DA).
+- **Verified locally:** tsc clean; font-stub 60/60; i18n parity clean (only_da =
+  pre-existing `_meta.*`), no ICU mismatches.
+- **⚠ QA on deploy:** goal card now shows one **Video** button; it opens the
+  overview; Edit task / Manage baseline / Archived videos hand off to the existing
+  screens; baseline plays inline when present. (No DB change this build.)
+- **Video feature now complete:** consent (0091) · baseline delete · archive
+  (0092, archive/unarchive/delete + per-patient view) · per-goal Video overview.
+  Remaining follow-up (separate): the patient-app home-filming consent gate.
+- **Tag:** `simplify-cockpit-35`  ·  **Migration: 0092 (DB 0091 → 0092)** — RUN THE SQL.
+- **Cumulative.** Video archive (stage 2):
+    - **Migration 0092**: `archived_goal_video` (clinician-only RLS, like
+      treatment_handoff) + `archive_goal_video(goal, source, rating, note)` and
+      `unarchive_goal_video(id)`. Archive snapshots the clip's path, clinic score,
+      and consent flags, then clears the active reference (rating `video_path` or
+      goal `baseline_video_path`) — **the Storage file and the rating's score are
+      KEPT**. Archiving **requires clinical consent** (raises otherwise). Permanent
+      delete of an archived clip = client-side Storage remove + row delete (0089
+      + 0092 DELETE policies). **VERIFIED against a real Postgres harness**
+      (stub schema + helpers): archive baseline/rating, score preserved, unarchive
+      restores, consent-off correctly errors.
+    - Hooks (`lib/supabase/goalVideo.ts`): `useArchivedVideos`, `useArchiveGoalVideo`,
+      `useUnarchiveGoalVideo`, `useDeleteArchivedVideo`, + `ArchivedGoalVideo` type.
+    - **Per-patient archive view**: `components/clinician/ArchivedVideosModal.tsx`
+      — lists archived clips (goal, source, score, consent chips, date) with
+      playback, Restore (unarchive), and Delete. Opened from a **"Archived videos"
+      button in the Background card**.
+    - **Archive actions**: in the clip player (`VideoPlayerModal`, beside Delete —
+      the "archive until rated" case) and the baseline recorder (`BaselineRecorderModal`,
+      beside Delete). Both gated on clinical consent; the player gets
+      `approvedGoalId` + `consentClinical` threaded via `VisitChanges`.
+    - i18n: new `clinician.archive` namespace + `clinician.video.archive/archiving`
+      + `clinician.baseline.archiveCta` + `clinician.patient.archivedVideosButton`
+      (EN + DA).
+- **Verified locally:** tsc clean; font-stub 60/60; i18n parity clean (only_da =
+  pre-existing `_meta.*`); migration run through Postgres harness.
+- **⚠ DEPLOY ORDER:** run `0092_goal_video_archive.sql` in Supabase before/with the zip.
+- **⚠ QA on deploy:** (a) with clinical consent ON, the clip player and baseline
+  modal show an Archive button; archiving moves the clip to the archive (graph
+  point keeps its score); (b) Background card "Archived videos" opens the list;
+  Restore returns the clip; Delete removes it permanently; (c) with consent OFF,
+  Archive is hidden / errors.
+- **NEXT:** the per-goal consolidated "Video" modal (fold "Record baseline" +
+  "Video task" into one entry with Protocol/Baseline/Clips) — UI-only, no migration.
+  Patient-side home-filming consent gate = separate patient-app follow-up.
+- **Tag:** `simplify-cockpit-34`  ·  **Migration: 0091 (DB 0090 → 0091)** — RUN THE SQL.
+- **⚠ cockpit-33 was a regression** — it was built on a reset (cockpit-20) base
+  and silently dropped builds 30/31/32 (Overview-header New-treatment, the mt-10
+  alignment fix, the header 520px cap, the headerBadge chip, the visible rating
+  delete). **Discard cockpit-33.** cockpit-34 is rebuilt from the verified
+  cockpit-32 base and is fully cumulative. Root cause: the cockpit-33 turn edited
+  without re-verifying the working-dir tag after a sandbox reset. Lesson logged in
+  §5: ALWAYS verify the HANDOVER tag / markers (or restore from the latest zip)
+  before editing, every turn.
+- **Cumulative.** Contents of 34:
+    - Re-applied **baseline-video delete** (cockpit-33's intended change) onto the
+      good base: Delete button + confirm in `BaselineRecorderModal`; hook
+      `useDeleteGoalBaselineVideo` (no migration — reuses 0089 storage policy +
+      `set_goal_baseline_video('')`).
+    - **Patient video consent (stage 1 of the video-archive feature).**
+      Migration **0091** adds two patient-level booleans `video_consent_clinical`
+      / `video_consent_research` (+ recorded_at/by audit) and RPC
+      `set_patient_video_consent` (clinician-only, mirrors `set_patient_medication`
+      0061). Loaded into `ClinicianPatientData.patient` and shown as **two
+      checkmarks in the Background card** (`onSetVideoConsent` saves both).
+      **Baseline filming is gated**: `BaselineRecorderModal` blocks the recorder
+      (shows a "record consent first" notice) when `video_consent_clinical` is
+      false; an existing baseline can still be viewed/deleted. New i18n:
+      `clinician.patient.videoConsent{Title,Clinical,Research}` and
+      `clinician.baseline.consentGate{Title,Body,Close}` (EN + DA).
+- **Verified locally:** tsc clean; font-stub 60/60; i18n parity clean (only_da =
+  pre-existing `_meta.*`), no ICU mismatches. Migration 0091 mirrors the proven
+  0061 pattern (NOT yet run through Method D — additive + idempotent, safe to
+  re-run).
+- **⚠ DEPLOY ORDER:** run `0091_video_consent.sql` in Supabase **before/with**
+  deploying the zip (the cockpit selects the new columns; the RPC must exist).
+- **⚠ QA on deploy:** (a) Background card shows two consent checkmarks, toggling
+  persists; (b) with clinical consent OFF, "Record baseline" shows the consent
+  notice instead of the recorder; with it ON, the recorder works; (c) all of
+  30/31/32 still present (alignment, header chip, visible rating-delete);
+  (d) baseline delete works.
+- **NEXT (stage 2):** per-goal "Video" modal + the archive table/RPCs as migration
+  **0092** (paired with its UI); per-person archive view = stage 3. Consent gate
+  for the patient's own home filming = follow-up (patient app).
+- **Tag:** `simplify-cockpit-32`  ·  **Migration:** none (DB **0090**).
+- **Cumulative.** Two video fixes:
+    1. **Video chip relocated.** The "Video task · baseline set/needed" chip used
+       to sit on the goal-card action row and, at 520px, wrapped onto its own line
+       above the buttons, pushing them down. `GoalProgressView` now takes an
+       optional **`headerBadge?: ReactNode`** rendered in the card header under the
+       title; the clinician page passes the video chip there. The action row is
+       back to a clean right-aligned button group (`justify-end`). Other
+       `GoalProgressView` call sites (physio, onboarding, modal, trend charts) omit
+       the prop, so they're unchanged.
+    2. **Video delete is now findable.** Delete already existed
+       (`useDeleteGoalRatingVideo`, migration 0089) but was a faint amber text link
+       at the bottom of the player modal. It's now a **visible outlined button with
+       a trash icon**. Reached by opening a video from "Since last visit" → the
+       player modal → **Delete** (then a confirm step). NB: this deletes a *rating*
+       clip (a graph point). **Baseline videos still have no delete** — only
+       re-record via "Record baseline" replaces them. Open question for Nikolaj:
+       add a "remove baseline video" action? (would clear `baseline_video_path`).
+- **Verified locally:** tsc clean; font-stub 60/60; no new i18n keys (reuses
+  `clinician.patient.videoTagBaseline*` and `clinician.video.delete`), parity unchanged.
+- **⚠ ENV NOTE:** sandbox reverted twice this session; recovered from the latest
+  output zip + `npm ci` each time. Output zips persist and are cumulative.
+- **⚠ QA on deploy:** (a) video chip now sits under the goal title inside the card,
+  buttons no longer shift; (b) opening a "Since last visit" video shows a clear
+  Delete button at the bottom of the player.
 - **Tag:** `simplify-cockpit-31`  ·  **Migration:** none (DB **0090**).
 - **Cumulative.** This build finally fixes the cockpit alignment, after several
   wrong guesses (22/24/28/29/30). The true causes were two width/margin facts,

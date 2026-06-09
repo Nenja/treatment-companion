@@ -158,6 +158,11 @@ export interface ClinicianPatientData {
      *  to spasticity and dystonia alike. */
     currentMedication: string | null;
     previousMedication: string | null;
+    /** Patient-level video consent (recorded by the clinician, migration 0091):
+     *  clinical = permission to record & store videos; research = permission to
+     *  use them for research. */
+    videoConsentClinical: boolean;
+    videoConsentResearch: boolean;
   };
   cycle: {
     id: string;
@@ -208,7 +213,7 @@ export function useClinicianPatientData(
       const { data: pRow, error: pErr } = await supabase
         .from('patient')
         .select(
-          'id, share_muscles_with_physio, physio_exercise_plan, physio_assistive_devices, current_medication, previous_medication, profile:profile_id (display_name)'
+          'id, share_muscles_with_physio, physio_exercise_plan, physio_assistive_devices, current_medication, previous_medication, video_consent_clinical, video_consent_research, profile:profile_id (display_name)'
         )
         .eq('id', patientId!)
         .maybeSingle();
@@ -231,7 +236,11 @@ export function useClinicianPatientData(
         currentMedication:
           (pRow.current_medication as string | null) ?? null,
         previousMedication:
-          (pRow.previous_medication as string | null) ?? null
+          (pRow.previous_medication as string | null) ?? null,
+        videoConsentClinical:
+          (pRow.video_consent_clinical as boolean | null) ?? false,
+        videoConsentResearch:
+          (pRow.video_consent_research as boolean | null) ?? false
       };
 
       // 2. Active cycle
@@ -1513,6 +1522,32 @@ export function useSetPatientMedication() {
       // Belt-and-braces: also refresh the previousTreatment query that
       // the treatment page can use as reference data.
       qc.invalidateQueries({ queryKey: ['previousTreatment', vars.patientId] });
+    }
+  });
+}
+
+/**
+ * Records the patient's video-consent flags (clinical + research). Clinician
+ * only; access-checked server-side (migration 0091). A simple yes/no per flag.
+ */
+export function useSetPatientVideoConsent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      patientId: string;
+      clinical: boolean;
+      research: boolean;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_patient_video_consent', {
+        p_patient_id: input.patientId,
+        p_clinical: input.clinical,
+        p_research: input.research
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
     }
   });
 }

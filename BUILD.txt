@@ -1,11 +1,11 @@
-BUILD: simplify-cockpit-31   (cumulative; FIX alignment — removed VisitChanges mt-10 float + capped Active-goals header to 520px so buttons hit the card right border — NO migration; DB 0090)
+BUILD: simplify-cockpit-36   (NO migration; DB 0092; per-goal video consolidation — one "Video" button opens a per-goal overview: protocol + baseline playback + pointers to clips BUILD: simplify-cockpit-35   (MIGRATION 0092 — run 0092_goal_video_archive.sql, DB 0091->0092; video archive: archive/unarchive/delete + per-patient archive view + archive buttons on clip player BUILD: simplify-cockpit-34   (MIGRATION 0091 — run 0091_video_consent.sql, DB 0090->0091; supersedes the regressed cockpit-33; baseline-delete + patient video-consent + baseline gate) baseline modal; migration verified vs real Postgres) archive; reuses existing editors)
 ==========================================================================
 WHY CUMULATIVE: the build sandbox reset itself between builds last session, so
 the zips tagged 21-26 were each built on a reverted base and are NOT cumulative
 (each missing pieces of the others). This zip re-applies the full intended set
 onto the known-good build-20 base in one pass.
 
-** DEPLOY THIS ZIP. DISCARD 21-30. **  Real alignment fix: "Since last visit" no longer floats (removed a stray mt-10), and Suggestions/Record now align to the goal card right border (header capped to 520px).
+** DEPLOY THIS ZIP. DISCARD 21-31. **  Video chip moved into the goal-card header; video-delete is now a visible button in the player (open a "Since last visit" video -> Delete).
 
 WHAT'S IN IT
 1. "What's still needed" checklist on new-goal + approve calibration forms,
