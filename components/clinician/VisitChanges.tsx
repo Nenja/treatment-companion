@@ -26,6 +26,8 @@ interface VisitChangesProps {
   /** Patient id — drives the conditional wearable trend (only shown when
    *  the patient actually has observations). */
   patientId: string;
+  /** Patient clinical video consent — enables the Archive action on clips. */
+  consentClinical?: boolean;
   /** Opens the "last treatment" dialog. Only wired when a treatment is
    *  recorded for the cycle; the button is hidden otherwise. */
   onShowLastTreatment?: () => void;
@@ -138,6 +140,7 @@ export function VisitChanges({
   checkins,
   goals,
   patientId,
+  consentClinical,
   onShowLastTreatment
 }: VisitChangesProps) {
   const t = useTranslations('visitChanges');
@@ -470,6 +473,8 @@ export function VisitChanges({
         <VideoPlayerModal
           path={video.path}
           title={video.title}
+          approvedGoalId={video.goalId}
+          consentClinical={consentClinical}
           onClose={() => setVideo(null)}
           scoring={{
             ratingId: video.ratingId,

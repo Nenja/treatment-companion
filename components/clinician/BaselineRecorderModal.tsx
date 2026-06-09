@@ -7,7 +7,11 @@ import {
   GoalVideoRecorder,
   type RecordedVideo
 } from '@/components/wizard/GoalVideoRecorder';
-import { useGoalVideoUrl } from '@/lib/supabase/goalVideo';
+import {
+  useGoalVideoUrl,
+  useDeleteGoalBaselineVideo,
+  useArchiveGoalVideo
+} from '@/lib/supabase/goalVideo';
 import {
   uploadBaselineVideo,
   useSetGoalBaselineVideo
@@ -29,6 +33,7 @@ export function BaselineRecorderModal({
   goalText,
   protocol,
   existingPath,
+  consentClinical,
   onClose
 }: {
   patientId: string;
@@ -40,6 +45,9 @@ export function BaselineRecorderModal({
     seconds: number | null;
   };
   existingPath: string | null;
+  /** Patient-level clinical video consent. Filming is blocked until this is on
+   *  file; an existing baseline can still be viewed/deleted without it. */
+  consentClinical: boolean;
   onClose: () => void;
 }) {
   const t = useTranslations('clinician.baseline');
@@ -47,10 +55,13 @@ export function BaselineRecorderModal({
   const toast = useToast();
   const containerRef = useModalA11y(onClose);
   const setBaseline = useSetGoalBaselineVideo();
+  const deleteBaseline = useDeleteGoalBaselineVideo();
+  const archiveBaseline = useArchiveGoalVideo();
 
   const [reRecording, setReRecording] = useState(existingPath == null);
   const [clip, setClip] = useState<RecordedVideo | null>(null);
   const [saving, setSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const existing = useGoalVideoUrl(reRecording ? null : existingPath);
 
@@ -117,15 +128,110 @@ export function BaselineRecorderModal({
               ) : (
                 <p className="text-[13px] text-ink-muted">{t('loading')}</p>
               )}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setClip(null);
+                    setReRecording(true);
+                  }}
+                  className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-2 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
+                >
+                  {t('reRecord')}
+                </button>
+                {consentClinical && (
+                  <button
+                    type="button"
+                    disabled={archiveBaseline.isPending}
+                    onClick={async () => {
+                      try {
+                        await archiveBaseline.mutateAsync({
+                          approvedGoalId: goalId,
+                          source: 'baseline'
+                        });
+                        onClose();
+                      } catch {
+                        /* leave open to retry */
+                      }
+                    }}
+                    className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-2 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink disabled:opacity-50"
+                  >
+                    {t('archiveCta')}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(true)}
+                  className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-amber-deep px-4 py-2 text-[14px] font-semibold text-amber-deep hover:bg-amber-deep hover:text-on-accent"
+                >
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                    <line x1="10" y1="11" x2="10" y2="17" />
+                    <line x1="14" y1="11" x2="14" y2="17" />
+                  </svg>
+                  {t('deleteCta')}
+                </button>
+              </div>
+              {confirmingDelete && existingPath && (
+                <div className="rounded-[var(--radius-button)] border border-stone bg-cream p-3">
+                  <p className="text-[13px] text-ink-soft">{t('deleteConfirm')}</p>
+                  <div className="mt-2 flex items-center gap-3">
+                    <button
+                      type="button"
+                      disabled={deleteBaseline.isPending}
+                      onClick={async () => {
+                        try {
+                          await deleteBaseline.mutateAsync({
+                            goalId,
+                            path: existingPath
+                          });
+                          onClose();
+                        } catch {
+                          /* leave the dialog open so the clinician can retry */
+                        }
+                      }}
+                      className="rounded-[var(--radius-button)] bg-amber-deep px-4 py-2 text-[13px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
+                    >
+                      {deleteBaseline.isPending
+                        ? t('deleting')
+                        : t('deleteConfirmCta')}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={deleteBaseline.isPending}
+                      onClick={() => setConfirmingDelete(false)}
+                      className="text-[13px] font-semibold text-ink-soft hover:text-ink"
+                    >
+                      {t('cancel')}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : !consentClinical ? (
+            <div className="rounded-[var(--radius-button)] border border-amber-deep bg-cream-soft p-4">
+              <p className="text-[14px] font-semibold text-ink">
+                {t('consentGateTitle')}
+              </p>
+              <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">
+                {t('consentGateBody')}
+              </p>
               <button
                 type="button"
-                onClick={() => {
-                  setClip(null);
-                  setReRecording(true);
-                }}
-                className="self-start rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-2 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
+                onClick={onClose}
+                className="mt-3 rounded-[var(--radius-button)] border border-stone bg-cream px-4 py-2 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
               >
-                {t('reRecord')}
+                {t('consentGateClose')}
               </button>
             </div>
           ) : (

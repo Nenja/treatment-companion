@@ -8,6 +8,13 @@ interface BackgroundCardProps {
   medication?: string | null;
   devices?: string | null;
   onEditMedication?: () => void;
+  /** Patient-level video consent (recorded by the clinician). Two simple
+   *  checkmarks; onSetVideoConsent saves both at once. */
+  videoConsentClinical?: boolean;
+  videoConsentResearch?: boolean;
+  onSetVideoConsent?: (clinical: boolean, research: boolean) => void;
+  /** Opens the per-patient archived-videos modal. */
+  onOpenArchive?: () => void;
   labels: {
     title: string;
     treatment: string;
@@ -15,6 +22,10 @@ interface BackgroundCardProps {
     devices: string;
     edit: string;
     medicationNone: string;
+    consentTitle: string;
+    consentClinical: string;
+    consentResearch: string;
+    archivedVideos: string;
   };
 }
 
@@ -31,6 +42,10 @@ export function BackgroundCard({
   medication,
   devices,
   onEditMedication,
+  videoConsentClinical = false,
+  videoConsentResearch = false,
+  onSetVideoConsent,
+  onOpenArchive,
   labels
 }: BackgroundCardProps) {
   return (
@@ -74,6 +89,44 @@ export function BackgroundCard({
             <span className="text-ink-muted">{labels.devices}</span>
             <span className="text-ink-soft">{devices}</span>
           </div>
+        )}
+      </div>
+      <div className="mt-3 flex flex-col gap-2 border-t border-stone pt-3">
+        <span className="text-[12px] font-semibold text-ink-soft">
+          {labels.consentTitle}
+        </span>
+        <label className="flex items-start gap-2 text-[13px] text-ink-soft">
+          <input
+            type="checkbox"
+            checked={videoConsentClinical}
+            disabled={!onSetVideoConsent}
+            onChange={(e) =>
+              onSetVideoConsent?.(e.target.checked, videoConsentResearch)
+            }
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
+          />
+          <span>{labels.consentClinical}</span>
+        </label>
+        <label className="flex items-start gap-2 text-[13px] text-ink-soft">
+          <input
+            type="checkbox"
+            checked={videoConsentResearch}
+            disabled={!onSetVideoConsent}
+            onChange={(e) =>
+              onSetVideoConsent?.(videoConsentClinical, e.target.checked)
+            }
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
+          />
+          <span>{labels.consentResearch}</span>
+        </label>
+        {onOpenArchive && (
+          <button
+            type="button"
+            onClick={onOpenArchive}
+            className="mt-1 self-start rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-sage-deep hover:bg-stone-soft"
+          >
+            {labels.archivedVideos}
+          </button>
         )}
       </div>
     </section>

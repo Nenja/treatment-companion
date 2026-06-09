@@ -5,7 +5,8 @@ import { useTranslations } from 'next-intl';
 import { useModalA11y } from '@/lib/useModalA11y';
 import {
   useGoalVideoUrl,
-  useDeleteGoalRatingVideo
+  useDeleteGoalRatingVideo,
+  useArchiveGoalVideo
 } from '@/lib/supabase/goalVideo';
 import type { GasAnchors } from '@/lib/supabase/clinicianPatient';
 
@@ -37,12 +38,18 @@ export function VideoPlayerModal({
   path,
   title,
   onClose,
-  scoring
+  scoring,
+  approvedGoalId,
+  consentClinical
 }: {
   path: string;
   title: string;
   onClose: () => void;
   scoring?: VideoScoring;
+  /** When set with clinical consent, an Archive action is offered alongside
+   *  Delete (migration 0092). */
+  approvedGoalId?: string;
+  consentClinical?: boolean;
 }) {
   const t = useTranslations('clinician.video');
   const containerRef = useModalA11y(onClose);
@@ -99,6 +106,8 @@ export function VideoPlayerModal({
           <DeleteClipControl
             ratingId={scoring.ratingId}
             path={path}
+            approvedGoalId={approvedGoalId}
+            canArchive={!!consentClinical}
             onDeleted={onClose}
           />
         )}
@@ -213,24 +222,70 @@ function ScorePanel({
 function DeleteClipControl({
   ratingId,
   path,
+  approvedGoalId,
+  canArchive,
   onDeleted
 }: {
   ratingId: string;
   path: string;
+  approvedGoalId?: string;
+  canArchive?: boolean;
   onDeleted: () => void;
 }) {
   const t = useTranslations('clinician.video');
   const [confirming, setConfirming] = useState(false);
   const del = useDeleteGoalRatingVideo();
+  const archive = useArchiveGoalVideo();
 
   if (!confirming) {
     return (
-      <div className="mt-4 flex justify-end border-t border-stone pt-3">
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-stone pt-3">
+        {canArchive && approvedGoalId && (
+          <button
+            type="button"
+            disabled={archive.isPending}
+            onClick={async () => {
+              try {
+                await archive.mutateAsync({
+                  approvedGoalId,
+                  source: 'rating',
+                  ratingId
+                });
+                onDeleted();
+              } catch {
+                /* surfaced by the mutation; leave the dialog open */
+              }
+            }}
+            className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink disabled:opacity-50"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <rect x="3" y="4" width="18" height="4" rx="1" />
+              <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" />
+              <path d="M10 12h4" />
+            </svg>
+            {archive.isPending ? t('archiving') : t('archive')}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setConfirming(true)}
-          className="text-[13px] font-semibold text-amber-deep underline-offset-2 hover:underline"
+          className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-amber-deep px-3 py-1.5 text-[13px] font-semibold text-amber-deep hover:bg-amber-deep hover:text-on-accent"
         >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+            <line x1="10" y1="11" x2="10" y2="17" />
+            <line x1="14" y1="11" x2="14" y2="17" />
+          </svg>
           {t('delete')}
         </button>
       </div>

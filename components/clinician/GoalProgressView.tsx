@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 
 interface WeekRating {
@@ -62,6 +62,9 @@ interface GoalProgressViewProps {
    *  faint vertical markers so the outcome line can be read against the
    *  titration. */
   doseMarkers?: { weekNumber: number }[];
+  /** Optional status chip shown in the card header under the title — used by the
+   *  clinician cockpit for the "video task" indicator. Other call sites omit it. */
+  headerBadge?: ReactNode;
 }
 
 /**
@@ -97,7 +100,8 @@ export function GoalProgressView({
   nrsBaseline,
   nrsTarget,
   clinicPoints = [],
-  doseMarkers = []
+  doseMarkers = [],
+  headerBadge
 }: GoalProgressViewProps) {
   const t = useTranslations('treatment');
   const tA11y = useTranslations('a11y');
@@ -281,6 +285,7 @@ export function GoalProgressView({
           <p className="mt-0.5 text-[14px] text-ink-muted">
             {t('weeksReported', { reported: reportedCount, total: currentWeek })}
           </p>
+          {headerBadge ? <div className="mt-1.5">{headerBadge}</div> : null}
         </div>
         {onExpand && (
           <button
