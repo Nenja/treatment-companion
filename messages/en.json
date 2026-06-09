@@ -394,7 +394,11 @@
       "backgroundTitle": "Background",
       "backgroundTreatment": "Treatment",
       "overviewTitle": "Overview",
-      "railTitle": "Tools"
+      "railTitle": "Tools",
+      "videoConsentTitle": "Video consent",
+      "videoConsentClinical": "Consent to record & store videos",
+      "videoConsentResearch": "Consent to use videos for research",
+      "archivedVideosButton": "Archived videos"
     },
     "review": {
       "title": "Review suggestion",
@@ -558,7 +562,9 @@
       "deleteConfirm": "Delete this clip? This can't be undone.",
       "deleteConfirmCta": "Delete",
       "deleteCancel": "Cancel",
-      "deleting": "Deleting…"
+      "deleting": "Deleting…",
+      "archive": "Archive",
+      "archiving": "Archiving…"
     },
     "videoProtocol": {
       "open": "Video task",
@@ -575,7 +581,8 @@
       "saving": "Saving…",
       "cancel": "Cancel",
       "baselineRecord": "Record baseline",
-      "baselineSet": "Baseline ✓"
+      "baselineSet": "Baseline ✓",
+      "hubButton": "Video"
     },
     "baseline": {
       "title": "Record baseline",
@@ -587,7 +594,15 @@
       "saving": "Saving…",
       "saved": "Baseline saved",
       "error": "Couldn't save the baseline. Please try again.",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "deleteCta": "Delete",
+      "deleteConfirm": "Delete this baseline clip permanently? This can't be undone.",
+      "deleteConfirmCta": "Delete baseline",
+      "deleting": "Deleting…",
+      "consentGateTitle": "Video consent needed",
+      "consentGateBody": "This patient hasn't consented to video recording yet. Record consent in the patient's Background card before filming.",
+      "consentGateClose": "Close",
+      "archiveCta": "Archive"
     },
     "videoQueue": {
       "open": "Score videos ({n})",
@@ -615,6 +630,45 @@
       "hint": "Optional, per goal — only shown to the therapist, never the patient.",
       "placeholder": "e.g. raised dose for this goal — push range of motion",
       "fromPhysician": "Note from the treating physician"
+    },
+    "archive": {
+      "title": "Archived videos",
+      "intro": "Clips moved out of the day-to-day view but kept (with their score). Restore one to its goal, or delete it permanently.",
+      "loading": "Loading…",
+      "empty": "No archived videos for this patient yet.",
+      "closePlayer": "Close",
+      "unknownGoal": "(goal removed)",
+      "sourceBaseline": "Baseline",
+      "sourceRating": "Check-in clip",
+      "score": "Clinic score",
+      "consentClinicalYes": "Recording consent ✓",
+      "consentClinicalNo": "No recording consent",
+      "consentResearchYes": "Research consent ✓",
+      "consentResearchNo": "No research consent",
+      "play": "Play",
+      "unarchive": "Restore",
+      "delete": "Delete",
+      "deleteConfirm": "Delete permanently",
+      "deleting": "Deleting…",
+      "cancel": "Cancel"
+    },
+    "videoHub": {
+      "title": "Video",
+      "protocolSection": "Task protocol",
+      "editTask": "Edit task",
+      "setUpTask": "Set up video",
+      "disabled": "Video isn't enabled for this goal yet. Set it up to give the patient a recording task.",
+      "instruction": "Instruction",
+      "setup": "Setup",
+      "seconds": "Length",
+      "noTask": "No task details yet.",
+      "baselineSection": "Baseline clip",
+      "manageBaseline": "Manage",
+      "recordBaseline": "Record baseline",
+      "loading": "Loading…",
+      "noBaseline": "No baseline recorded yet.",
+      "clipsNote": "Check-in clips from the patient are reviewed under “Since last visit”.",
+      "openArchive": "Archived videos"
     }
   },
   "intro": {

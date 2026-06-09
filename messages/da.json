@@ -398,7 +398,11 @@
       "backgroundTitle": "Baggrund",
       "backgroundTreatment": "Behandling",
       "overviewTitle": "Oversigt",
-      "railTitle": "Værktøjer"
+      "railTitle": "Værktøjer",
+      "videoConsentTitle": "Videosamtykke",
+      "videoConsentClinical": "Samtykke til at optage og gemme videoer",
+      "videoConsentResearch": "Samtykke til at bruge videoer til forskning",
+      "archivedVideosButton": "Arkiverede videoer"
     },
     "review": {
       "title": "Gennemgå forslag",
@@ -562,7 +566,9 @@
       "deleteConfirm": "Slet dette klip? Dette kan ikke fortrydes.",
       "deleteConfirmCta": "Slet",
       "deleteCancel": "Annuller",
-      "deleting": "Sletter…"
+      "deleting": "Sletter…",
+      "archive": "Arkivér",
+      "archiving": "Arkiverer…"
     },
     "videoProtocol": {
       "open": "Videoopgave",
@@ -579,7 +585,8 @@
       "saving": "Gemmer…",
       "cancel": "Annullér",
       "baselineRecord": "Optag udgangspunkt",
-      "baselineSet": "Udgangspunkt ✓"
+      "baselineSet": "Udgangspunkt ✓",
+      "hubButton": "Video"
     },
     "baseline": {
       "title": "Optag udgangspunkt",
@@ -591,7 +598,15 @@
       "saving": "Gemmer…",
       "saved": "Udgangspunkt gemt",
       "error": "Kunne ikke gemme udgangspunktet. Prøv igen.",
-      "cancel": "Annullér"
+      "cancel": "Annullér",
+      "deleteCta": "Slet",
+      "deleteConfirm": "Vil du slette dette baseline-klip permanent? Det kan ikke fortrydes.",
+      "deleteConfirmCta": "Slet baseline",
+      "deleting": "Sletter…",
+      "consentGateTitle": "Videosamtykke kræves",
+      "consentGateBody": "Denne patient har endnu ikke samtykket til videooptagelse. Registrér samtykke i patientens Baggrund-kort, før du filmer.",
+      "consentGateClose": "Luk",
+      "archiveCta": "Arkivér"
     },
     "videoQueue": {
       "open": "Bedøm videoer ({n})",
@@ -619,6 +634,45 @@
       "hint": "Valgfrit, per mål — vises kun til terapeuten, aldrig til patienten.",
       "placeholder": "f.eks. øget dosis for dette mål — arbejd med bevægeudslag",
       "fromPhysician": "Note fra den behandlende læge"
+    },
+    "archive": {
+      "title": "Arkiverede videoer",
+      "intro": "Klip flyttet ud af det daglige overblik, men bevaret (med deres score). Gendan et til dets mål, eller slet det permanent.",
+      "loading": "Indlæser…",
+      "empty": "Ingen arkiverede videoer for denne patient endnu.",
+      "closePlayer": "Luk",
+      "unknownGoal": "(mål fjernet)",
+      "sourceBaseline": "Baseline",
+      "sourceRating": "Check-in-klip",
+      "score": "Klinikscore",
+      "consentClinicalYes": "Optagesamtykke ✓",
+      "consentClinicalNo": "Intet optagesamtykke",
+      "consentResearchYes": "Forskningssamtykke ✓",
+      "consentResearchNo": "Intet forskningssamtykke",
+      "play": "Afspil",
+      "unarchive": "Gendan",
+      "delete": "Slet",
+      "deleteConfirm": "Slet permanent",
+      "deleting": "Sletter…",
+      "cancel": "Annullér"
+    },
+    "videoHub": {
+      "title": "Video",
+      "protocolSection": "Opgaveprotokol",
+      "editTask": "Redigér opgave",
+      "setUpTask": "Opsæt video",
+      "disabled": "Video er ikke aktiveret for dette mål endnu. Opsæt det for at give patienten en optageopgave.",
+      "instruction": "Instruktion",
+      "setup": "Opsætning",
+      "seconds": "Længde",
+      "noTask": "Ingen opgavedetaljer endnu.",
+      "baselineSection": "Baseline-klip",
+      "manageBaseline": "Administrér",
+      "recordBaseline": "Optag baseline",
+      "loading": "Indlæser…",
+      "noBaseline": "Ingen baseline optaget endnu.",
+      "clipsNote": "Check-in-klip fra patienten gennemgås under “Siden sidste besøg”.",
+      "openArchive": "Arkiverede videoer"
     }
   },
   "intro": {

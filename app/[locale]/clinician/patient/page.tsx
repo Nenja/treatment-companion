@@ -20,6 +20,7 @@ import {
   useRetireGoal,
   useReactivateGoal,
   useSetPatientMedication,
+  useSetPatientVideoConsent,
   type GoalOutcome,
   type ClinicianPatientGoal
 } from '@/lib/supabase/clinicianPatient';
@@ -45,6 +46,8 @@ import {
 import { BackgroundCard } from '@/components/clinician/BackgroundCard';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
+import { ArchivedVideosModal } from '@/components/clinician/ArchivedVideosModal';
+import { GoalVideoModal } from '@/components/clinician/GoalVideoModal';
 import { RecordGoalDrawer } from '@/components/clinician/RecordGoalDrawer';
 import { VideoProtocolEditor } from '@/components/clinician/VideoProtocolEditor';
 import { CockpitPanelDrawer } from '@/components/clinician/CockpitPanelDrawer';
@@ -105,6 +108,7 @@ export default function ClinicianPatientPage() {
   const touchSession = useTouchClinicianSession();
   const setStatus = useSetSuggestionStatus();
   const retireGoal = useRetireGoal();
+  const setVideoConsent = useSetPatientVideoConsent();
   const reactivateGoal = useReactivateGoal();
   const toast = useToast();
   const wide = useWideLayout();
@@ -165,6 +169,16 @@ export default function ClinicianPatientPage() {
   const [showScoreQueue, setShowScoreQueue] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showNewCycle, setShowNewCycle] = useState(false);
+  const [showArchive, setShowArchive] = useState(false);
+  const [videoHubGoal, setVideoHubGoal] = useState<{
+    id: string;
+    text: string;
+    enabled: boolean;
+    instruction: string | null;
+    setup: string | null;
+    seconds: number | null;
+    baselineVideoPath: string | null;
+  } | null>(null);
   const [showRecordGoal, setShowRecordGoal] = useState(false);
   const [showLastTreatment, setShowLastTreatment] = useState(false);
   const [showRecordItbGoal, setShowRecordItbGoal] = useState(false);  // Which inline action panel is open under the action row, if any.
@@ -1044,6 +1058,7 @@ export default function ClinicianPatientPage() {
             checkins={checkins}
             goals={[...activeGoals, ...archivedGoals]}
             patientId={patient.id}
+            consentClinical={patient.videoConsentClinical}
             onShowLastTreatment={() => setShowLastTreatment(true)}
           />
         </div>
@@ -1058,14 +1073,29 @@ export default function ClinicianPatientPage() {
               null
             }
             onEditMedication={() => setOpenPanel('medication')}
+            videoConsentClinical={patient.videoConsentClinical}
+            videoConsentResearch={patient.videoConsentResearch}
+            onSetVideoConsent={(clinical, research) => {
+              touch();
+              void setVideoConsent.mutateAsync({
+                patientId: patient.id,
+                clinical,
+                research
+              });
+            }}
             labels={{
               title: t('backgroundTitle'),
               treatment: t('backgroundTreatment'),
               medication: t('banner.medication'),
               devices: t('banner.devices'),
               edit: t('medEdit'),
-              medicationNone: t('medNotRecordedYet')
+              medicationNone: t('medNotRecordedYet'),
+              consentTitle: t('videoConsentTitle'),
+              consentClinical: t('videoConsentClinical'),
+              consentResearch: t('videoConsentResearch'),
+              archivedVideos: t('archivedVideosButton')
             }}
+            onOpenArchive={() => setShowArchive(true)}
           />
         </div>
 
@@ -1257,6 +1287,29 @@ export default function ClinicianPatientPage() {
                     nrsBaseline={g.nrs?.baselineValue ?? null}
                     nrsTarget={g.nrs?.targetValue ?? null}
                     clinicPoints={clinicPointsByGoal.get(g.id) ?? []}
+                    headerBadge={
+                      g.videoEnabled ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-ink-soft">
+                          <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden
+                          >
+                            <rect x="2" y="6" width="14" height="12" rx="2" />
+                            <path d="M16 10l6-3v10l-6-3z" />
+                          </svg>
+                          {g.baselineVideoPath
+                            ? t('videoTagBaselineSet')
+                            : t('videoTagBaselineNeeded')}
+                        </span>
+                      ) : undefined
+                    }
                     onExpand={() => setEnlargedGoalId(g.id)}
                   />
                   {workingOnGoalIds.has(g.id) && (
@@ -1285,31 +1338,7 @@ export default function ClinicianPatientPage() {
                   {/* Retire action — retires a goal (achieved /
                       partial / no longer suitable). History is kept;
                       the goal leaves the patient's future check-ins. */}
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center">
-                      {g.videoEnabled && (
-                        <p className="inline-flex items-center gap-1.5 rounded-full border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-ink-soft">
-                          <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden
-                          >
-                            <rect x="2" y="6" width="14" height="12" rx="2" />
-                            <path d="M16 10l6-3v10l-6-3z" />
-                          </svg>
-                          {g.baselineVideoPath
-                            ? t('videoTagBaselineSet')
-                            : t('videoTagBaselineNeeded')}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => setEditGoalTarget(g)}
@@ -1331,52 +1360,18 @@ export default function ClinicianPatientPage() {
                       </svg>
                       {t('editGoalCta')}
                     </button>
-                    {g.videoEnabled && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          touch();
-                          setBaselineGoal({
-                            id: g.id,
-                            text: g.patientFacingText,
-                            instruction: g.videoTaskInstruction,
-                            setup: g.videoTaskSetup,
-                            seconds: g.videoTaskSeconds,
-                            existingPath: g.baselineVideoPath
-                          });
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
-                      >
-                        <svg
-                          width="15"
-                          height="15"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden
-                        >
-                          <path d="M3 4h18l-4 5 4 5H3z" />
-                          <path d="M3 4v16" />
-                        </svg>
-                        {g.baselineVideoPath
-                          ? tVideoProtocol('baselineSet')
-                          : tVideoProtocol('baselineRecord')}
-                      </button>
-                    )}
                     <button
                       type="button"
                       onClick={() => {
                         touch();
-                        setVideoEditorGoal({
+                        setVideoHubGoal({
                           id: g.id,
                           text: g.patientFacingText,
                           enabled: g.videoEnabled,
                           instruction: g.videoTaskInstruction,
                           setup: g.videoTaskSetup,
-                          seconds: g.videoTaskSeconds
+                          seconds: g.videoTaskSeconds,
+                          baselineVideoPath: g.baselineVideoPath
                         });
                       }}
                       className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
@@ -1395,7 +1390,7 @@ export default function ClinicianPatientPage() {
                         <rect x="2" y="6" width="14" height="12" rx="2" />
                         <path d="M16 10l6-3v10l-6-3z" />
                       </svg>
-                      {tVideoProtocol('open')}
+                      {tVideoProtocol('hubButton')}
                     </button>
                     <button
                       type="button"
@@ -1426,7 +1421,6 @@ export default function ClinicianPatientPage() {
                       </svg>
                       {t('retireGoal')}
                     </button>
-                    </div>
                   </div>
                 </li>
               ))}
@@ -1658,7 +1652,50 @@ export default function ClinicianPatientPage() {
             seconds: baselineGoal.seconds
           }}
           existingPath={baselineGoal.existingPath}
+          consentClinical={patient.videoConsentClinical}
           onClose={() => setBaselineGoal(null)}
+        />
+      )}
+
+      {showArchive && (
+        <ArchivedVideosModal
+          patientId={patient.id}
+          onClose={() => setShowArchive(false)}
+        />
+      )}
+
+      {videoHubGoal && (
+        <GoalVideoModal
+          goal={videoHubGoal}
+          onEditProtocol={() => {
+            const g = videoHubGoal;
+            setVideoHubGoal(null);
+            setVideoEditorGoal({
+              id: g.id,
+              text: g.text,
+              enabled: g.enabled,
+              instruction: g.instruction,
+              setup: g.setup,
+              seconds: g.seconds
+            });
+          }}
+          onManageBaseline={() => {
+            const g = videoHubGoal;
+            setVideoHubGoal(null);
+            setBaselineGoal({
+              id: g.id,
+              text: g.text,
+              instruction: g.instruction,
+              setup: g.setup,
+              seconds: g.seconds,
+              existingPath: g.baselineVideoPath
+            });
+          }}
+          onOpenArchive={() => {
+            setVideoHubGoal(null);
+            setShowArchive(true);
+          }}
+          onClose={() => setVideoHubGoal(null)}
         />
       )}
 
