@@ -24,7 +24,7 @@ import { useTranslations } from 'next-intl';
  * icon library is bundled).
  */
 
-export type PatientActionId = 'medication' | 'physio' | 'history' | 'export' | 'training';
+export type PatientActionId = 'medication' | 'physio' | 'history' | 'export' | 'training' | 'video';
 
 function Badge({ count }: { count: number }) {
   if (count <= 0) return null;
@@ -92,6 +92,14 @@ function iconFor(id: PatientActionId) {
           <path d="M6 12h12" />
         </svg>
       );
+    case 'video':
+      // video camera
+      return (
+        <svg {...common}>
+          <rect x="2" y="6" width="14" height="12" rx="2" />
+          <path d="M16 10l6-3v10l-6-3z" />
+        </svg>
+      );
   }
 }
 
@@ -125,6 +133,7 @@ export function PatientActionRow({
   const tA11y = useTranslations('a11y');
   const items: { id: PatientActionId; count?: number }[] = [
     { id: 'training' },
+    { id: 'video' },
     { id: 'history' },
     { id: 'export' }
   ];

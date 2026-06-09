@@ -20,6 +20,8 @@ export function VideoProtocolEditor({
   initialInstruction,
   initialSetup,
   initialSeconds,
+  onBack,
+  onEnabled,
   onClose
 }: {
   goalId: string;
@@ -28,9 +30,15 @@ export function VideoProtocolEditor({
   initialInstruction: string | null;
   initialSetup: string | null;
   initialSeconds: number | null;
+  /** When opened from the per-goal Video overview, returns to it. */
+  onBack?: () => void;
+  /** Fired after a save that flips video from off → on, so the caller can
+   *  start the guided consent → baseline follow-up. */
+  onEnabled?: () => void;
   onClose: () => void;
 }) {
   const t = useTranslations('clinician.videoProtocol');
+  const tA11y = useTranslations('a11y');
   const containerRef = useModalA11y(onClose);
   const setEnabled = useSetGoalVideoEnabled();
   const setProtocol = useSetGoalVideoProtocol();
@@ -45,6 +53,7 @@ export function VideoProtocolEditor({
 
   const save = async () => {
     setSaving(true);
+    const justEnabled = !initialEnabled && enabled;
     try {
       if (enabled !== initialEnabled) {
         await setEnabled.mutateAsync({ goalId, enabled });
@@ -61,6 +70,7 @@ export function VideoProtocolEditor({
         });
       }
       onClose();
+      if (justEnabled) onEnabled?.();
     } catch {
       setSaving(false);
     }
@@ -83,6 +93,18 @@ export function VideoProtocolEditor({
         onClick={(e) => e.stopPropagation()}
         className="max-h-[90vh] w-full max-w-[var(--max-w-page-narrow)] overflow-y-auto rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
       >
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="mb-2 inline-flex items-center gap-1 text-[13px] font-semibold text-sage-deep hover:text-ink"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            {tA11y('back')}
+          </button>
+        )}
         <h2 className="font-display text-[18px] leading-tight text-ink">
           {t('title')}
         </h2>

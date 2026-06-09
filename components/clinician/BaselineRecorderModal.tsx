@@ -34,6 +34,7 @@ export function BaselineRecorderModal({
   protocol,
   existingPath,
   consentClinical,
+  onBack,
   onClose
 }: {
   patientId: string;
@@ -48,6 +49,8 @@ export function BaselineRecorderModal({
   /** Patient-level clinical video consent. Filming is blocked until this is on
    *  file; an existing baseline can still be viewed/deleted without it. */
   consentClinical: boolean;
+  /** When opened from the per-goal Video overview, returns to it. */
+  onBack?: () => void;
   onClose: () => void;
 }) {
   const t = useTranslations('clinician.baseline');
@@ -94,7 +97,21 @@ export function BaselineRecorderModal({
         className="flex max-h-[92dvh] w-full max-w-[560px] flex-col overflow-y-auto rounded-[var(--radius-card)] border border-stone bg-cream shadow-xl"
       >
         <div className="flex shrink-0 items-center justify-between border-b border-stone/70 px-5 py-3">
-          <span className="eyebrow">{t('title')}</span>
+          <div className="flex items-center gap-2">
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="inline-flex items-center gap-1 text-[13px] font-semibold text-sage-deep hover:text-ink"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                {tA11y('back')}
+              </button>
+            )}
+            <span className="eyebrow">{t('title')}</span>
+          </div>
           <button
             type="button"
             onClick={onClose}
