@@ -8,6 +8,7 @@ import { useUpdateOwnProfile } from '@/lib/supabase/profile';
 import { useOwnSex, useSetOwnSex, type Sex } from '@/lib/supabase/patientInfo';
 import { useToast } from '@/components/feedback/Toast';
 import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
+import { VideoConsentSettings } from '@/components/settings/VideoConsentSettings';
 import {
   professionOptions,
   type ProfessionCode
@@ -262,6 +263,12 @@ export default function ProfilePage() {
         >
           {updateProfile.isPending ? t('saving') : t('save')}
         </button>
+
+        {isPatient && (
+          <div className="mt-10 border-t border-stone/70 pt-7">
+            <VideoConsentSettings />
+          </div>
+        )}
 
         {/* Appearance — colour palette + night mode. Applies on tap;
             no Save needed (it has its own persistence). */}

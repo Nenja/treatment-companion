@@ -402,7 +402,9 @@
       "videoConsentTitle": "Videosamtykke",
       "videoConsentClinical": "Samtykke til at optage og gemme videoer",
       "videoConsentResearch": "Samtykke til at bruge videoer til forskning",
-      "archivedVideosButton": "Arkiverede videoer"
+      "archivedVideosButton": "Arkiverede videoer",
+      "actionVideo": "Video",
+      "actionShortVideo": "Video"
     },
     "review": {
       "title": "Gennemgå forslag",
@@ -673,6 +675,23 @@
       "noBaseline": "Ingen baseline optaget endnu.",
       "clipsNote": "Check-in-klip fra patienten gennemgås under “Siden sidste besøg”.",
       "openArchive": "Arkiverede videoer"
+    },
+    "videoPanel": {
+      "title": "Video",
+      "intro": "Videoindstillinger på patientniveau. Optageprotokoller og baseline-videoer for de enkelte mål findes på hvert måls Video-knap.",
+      "consentHint": "Samtykke skal være registreret, før en baseline- eller opfølgningsvideo kan optages."
+    },
+    "videoGuide": {
+      "title": "Video aktiveret",
+      "intro": "Video er nu slået til for “{goal}”. To hurtige trin klargør den første optagelse.",
+      "step1": "Trin 1 · Samtykke",
+      "consentHint": "Optagelse kræver samtykke til klinisk brug. Registrér det her, før der optages.",
+      "step2": "Trin 2 · Baseline-video",
+      "haveBaseline": "Der findes allerede en baseline-video for dette mål.",
+      "film": "Optag baseline nu",
+      "refilm": "Optag baseline igen",
+      "filmGatedHint": "Tilføj samtykke til klinisk brug ovenfor for at kunne optage.",
+      "later": "Gør dette senere"
     }
   },
   "intro": {
@@ -1391,7 +1410,8 @@
     "chartTableCaption": "Ugentlige vurderingsdata for {goal}",
     "chartColWeek": "Uge",
     "chartColRating": "Vurdering",
-    "chartNoData": "Ingen vurderinger registreret endnu."
+    "chartNoData": "Ingen vurderinger registreret endnu.",
+    "back": "Tilbage"
   },
   "accountMenu": {
     "adminLink": "Administration",
@@ -1595,5 +1615,22 @@
   "lastTreatment": {
     "title": "Seneste behandling",
     "button": "Vis seneste behandling"
+  },
+  "videoConsent": {
+    "gateTitle": "Samtykke til videooptagelse",
+    "intro": "Før du optager, bekræft venligst dit samtykke. Dit behandlingsteam bruger disse korte videoer til at se, hvordan din behandling virker.",
+    "recordingDesc": "Ved at fortsætte accepterer du, at videoer af dig, der udfører din måløvelse, må optages og gemmes og ses af dit behandlingsteam.",
+    "recordingLabel": "Jeg samtykker til at optage og gemme mine videoer",
+    "researchLabel": "Jeg tillader også, at mine videoer bruges til forskning (valgfrit)",
+    "researchDesc": "Valgfrit. Du kan optage og bruge videoer uden at acceptere dette.",
+    "consentCta": "Jeg samtykker – fortsæt",
+    "saving": "Gemmer…",
+    "saved": "Samtykke opdateret",
+    "saveError": "Dit samtykke kunne ikke gemmes. Prøv igen.",
+    "withdrawNote": "Du kan ændre eller trække dit samtykke tilbage når som helst i din profil.",
+    "loading": "Indlæser…",
+    "profileHeading": "Videosamtykke",
+    "profileHelper": "Vælg, om dit behandlingsteam må optage videoer af dig, og om de må bruges til forskning. Du kan ændre dette når som helst.",
+    "save": "Gem samtykke"
   }
 }

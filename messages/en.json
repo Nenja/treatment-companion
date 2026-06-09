@@ -398,7 +398,9 @@
       "videoConsentTitle": "Video consent",
       "videoConsentClinical": "Consent to record & store videos",
       "videoConsentResearch": "Consent to use videos for research",
-      "archivedVideosButton": "Archived videos"
+      "archivedVideosButton": "Archived videos",
+      "actionVideo": "Video",
+      "actionShortVideo": "Video"
     },
     "review": {
       "title": "Review suggestion",
@@ -669,6 +671,23 @@
       "noBaseline": "No baseline recorded yet.",
       "clipsNote": "Check-in clips from the patient are reviewed under “Since last visit”.",
       "openArchive": "Archived videos"
+    },
+    "videoPanel": {
+      "title": "Video",
+      "intro": "Patient-level video settings. Recording protocols and baseline videos for individual goals live on each goal's Video button.",
+      "consentHint": "Consent must be on file before a baseline or check-in video can be recorded."
+    },
+    "videoGuide": {
+      "title": "Video enabled",
+      "intro": "Video is now on for “{goal}”. Two quick steps set up the first recording.",
+      "step1": "Step 1 · Consent",
+      "consentHint": "Recording requires consent for clinical use. Record it here before filming.",
+      "step2": "Step 2 · Baseline video",
+      "haveBaseline": "A baseline video is already on file for this goal.",
+      "film": "Film baseline now",
+      "refilm": "Re-film baseline",
+      "filmGatedHint": "Add consent for clinical use above to enable filming.",
+      "later": "Do this later"
     }
   },
   "intro": {
@@ -1387,7 +1406,8 @@
     "chartTableCaption": "Weekly ratings data for {goal}",
     "chartColWeek": "Week",
     "chartColRating": "Rating",
-    "chartNoData": "No ratings reported yet."
+    "chartNoData": "No ratings reported yet.",
+    "back": "Back"
   },
   "accountMenu": {
     "adminLink": "Admin",
@@ -1591,5 +1611,22 @@
   "lastTreatment": {
     "title": "Last treatment",
     "button": "Show last treatment"
+  },
+  "videoConsent": {
+    "gateTitle": "Consent to record videos",
+    "intro": "Before recording, please confirm your consent. Your care team uses these short videos to see how your treatment is working.",
+    "recordingDesc": "By continuing you agree that videos of you doing your goal task may be recorded and stored, and seen by your care team.",
+    "recordingLabel": "I consent to recording and storing my videos",
+    "researchLabel": "I also allow my videos to be used for research (optional)",
+    "researchDesc": "Optional. You can record and use videos without agreeing to this.",
+    "consentCta": "I consent — continue",
+    "saving": "Saving…",
+    "saved": "Consent updated",
+    "saveError": "Couldn't save your consent. Please try again.",
+    "withdrawNote": "You can change or withdraw your consent at any time in your profile.",
+    "loading": "Loading…",
+    "profileHeading": "Video consent",
+    "profileHelper": "Choose whether your care team may record videos of you, and whether they may be used for research. You can change this at any time.",
+    "save": "Save consent"
   }
 }

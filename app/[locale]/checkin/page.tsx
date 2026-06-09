@@ -22,6 +22,7 @@ import {
   type RecordedVideo
 } from '@/components/wizard/GoalVideoRecorder';
 import { BaselineReference } from '@/components/wizard/BaselineReference';
+import { PatientVideoConsentGate } from '@/components/wizard/PatientVideoConsentGate';
 import { TrainingDaysPicker } from '@/components/wizard/TrainingDaysPicker';
 
 /**
@@ -398,7 +399,7 @@ function CheckinPageInner() {
         )}
         {picker}
         {showVideo && (
-          <>
+          <PatientVideoConsentGate>
             {goal.baselineVideoPath && (
               <BaselineReference path={goal.baselineVideoPath} />
             )}
@@ -420,7 +421,7 @@ function CheckinPageInner() {
               })
             }
           />
-          </>
+          </PatientVideoConsentGate>
         )}
       </>
     );

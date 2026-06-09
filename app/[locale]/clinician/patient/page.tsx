@@ -47,6 +47,8 @@ import { BackgroundCard } from '@/components/clinician/BackgroundCard';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
 import { ArchivedVideosModal } from '@/components/clinician/ArchivedVideosModal';
+import { ClinicianVideoModal } from '@/components/clinician/ClinicianVideoModal';
+import { VideoEnableGuide } from '@/components/clinician/VideoEnableGuide';
 import { GoalVideoModal } from '@/components/clinician/GoalVideoModal';
 import { RecordGoalDrawer } from '@/components/clinician/RecordGoalDrawer';
 import { VideoProtocolEditor } from '@/components/clinician/VideoProtocolEditor';
@@ -170,6 +172,12 @@ export default function ClinicianPatientPage() {
   const [showExport, setShowExport] = useState(false);
   const [showNewCycle, setShowNewCycle] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
+  const [showVideoPanel, setShowVideoPanel] = useState(false);
+  const [guideGoal, setGuideGoal] = useState<{
+    id: string;
+    text: string;
+    baselineVideoPath: string | null;
+  } | null>(null);
   const [videoHubGoal, setVideoHubGoal] = useState<{
     id: string;
     text: string;
@@ -665,14 +673,16 @@ export default function ClinicianPatientPage() {
     physio: t('actionPhysio'),
     history: t('actionHistory'),
     export: t('actionExport'),
-    training: t('actionTraining')
+    training: t('actionTraining'),
+    video: t('actionVideo')
   };
   const actionShortLabels = {
     medication: t('actionShortMedication'),
     physio: t('actionShortPhysio'),
     history: t('actionShortHistory'),
     export: t('actionShortExport'),
-    training: t('actionShortTraining')
+    training: t('actionShortTraining'),
+    video: t('actionShortVideo')
   };
   const onActionSelect = (id: PatientActionId) => {
     touch();
@@ -684,6 +694,8 @@ export default function ClinicianPatientPage() {
       setShowExport(true);
     } else if (id === 'training') {
       setOpenPanel((cur) => (cur === 'training' ? null : 'training'));
+    } else if (id === 'video') {
+      setShowVideoPanel(true);
     }
   };
 
@@ -1073,29 +1085,14 @@ export default function ClinicianPatientPage() {
               null
             }
             onEditMedication={() => setOpenPanel('medication')}
-            videoConsentClinical={patient.videoConsentClinical}
-            videoConsentResearch={patient.videoConsentResearch}
-            onSetVideoConsent={(clinical, research) => {
-              touch();
-              void setVideoConsent.mutateAsync({
-                patientId: patient.id,
-                clinical,
-                research
-              });
-            }}
             labels={{
               title: t('backgroundTitle'),
               treatment: t('backgroundTreatment'),
               medication: t('banner.medication'),
               devices: t('banner.devices'),
               edit: t('medEdit'),
-              medicationNone: t('medNotRecordedYet'),
-              consentTitle: t('videoConsentTitle'),
-              consentClinical: t('videoConsentClinical'),
-              consentResearch: t('videoConsentResearch'),
-              archivedVideos: t('archivedVideosButton')
+              medicationNone: t('medNotRecordedYet')
             }}
-            onOpenArchive={() => setShowArchive(true)}
           />
         </div>
 
@@ -1637,7 +1634,64 @@ export default function ClinicianPatientPage() {
           initialInstruction={videoEditorGoal.instruction}
           initialSetup={videoEditorGoal.setup}
           initialSeconds={videoEditorGoal.seconds}
+          onBack={() => {
+            const id = videoEditorGoal.id;
+            setVideoEditorGoal(null);
+            const live = bontGoals.find((x) => x.id === id);
+            if (live)
+              setVideoHubGoal({
+                id: live.id,
+                text: live.patientFacingText,
+                enabled: live.videoEnabled,
+                instruction: live.videoTaskInstruction,
+                setup: live.videoTaskSetup,
+                seconds: live.videoTaskSeconds,
+                baselineVideoPath: live.baselineVideoPath
+              });
+          }}
+          onEnabled={() => {
+            const id = videoEditorGoal.id;
+            const live = bontGoals.find((x) => x.id === id);
+            if (live)
+              setGuideGoal({
+                id: live.id,
+                text: live.patientFacingText,
+                baselineVideoPath: live.baselineVideoPath
+              });
+          }}
           onClose={() => setVideoEditorGoal(null)}
+        />
+      )}
+
+      {guideGoal && (
+        <VideoEnableGuide
+          goalText={guideGoal.text}
+          consentClinical={patient.videoConsentClinical}
+          consentResearch={patient.videoConsentResearch}
+          hasBaseline={!!guideGoal.baselineVideoPath}
+          onSetConsent={(clinical, research) => {
+            touch();
+            void setVideoConsent.mutateAsync({
+              patientId: patient.id,
+              clinical,
+              research
+            });
+          }}
+          onFilmBaseline={() => {
+            const id = guideGoal.id;
+            setGuideGoal(null);
+            const live = bontGoals.find((x) => x.id === id);
+            if (live)
+              setBaselineGoal({
+                id: live.id,
+                text: live.patientFacingText,
+                instruction: live.videoTaskInstruction,
+                setup: live.videoTaskSetup,
+                seconds: live.videoTaskSeconds,
+                existingPath: live.baselineVideoPath
+              });
+          }}
+          onClose={() => setGuideGoal(null)}
         />
       )}
 
@@ -1653,6 +1707,21 @@ export default function ClinicianPatientPage() {
           }}
           existingPath={baselineGoal.existingPath}
           consentClinical={patient.videoConsentClinical}
+          onBack={() => {
+            const id = baselineGoal.id;
+            setBaselineGoal(null);
+            const live = bontGoals.find((x) => x.id === id);
+            if (live)
+              setVideoHubGoal({
+                id: live.id,
+                text: live.patientFacingText,
+                enabled: live.videoEnabled,
+                instruction: live.videoTaskInstruction,
+                setup: live.videoTaskSetup,
+                seconds: live.videoTaskSeconds,
+                baselineVideoPath: live.baselineVideoPath
+              });
+          }}
           onClose={() => setBaselineGoal(null)}
         />
       )}
@@ -1661,6 +1730,26 @@ export default function ClinicianPatientPage() {
         <ArchivedVideosModal
           patientId={patient.id}
           onClose={() => setShowArchive(false)}
+        />
+      )}
+
+      {showVideoPanel && (
+        <ClinicianVideoModal
+          consentClinical={patient.videoConsentClinical}
+          consentResearch={patient.videoConsentResearch}
+          onSetConsent={(clinical, research) => {
+            touch();
+            void setVideoConsent.mutateAsync({
+              patientId: patient.id,
+              clinical,
+              research
+            });
+          }}
+          onOpenArchive={() => {
+            setShowVideoPanel(false);
+            setShowArchive(true);
+          }}
+          onClose={() => setShowVideoPanel(false)}
         />
       )}
 
