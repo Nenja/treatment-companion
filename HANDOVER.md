@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-30` (no migration; DB 0090). Cumulative; supersedes 21–29. Latest: moved New treatment into the Overview header (column alignment) + goal-card chip/buttons on one row; see §7._
+> _Last updated for build tag: `simplify-cockpit-31` (no migration; DB 0090). Cumulative; supersedes 21–30. Fixes the real alignment bug: removed a redundant `mt-10` on the VisitChanges section (the unexplained float) and capped the Active-goals header to the 520px card width so its buttons sit on the card's right border. See §7._
 
 ---
 
@@ -849,7 +849,34 @@ new-goal + approve calibration forms; current).
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-simplify-cockpit-30.zip`
+- **Zip:** `treatment-companion-simplify-cockpit-31.zip`
+- **Tag:** `simplify-cockpit-31`  ·  **Migration:** none (DB **0090**).
+- **Cumulative.** This build finally fixes the cockpit alignment, after several
+  wrong guesses (22/24/28/29/30). The true causes were two width/margin facts,
+  not header-height math:
+    1. **The float.** `components/clinician/VisitChanges.tsx` rendered its root
+       `<section>` with a baked-in **`mt-10`** (left over from when it sat lower
+       in the page). Once it was moved under the Overview header — which already
+       wraps it in `mt-4 lg:mt-3` — that `mt-10` dropped "Since last visit" ~40px
+       below the header "for no apparent reason." **Removed the `mt-10`**; the
+       wrapper now governs spacing, so "Since last visit" lines up with the first
+       goal graph (both at header + `mt-3`).
+    2. **The right border.** Goal cards are capped at `max-w-[520px]` on the
+       `<li>`, but the **Active-goals header row spanned the full 7fr column**, so
+       Suggestions / Record a goal were pushed to the far-right column edge, past
+       the card's 520px right border. **Capped the header at `max-w-[520px]`** so
+       its buttons sit on the card's right border. (The Edit/Record/Video/Retire
+       row was already inside the 520px `<li>` and correctly aligned — cockpit-30
+       had wrongly restyled that row instead; the chip-on-row layout from 30 is
+       kept as it's harmless and tidy.)
+- **Verified locally:** tsc clean; font-stub 60/60; i18n parity unchanged.
+- **⚠ ENV NOTE:** sandbox reverted again early this session (lost 27→30 working
+  state + node_modules); recovered from the cockpit-29 zip + `npm ci`, then
+  re-applied 30's edits and these. Output zips persist and are cumulative.
+- **⚠ QA on deploy:** (a) "Since last visit" top should align with the first goal
+  graph; (b) Suggestions / Record a goal right edge should sit on the goal card's
+  right border; (c) "New treatment" is in the Overview header (top bar no longer
+  has it).
 - **Tag:** `simplify-cockpit-30`  ·  **Migration:** none (DB **0090**).
 - **Cumulative.** Latest changes (29→30):
     - **Column alignment via matching headers.** The "Active goals" header has
