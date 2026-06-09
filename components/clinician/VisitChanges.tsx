@@ -303,7 +303,7 @@ export function VisitChanges({
   );
 
   return (
-    <section className="mt-10 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+    <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-display text-[18px] leading-tight text-ink">
           {t('title')}
