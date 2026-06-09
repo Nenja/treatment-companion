@@ -1111,7 +1111,7 @@ export default function ClinicianPatientPage() {
         <div>
         {/* Active goals with progress visualisation */}
         <section className={wide ? 'mt-10 lg:mt-0' : 'mt-10'}>
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex max-w-[520px] items-center justify-between gap-3">
             <h2 className="font-display text-[20px] leading-tight text-ink">
               {t('activeGoalsTitle')}
             </h2>
