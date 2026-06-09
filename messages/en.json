@@ -392,7 +392,9 @@
       "videoTagBaselineSet": "Video task · baseline set",
       "videoTagBaselineNeeded": "Video task · baseline needed",
       "backgroundTitle": "Background",
-      "backgroundTreatment": "Treatment"
+      "backgroundTreatment": "Treatment",
+      "overviewTitle": "Overview",
+      "railTitle": "Tools"
     },
     "review": {
       "title": "Review suggestion",

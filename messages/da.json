@@ -396,7 +396,9 @@
       "videoTagBaselineSet": "Videoopgave · baseline registreret",
       "videoTagBaselineNeeded": "Videoopgave · baseline mangler",
       "backgroundTitle": "Baggrund",
-      "backgroundTreatment": "Behandling"
+      "backgroundTreatment": "Behandling",
+      "overviewTitle": "Oversigt",
+      "railTitle": "Værktøjer"
     },
     "review": {
       "title": "Gennemgå forslag",
