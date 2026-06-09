@@ -77,7 +77,8 @@ function TreatmentRecordInner() {
   // layout below.
   const headerWidthClass =
     'mx-auto flex max-w-[var(--max-w-page-mid)] items-center justify-between px-5 py-4';
-  const mainWidthClass = 'mx-auto max-w-[var(--max-w-page-mid)] px-5 pb-24 pt-6';
+  const mainWidthClass =
+    'mx-auto max-w-[var(--max-w-page-mid)] px-5 pb-24 pt-6 lg:max-w-[var(--max-w-page-wide)]';
   // Single-column layout: the area selector and last-treatment card sit
   // at the top of the form (not a separate left column), side by side on
   // sm+ and stacked on mobile, per clinician request.
@@ -260,6 +261,9 @@ function TreatmentRecordInner() {
   const [faceMarks, setFaceMarks] = useState<FaceMarkInput[]>([]);
   // Which form section the left-rail nav highlights (scroll-tracked).
   const [activeSec, setActiveSec] = useState('setup');
+  // The rail total is the single home for the dose now; the manual
+  // override (rare) is tucked behind an "Adjust" reveal.
+  const [showTotalAdjust, setShowTotalAdjust] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -528,7 +532,7 @@ function TreatmentRecordInner() {
   // viewport as the clinician scrolls. Re-runs when areas toggle, since
   // the muscle / face sections appear and disappear.
   useEffect(() => {
-    const ids = ['setup', 'muscles', 'face', 'total', 'notes'];
+    const ids = ['setup', 'muscles', 'face', 'notes'];
     const els = ids
       .map((id) => document.getElementById(`tsec-${id}`))
       .filter((el): el is HTMLElement => el != null);
@@ -681,7 +685,6 @@ function TreatmentRecordInner() {
     { id: 'setup', label: t('sessionSetupTitle') },
     ...(includesStandard ? [{ id: 'muscles', label: t('musclesTitle') }] : []),
     ...(includesFace ? [{ id: 'face', label: t('areaFace') }] : []),
-    { id: 'total', label: t('fieldTotalUnits') },
     { id: 'notes', label: t('fieldSessionNotes') }
   ];
 
@@ -819,6 +822,60 @@ function TreatmentRecordInner() {
           <div className="mt-1 text-[12.5px] text-ink-muted">
             {drugProduct.trim() || '—'} · {filledCount} {t('musclePlural')}
           </div>
+          {!showTotalAdjust ? (
+            <button
+              type="button"
+              onClick={() => setShowTotalAdjust(true)}
+              className="mt-2 text-[12px] font-semibold text-sage-deep hover:text-ink"
+            >
+              {t('adjustTotal')}
+            </button>
+          ) : (
+            <div className="mt-2">
+              <label className="block text-[12px] text-ink-soft">
+                {t('fieldTotalUnits')}
+              </label>
+              <input
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="any"
+                value={totalUnits}
+                onChange={(e) => {
+                  setTotalManual(true);
+                  setTotalUnits(e.target.value);
+                }}
+                className={inputClasses}
+              />
+              {!totalManual && dosesSum > 0 && (
+                <p className="mt-1 text-[11px] leading-snug text-ink-muted">
+                  {t('totalFromSum')}
+                </p>
+              )}
+              {totalManual && dosesSum > 0 && (
+                <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[11px] text-ink-muted">
+                  <span>
+                    Muscle sum:{' '}
+                    <span className="font-semibold tabular-nums text-ink-soft">
+                      {dosesSumLabel}
+                    </span>
+                  </span>
+                  {totalUnits.trim() !== dosesSumLabel && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTotalManual(false);
+                        setTotalUnits(dosesSumLabel);
+                      }}
+                      className="font-semibold text-sage-deep hover:text-ink"
+                    >
+                      use the sum
+                    </button>
+                  )}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="h-px bg-stone" />
@@ -891,75 +948,60 @@ function TreatmentRecordInner() {
             </button>
           ))}
         </nav>
-        {/* Last-treatment card. The summary area is tappable to open
-            the full per-muscle details; below it, a prominent Copy
-            button fills the whole form from last time. Only shown when a
-            previous treatment exists. */}
-        {referenceTreatment && (
-            <div className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft">
-              <button
-                type="button"
-                onClick={() => setShowLastTreatmentModal(true)}
-                className="block w-full rounded-t-[var(--radius-card)] p-3 text-left hover:bg-stone-soft/40"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="eyebrow">{t('lastTreatment')}</div>
-                    <div className="mt-0.5 truncate text-[13px] text-ink-soft">
-                      {referenceTreatment.drugProduct} ·{' '}
-                      {referenceTreatment.totalUnits} {t('unitsSuffix')}
-                    </div>
-                    <div className="mt-0.5 truncate text-[12px] text-ink-muted">
-                      {referenceTreatment.injections.length}{' '}
-                      {referenceTreatment.injections.length === 1
-                        ? t('muscleSingular')
-                        : t('musclePlural')}{' '}
-                      · {t('tapForDetails')}
-                    </div>
-                  </div>
-                  <span aria-hidden className="text-[14px] text-ink-muted">
-                    ›
-                  </span>
-                </div>
-              </button>
-              {/* Prominent copy action — fills the whole form from last
-                  time, then asks to confirm (it overwrites anything
-                  already entered). */}
-              <div className="border-t border-stone/70 p-3 pt-2.5">
-                <button
-                  type="button"
-                  onClick={requestCopyFromPrevious}
-                  className="flex min-h-10 w-full items-center justify-center gap-2 rounded-[var(--radius-button)] border border-sage/50 bg-cream px-3 py-2 text-center text-[14px] font-semibold leading-tight text-sage-deep hover:bg-sage-soft"
-                >
-                  {/* duplicate/copy glyph */}
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="shrink-0"
-                    aria-hidden
-                  >
-                    <rect x="9" y="9" width="11" height="11" rx="2" />
-                    <path d="M5 15V5a2 2 0 0 1 2-2h10" />
-                  </svg>
-                  {t('copyLastIntoForm')}
-                </button>
-                <p className="mt-1.5 text-[12px] leading-snug text-ink-muted">
-                  {t('copyLastHelper')}
-                </p>
-              </div>
-            </div>
-          )}
         </div>
           </aside>
 
           {/* Right pane: the actual treatment form. */}
           <div>
+        {/* Last treatment — reference + one-tap copy of the previous
+            visit, placed above the form so it reads before the fields.
+            Horizontal banner: tappable summary left, Copy right; stacks
+            on narrow. */}
+        {referenceTreatment && (
+          <div className="mb-4 flex flex-col gap-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <button
+              type="button"
+              onClick={() => setShowLastTreatmentModal(true)}
+              className="-m-1 rounded-[var(--radius-button)] p-1 text-left hover:bg-stone-soft/40"
+            >
+              <div className="eyebrow">{t('lastTreatment')}</div>
+              <div className="mt-0.5 text-[13px] text-ink-soft">
+                {referenceTreatment.drugProduct} ·{' '}
+                {referenceTreatment.totalUnits} {t('unitsSuffix')} ·{' '}
+                {referenceTreatment.injections.length}{' '}
+                {referenceTreatment.injections.length === 1
+                  ? t('muscleSingular')
+                  : t('musclePlural')}{' '}
+                · {t('tapForDetails')}
+              </div>
+              <p className="mt-0.5 text-[12px] leading-snug text-ink-muted">
+                {t('copyLastHelper')}
+              </p>
+            </button>
+            <button
+              type="button"
+              onClick={requestCopyFromPrevious}
+              className="flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-button)] border border-sage/50 bg-cream px-4 py-2 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="shrink-0"
+                aria-hidden
+              >
+                <rect x="9" y="9" width="11" height="11" rx="2" />
+                <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+              </svg>
+              {t('copyLastIntoForm')}
+            </button>
+          </div>
+        )}
         {/* Session setup — date/drug/dilution/guidance for this visit.
             Given its own heading so the long form reads as labelled groups
             (Session setup → Injections → Total → Notes), matching the other
@@ -1241,62 +1283,6 @@ function TreatmentRecordInner() {
             </section>
           </>
         )}
-
-        {/* Total units — auto-filled from the per-muscle sum, with a
-            manual override. The total IS the sum in the common case, so
-            it fills itself as muscles are added; typing in it takes
-            manual control, and a "use the sum" link snaps back. Sits
-            below the muscle list (it's the conclusion of choosing
-            muscles). Constrained width on desktop — short numeric. */}
-        <section id="tsec-total" className="mt-4 scroll-mt-20 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4 sm:p-5">
-        <div className="sm:max-w-[260px]">
-          <Field label={t('fieldTotalUnits')} inline>
-            <input
-              type="number"
-              inputMode="decimal"
-              min={0}
-              step="any"
-              value={totalUnits}
-              onChange={(e) => {
-                // Typing here takes manual control.
-                setTotalManual(true);
-                setTotalUnits(e.target.value);
-              }}
-              className={inputClasses}
-            />
-            {!totalManual && dosesSum > 0 && (
-              <p className="mt-1 text-[12px] text-ink-muted">
-                {t('totalFromSum')}
-              </p>
-            )}
-            {totalManual && dosesSum > 0 && (
-              <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[12px] text-ink-muted">
-                <span>
-                  Muscle sum:{' '}
-                  <span className="font-semibold tabular-nums text-ink-soft">
-                    {dosesSumLabel}
-                  </span>
-                </span>
-                {/* Only offer the reset when the manual value actually
-                    differs from the sum — otherwise it's a no-op. */}
-                {totalUnits.trim() !== dosesSumLabel && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTotalManual(false);
-                      setTotalUnits(dosesSumLabel);
-                    }}
-                    className="font-semibold text-sage-deep hover:text-ink"
-                  >
-                    use the sum
-                  </button>
-                )}
-              </p>
-            )}
-          </Field>
-        </div>
-
-        </section>
 
         <section id="tsec-notes" className="mt-4 scroll-mt-20 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4 sm:p-5">
         {/* Session notes */}

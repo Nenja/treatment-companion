@@ -1191,7 +1191,8 @@
     "chartPhysioNote": "Physiotherapist note:",
     "chartWeekNotReported": "Week {week}: not reported",
     "therapistInputButton": "Therapist input",
-    "runningTotalLabel": "Running total"
+    "runningTotalLabel": "Running total",
+    "adjustTotal": "Adjust total"
   },
   "goalVideo": {
     "introTitle": "Record a short video (optional)",
