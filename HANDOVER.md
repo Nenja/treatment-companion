@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-40` (no migration; DB 0093). Cumulative; supersedes 21–39. Adds the guided enable→consent→baseline flow: flipping video ON for a goal now opens a follow-up that walks consent (gates recording) then offers to film the baseline. See §7._
+> _Last updated for build tag: `simplify-cockpit-43` (no migration; DB 0093). Cumulative; supersedes 21–42. Treatment page: removed the duplicate total — the standalone 'Total units' form section is gone; the rail running total is now the single home for the dose, with the manual override tucked behind an 'Adjust total' reveal. Page widened to --max-w-page-wide (1080) on lg. See §7._
 
 ---
 
@@ -849,8 +849,65 @@ new-goal + approve calibration forms; current).
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-simplify-cockpit-40.zip`
-- **Tag:** `simplify-cockpit-40`  ·  **Migration: none (DB 0093).** UI-only.
+- **Zip:** `treatment-companion-simplify-cockpit-43.zip`
+- **Tag:** `simplify-cockpit-43`  ·  **Migration: none (DB 0093).** UI-only.
+- **Cumulative.** Treatment page content + width:
+    - **De-duplicated the total.** The standalone "Total units" form card
+      (`tsec-total`) and its nav entry are removed. The rail **running total** is
+      now the single place the dose appears; its manual override (auto-sum vs.
+      typed value + "use the sum") moved into the rail behind an **"Adjust total"**
+      reveal (`showTotalAdjust`). Same state/logic (`totalUnits`, `totalManual`,
+      `dosesSum`) — only the home changed, so validation/save are unaffected.
+    - **More width.** `mainWidthClass` now `lg:max-w-[var(--max-w-page-wide)]`
+      (1080px, matching the cockpit) instead of capping at mid (720px), so the
+      two-pane form has room.
+    - New i18n `treatment.adjustTotal` (EN + DA, DA first-pass). ("use the sum" /
+      "Muscle sum:" remain hardcoded English — pre-existing, carried over verbatim.)
+- **Verified locally:** tsc clean; font-stub 60/60; parity clean.
+- **⚠ QA on deploy:** total appears once (rail); "Adjust total" reveals the input;
+  typing takes manual control and the big number tracks it; "use the sum" resets;
+  page is wider on large screens; nav no longer lists Total units.
+- _(superseded)_ `simplify-cockpit-42` · last-treatment banner move. None.
+- **Cumulative.** Treatment page follow-up to the option-C makeover:
+    - **Last treatment** reference + **Copy into form** moved out of the left
+      rail and up to a **horizontal banner at the top of the form column**
+      (tappable summary + helper on the left, Copy button on the right; stacks on
+      narrow). Fixes the cramped Copy button that wrapped in the ~212px rail and
+      aligns it with the form cards below.
+    - The left rail now carries only the running total, area toggles, and section
+      nav. All handlers unchanged (`setShowLastTreatmentModal`, `requestCopyFromPrevious`).
+- **Verified locally:** tsc clean; font-stub 60/60; parity unchanged.
+- **⚠ QA on deploy:** banner sits above Session setup, aligned with the form
+  cards; Copy button is one line (not wrapped); tapping the summary opens the
+  last-treatment details; Copy still fills the form; banner stacks on narrow.
+- _(superseded)_ `simplify-cockpit-41` · option-C treatment makeover. None.
+- **Cumulative.** Treatment-record page (`app/[locale]/clinician/treatment`)
+  visual makeover — chosen design **option C** (mockups shown to Nikolaj):
+    - **Left rail** (`paneGridClass`/`asideClass`, previously empty strings →
+      now a `lg:` two-pane grid + sticky aside): a **running total** rendered
+      typographically (`font-display` 32px number + `runningTotalLabel` eyebrow +
+      `drug · N muscles` subline, all derived from existing `totalUnits`/`dosesSum`),
+      the **area toggles** (Body and neck / Face) moved here as quiet chips
+      (replacing the old areas checkbox card; same `includesStandard`/`includesFace`
+      state), and a **section nav** that jumps to a section and scroll-tracks the
+      one in view (IntersectionObserver, `activeSec`).
+    - The muscle-entry section keeps its own name `musclesTitle` ("Muscles
+      injected") — the area is "Body and neck", the section is "Muscles injected";
+      they are deliberately not the same word (per Nikolaj).
+    - Form sections are now **cockpit-style cards** (`tsec-setup`/`-muscles`/
+      `-face`/`-total`/`-notes`, 20px `font-display` headings) instead of bare
+      `mt-8` headings; **sticky frosted save bar** at the foot.
+    - All existing logic preserved verbatim — copy-from-last, edit-lock, validation,
+      total override + "use the sum", per-muscle notes, FaceMap, handoff note.
+    - New i18n `treatment.runningTotalLabel` (EN + DA, DA first-pass).
+- **Verified locally:** tsc clean; font-stub 60/60; i18n parity clean.
+- **⚠ QA on deploy (can't verify rendering here):** the rail shows on wide
+  screens and sticks while scrolling; nav clicks jump to sections and the active
+  item tracks on scroll; toggling Body and neck / Face shows/hides the muscle &
+  face sections AND their nav rows; running total updates as doses change; the
+  layout collapses to a single column on narrow widths; sticky save bar doesn't
+  overlap content.
+- _(superseded)_ `simplify-cockpit-40` · guided enable→consent→baseline. None.
 - **Cumulative.** Guided **enable → consent → baseline** flow:
     - `VideoProtocolEditor` gained `onEnabled`, fired only on a save that flips
       video from off → on (`!initialEnabled && enabled`).

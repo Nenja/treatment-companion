@@ -1,4 +1,4 @@
-BUILD: simplify-cockpit-40   (NO migration; DB 0093; guided enable->consent->baseline flow: enabling video on a goal opens a 2-step follow-up — consent (gates recording) then film baseline.)
+BUILD: simplify-cockpit-43   (NO migration; DB 0093; treatment page: removed duplicate Total-units form section — total now lives only in the rail with an "Adjust total" override; widened page to 1080px on large screens.)
 ==========================================================================
 WHY CUMULATIVE: the build sandbox reset itself between builds last session, so
 the zips tagged 21-26 were each built on a reverted base and are NOT cumulative
