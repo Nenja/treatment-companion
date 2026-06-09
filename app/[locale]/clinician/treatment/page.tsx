@@ -532,7 +532,7 @@ function TreatmentRecordInner() {
   // viewport as the clinician scrolls. Re-runs when areas toggle, since
   // the muscle / face sections appear and disappear.
   useEffect(() => {
-    const ids = ['setup', 'muscles', 'face', 'notes'];
+    const ids = ['setup', 'muscles', 'face'];
     const els = ids
       .map((id) => document.getElementById(`tsec-${id}`))
       .filter((el): el is HTMLElement => el != null);
@@ -684,15 +684,14 @@ function TreatmentRecordInner() {
   const navItems: { id: string; label: string }[] = [
     { id: 'setup', label: t('sessionSetupTitle') },
     ...(includesStandard ? [{ id: 'muscles', label: t('musclesTitle') }] : []),
-    ...(includesFace ? [{ id: 'face', label: t('areaFace') }] : []),
-    { id: 'notes', label: t('fieldSessionNotes') }
+    ...(includesFace ? [{ id: 'face', label: t('areaFace') }] : [])
   ];
 
   return (
     <div className="min-h-dvh bg-cream">
       <AppHeader
-        width="mid"
-        back={{ label: 'Back', onClick: back }}
+        maxWidthClass="max-w-[var(--max-w-page-mid)] lg:max-w-[var(--max-w-page-wide)]"
+        back={{ label: t('back'), onClick: back }}
         actions={<EndSessionButton role="clinician" />}
         helpPageKey="treatment"
       />
@@ -855,7 +854,7 @@ function TreatmentRecordInner() {
               {totalManual && dosesSum > 0 && (
                 <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[11px] text-ink-muted">
                   <span>
-                    Muscle sum:{' '}
+                    {t('muscleSumLabel')}{' '}
                     <span className="font-semibold tabular-nums text-ink-soft">
                       {dosesSumLabel}
                     </span>
@@ -869,7 +868,7 @@ function TreatmentRecordInner() {
                       }}
                       className="font-semibold text-sage-deep hover:text-ink"
                     >
-                      use the sum
+                      {t('useTheSum')}
                     </button>
                   )}
                 </p>
@@ -1284,19 +1283,6 @@ function TreatmentRecordInner() {
           </>
         )}
 
-        <section id="tsec-notes" className="mt-4 scroll-mt-20 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4 sm:p-5">
-        {/* Session notes */}
-        <Field label={t('fieldSessionNotes')} helper={t('optional')}>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            className={inputClasses}
-            maxLength={500}
-          />
-        </Field>
-        </section>
-
         {/* Note for the therapist — the one downward (clinic → therapist)
             channel. Therapist-only and never patient-visible; set apart with
             a sage panel so it doesn't read like another clinic-internal note.
@@ -1304,9 +1290,14 @@ function TreatmentRecordInner() {
             anything changed" gap between visits. */}
         {therapistHasEngaged && (
         <div className="mt-4 rounded-[var(--radius-card)] border border-sage-soft bg-sage-soft/20 p-4">
-          <h3 className="font-display text-[15px] text-ink">
-            {t('handoffTitle')}
-          </h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-display text-[15px] text-ink">
+              {t('handoffTitle')}
+            </h3>
+            <span className="rounded-full bg-sage-soft/50 px-2 py-0.5 text-[11px] font-semibold text-sage-deep">
+              {t('handoffAudienceBadge')}
+            </span>
+          </div>
           <p className="mt-0.5 text-[13px] leading-snug text-ink-muted">
             {t('handoffHint')}
           </p>

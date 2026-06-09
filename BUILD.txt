@@ -1,4 +1,4 @@
-BUILD: simplify-cockpit-43   (NO migration; DB 0093; treatment page: removed duplicate Total-units form section — total now lives only in the rail with an "Adjust total" override; widened page to 1080px on large screens.)
+BUILD: simplify-cockpit-45   (NO migration; DB 0093; treatment page: removed the Session notes field — keeping notes state wired for reversibility — and added a "Therapist only" badge to the therapist handoff note.)
 ==========================================================================
 WHY CUMULATIVE: the build sandbox reset itself between builds last session, so
 the zips tagged 21-26 were each built on a reverted base and are NOT cumulative

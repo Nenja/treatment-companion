@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-43` (no migration; DB 0093). Cumulative; supersedes 21–42. Treatment page: removed the duplicate total — the standalone 'Total units' form section is gone; the rail running total is now the single home for the dose, with the manual override tucked behind an 'Adjust total' reveal. Page widened to --max-w-page-wide (1080) on lg. See §7._
+> _Last updated for build tag: `simplify-cockpit-45` (no migration; DB 0093). Cumulative; supersedes 21–44. Treatment page: resolved the two-notes clash — removed the Session notes UI field (kept the `notes` state wired to save/hydration so it's reversible and loses no data) and added a 'Therapist only' audience badge to the therapist handoff note (design option 3). See §7._
 
 ---
 
@@ -849,8 +849,36 @@ new-goal + approve calibration forms; current).
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-simplify-cockpit-43.zip`
-- **Tag:** `simplify-cockpit-43`  ·  **Migration: none (DB 0093).** UI-only.
+- **Zip:** `treatment-companion-simplify-cockpit-45.zip`
+- **Tag:** `simplify-cockpit-45`  ·  **Migration: none (DB 0093).** UI-only.
+- **Cumulative.** Two-notes clash resolved (mockups shown; Nikolaj chose option 3
+  badge + remove Session notes):
+    - **Session notes UI removed** (its `tsec-notes` card + nav entry + scroll-spy
+      id). The `notes` state stays fully wired — hydrated from an existing record,
+      copied by copy-from-last, and still written on save — so this is reversible
+      and loses no stored data; the field is simply no longer shown/editable.
+      (Hidden caveat: a value carried in by copy-from-last or an existing record
+      will still be re-saved silently.)
+    - **Therapist handoff** note now carries a sage **"Therapist only"** audience
+      badge beside its title (`handoffAudienceBadge`, EN + DA, DA first-pass), so
+      the one remaining note's destination is unambiguous.
+    - Section nav is now Session setup · Muscles · Face (notes/total both gone).
+- **Verified locally:** tsc clean; font-stub 60/60; parity clean.
+- **⚠ QA on deploy:** no Session notes field; therapist handoff shows the
+  "Therapist only" badge; copy-from-last + save still work.
+- _(superseded)_ `simplify-cockpit-44` · header width + localize. None.
+- **Cumulative.** Treatment page fixes from a proper content read:
+    - **Header width regression fixed.** `AppHeader` was still `width="mid"` (720)
+      after the body went `lg:wide` (1080) in cockpit-43 — Back / End-session sat
+      misaligned with the form on large screens. Now uses `maxWidthClass` matching
+      the body (`mid` base, `lg:wide`).
+    - **Localized strings:** the header **Back** label now uses `t('back')`; the
+      relocated rail-total override strings are now i18n (`treatment.muscleSumLabel`,
+      `treatment.useTheSum`) in EN + DA (DA first-pass) instead of hardcoded English.
+- **Verified locally:** tsc clean; font-stub 60/60; parity clean.
+- **⚠ QA on deploy:** on a wide screen the header bar edges line up with the form;
+  Back/End-session aligned; total override text shows in Danish when da.
+- _(superseded)_ `simplify-cockpit-43` · total de-dup + width. None.
 - **Cumulative.** Treatment page content + width:
     - **De-duplicated the total.** The standalone "Total units" form card
       (`tsec-total`) and its nav entry are removed. The rail **running total** is
