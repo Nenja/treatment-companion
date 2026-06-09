@@ -1,4 +1,4 @@
-BUILD: simplify-cockpit-45   (NO migration; DB 0093; treatment page: removed the Session notes field — keeping notes state wired for reversibility — and added a "Therapist only" badge to the therapist handoff note.)
+BUILD: simplify-cockpit-46   (NO migration; DB 0093; treatment page: moved title/subtitle/Therapist-input into the rail top to remove the blank band above the form; added "Note for the therapist" to the rail nav.)
 ==========================================================================
 WHY CUMULATIVE: the build sandbox reset itself between builds last session, so
 the zips tagged 21-26 were each built on a reverted base and are NOT cumulative

@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-45` (no migration; DB 0093). Cumulative; supersedes 21–44. Treatment page: resolved the two-notes clash — removed the Session notes UI field (kept the `notes` state wired to save/hydration so it's reversible and loses no data) and added a 'Therapist only' audience badge to the therapist handoff note (design option 3). See §7._
+> _Last updated for build tag: `simplify-cockpit-46` (no migration; DB 0093). Cumulative; supersedes 21–45. Treatment page: moved the page title/subtitle/Therapist-input into the top of the left rail (removes the blank band that left the form column starting low), and added 'Note for the therapist' to the rail section nav (jumps to the handoff). See §7._
 
 ---
 
@@ -849,8 +849,24 @@ new-goal + approve calibration forms; current).
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-simplify-cockpit-45.zip`
-- **Tag:** `simplify-cockpit-45`  ·  **Migration: none (DB 0093).** UI-only.
+- **Zip:** `treatment-companion-simplify-cockpit-46.zip`
+- **Tag:** `simplify-cockpit-46`  ·  **Migration: none (DB 0093).** UI-only.
+- **Cumulative.** Treatment page layout polish:
+    - **Title block moved into the rail.** The page heading, "For {patient}"
+      subline, and the Therapist-input button were a full-width band above the
+      two-pane grid, so the form column started well below the top (visible blank
+      gap top-right). They now sit at the top of the left rail, so the grid — and
+      the form column's Last-treatment banner — start at the very top. (Expiry
+      banner + therapist drawer stay above the grid.)
+    - **"Note for the therapist" added to the rail nav** — a conditional nav row
+      (when a therapist is engaged) that jumps to the handoff block, which now has
+      `id="tsec-handoff"` + scroll-spy. Nav: Session setup · Muscles · Face ·
+      Note for the therapist (each shown when relevant).
+- **Verified locally:** tsc clean; font-stub 60/60; parity unchanged.
+- **⚠ QA on deploy:** no blank band above the form; rail shows title + therapist
+  button + total + areas + nav; "Note for the therapist" nav row appears (therapist
+  engaged) and jumps to the handoff; layout still collapses on narrow.
+- _(superseded)_ `simplify-cockpit-45` · remove Session notes + badge. None.
 - **Cumulative.** Two-notes clash resolved (mockups shown; Nikolaj chose option 3
   badge + remove Session notes):
     - **Session notes UI removed** (its `tsec-notes` card + nav entry + scroll-spy
