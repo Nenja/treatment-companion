@@ -1196,7 +1196,10 @@
     "chartWeekNotReported": "Uge {week}: ikke registreret",
     "therapistInputButton": "Terapeutinput",
     "runningTotalLabel": "Løbende total",
-    "adjustTotal": "Justér total"
+    "adjustTotal": "Justér total",
+    "muscleSumLabel": "Muskelsum:",
+    "useTheSum": "brug summen",
+    "handoffAudienceBadge": "Kun terapeut"
   },
   "goalVideo": {
     "introTitle": "Optag en kort video (valgfrit)",

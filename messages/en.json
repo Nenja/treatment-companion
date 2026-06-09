@@ -1192,7 +1192,10 @@
     "chartWeekNotReported": "Week {week}: not reported",
     "therapistInputButton": "Therapist input",
     "runningTotalLabel": "Running total",
-    "adjustTotal": "Adjust total"
+    "adjustTotal": "Adjust total",
+    "muscleSumLabel": "Muscle sum:",
+    "useTheSum": "use the sum",
+    "handoffAudienceBadge": "Therapist only"
   },
   "goalVideo": {
     "introTitle": "Record a short video (optional)",
