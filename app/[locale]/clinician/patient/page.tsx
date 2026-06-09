@@ -839,15 +839,24 @@ export default function ClinicianPatientPage() {
       <main className={mainWidthClass}>
         <div className={gridClass}>
         {sideMenu && (
-          <PatientActionRow
-            variant="sidebar"
-            physioCount={physioActionCount}
-            openPanel={openPanel}
-            labels={actionLabels}
-            shortLabels={actionShortLabels}
-            onSelect={onActionSelect}
-            className="hidden lg:flex lg:sticky lg:top-4"
-          />
+          <div className="hidden lg:block lg:sticky lg:top-4">
+            {/* Rail header, matching "Overview" and "Active goals" so all three
+                columns read as parallel and their content tops line up. */}
+            <div className="flex items-center lg:min-h-[39px]">
+              <h2 className="font-display text-[20px] leading-tight text-ink">
+                {t('railTitle')}
+              </h2>
+            </div>
+            <PatientActionRow
+              variant="sidebar"
+              physioCount={physioActionCount}
+              openPanel={openPanel}
+              labels={actionLabels}
+              shortLabels={actionShortLabels}
+              onSelect={onActionSelect}
+              className="mt-3"
+            />
+          </div>
         )}
         {/* Left column: patient context — banner, since-last-visit,
             the look-up panels, and the new-cycle action. The narrower
@@ -1023,11 +1032,17 @@ export default function ClinicianPatientPage() {
             )}
           </CockpitPanelDrawer>
         )}
-        {/* "Since last visit" leads the context column flush at the top, so
-            its top sits level with the "Active goals" heading opposite. (No empty
-            alignment band — that read as a gap once the modality pill moved into
-            the Background card.) */}
-        <div className="mt-4 lg:mt-0">
+        {/* Left-column section header, mirroring "Active goals" on the right
+            so the two columns read as parallel. Its min-height matches the goals
+            header band (the Active-goals title + buttons), so "since last visit"
+            lines up with the first goal graph — and because the header has its
+            own text it doesn't read as an empty gap. */}
+        <div className="flex items-center lg:min-h-[39px]">
+          <h2 className="font-display text-[20px] leading-tight text-ink">
+            {t('overviewTitle')}
+          </h2>
+        </div>
+        <div className="mt-4 lg:mt-3">
           <VisitChanges
             lastTreatmentDate={treatment?.date ?? null}
             cycleStartDate={cycle.startDate}

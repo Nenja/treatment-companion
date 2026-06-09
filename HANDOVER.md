@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-28` (no migration; DB 0090). Cumulative; supersedes 21–27. Latest change: removed the empty top-of-left-column alignment band; see §7._
+> _Last updated for build tag: `simplify-cockpit-29` (no migration; DB 0090). Cumulative; supersedes 21–28. Latest: column headers (Overview / Tools) added so all three columns are headed; see §7._
 
 ---
 
@@ -849,7 +849,17 @@ new-goal + approve calibration forms; current).
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-simplify-cockpit-28.zip`
+- **Zip:** `treatment-companion-simplify-cockpit-29.zip`
+- **Tag:** `simplify-cockpit-29`  ·  **Migration:** none (DB **0090**).
+- **Cumulative.** Latest changes (28→29): every cockpit column now has a header,
+  so they read as parallel and their content tops align via a shared
+  `lg:min-h-[39px]` header band (no empty gap — each header has its own text):
+    - context column: **"Overview"** (`clinician.patient.overviewTitle`) above
+      "Since last visit" + "Background".
+    - sidebar rail (side-nav): **"Tools"** (`clinician.patient.railTitle`) above
+      Training / History / Export; the header+rail stay sticky as a unit.
+    - goals column: existing **"Active goals"**.
+  - Labels are easy to rename if wanted (overviewTitle / railTitle).
 - **Tag:** `simplify-cockpit-28`  ·  **Migration:** none (DB **0090**).
 - **Cumulative** (same full set as cockpit-27 below). **Latest change:** removed
   the empty `lg:min-h-[39px]` alignment band at the top of the context column —
