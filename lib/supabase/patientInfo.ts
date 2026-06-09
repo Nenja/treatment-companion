@@ -283,3 +283,50 @@ export function useSetOwnDateOfBirth() {
     }
   });
 }
+
+/** The patient's own video-consent flags (clinical recording + research use),
+ *  readable via the patient's own-row RLS. */
+export interface OwnVideoConsent {
+  clinical: boolean;
+  research: boolean;
+}
+
+export function useOwnVideoConsent(enabled: boolean) {
+  return useQuery({
+    enabled,
+    queryKey: ['ownVideoConsent'],
+    queryFn: async (): Promise<OwnVideoConsent> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase
+        .from('patient')
+        .select('video_consent_clinical, video_consent_research')
+        .maybeSingle();
+      if (error) throw error;
+      return {
+        clinical: !!(data?.video_consent_clinical as boolean | null),
+        research: !!(data?.video_consent_research as boolean | null)
+      };
+    }
+  });
+}
+
+/** Patient records or withdraws their OWN video consent (migration 0093). */
+export function useSetOwnVideoConsent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      clinical: boolean;
+      research: boolean;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_own_video_consent', {
+        p_clinical: input.clinical,
+        p_research: input.research
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ownVideoConsent'] });
+    }
+  });
+}

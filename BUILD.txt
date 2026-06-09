@@ -1,4 +1,4 @@
-BUILD: simplify-cockpit-36   (NO migration; DB 0092; per-goal video consolidation — one "Video" button opens a per-goal overview: protocol + baseline playback + pointers to clips BUILD: simplify-cockpit-35   (MIGRATION 0092 — run 0092_goal_video_archive.sql, DB 0091->0092; video archive: archive/unarchive/delete + per-patient archive view + archive buttons on clip player BUILD: simplify-cockpit-34   (MIGRATION 0091 — run 0091_video_consent.sql, DB 0090->0091; supersedes the regressed cockpit-33; baseline-delete + patient video-consent + baseline gate) baseline modal; migration verified vs real Postgres) archive; reuses existing editors)
+BUILD: simplify-cockpit-40   (NO migration; DB 0093; guided enable->consent->baseline flow: enabling video on a goal opens a 2-step follow-up — consent (gates recording) then film baseline.)
 ==========================================================================
 WHY CUMULATIVE: the build sandbox reset itself between builds last session, so
 the zips tagged 21-26 were each built on a reverted base and are NOT cumulative

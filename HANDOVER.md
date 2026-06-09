@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-36` (no migration; DB 0092). Cumulative; supersedes 21–35. Per-goal video consolidation: the goal card's two video buttons (Record baseline + Video task) are now one **Video** button opening a per-goal overview (protocol + baseline playback + pointers to check-in clips and the archive). See §7._
+> _Last updated for build tag: `simplify-cockpit-40` (no migration; DB 0093). Cumulative; supersedes 21–39. Adds the guided enable→consent→baseline flow: flipping video ON for a goal now opens a follow-up that walks consent (gates recording) then offers to film the baseline. See §7._
 
 ---
 
@@ -849,7 +849,88 @@ new-goal + approve calibration forms; current).
 
 ## 7. Latest delivered build
 
-- **Zip:** `treatment-companion-simplify-cockpit-36.zip`
+- **Zip:** `treatment-companion-simplify-cockpit-40.zip`
+- **Tag:** `simplify-cockpit-40`  ·  **Migration: none (DB 0093).** UI-only.
+- **Cumulative.** Guided **enable → consent → baseline** flow:
+    - `VideoProtocolEditor` gained `onEnabled`, fired only on a save that flips
+      video from off → on (`!initialEnabled && enabled`).
+    - The page then opens `VideoEnableGuide` (new component) for that goal: a
+      two-step follow-up — **Step 1 Consent** (the same two checkmarks /
+      `set_patient_video_consent` path) and **Step 2 Baseline** (a "Film baseline
+      now" CTA, disabled until consent for clinical use is on file, with a hint;
+      "Re-film" wording + a note when a baseline already exists). "Do this later"
+      dismisses; the goal stays enabled with no recording (a valid state).
+    - Filming from the guide opens the existing `BaselineRecorderModal` for the
+      goal (its Back → the goal's Video overview, Close → cockpit).
+    - New i18n `clinician.videoGuide.*` (EN + DA, DA first-pass; `intro` carries
+      ICU `{goal}`).
+- **Verified locally:** tsc clean; font-stub 60/60; parity + ICU-arg check clean.
+- **⚠ QA on deploy:** open a goal → Video → Edit task → tick *Enable video* →
+  Save; the guide should appear; with consent off the Film button is disabled
+  and shows a hint; ticking clinical consent enables it and opens the recorder;
+  editing an already-enabled goal does NOT trigger the guide.
+- _(superseded)_ `simplify-cockpit-39`  ·  per-patient Video toolbar entry +
+  Background-card declutter. Migration: none.
+- **Cumulative.** Video governance relocated to declutter the Background card:
+    - New per-patient **Video** item in the cockpit toolbar (`PatientActionRow`,
+      alongside Training / History / Export; camera icon). Opens
+      `ClinicianVideoModal` holding the two **consent** checkmarks (recording /
+      research) + an **Archived videos** entry.
+    - The Background card no longer carries consent checkboxes or the archived
+      button (`BackgroundCard` props/labels for those removed) — it's back to
+      demographics · treatment · medication.
+    - The **per-goal** "Video" button on each goal card is unchanged: it's
+      goal-scoped (protocol + that goal's baseline), a different surface from the
+      patient-level governance now in the toolbar.
+    - New i18n: `clinician.patient.actionVideo`/`actionShortVideo`,
+      `clinician.videoPanel.{title,intro,consentHint}` (EN + DA, DA first-pass).
+- **Verified locally:** tsc clean; font-stub 60/60; i18n parity clean.
+- **⚠ QA on deploy:** toolbar shows a Video item (top + sidebar + narrow row);
+  it opens the consent + archive panel; consent edits persist (`set_patient_video_consent`);
+  Archived-videos opens from the panel; Background card no longer shows consent.
+- _(superseded)_ `simplify-cockpit-38`  ·  Migration: none (DB 0093). UI-only.
+- **Cumulative.** Back navigation in the per-goal Video module:
+    - Opening **Manage** (baseline) or **Edit task** (protocol) from the Video
+      overview previously left only a close button, dropping you back to the
+      cockpit. Both editors now take an optional `onBack` and render a **Back**
+      button (← ) when opened from the overview; Back returns to the Video
+      overview (rebuilt from live goal data, so changes show), while close still
+      exits to the cockpit. New i18n `a11y.back` (EN + DA).
+- **Verified locally:** tsc clean; font-stub 60/60; i18n parity clean.
+- **⚠ QA on deploy:** goal → Video → Manage/Edit task shows a Back button that
+  returns to the overview; the overview reflects the change (e.g. a freshly
+  recorded/deleted baseline); close still exits fully.
+- **Tag:** `simplify-cockpit-37`  ·  **Migration: 0093 (DB 0092 → 0093)** — RUN THE SQL.
+- **Cumulative.** Patient-side video consent:
+    - **Migration 0093**: `set_own_video_consent(clinical, research)` — patient-only,
+      scoped to `current_patient_id()` (mirrors `set_own_sex`, 0055), writing the
+      SAME flags the clinician sees so all existing gates reflect it. Adds
+      `patient.video_consent_source` ('patient'|'clinician'); the 0091 clinician RPC
+      is re-declared to stamp source='clinician'. NOT re-run through the Postgres
+      harness (the sandbox wiped the apt install mid-session); it's a near-verbatim
+      clone of `set_own_sex` + the verified 0091 pattern. Additive + idempotent.
+    - Hooks (`lib/supabase/patientInfo.ts`): `useOwnVideoConsent`,
+      `useSetOwnVideoConsent`, `OwnVideoConsent`.
+    - **Profile consent section** (`components/settings/VideoConsentSettings.tsx`,
+      patient-only): two checkmarks (recording + research) the patient can set or
+      **withdraw** any time, with informed text + Save.
+    - **Check-in filming gate** (`components/wizard/PatientVideoConsentGate.tsx`):
+      wraps the check-in recorder; if recording consent isn't on file it shows an
+      informed-consent prompt (record + optional research) and only reveals the
+      recorder once the patient consents.
+    - i18n: new top-level **`videoConsent`** namespace (patient-facing), EN + DA.
+- **⚠ CONSENT WORDING IS FIRST-PASS** — the patient-facing consent text (EN + DA)
+  must be reviewed by the study team / DPO and a native Danish speaker before real
+  use. It's an attestation in-app; the binding consent process lives in study docs.
+- **Verified locally:** tsc clean; font-stub 60/60; i18n parity clean (only_da =
+  pre-existing `_meta.*`).
+- **⚠ DEPLOY ORDER:** run `0093_patient_video_consent.sql` before/with the zip.
+- **⚠ QA on deploy:** (a) as a patient, Profile shows a Video consent section;
+  setting it persists and reflects in the clinician cockpit (source = patient);
+  (b) in check-in, a video goal in the peak window shows the consent prompt until
+  the patient consents, then the recorder; (c) withdrawing in Profile re-gates filming.
+- **Video feature complete across both roles.** Remaining: nothing required; the
+  consent copy needs human/legal review.
 - **Tag:** `simplify-cockpit-36`  ·  **Migration: none (DB 0092).** UI-only.
 - **Cumulative.** Per-goal video consolidation (the last item of the video work):
     - The goal-card action row's two video buttons — **Record baseline** and
