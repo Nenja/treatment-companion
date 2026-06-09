@@ -81,8 +81,9 @@ function TreatmentRecordInner() {
   // Single-column layout: the area selector and last-treatment card sit
   // at the top of the form (not a separate left column), side by side on
   // sm+ and stacked on mobile, per clinician request.
-  const paneGridClass = '';
-  const asideClass = '';
+  const paneGridClass =
+    'mt-5 lg:grid lg:grid-cols-[212px_minmax(0,1fr)] lg:gap-6 lg:items-start';
+  const asideClass = 'mb-6 lg:mb-0 lg:sticky lg:top-4 lg:self-start';
   // Muscle-row element classes. When wide, the row goes single-line at
   // lg (name flexes, side/units fixed width, × at the end). When
   // compact, it stays in the two-line mobile shape on every screen.
@@ -257,6 +258,8 @@ function TreatmentRecordInner() {
   const [faceDisplayMode, setFaceDisplayMode] =
     useState<FaceDisplayMode>('color');
   const [faceMarks, setFaceMarks] = useState<FaceMarkInput[]>([]);
+  // Which form section the left-rail nav highlights (scroll-tracked).
+  const [activeSec, setActiveSec] = useState('setup');
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -497,6 +500,17 @@ function TreatmentRecordInner() {
   const dosesSumLabel = Number.isInteger(dosesSum)
     ? String(dosesSum)
     : String(Number(dosesSum.toFixed(2)));
+  // Rail running total: the effective Total units (manual override or
+  // the per-muscle sum), plus a count of filled points for the subline.
+  const totalDisplay = totalUnits.trim()
+    ? totalUnits.trim()
+    : dosesSum > 0
+      ? dosesSumLabel
+      : '0';
+  const filledCount =
+    (includesStandard
+      ? injections.filter((x) => x.muscle.trim()).length
+      : 0) + (includesFace ? faceMarks.length : 0);
 
   // Auto-fill Total units from the per-muscle sum while the clinician
   // hasn't taken manual control. Keeping the totalUnits *state* in sync
@@ -509,6 +523,28 @@ function TreatmentRecordInner() {
     const next = dosesSum > 0 ? dosesSumLabel : '';
     setTotalUnits((cur) => (cur === next ? cur : next));
   }, [totalManual, dosesSum, dosesSumLabel]);
+
+  // Left-rail section nav: highlight the section nearest the top of the
+  // viewport as the clinician scrolls. Re-runs when areas toggle, since
+  // the muscle / face sections appear and disappear.
+  useEffect(() => {
+    const ids = ['setup', 'muscles', 'face', 'total', 'notes'];
+    const els = ids
+      .map((id) => document.getElementById(`tsec-${id}`))
+      .filter((el): el is HTMLElement => el != null);
+    if (els.length === 0) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const top = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (top) setActiveSec(top.target.id.replace('tsec-', ''));
+      },
+      { rootMargin: '-15% 0px -75% 0px', threshold: 0 }
+    );
+    els.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+  }, [includesStandard, includesFace]);
 
   // A treatment record can be corrected only on the day it was
   // entered. In edit mode, if the existing treatment was recorded on an
@@ -641,6 +677,14 @@ function TreatmentRecordInner() {
     }
   };
 
+  const navItems: { id: string; label: string }[] = [
+    { id: 'setup', label: t('sessionSetupTitle') },
+    ...(includesStandard ? [{ id: 'muscles', label: t('musclesTitle') }] : []),
+    ...(includesFace ? [{ id: 'face', label: t('areaFace') }] : []),
+    { id: 'total', label: t('fieldTotalUnits') },
+    { id: 'notes', label: t('fieldSessionNotes') }
+  ];
+
   return (
     <div className="min-h-dvh bg-cream">
       <AppHeader
@@ -758,36 +802,95 @@ function TreatmentRecordInner() {
           <aside className={asideClass}>
         {/* Area selector + last-treatment, side by side on sm+ (stacked
             on mobile), at the top of the form. */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-        {/* Treatment areas — the control that decides which sections
-            appear in the form (Body-and-neck muscle list / face map).
-            At least one area is required. */}
-        <div className="flex-1 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3">
-          <div className="eyebrow">{t('areasTitle')}</div>
-          <p className="mt-0.5 text-[12px] leading-snug text-ink-muted">
-            {t('areasSubtitle')}
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2">
-            <label className="flex items-center gap-2 text-[14px] text-ink">
-              <input
-                type="checkbox"
-                checked={includesStandard}
-                onChange={(e) => setIncludesStandard(e.target.checked)}
-                className="h-4 w-4 accent-sage-deep"
-              />
-              {t('areaStandard')}
-            </label>
-            <label className="flex items-center gap-2 text-[14px] text-ink">
-              <input
-                type="checkbox"
-                checked={includesFace}
-                onChange={(e) => setIncludesFace(e.target.checked)}
-                className="h-4 w-4 accent-sage-deep"
-              />
-              {t('areaFace')}
-            </label>
+        <div className="flex flex-col gap-4">
+        {/* Running total — the rail's signature. Reflects the effective
+            Total units (manual override or per-muscle sum) so the dose
+            being built stays in view while scrolling the form. */}
+        <div>
+          <div className="eyebrow">{t('runningTotalLabel')}</div>
+          <div className="mt-0.5 flex items-baseline gap-1">
+            <span className="font-display text-[32px] leading-none text-ink">
+              {totalDisplay}
+            </span>
+            <span className="font-display text-[16px] text-ink-muted">
+              {t('unitsSuffix')}
+            </span>
+          </div>
+          <div className="mt-1 text-[12.5px] text-ink-muted">
+            {drugProduct.trim() || '—'} · {filledCount} {t('musclePlural')}
           </div>
         </div>
+
+        <div className="h-px bg-stone" />
+
+        {/* Treatment areas — toggles deciding which sections appear in the
+            form (muscle list / face map). At least one required. */}
+        <div>
+          <div className="eyebrow">{t('areasTitle')}</div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              aria-pressed={includesStandard}
+              onClick={() => setIncludesStandard((v) => !v)}
+              className={`inline-flex items-center gap-1.5 rounded-[6px] border px-2.5 py-1.5 text-[12.5px] ${
+                includesStandard
+                  ? 'border-sage-deep bg-sage-soft/40 font-semibold text-sage-deep'
+                  : 'border-stone text-ink-muted hover:text-ink'
+              }`}
+            >
+              {includesStandard && (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              )}
+              {t('areaStandard')}
+            </button>
+            <button
+              type="button"
+              aria-pressed={includesFace}
+              onClick={() => setIncludesFace((v) => !v)}
+              className={`inline-flex items-center gap-1.5 rounded-[6px] border px-2.5 py-1.5 text-[12.5px] ${
+                includesFace
+                  ? 'border-sage-deep bg-sage-soft/40 font-semibold text-sage-deep'
+                  : 'border-stone text-ink-muted hover:text-ink'
+              }`}
+            >
+              {includesFace && (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              )}
+              {t('areaFace')}
+            </button>
+          </div>
+          <p className="mt-1.5 text-[12px] leading-snug text-ink-muted">
+            {t('areasSubtitle')}
+          </p>
+        </div>
+
+        {/* Section nav — jumps to a form section and tracks the one in
+            view; lists only the sections that exist for the chosen areas. */}
+        <nav className="flex flex-col gap-0.5">
+          {navItems.map((it) => (
+            <button
+              key={it.id}
+              type="button"
+              onClick={() => {
+                setActiveSec(it.id);
+                document
+                  .getElementById(`tsec-${it.id}`)
+                  ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className={`border-l-2 py-1.5 pl-3 text-left text-[14px] ${
+                activeSec === it.id
+                  ? 'border-sage-deep font-semibold text-sage-deep'
+                  : 'border-transparent text-ink-muted hover:text-ink'
+              }`}
+            >
+              {it.label}
+            </button>
+          ))}
+        </nav>
         {/* Last-treatment card. The summary area is tappable to open
             the full per-muscle details; below it, a prominent Copy
             button fills the whole form from last time. Only shown when a
@@ -862,7 +965,8 @@ function TreatmentRecordInner() {
             (Session setup → Injections → Total → Notes), matching the other
             sections. Total units has moved below the muscle list, since the
             physician records it once the injections are chosen. */}
-        <h2 className="mt-6 font-display text-[18px] text-ink">
+        <section id="tsec-setup" className="mt-5 scroll-mt-20 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4 sm:p-5">
+        <h2 className="font-display text-[20px] leading-tight text-ink">
           {t('sessionSetupTitle')}
         </h2>
         <p className="mt-1 text-[14px] text-ink-muted">
@@ -916,12 +1020,15 @@ function TreatmentRecordInner() {
           </Field>
         </div>
 
+        </section>
+
         {/* Standard injections — the muscle list. Rendered only when the
             Standard area is selected. */}
         {includesStandard && (
           <>
         {/* Muscles section */}
-        <h2 className="mt-8 font-display text-[18px] text-ink">
+        <section id="tsec-muscles" className="mt-4 scroll-mt-20 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4 sm:p-5">
+        <h2 className="font-display text-[20px] leading-tight text-ink">
           {t('musclesTitle')}
         </h2>
         <p className="mt-1 text-[14px] text-ink-muted">
@@ -1103,10 +1210,11 @@ function TreatmentRecordInner() {
         <button
           type="button"
           onClick={addInjection}
-          className="mt-3 flex h-10 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+          className="mt-3 flex h-10 w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
         >
           + {t('addAnotherMuscle')}
         </button>
+        </section>
           </>
         )}
 
@@ -1117,7 +1225,8 @@ function TreatmentRecordInner() {
             section heading here. */}
         {includesFace && (
           <>
-            <h2 className="mt-8 font-display text-[18px] text-ink">
+            <section id="tsec-face" className="mt-4 scroll-mt-20 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4 sm:p-5">
+            <h2 className="font-display text-[20px] leading-tight text-ink">
               {t('areaFace')}
             </h2>
             <div className="mt-3">
@@ -1129,6 +1238,7 @@ function TreatmentRecordInner() {
                 exportLabel={patient.displayName}
               />
             </div>
+            </section>
           </>
         )}
 
@@ -1138,7 +1248,8 @@ function TreatmentRecordInner() {
             manual control, and a "use the sum" link snaps back. Sits
             below the muscle list (it's the conclusion of choosing
             muscles). Constrained width on desktop — short numeric. */}
-        <div className="mt-6 sm:max-w-[260px]">
+        <section id="tsec-total" className="mt-4 scroll-mt-20 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4 sm:p-5">
+        <div className="sm:max-w-[260px]">
           <Field label={t('fieldTotalUnits')} inline>
             <input
               type="number"
@@ -1185,6 +1296,9 @@ function TreatmentRecordInner() {
           </Field>
         </div>
 
+        </section>
+
+        <section id="tsec-notes" className="mt-4 scroll-mt-20 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4 sm:p-5">
         {/* Session notes */}
         <Field label={t('fieldSessionNotes')} helper={t('optional')}>
           <textarea
@@ -1195,6 +1309,7 @@ function TreatmentRecordInner() {
             maxLength={500}
           />
         </Field>
+        </section>
 
         {/* Note for the therapist — the one downward (clinic → therapist)
             channel. Therapist-only and never patient-visible; set apart with
@@ -1202,7 +1317,7 @@ function TreatmentRecordInner() {
             Optional. Closes the therapist's "what did the physician do / has
             anything changed" gap between visits. */}
         {therapistHasEngaged && (
-        <div className="mt-6 rounded-[var(--radius-card)] border border-sage-soft bg-sage-soft/20 p-4">
+        <div className="mt-4 rounded-[var(--radius-card)] border border-sage-soft bg-sage-soft/20 p-4">
           <h3 className="font-display text-[15px] text-ink">
             {t('handoffTitle')}
           </h3>
@@ -1293,7 +1408,7 @@ function TreatmentRecordInner() {
           </p>
         )}
 
-        <div className="mt-8 flex gap-3">
+        <div className="sticky bottom-0 z-10 -mx-5 mt-8 flex gap-3 border-t border-stone/60 bg-cream/90 px-5 py-3 backdrop-blur">
           <button
             type="button"
             onClick={back}

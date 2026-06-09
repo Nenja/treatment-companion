@@ -1194,7 +1194,8 @@
     "chartWeekLabel": "Uge {week}:",
     "chartPhysioNote": "Fysioterapeutnote:",
     "chartWeekNotReported": "Uge {week}: ikke registreret",
-    "therapistInputButton": "Terapeutinput"
+    "therapistInputButton": "Terapeutinput",
+    "runningTotalLabel": "Løbende total"
   },
   "goalVideo": {
     "introTitle": "Optag en kort video (valgfrit)",
