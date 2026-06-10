@@ -28,6 +28,7 @@ export interface UpdateOwnProfileInput {
   displayName?: string;
   profession?: string | null;
   professionOther?: string | null;
+  notifyWeekday?: number | null;
 }
 
 export function useUpdateOwnProfile() {
@@ -47,6 +48,9 @@ export function useUpdateOwnProfile() {
       }
       if (input.professionOther !== undefined) {
         patch.profession_other = input.professionOther;
+      }
+      if (input.notifyWeekday !== undefined) {
+        patch.notify_weekday = input.notifyWeekday;
       }
       if (Object.keys(patch).length === 0) return;
 

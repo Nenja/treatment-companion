@@ -57,6 +57,10 @@ export interface AppProfile {
    *  which are always single-column. Defaults to 'wide'. */
   layoutPreference: 'wide' | 'compact';
   navStyle: 'top' | 'side';
+  /** Day of week the patient wants their weekly check-in reminder push:
+   *  0=Sunday … 6=Saturday (JS getUTCDay). Null until chosen — the app
+   *  shows the reminder-day modal on login until it's set. */
+  notifyWeekday: number | null;
 }
 
 interface AuthState {
@@ -108,7 +112,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data, error } = await supabase
         .from('profile')
         .select(
-          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin, color_scheme, night_mode, read_aloud, profession, profession_other, layout_preference, nav_style'
+          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin, color_scheme, night_mode, read_aloud, profession, profession_other, layout_preference, nav_style, notify_weekday'
         )
         .eq('id', userId)
         .maybeSingle();
@@ -133,7 +137,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
             ? 'compact'
             : 'wide',
         navStyle:
-          (data.nav_style as 'top' | 'side' | null) === 'side' ? 'side' : 'top'
+          (data.nav_style as 'top' | 'side' | null) === 'side' ? 'side' : 'top',
+        notifyWeekday:
+          data.notify_weekday === null || data.notify_weekday === undefined
+            ? null
+            : Number(data.notify_weekday)
       };
     },
     []

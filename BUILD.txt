@@ -1,11 +1,11 @@
-BUILD: simplify-cockpit-54   (NO migration; DB 0093; goals moved to a dedicated /goals page via a "Your goals" button; home top tightened so check-in is above the fold. New route + UI restructure.)
+BUILD: simplify-cockpit-57   (MIGRATION 0094 — run 0094_notify_weekday.sql; DB 0093->0094. Reminder-day login modal + day picker + skip + re-prompt; profile.notify_weekday; settings control. EDGE FUNCTION send-checkin-notifications rewritten — NEEDS SEPARATE supabase functions deploy.)
 ==========================================================================
 WHY CUMULATIVE: the build sandbox reset itself between builds last session, so
 the zips tagged 21-26 were each built on a reverted base and are NOT cumulative
 (each missing pieces of the others). This zip re-applies the full intended set
 onto the known-good build-20 base in one pass.
 
-** DEPLOY THIS ZIP. DISCARD 21-53. **  No migration (DB stays 0093). New /goals route + home rework.
+** DEPLOY THIS ZIP. DISCARD 21-56. **  RUN MIGRATION 0094 (DB 0093->0094). THEN DEPLOY THE EDGE FUNCTION (supabase functions deploy send-checkin-notifications) — without it the chosen day is stored but not yet acted on.
 
 WHAT'S IN IT
 1. "What's still needed" checklist on new-goal + approve calibration forms,

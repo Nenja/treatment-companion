@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-54` (no migration; DB 0093). Patient goals moved off the home onto a dedicated `/goals` page reached by a prominent "Your goals" button; home top tightened so Start check-in sits above the fold. New route + relocated components, styling/structure only. See §7._
+> _Last updated for build tag: `simplify-cockpit-57` (**migration 0094 — DB 0093 → 0094**). Notification opt-in moved from an inline home card to a login-time modal that makes the patient pick a reminder weekday (with Skip; re-prompts every login until set). New `profile.notify_weekday`; settings control to change it; **send-checkin-notifications Edge Function rewritten to fire on the chosen weekday — needs a separate deploy.** See §7._
 
 ---
 
@@ -848,6 +848,36 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Zip:** `treatment-companion-simplify-cockpit-57.zip`  ·  **Tag:** `simplify-cockpit-57`  ·  **⚠ MIGRATION 0094 — run `0094_notify_weekday.sql` in Supabase (DB 0093 → 0094).** Cumulative (supersedes 21–56).
+- **New feature: patient-chosen weekly reminder day.**
+  - **Migration 0094:** `profile.notify_weekday smallint` (CHECK null or 0–6; 0=Sun..6=Sat = JS getUTCDay). NULL = not chosen. No new RLS/grant — patients already self-update `profile`, and the WITH CHECK only forbids role changes.
+  - **Login modal** `components/cards/NotificationDayModal.tsx`: bottom-sheet (uses `useModalA11y`). Day chips (Mon-first display, stores JS index), "Turn on reminders" (saves the day **first**, then `subscribeToPush` — so the day persists even if push is blocked / needs iOS install, avoiding a permanent nag), and "Skip for now". Reuses the existing `notifications.*` push status copy.
+  - **Home** (`app/[locale]/page.tsx`): inline `NotificationsCard` removed; modal shown when `profile.notifyWeekday == null && pushSupported()`, client-gated via an effect (no SSR flip), tracked with a per-session `notifModalDone` so Skip dismisses for the session but it returns next login (per spec). Rendered in the cycle branch only, so it appears once the patient actually has check-ins.
+  - **Auth/profile plumbing:** `AppProfile.notifyWeekday` added (auth.tsx select + map); `useUpdateOwnProfile` accepts `notifyWeekday`.
+  - **Settings:** profile page gains a patient-only "Reminder day" select (auto-saves on change, like Sex). It has no "off" — once set, the patient picks among days; a true "off / declined" state would need a separate flag (not built).
+  - **i18n:** `notifications.dayTitle/dayBody/dayTurnOn/daySkip/dayDone/dayChangeNote`; new top-level `weekday.short.0–6` + `weekday.long.0–6`; `profile.reminderDay*`. EN + DA (DA first-pass — flag for native review).
+  - **Inline `NotificationsCard.tsx` is now unused** (superseded by the modal); left in the repo, safe to delete later.
+- **⚠⚠ EDGE FUNCTION NEEDS A SEPARATE DEPLOY — NOT part of the zip→Vercel flow.** `supabase/functions/send-checkin-notifications/index.ts` was rewritten: instead of firing on each prompt's due_date, it now (per UTC day) finds patients whose `notify_weekday == today's weekday`, then their pending prompts (due_date ≤ today, not yet notified → initial; notified ≥ ~6 days ago, still pending, not reminded → reminder), and pushes. **Until this is deployed (`supabase functions deploy send-checkin-notifications`), the chosen day is stored and shown but reminders still behave as before / won't honor the day.** I could not run or test this Deno function here — verify with the `{ "dryRun": true }` POST before relying on it.
+- **⚠ QA (cannot verify from here):** modal appears on patient login when no day is set and not after; Skip re-prompts next login; "Turn on reminders" saves the day + drives the push permission flow (incl. iOS install path); settings select changes the day; edge function deploy + dryRun sanity check.
+
+
+- **Zip:** `treatment-companion-simplify-cockpit-56.zip`  ·  **Tag:** `simplify-cockpit-56`  ·  **Migration: none (DB 0093).** Patient-home + check-in-card layout only, cumulative (supersedes 21–55).
+- **Catch-up moved inside the check-in card.** `CheckinPromptCard` gained an optional `catchUp?: ReactNode` prop; the home now passes `<CatchUpCard>` into it instead of rendering it as a standalone sibling. It renders inside the card below the main action, separated by a hairline (`mt-5 border-t border-sage/25 pt-4`), in both the pending and the "all caught up" states. `CatchUpCard`'s own outer row styling was neutralised (`mt-2 border-b border-stone/60 px-0.5 py-3` → `px-0.5`) so the parent controls the divider/spacing. It's only used here, so this is safe.
+- **"Takes about two minutes" removed** from the pending check-in card (the `checkinReadyBody` `<p>`). The i18n key `checkinReadyBody` is now unused (left in `en/da` for now; parity unaffected).
+- **Visit code moved below the goals button.** The full-width visit-code utility row now sits *under* the "Your goals" button (goals is the more frequent destination; visit code is appointment-only), with `mt-3` separation. Order under the check-in card is now: NotificationsCard (conditional) → Your goals button → visit-code row → treated-muscles link → safety → privacy.
+- **Data & privacy link re-centred** (`inline-flex` → `flex w-full justify-center`), per preference.
+- Files: `components/cards/CheckinPromptCard.tsx`, `components/cards/CatchUpCard.tsx`, `app/[locale]/page.tsx`. No i18n change; page count unchanged at 62.
+- **⚠ QA (cannot verify from here):** the catch-up disclosure expands/collapses correctly *inside* the card and its divider reads well on both the sage (pending) and cream (caught-up) card backgrounds; on a real device the card looks balanced without the two-minutes line; visit-code row below the goals button reads right; centred privacy link looks correct.
+
+
+- **Zip:** `treatment-companion-simplify-cockpit-55.zip`  ·  **Tag:** `simplify-cockpit-55`  ·  **Migration: none (DB 0093).** Patient-home layout only, cumulative (supersedes 21–54).
+- **Visit code moved up.** The footer had three different treatments stacked (full-width goals button, a left-aligned link, a centred visit-code pill) which read as scattered. The "Show visit code" pill is removed from the footer and re-added as a **full-width utility row** (keypad icon + label + `→`, `border-b border-stone/60 py-4`) placed directly under the catch-up card, so the two utility rows group as a pair under the check-in. It stays obvious (full-width, icon, chevron) without competing with the check-in hero or the goals button. Note: the catch-up row is conditional, so on most days the visit-code row sits on its own directly under the check-in card — still a clear spot.
+- **Footer simplified.** What remains below the goals button is just the quiet "See which muscles were treated →" link and the safety notice; the "Your data & privacy" link is now left-aligned (`inline-flex`, no `w-full`/`justify-center`) so the whole region shares one left column edge. No centred elements left in that band.
+- `app/[locale]/page.tsx` only. No i18n change (reuses `showVisitCode`); page count unchanged at 62.
+- **⚠ QA (cannot verify from here):** on a real device, the visit-code row reads as obviously tappable and routes to `/visit-code`; the row looks right both with and without a catch-up above it; the de-scattered footer reads tidy on Firefox mobile.
+- _(Process note: first attempt aborted on a script error before writing — marker check `visitRow=0` caught it, nothing was shipped; rebuilt clean.)_
+
 
 - **Zip:** `treatment-companion-simplify-cockpit-54.zip`  ·  **Tag:** `simplify-cockpit-54`  ·  **Migration: none (DB 0093).** New route + UI restructure, cumulative (supersedes 21–53).
 - **Goals moved to their own page.** New `app/[locale]/goals/page.tsx` (patient-only, same auth guards + `usePatientHomeData` source as the home). It holds the goal cards, each goal's read-only `GoalGraphModal`, the sent-suggestion status, the weeks-1–2 progress reassurance, and the "Suggest a new goal" action. Has a "← Home" back link at top (new i18n `patient.home.navHome`, EN "Home" / DA "Hjem"). Builds as `/en/goals` + `/da/goals` (page count 60 → 62).
