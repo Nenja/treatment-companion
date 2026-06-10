@@ -38,6 +38,9 @@ interface WizardLayoutProps {
   /** Hide the page <h1>/helper block — used on rating steps where the
    *  goal itself is the heading, rendered by the picker. */
   hideHeader?: boolean;
+  /** Optional small uppercase eyebrow at the very top of the content,
+   *  above the heading. Used for the catch-up week cue. */
+  eyebrow?: string;
   /** When set, a "?" help button appears next to the account menu,
    *  opening the help modal for that page. */
   helpPageKey?: string;
@@ -56,6 +59,7 @@ export function WizardLayout({
   forgiving = false,
   hideStepBar = false,
   hideHeader = false,
+  eyebrow,
   helpPageKey,
   children
 }: WizardLayoutProps) {
@@ -155,6 +159,11 @@ export function WizardLayout({
 
       {/* Body */}
       <main className="mx-auto max-w-[480px] px-5 pb-32 pt-6">
+        {eyebrow && (
+          <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-amber-deep">
+            {eyebrow}
+          </p>
+        )}
         {!hideHeader && (
           <>
             <h1 className="font-display text-[26px] leading-tight text-ink">
