@@ -272,7 +272,7 @@ export default function PatientHomePage() {
       <section className="mt-9" aria-labelledby="goals-heading">
         <h2
           id="goals-heading"
-          className="border-b border-stone/60 pb-3 font-display text-[22px] leading-tight text-ink"
+          className="font-display text-[22px] leading-tight text-ink"
         >
           {t('yourGoals')}
         </h2>
@@ -289,7 +289,7 @@ export default function PatientHomePage() {
             </Card>
           </div>
         ) : (
-          <ul className="mt-1 divide-y divide-stone/60">
+          <ul className="mt-4 space-y-3">
             {data.goals.map((g) => (
               <li key={g.id}>
                 <GoalCard
