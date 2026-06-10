@@ -20,7 +20,7 @@ export function SafetyNotice() {
     <aside
       role="note"
       aria-label={t('title')}
-      className="rounded-[var(--radius-card)] border border-stone/70 bg-cream-soft/50 px-4 py-3 text-[14px] leading-relaxed text-ink-soft"
+      className="border-t border-stone/60 px-0.5 pt-4 text-[14px] leading-relaxed text-ink-soft"
     >
       <button
         type="button"

@@ -32,8 +32,8 @@ export function GoalCard({
   viewGraphLabel
 }: GoalCardProps) {
   return (
-    <article className="flex items-center justify-between gap-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5">
-      <h3 className="min-w-0 flex-1 font-display text-[20px] leading-snug text-ink">
+    <article className="flex items-center justify-between gap-3 py-4">
+      <h3 className="min-w-0 flex-1 font-display text-[18px] leading-snug text-ink">
         {patientFacingText}
       </h3>
       <div className="flex shrink-0 items-center gap-1.5">
