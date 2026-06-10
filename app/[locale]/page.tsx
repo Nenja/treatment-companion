@@ -372,9 +372,19 @@ export default function PatientHomePage() {
 
       </section>
 
-      {/* Safety notice */}
+      {/* Safety notice + a quiet data & privacy link — the two static
+          informational items grouped at the foot of the home. */}
       <div className="mt-10">
         <SafetyNotice />
+        <button
+          type="button"
+          onClick={() =>
+            router.push(locale === 'en' ? '/privacy' : `/${locale}/privacy`)
+          }
+          className="mt-4 flex w-full items-center justify-center text-[13px] font-medium text-ink-muted hover:text-ink-soft"
+        >
+          {t('dataPrivacy')}
+        </button>
       </div>
 
       {/* Read-only progress graph for one goal, opened from a goal card's

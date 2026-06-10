@@ -72,7 +72,8 @@
       "visitCodeTitle": "Ved dit besøg",
       "visitCodeBody": "Tag denne app med til din aftale. Åbn “Vis besøgskode”, så din kliniker kan åbne din journal.",
       "pendingSuggestions": "{count, plural, one {# mål sendt — din kliniker gennemgår det ved dit næste besøg.} other {# mål sendt — din kliniker gennemgår dem ved dit næste besøg.}}",
-      "progressReassurance": "Fremgang kommer ofte i op- og nedture — en uge uden ændring er ikke en fiasko. Din kliniker ser på hele billedet over tid."
+      "progressReassurance": "Fremgang kommer ofte i op- og nedture — en uge uden ændring er ikke en fiasko. Din kliniker ser på hele billedet over tid.",
+      "dataPrivacy": "Dine data og privatliv"
     },
     "visitCode": {
       "pageTitle": "Besøgskode",
@@ -822,7 +823,8 @@
     "navStyleTop": "Topmenu",
     "navStyleSide": "Sidemenu",
     "navStyleTopHint": "Ikoner i en række under patientens navn.",
-    "navStyleSideHint": "Ikoner i en skinne langs venstre kant."
+    "navStyleSideHint": "Ikoner i en skinne langs venstre kant.",
+    "displayLabel": "Visning"
   },
   "admin": {
     "roleTherapist": "Terapeut",

@@ -68,7 +68,8 @@
       "visitCodeTitle": "At your visit",
       "visitCodeBody": "Bring this app to your appointment. Open “Show visit code” so your clinician can open your record.",
       "pendingSuggestions": "{count, plural, one {# goal sent — your clinician will review it at your next visit.} other {# goals sent — your clinician will review them at your next visit.}}",
-      "progressReassurance": "Progress often comes in ups and downs — a flat week isn't a failure. Your clinician looks at the whole picture over time."
+      "progressReassurance": "Progress often comes in ups and downs — a flat week isn't a failure. Your clinician looks at the whole picture over time.",
+      "dataPrivacy": "Your data & privacy"
     },
     "visitCode": {
       "pageTitle": "Visit code",
@@ -818,7 +819,8 @@
     "navStyleTop": "Top menu",
     "navStyleSide": "Side menu",
     "navStyleTopHint": "Icons in a row under the patient name.",
-    "navStyleSideHint": "Icons in a rail down the left edge."
+    "navStyleSideHint": "Icons in a rail down the left edge.",
+    "displayLabel": "Display"
   },
   "admin": {
     "roleTherapist": "Therapist",
