@@ -272,7 +272,7 @@ export default function PatientHomePage() {
       <section className="mt-9" aria-labelledby="goals-heading">
         <h2
           id="goals-heading"
-          className="font-display text-[22px] leading-tight text-ink"
+          className="border-b border-stone/60 pb-3 font-display text-[22px] leading-tight text-ink"
         >
           {t('yourGoals')}
         </h2>
@@ -289,7 +289,7 @@ export default function PatientHomePage() {
             </Card>
           </div>
         ) : (
-          <ul className="mt-4 space-y-3">
+          <ul className="mt-1 divide-y divide-stone/60">
             {data.goals.map((g) => (
               <li key={g.id}>
                 <GoalCard
@@ -333,7 +333,7 @@ export default function PatientHomePage() {
               locale === 'en' ? '/suggest-goal' : `/${locale}/suggest-goal`
             );
           }}
-          className="mt-5 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] border border-sage/40 bg-cream-soft px-4 text-[15px] font-semibold text-sage-deep hover:bg-sage-soft"
+          className="mt-5 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] border border-sage/50 px-4 text-[15px] font-semibold text-sage-deep hover:bg-sage-soft/40"
         >
           <span aria-hidden className="mr-2 text-[17px] leading-none">
             +
@@ -342,17 +342,33 @@ export default function PatientHomePage() {
         </button>
         {/* Show visit code — infrequent, visit-time only; demoted to a
             quiet link so it doesn't compete with the daily actions. */}
-        <button
-          type="button"
-          onClick={() =>
-            router.push(
-              locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
-            )
-          }
-          className="mt-3 flex w-full items-center justify-center text-[13px] font-medium text-ink-soft hover:text-ink"
-        >
-          {t('showVisitCode')}
-        </button>
+        <div className="mt-3 flex justify-center">
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
+              )
+            }
+            className="inline-flex items-center gap-1.5 rounded-full border border-stone px-4 py-1.5 text-[13px] font-medium text-ink-soft hover:bg-stone-soft hover:text-ink"
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <rect x="3" y="6" width="18" height="12" rx="2" />
+              <path d="M7 10v4M11 10v4M15 10v4M19 10v4" />
+            </svg>
+            {t('showVisitCode')}
+          </button>
+        </div>
 
       </section>
 

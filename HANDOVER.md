@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-50` (no migration; DB 0093). Patient home decluttered per a full relevance pass: one cycle-position signal, reassurance only early-cycle, 'Suggest a goal' prominent with 'Show visit code' demoted, 'See what was treated' moved up to the treatment line, and the urgent-care notice collapsed to a headline + expander (wording verbatim). See §7._
+> _Last updated for build tag: `simplify-cockpit-51` (no migration; DB 0093). Visual pass on the patient home to fix 'blockiness': only the check-in stays a filled card; catch-up, goals and the safety notice become hairline rows/dividers; 'Suggest a goal' is an outline button; 'Show visit code' returns as a small outlined chip. Styling only. See §7._
 
 ---
 
@@ -848,6 +848,15 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Zip:** `treatment-companion-simplify-cockpit-51.zip`  ·  **Tag:** `simplify-cockpit-51`  ·  **Migration: none (DB 0093).** Styling only, cumulative (supersedes 21–50).
+- **Patient home visual hierarchy** — fixes the "stack of equal filled boxes" look. No logic/i18n changes; classNames only.
+    - **One filled hero.** Only the check-in card keeps its fill. Everything below recedes to hairlines so the page reads as a list, not a stack.
+    - **Goals = divided list.** `GoalCard` de-filled (was `rounded-card border bg-cream-soft p-5` → `flex … py-4`, text 20→18px); the goals `<ul>` uses `divide-y divide-stone/60`; a hairline rule sits under the "Your goals" heading. Scales cleanly to multiple goals; a new goal with no ratings just omits the graph chip.
+    - **Catch-up + safety = hairline rows.** `CatchUpCard` container de-filled to a `border-b` row; `SafetyNotice` de-carded to a `border-t` top-rule (still the headline + "What to do" expander).
+    - **Action hierarchy.** "Suggest a new goal" is now an outline button (fill removed); "Show visit code" returns from a bare text link to a small outlined pill chip with a keypad icon — visible/tappable without competing with Suggest.
+    - **⚠ QA:** check the home reads as a divided list with the check-in clearly the anchor; confirm long goal text wraps tidily with the read-aloud/graph actions staying right-aligned; confirm the visit-code chip and safety expander still work.
+
 
 - **Zip:** `treatment-companion-simplify-cockpit-50.zip`  ·  **Tag:** `simplify-cockpit-50`  ·  **Migration: none (DB 0093).** UI-only, cumulative (supersedes 21–49).
 - **Patient home (`app/[locale]/page.tsx`, `SafetyNotice`) decluttered** after an element-by-element relevance review:

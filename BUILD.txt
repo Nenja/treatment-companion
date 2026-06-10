@@ -1,11 +1,11 @@
-BUILD: simplify-cockpit-50   (NO migration; DB 0093; patient home declutter: one cycle-position line, occasional reassurance, prominent Suggest goal + demoted visit code, treated-muscles link moved up, safety notice = headline + expander with verbatim wording.)
+BUILD: simplify-cockpit-51   (NO migration; DB 0093; patient home visual pass: one filled hero, hairline rows/dividers for goals/catch-up/safety, outline Suggest button, visit-code chip. Styling only.)
 ==========================================================================
 WHY CUMULATIVE: the build sandbox reset itself between builds last session, so
 the zips tagged 21-26 were each built on a reverted base and are NOT cumulative
 (each missing pieces of the others). This zip re-applies the full intended set
 onto the known-good build-20 base in one pass.
 
-** DEPLOY THIS ZIP. DISCARD 21-49. **  No migration (DB stays 0093). Patient home relevance/declutter pass.
+** DEPLOY THIS ZIP. DISCARD 21-50. **  No migration (DB stays 0093). Patient home visual hierarchy pass.
 
 WHAT'S IN IT
 1. "What's still needed" checklist on new-goal + approve calibration forms,
