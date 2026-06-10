@@ -137,14 +137,6 @@ export default function PatientGoalsPage() {
         </p>
       )}
 
-      {/* Sent-suggestion status — confirms the patient's input arrived,
-          with no clinic→patient messaging. */}
-      {data.pendingSuggestions > 0 && (
-        <p className="mt-4 text-[13px] leading-relaxed text-ink-muted">
-          {t('pendingSuggestions', { count: data.pendingSuggestions })}
-        </p>
-      )}
-
       {/* Suggest a new goal — the prominent patient action, now living
           with the goals it adds to. */}
       <button
@@ -157,6 +149,14 @@ export default function PatientGoalsPage() {
         <span aria-hidden className="mr-2 text-[17px] leading-none">+</span>
         {t('suggestGoal')}
       </button>
+
+      {/* Sent-suggestion status — confirms the patient's input arrived.
+          Below the suggest action. */}
+      {data.pendingSuggestions > 0 && (
+        <p className="mt-4 text-[13px] leading-relaxed text-ink-muted">
+          {t('pendingSuggestions', { count: data.pendingSuggestions })}
+        </p>
+      )}
 
       {graphGoal && (
         <GoalGraphModal

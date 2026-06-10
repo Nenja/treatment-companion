@@ -33,7 +33,7 @@
       "catchUpTitle": "{count, plural, =1 {1 earlier check-in to catch up} other {# earlier check-ins to catch up}}",
       "catchUpWeek": "Week {week}",
       "nextVisit": "Next visit: {date}",
-      "checkinReadyTitle": "Your weekly check-in is ready",
+      "checkinReadyTitle": "Your check-in is ready",
       "checkinReadyBody": "Takes about two minutes.",
       "checkinReadyAction": "Start check-in",
       "nextCheckinTitle": "Next check-in",
@@ -1036,7 +1036,11 @@
     "reminderDayHelper": "We'll remind you about your weekly check-in on this day.",
     "reminderDayUnset": "Choose a day",
     "reminderDaySaved": "Reminder day updated",
-    "reminderDayError": "Could not update your reminder day"
+    "reminderDayError": "Could not update your reminder day",
+    "leaveTitle": "Unsaved changes",
+    "leaveBody": "You have changes that haven't been saved. Leave without saving?",
+    "leaveConfirm": "Leave without saving",
+    "leaveCancel": "Keep editing"
   },
   "help": {
     "buttonLabel": "Help",

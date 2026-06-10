@@ -37,7 +37,7 @@
       "catchUpTitle": "{count, plural, =1 {1 tidligere status at indhente} other {# tidligere status at indhente}}",
       "catchUpWeek": "Uge {week}",
       "nextVisit": "Næste besøg: {date}",
-      "checkinReadyTitle": "Din ugentlige status er klar",
+      "checkinReadyTitle": "Din status er klar",
       "checkinReadyBody": "Tager omkring to minutter.",
       "checkinReadyAction": "Start status",
       "nextCheckinTitle": "Næste status",
@@ -1040,7 +1040,11 @@
     "reminderDayHelper": "Vi minder dig om din ugentlige status på denne dag.",
     "reminderDayUnset": "Vælg en dag",
     "reminderDaySaved": "Påmindelsesdag opdateret",
-    "reminderDayError": "Kunne ikke opdatere din påmindelsesdag"
+    "reminderDayError": "Kunne ikke opdatere din påmindelsesdag",
+    "leaveTitle": "Ikke-gemte ændringer",
+    "leaveBody": "Du har ændringer, der ikke er gemt. Vil du forlade siden uden at gemme?",
+    "leaveConfirm": "Forlad uden at gemme",
+    "leaveCancel": "Bliv og rediger"
   },
   "help": {
     "buttonLabel": "Hjælp",

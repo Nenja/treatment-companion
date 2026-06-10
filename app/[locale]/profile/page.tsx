@@ -5,7 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useUpdateOwnProfile } from '@/lib/supabase/profile';
-import { useOwnSex, useSetOwnSex, type Sex } from '@/lib/supabase/patientInfo';
+import {
+  useOwnSex,
+  useSetOwnSex,
+  type Sex,
+  useOwnVideoConsent,
+  useSetOwnVideoConsent
+} from '@/lib/supabase/patientInfo';
 import { useToast } from '@/components/feedback/Toast';
 import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
 import { VideoConsentSettings } from '@/components/settings/VideoConsentSettings';
@@ -17,20 +23,16 @@ import {
 /**
  * Profile & settings page.
  *
- * One place for a signed-in user to see and adjust their own details:
- *   - Name (editable)
- *   - Email (read-only — it is the sign-in identifier)
- *   - Password (a link to the existing reset flow)
- *   - Profession (therapist accounts only — self-editable label)
- *   - Colour appearance (palette + night mode)
+ * All form fields — name, profession (therapists), sex, reminder day,
+ * and video consent (patients) — are STAGED in local state and written
+ * only when the single "Save changes" button (last on the page) is
+ * tapped. Nothing auto-saves. If the user tries to leave with unsaved
+ * changes (Back, the password link, or closing the tab) they are warned.
  *
- * Text size is deliberately NOT here — it stays in the account menu as
- * an always-one-tap accessibility control. Colours are a settled-once
- * preference and belong on this settings page.
- *
- * Reached from the account menu. Name and profession are saved
- * together via one "Save changes" action; appearance applies
- * immediately on tap (it has its own persistence).
+ * Appearance (colour palette + night mode) is the one exception: it
+ * applies live so the patient can preview it, and persists itself — it
+ * is a display preference, not form data, so it is not under Save and
+ * not part of the unsaved-changes check.
  */
 export default function ProfilePage() {
   const router = useRouter();
@@ -41,34 +43,92 @@ export default function ProfilePage() {
   const updateProfile = useUpdateOwnProfile();
   const toast = useToast();
 
-  // Patient-only: self-reported sex. Only patient accounts have a
-  // patient row, so this section shows for patients alone.
   const isPatient = profile?.role === 'patient';
+  const isTherapist = profile?.role === 'physiotherapist';
+
   const ownSex = useOwnSex(!!isPatient);
   const setOwnSex = useSetOwnSex();
+  const ownConsent = useOwnVideoConsent(!!isPatient);
+  const setOwnConsent = useSetOwnVideoConsent();
   const tSex = useTranslations('sex');
   const tWeekday = useTranslations('weekday');
   const SEX_OPTS: Sex[] = ['female', 'male', 'other', 'preferNotToSay'];
 
-  // Editable fields, seeded from the profile once it loads.
+  // Staged edits — nothing persists until "Save changes".
   const [name, setName] = useState('');
   const [profession, setProfession] = useState<ProfessionCode>(
     'physiotherapist'
   );
   const [professionOther, setProfessionOther] = useState('');
-  const [seeded, setSeeded] = useState(false);
+  const [sex, setSex] = useState<Sex | null>(null);
+  const [reminderDay, setReminderDay] = useState<number | null>(null);
+  const [clinical, setClinical] = useState(false);
+  const [research, setResearch] = useState(false);
 
-  // Seed the form from the profile the first time it is available.
+  const [seeded, setSeeded] = useState(false);
+  const [baseline, setBaseline] = useState('');
+
+  // When set, a confirm dialog is shown; running it performs the queued
+  // navigation (used to guard Back / the password link).
+  const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
+
+  const snapshot = (v: {
+    name: string;
+    profession: ProfessionCode;
+    professionOther: string;
+    sex: Sex | null;
+    reminderDay: number | null;
+    clinical: boolean;
+    research: boolean;
+  }) =>
+    JSON.stringify({
+      n: v.name.trim(),
+      pf: v.profession,
+      po: v.professionOther.trim(),
+      sx: v.sex,
+      rd: v.reminderDay,
+      cc: v.clinical,
+      cr: v.research
+    });
+
+  const current = snapshot({
+    name,
+    profession,
+    professionOther,
+    sex,
+    reminderDay,
+    clinical,
+    research
+  });
+  const dirty = seeded && current !== baseline;
+
+  // Everything the user can edit is loaded? (Sex + consent are async
+  // patient queries; for non-patients they are disabled and idle.)
+  const ready =
+    !!profile && (!isPatient || (!ownSex.isLoading && !ownConsent.isLoading));
+
+  // Seed staged state + the baseline once, when ready.
   useEffect(() => {
-    if (profile && !seeded) {
-      setName(profile.displayName ?? '');
-      if (profile.profession) {
-        setProfession(profile.profession as ProfessionCode);
-      }
-      setProfessionOther(profile.professionOther ?? '');
-      setSeeded(true);
-    }
-  }, [profile, seeded]);
+    if (seeded || !ready || !profile) return;
+    const seedVals = {
+      name: profile.displayName ?? '',
+      profession: (profile.profession as ProfessionCode) ?? 'physiotherapist',
+      professionOther: profile.professionOther ?? '',
+      sex: (ownSex.data ?? null) as Sex | null,
+      reminderDay: profile.notifyWeekday ?? null,
+      clinical: ownConsent.data?.clinical ?? false,
+      research: ownConsent.data?.research ?? false
+    };
+    setName(seedVals.name);
+    setProfession(seedVals.profession);
+    setProfessionOther(seedVals.professionOther);
+    setSex(seedVals.sex);
+    setReminderDay(seedVals.reminderDay);
+    setClinical(seedVals.clinical);
+    setResearch(seedVals.research);
+    setBaseline(snapshot(seedVals));
+    setSeeded(true);
+  }, [seeded, ready, profile, ownSex.data, ownConsent.data]);
 
   // Not signed in → send to login once auth has resolved.
   useEffect(() => {
@@ -77,33 +137,63 @@ export default function ProfilePage() {
     }
   }, [loading, user, router, prefix]);
 
+  // Warn on tab close / refresh with unsaved changes (native prompt —
+  // the browser won't let us style this one).
+  useEffect(() => {
+    if (!dirty) return;
+    const h = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', h);
+    return () => window.removeEventListener('beforeunload', h);
+  }, [dirty]);
+
   if (loading || !user || !profile) {
     return <div className="min-h-dvh bg-cream" />;
   }
 
-  // The non-physician professional role carries an editable profession.
-  const isTherapist = profile.role === 'physiotherapist';
-
   const nameValid = name.trim().length > 0;
   const professionOtherValid =
     !isTherapist || profession !== 'other' || professionOther.trim().length > 0;
-  const canSave = nameValid && professionOtherValid && !updateProfile.isPending;
+  const saving =
+    updateProfile.isPending || setOwnSex.isPending || setOwnConsent.isPending;
+
+  // Guard in-app navigation: if there are unsaved changes, queue the nav
+  // behind the confirm dialog; otherwise go straight away.
+  const attemptLeave = (nav: () => void) => {
+    if (dirty) setPendingLeave(() => nav);
+    else nav();
+  };
 
   const onSave = async () => {
-    if (!canSave) return;
+    if (!dirty || saving) return;
+    if (!nameValid) {
+      toast.error(t('nameRequired'));
+      return;
+    }
+    if (!professionOtherValid) {
+      toast.error(t('professionOtherRequired'));
+      return;
+    }
+    const saved = current;
     try {
       await updateProfile.mutateAsync({
         displayName: name.trim(),
-        // Profession is only sent for therapist accounts; for others it
-        // is left untouched (undefined → not written).
         ...(isTherapist
           ? {
               profession,
               professionOther:
                 profession === 'other' ? professionOther.trim() : null
             }
-          : {})
+          : {}),
+        ...(isPatient ? { notifyWeekday: reminderDay } : {})
       });
+      if (isPatient) {
+        await setOwnSex.mutateAsync(sex);
+        await setOwnConsent.mutateAsync({ clinical, research });
+      }
+      setBaseline(saved);
       toast.success(t('saved'));
     } catch {
       toast.error(t('saveError'));
@@ -121,7 +211,7 @@ export default function ProfilePage() {
         <div className="mx-auto flex max-w-[480px] items-center px-5 py-4">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => attemptLeave(() => router.back())}
             className="text-[14px] font-semibold text-ink-soft hover:text-ink"
           >
             {t('back')}
@@ -134,8 +224,8 @@ export default function ProfilePage() {
           {t('title')}
         </h1>
 
-        {/* Name — editable. */}
-        <div className="mt-7">
+        {/* Name */}
+        <div className="mt-6">
           <label htmlFor="profile-name" className={fieldLabel}>
             {t('nameLabel')}
           </label>
@@ -155,32 +245,32 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* Email — read-only. It is the sign-in identifier. */}
-        <div className="mt-6">
+        {/* Email — read-only, plain text. */}
+        <div className="mt-5">
           <p className={fieldLabel}>{t('emailLabel')}</p>
-          <p className="mt-1.5 rounded-[var(--radius-button)] border border-stone bg-stone-soft px-3 py-2.5 text-[15px] text-ink-soft">
-            {user.email ?? '—'}
-          </p>
+          <p className="mt-1 text-[15px] text-ink">{user.email ?? '\u2014'}</p>
           <p className={fieldHelper}>{t('emailHelper')}</p>
         </div>
 
         {/* Password — links to the existing reset flow. */}
-        <div className="mt-6">
+        <div className="mt-5">
           <p className={fieldLabel}>{t('passwordLabel')}</p>
           <button
             type="button"
             onClick={() =>
-              router.push(
-                prefix ? `${prefix}/reset-password` : '/reset-password'
+              attemptLeave(() =>
+                router.push(
+                  prefix ? `${prefix}/reset-password` : '/reset-password'
+                )
               )
             }
-            className="mt-1.5 flex h-11 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+            className="mt-1.5 flex h-10 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
             {t('passwordChange')}
           </button>
         </div>
 
-        {/* Profession — therapist accounts only, self-editable. */}
+        {/* Profession — therapist accounts only. */}
         {isTherapist && (
           <div className="mt-6">
             <label htmlFor="profile-profession" className={fieldLabel}>
@@ -189,18 +279,14 @@ export default function ProfilePage() {
             <select
               id="profile-profession"
               value={profession}
-              onChange={(e) =>
-                setProfession(e.target.value as ProfessionCode)
-              }
+              onChange={(e) => setProfession(e.target.value as ProfessionCode)}
               className={`${inputClass} font-semibold`}
             >
-              {professionOptions(locale === 'da' ? 'da' : 'en').map(
-                (opt) => (
-                  <option key={opt.code} value={opt.code}>
-                    {opt.label}
-                  </option>
-                )
-              )}
+              {professionOptions(locale === 'da' ? 'da' : 'en').map((opt) => (
+                <option key={opt.code} value={opt.code}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
             <p className={fieldHelper}>{t('professionHelper')}</p>
             {profession === 'other' && (
@@ -223,9 +309,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Sex — patient accounts only. Saves on change via its own
-            patient-scoped action (independent of the name/profession
-            Save button). */}
+        {/* Sex — patient accounts only. */}
         {isPatient && (
           <div className="mt-6">
             <label htmlFor="profile-sex" className={fieldLabel}>
@@ -233,15 +317,9 @@ export default function ProfilePage() {
             </label>
             <select
               id="profile-sex"
-              value={ownSex.data ?? ''}
-              disabled={ownSex.isLoading || setOwnSex.isPending}
-              onChange={(e) => {
-                const v = (e.target.value || null) as Sex | null;
-                setOwnSex.mutate(v, {
-                  onSuccess: () => toast.success(t('sexSaved')),
-                  onError: () => toast.error(t('sexError'))
-                });
-              }}
+              value={sex ?? ''}
+              disabled={ownSex.isLoading}
+              onChange={(e) => setSex((e.target.value || null) as Sex | null)}
               className={inputClass}
             >
               <option value="">{t('sexUnset')}</option>
@@ -255,9 +333,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Reminder day — patient only. The weekly check-in reminder
-            fires on this weekday. Saves on change (independent of the
-            name/profession Save button). */}
+        {/* Reminder day — patient accounts only. */}
         {isPatient && (
           <div className="mt-6">
             <label htmlFor="profile-reminder-day" className={fieldLabel}>
@@ -265,19 +341,12 @@ export default function ProfilePage() {
             </label>
             <select
               id="profile-reminder-day"
-              value={profile.notifyWeekday ?? ''}
-              disabled={updateProfile.isPending}
-              onChange={(e) => {
-                const v = e.target.value === '' ? null : Number(e.target.value);
-                if (v === null) return;
-                updateProfile.mutate(
-                  { notifyWeekday: v },
-                  {
-                    onSuccess: () => toast.success(t('reminderDaySaved')),
-                    onError: () => toast.error(t('reminderDayError'))
-                  }
-                );
-              }}
+              value={reminderDay ?? ''}
+              onChange={(e) =>
+                setReminderDay(
+                  e.target.value === '' ? null : Number(e.target.value)
+                )
+              }
               className={inputClass}
             >
               <option value="" disabled>
@@ -293,24 +362,23 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Save — applies name (and profession for therapists). */}
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={!canSave}
-          className="mt-7 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {updateProfile.isPending ? t('saving') : t('save')}
-        </button>
-
+        {/* Video consent — patient accounts only. Staged here; saved by
+            the page's Save button. */}
         {isPatient && (
           <div className="mt-10 border-t border-stone/70 pt-7">
-            <VideoConsentSettings />
+            <VideoConsentSettings
+              clinical={clinical}
+              research={research}
+              onChange={(next) => {
+                setClinical(next.clinical);
+                setResearch(next.research);
+              }}
+            />
           </div>
         )}
 
-        {/* Appearance — colour palette + night mode. Applies on tap;
-            no Save needed (it has its own persistence). */}
+        {/* Appearance — colour palette + night mode. Applies live and
+            persists itself; not under Save. */}
         <div className="mt-10 border-t border-stone/70 pt-7">
           <h2 className="text-[13px] font-semibold text-ink-soft">
             {t('appearanceHeading')}
@@ -320,7 +388,57 @@ export default function ProfilePage() {
             <AppearanceSettings />
           </div>
         </div>
+
+        {/* Save — the single write for every form field above. Disabled
+            until something changes. Last on the page. */}
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={!dirty || saving}
+          className="mt-10 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {saving ? t('saving') : t('save')}
+        </button>
       </main>
+
+      {/* Unsaved-changes guard for in-app navigation. */}
+      {pendingLeave && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-ink/45 px-5"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="leave-title"
+        >
+          <div className="w-full max-w-[360px] rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5">
+            <h2 id="leave-title" className="font-display text-[18px] text-ink">
+              {t('leaveTitle')}
+            </h2>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-ink-soft">
+              {t('leaveBody')}
+            </p>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingLeave(null)}
+                className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+              >
+                {t('leaveCancel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const nav = pendingLeave;
+                  setPendingLeave(null);
+                  nav?.();
+                }}
+                className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
+              >
+                {t('leaveConfirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,7 +9,6 @@ import { usePatientHomeData } from '@/lib/supabase/patientHome';
 import { AppShell } from '@/components/layout/AppShell';
 import { PatientHomeSkeleton } from '@/components/layout/PatientHomeSkeleton';
 import { SafetyNotice } from '@/components/layout/SafetyNotice';
-import { TreatedMusclesModal } from '@/components/cards/TreatedMusclesModal';
 import { CheckinPromptCard } from '@/components/cards/CheckinPromptCard';
 import { CatchUpCard } from '@/components/cards/CatchUpCard';
 import { NotificationDayModal } from '@/components/cards/NotificationDayModal';
@@ -25,8 +24,6 @@ export default function PatientHomePage() {
   const { user, profile, loading: authLoading } = useAuth();
   const homeQuery = usePatientHomeData(profile?.id ?? null, profile?.role);
 
-  // Whether the read-only "treated muscles" pop-up is open.
-  const [showMuscles, setShowMuscles] = useState(false);
   // Weekly-reminder-day modal visibility + per-session dismissal.
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [notifModalDone, setNotifModalDone] = useState(false);
@@ -314,19 +311,6 @@ export default function PatientHomePage() {
         </span>
       </button>
 
-      {/* See what was treated — quiet reference link below the goals
-          entry. Opens a read-only pop-up. */}
-      {data.latestTreatment && (
-        <button
-          type="button"
-          onClick={() => setShowMuscles(true)}
-          className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-sage-deep hover:text-ink"
-        >
-          {t('viewTreatedMuscles')}
-          <span aria-hidden>→</span>
-        </button>
-      )}
-
       {/* Safety notice + a quiet data & privacy link — the two static
           informational items grouped at the foot of the home. */}
       <div className="mt-10">
@@ -354,15 +338,6 @@ export default function PatientHomePage() {
         />
       )}
 
-      {/* Read-only list of muscles treated at the last treatment. */}
-      {showMuscles && data.latestTreatment && (
-        <TreatedMusclesModal
-          date={data.latestTreatment.date}
-          muscles={data.latestTreatment.muscles}
-          locale={locale}
-          onClose={() => setShowMuscles(false)}
-        />
-      )}
     </AppShell>
   );
 }
