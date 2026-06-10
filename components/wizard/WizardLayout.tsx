@@ -33,6 +33,8 @@ interface WizardLayoutProps {
    * always safe — this just makes that visible.
    */
   forgiving?: boolean;
+  /** Hide the progress strip, keeping only the "Step X of X" counter. */
+  hideStepBar?: boolean;
   /** When set, a "?" help button appears next to the account menu,
    *  opening the help modal for that page. */
   helpPageKey?: string;
@@ -49,6 +51,7 @@ export function WizardLayout({
   primaryAction,
   stepLabels,
   forgiving = false,
+  hideStepBar = false,
   helpPageKey,
   children
 }: WizardLayoutProps) {
@@ -79,8 +82,8 @@ export function WizardLayout({
           </span>
         </div>
 
-        {/* Progress — named list when stepLabels given, else dots. */}
-        {stepLabels && stepLabels.length > 0 ? (
+        {/* Progress — list/dots; suppressed when hideStepBar set. */}
+        {hideStepBar ? null : stepLabels && stepLabels.length > 0 ? (
           <div className="mx-auto max-w-[480px] px-5 pb-4">
             <ol className="flex flex-col gap-1">
               {stepLabels.map((s, i) => {
