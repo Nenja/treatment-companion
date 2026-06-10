@@ -12,7 +12,8 @@ import { SafetyNotice } from '@/components/layout/SafetyNotice';
 import { TreatedMusclesModal } from '@/components/cards/TreatedMusclesModal';
 import { CheckinPromptCard } from '@/components/cards/CheckinPromptCard';
 import { CatchUpCard } from '@/components/cards/CatchUpCard';
-import { NotificationsCard } from '@/components/cards/NotificationsCard';
+import { NotificationDayModal } from '@/components/cards/NotificationDayModal';
+import { pushSupported } from '@/lib/pwa';
 import { Card } from '@/components/cards/Card';
 import { OnboardingWizard } from '@/components/feedback/OnboardingWizard';
 
@@ -26,6 +27,9 @@ export default function PatientHomePage() {
 
   // Whether the read-only "treated muscles" pop-up is open.
   const [showMuscles, setShowMuscles] = useState(false);
+  // Weekly-reminder-day modal visibility + per-session dismissal.
+  const [showNotifModal, setShowNotifModal] = useState(false);
+  const [notifModalDone, setNotifModalDone] = useState(false);
 
   // Auth redirects: not signed in → /login; clinician → /clinician.
   useEffect(() => {
@@ -42,6 +46,19 @@ export default function PatientHomePage() {
       router.replace(locale === 'en' ? '/physio' : `/${locale}/physio`);
     }
   }, [authLoading, user, profile, router, locale]);
+
+  // Weekly-reminder-day modal: show to a patient who hasn't chosen a
+  // reminder day, on a push-capable browser. Re-shown every login until
+  // a day is set (skip only dismisses for the session). Client-gated to
+  // avoid an SSR/hydration flip.
+  useEffect(() => {
+    if (notifModalDone) return;
+    const eligible =
+      profile?.role === 'patient' &&
+      profile?.notifyWeekday == null &&
+      pushSupported();
+    setShowNotifModal(Boolean(eligible));
+  }, [profile?.role, profile?.notifyWeekday, notifModalDone]);
 
   // While auth is resolving OR the user is being redirected away,
   // render a skeleton placeholder so we don't flash "no goals" or an
@@ -231,54 +248,13 @@ export default function PatientHomePage() {
           nextDueDate={nextDueDate}
           patientId={data.patient.id}
           hasActiveGoals={data.goals.length > 0}
+          catchUp={
+            data.catchUpPrompts.length > 0 && data.goals.length > 0 ? (
+              <CatchUpCard prompts={data.catchUpPrompts} />
+            ) : undefined
+          }
         />
       </div>
-
-      {/* Catch-up card — older pending check-ins. Sits right under the
-          primary CTA because it IS check-in work. */}
-      {data.catchUpPrompts.length > 0 && data.goals.length > 0 && (
-        <CatchUpCard prompts={data.catchUpPrompts} />
-      )}
-
-      {/* Show visit code — moved up here as a utility row beside the
-          catch-up so it stays obvious. Visit-time only; navigates to the
-          code screen. */}
-      <button
-        type="button"
-        onClick={() =>
-          router.push(
-            locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
-          )
-        }
-        className="flex w-full items-center justify-between border-b border-stone/60 py-4 text-left"
-      >
-        <span className="flex items-center gap-2.5 text-[15px] font-semibold text-ink">
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-            className="text-sage-deep"
-          >
-            <rect x="3" y="6" width="18" height="12" rx="2" />
-            <path d="M7 10v4M11 10v4M15 10v4M19 10v4" />
-          </svg>
-          {t('showVisitCode')}
-        </span>
-        <span aria-hidden className="text-[17px] text-ink-soft">
-          →
-        </span>
-      </button>
-
-      {/* Notifications opt-in — secondary. Demoted below the check-in
-          CTA and styled quietly so it doesn't compete with the primary
-          action. Hidden once subscribed or dismissed. */}
-      <NotificationsCard profileId={data.patient.id} />
 
       {/* Your goals — one prominent entry to the dedicated goals page,
           which holds the goal cards, progress graphs and the suggest
@@ -299,6 +275,41 @@ export default function PatientHomePage() {
           </span>
         </span>
         <span aria-hidden className="shrink-0 text-[20px] leading-none text-ink-soft">
+          →
+        </span>
+      </button>
+
+      {/* Show visit code — a utility row below the goals entry, kept
+          obvious (full-width, icon, chevron). Visit-time only; navigates
+          to the code screen. */}
+      <button
+        type="button"
+        onClick={() =>
+          router.push(
+            locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
+          )
+        }
+        className="mt-3 flex w-full items-center justify-between border-b border-stone/60 py-4 text-left"
+      >
+        <span className="flex items-center gap-2.5 text-[15px] font-semibold text-ink">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+            className="text-sage-deep"
+          >
+            <rect x="3" y="6" width="18" height="12" rx="2" />
+            <path d="M7 10v4M11 10v4M15 10v4M19 10v4" />
+          </svg>
+          {t('showVisitCode')}
+        </span>
+        <span aria-hidden className="text-[17px] text-ink-soft">
           →
         </span>
       </button>
@@ -325,11 +336,23 @@ export default function PatientHomePage() {
           onClick={() =>
             router.push(locale === 'en' ? '/privacy' : `/${locale}/privacy`)
           }
-          className="mt-4 inline-flex items-center text-[13px] font-medium text-ink-muted hover:text-ink-soft"
+          className="mt-4 flex w-full items-center justify-center text-[13px] font-medium text-ink-muted hover:text-ink-soft"
         >
           {t('dataPrivacy')}
         </button>
       </div>
+
+      {/* Weekly check-in reminder day — shown on login to a patient who
+          hasn't chosen a reminder day yet (re-shown until set). Sits in
+          the cycle branch, so it only appears once there are check-ins. */}
+      {showNotifModal && (
+        <NotificationDayModal
+          onClose={() => {
+            setNotifModalDone(true);
+            setShowNotifModal(false);
+          }}
+        />
+      )}
 
       {/* Read-only list of muscles treated at the last treatment. */}
       {showMuscles && data.latestTreatment && (

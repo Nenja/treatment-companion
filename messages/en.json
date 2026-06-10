@@ -1031,7 +1031,12 @@
     "sexHelper": "Optional. Used for your care record and, in pseudonymised form, for research.",
     "sexUnset": "Prefer not to answer now",
     "sexSaved": "Saved",
-    "sexError": "Could not save. Please try again."
+    "sexError": "Could not save. Please try again.",
+    "reminderDayLabel": "Reminder day",
+    "reminderDayHelper": "We'll remind you about your weekly check-in on this day.",
+    "reminderDayUnset": "Choose a day",
+    "reminderDaySaved": "Reminder day updated",
+    "reminderDayError": "Could not update your reminder day"
   },
   "help": {
     "buttonLabel": "Help",
@@ -1407,7 +1412,13 @@
     "iosStep3": "Open the app from the home screen, sign in, and tap “Enable notifications” again.",
     "notConfigured": "Notifications are not configured (missing VAPID key).",
     "couldNotEnable": "Could not enable notifications.",
-    "genericError": "Something went wrong."
+    "genericError": "Something went wrong.",
+    "dayTitle": "Weekly check-in reminder",
+    "dayBody": "Pick a day to be reminded about your check-in. We'll send one gentle notification that day.",
+    "dayTurnOn": "Turn on reminders",
+    "daySkip": "Skip for now",
+    "dayDone": "Done",
+    "dayChangeNote": "You can change this anytime in settings."
   },
   "a11y": {
     "loading": "Loading…",
@@ -1645,5 +1656,25 @@
     "profileHeading": "Video consent",
     "profileHelper": "Choose whether your care team may record videos of you, and whether they may be used for research. You can change this at any time.",
     "save": "Save consent"
+  },
+  "weekday": {
+    "short": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    },
+    "long": {
+      "0": "Sunday",
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday"
+    }
   }
 }

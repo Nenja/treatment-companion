@@ -47,6 +47,7 @@ export default function ProfilePage() {
   const ownSex = useOwnSex(!!isPatient);
   const setOwnSex = useSetOwnSex();
   const tSex = useTranslations('sex');
+  const tWeekday = useTranslations('weekday');
   const SEX_OPTS: Sex[] = ['female', 'male', 'other', 'preferNotToSay'];
 
   // Editable fields, seeded from the profile once it loads.
@@ -251,6 +252,44 @@ export default function ProfilePage() {
               ))}
             </select>
             <p className={fieldHelper}>{t('sexHelper')}</p>
+          </div>
+        )}
+
+        {/* Reminder day — patient only. The weekly check-in reminder
+            fires on this weekday. Saves on change (independent of the
+            name/profession Save button). */}
+        {isPatient && (
+          <div className="mt-6">
+            <label htmlFor="profile-reminder-day" className={fieldLabel}>
+              {t('reminderDayLabel')}
+            </label>
+            <select
+              id="profile-reminder-day"
+              value={profile.notifyWeekday ?? ''}
+              disabled={updateProfile.isPending}
+              onChange={(e) => {
+                const v = e.target.value === '' ? null : Number(e.target.value);
+                if (v === null) return;
+                updateProfile.mutate(
+                  { notifyWeekday: v },
+                  {
+                    onSuccess: () => toast.success(t('reminderDaySaved')),
+                    onError: () => toast.error(t('reminderDayError'))
+                  }
+                );
+              }}
+              className={inputClass}
+            >
+              <option value="" disabled>
+                {t('reminderDayUnset')}
+              </option>
+              {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+                <option key={d} value={d}>
+                  {tWeekday(`long.${d}`)}
+                </option>
+              ))}
+            </select>
+            <p className={fieldHelper}>{t('reminderDayHelper')}</p>
           </div>
         )}
 

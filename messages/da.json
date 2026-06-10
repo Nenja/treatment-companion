@@ -1035,7 +1035,12 @@
     "sexHelper": "Valgfrit. Bruges til din behandlingsjournal og, i pseudonymiseret form, til forskning.",
     "sexUnset": "Ønsker ikke at svare nu",
     "sexSaved": "Gemt",
-    "sexError": "Kunne ikke gemme. Prøv venligst igen."
+    "sexError": "Kunne ikke gemme. Prøv venligst igen.",
+    "reminderDayLabel": "Påmindelsesdag",
+    "reminderDayHelper": "Vi minder dig om din ugentlige status på denne dag.",
+    "reminderDayUnset": "Vælg en dag",
+    "reminderDaySaved": "Påmindelsesdag opdateret",
+    "reminderDayError": "Kunne ikke opdatere din påmindelsesdag"
   },
   "help": {
     "buttonLabel": "Hjælp",
@@ -1411,7 +1416,13 @@
     "iosStep3": "Åbn appen fra hjemmeskærmen, log ind, og tryk på “Aktivér notifikationer” igen.",
     "notConfigured": "Notifikationer er ikke konfigureret (manglende VAPID-nøgle).",
     "couldNotEnable": "Notifikationer kunne ikke aktiveres.",
-    "genericError": "Noget gik galt."
+    "genericError": "Noget gik galt.",
+    "dayTitle": "Påmindelse om ugentlig status",
+    "dayBody": "Vælg en dag, hvor du vil mindes om din status. Vi sender én venlig notifikation den dag.",
+    "dayTurnOn": "Slå påmindelser til",
+    "daySkip": "Spring over for nu",
+    "dayDone": "Færdig",
+    "dayChangeNote": "Du kan altid ændre dette i indstillinger."
   },
   "a11y": {
     "loading": "Indlæser…",
@@ -1649,5 +1660,25 @@
     "profileHeading": "Videosamtykke",
     "profileHelper": "Vælg, om dit behandlingsteam må optage videoer af dig, og om de må bruges til forskning. Du kan ændre dette når som helst.",
     "save": "Gem samtykke"
+  },
+  "weekday": {
+    "short": {
+      "0": "Søn",
+      "1": "Man",
+      "2": "Tir",
+      "3": "Ons",
+      "4": "Tor",
+      "5": "Fre",
+      "6": "Lør"
+    },
+    "long": {
+      "0": "Søndag",
+      "1": "Mandag",
+      "2": "Tirsdag",
+      "3": "Onsdag",
+      "4": "Torsdag",
+      "5": "Fredag",
+      "6": "Lørdag"
+    }
   }
 }
