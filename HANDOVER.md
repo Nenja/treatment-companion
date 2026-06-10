@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-51` (no migration; DB 0093). Visual pass on the patient home to fix 'blockiness': only the check-in stays a filled card; catch-up, goals and the safety notice become hairline rows/dividers; 'Suggest a goal' is an outline button; 'Show visit code' returns as a small outlined chip. Styling only. See §7._
+> _Last updated for build tag: `simplify-cockpit-52` (no migration; DB 0093). Patient account menu de-densified: role line dropped for patients, text-size + night-mode grouped under one 'Display' section, link rows lightened. Visit code removed from the menu (home chip is now the only entry). 'Your data & privacy' moved out of the menu to a quiet i18n'd link under the home safety notice. Profile page reviewed, left as-is. See §7._
 
 ---
 
@@ -848,6 +848,17 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Zip:** `treatment-companion-simplify-cockpit-52.zip`  ·  **Tag:** `simplify-cockpit-52`  ·  **Migration: none (DB 0093).** UI + i18n, cumulative (supersedes 21–51).
+- **Patient account menu (`AccountMenu`) de-densified:**
+    - Role line (`PATIENT`) hidden for patients (`profile.role !== 'patient'`); kept for clinician/physio/admin.
+    - Text size + night mode combined into one bordered **"Display"** section (single heading + two sub-labelled control rows) instead of two separate bordered blocks. New i18n `appearance.displayLabel` (EN "Display" / DA "Visning").
+    - Link rows lightened: `font-semibold`→`font-medium`, dividers `border-stone/70`→`/50`, and the tutorial row normalised to `border-b` so dividers don't double up after removals.
+    - **Visit code removed from the menu** — the home-screen chip (cockpit-50/51) is now the single entry point. `accountMenu.visitCode` key left unused.
+    - **"Your data & privacy" removed from the menu** (it was the one hardcoded-English string) and **moved to a quiet link under the home safety notice**, grouped with it as the two static informational items at the foot of the home. New i18n `patient.home.dataPrivacy` (EN "Your data & privacy" / DA "Dine data og privatliv"). Routes to `/privacy`. Note: privacy is now reachable from the home screen rather than globally from the menu.
+    - Profile/settings page reviewed and left as-is (clean settings form, not blocky). Open minor item: for patients the Save button only persists the name while Sex auto-saves on change — left unchanged, can unify later if wanted.
+    - **⚠ QA:** open the patient menu — no role line, one "Display" group, lighter link list, no visit-code or privacy rows; the home foot shows the safety notice + a quiet "Your data & privacy" link; both visit-code chip and privacy link route correctly. DA strings first-pass.
+
 
 - **Zip:** `treatment-companion-simplify-cockpit-51.zip`  ·  **Tag:** `simplify-cockpit-51`  ·  **Migration: none (DB 0093).** Styling only, cumulative (supersedes 21–50).
 - **Patient home visual hierarchy** — fixes the "stack of equal filled boxes" look. No logic/i18n changes; classNames only.
