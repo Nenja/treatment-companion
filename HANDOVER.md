@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-53` (no migration; DB 0093). Patient home goals changed from bare divided rows to outlined (no-fill) cards — they read better with a hairline border for definition. Heading rule dropped. Styling only. See §7._
+> _Last updated for build tag: `simplify-cockpit-54` (no migration; DB 0093). Patient goals moved off the home onto a dedicated `/goals` page reached by a prominent "Your goals" button; home top tightened so Start check-in sits above the fold. New route + relocated components, styling/structure only. See §7._
 
 ---
 
@@ -848,6 +848,15 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Zip:** `treatment-companion-simplify-cockpit-54.zip`  ·  **Tag:** `simplify-cockpit-54`  ·  **Migration: none (DB 0093).** New route + UI restructure, cumulative (supersedes 21–53).
+- **Goals moved to their own page.** New `app/[locale]/goals/page.tsx` (patient-only, same auth guards + `usePatientHomeData` source as the home). It holds the goal cards, each goal's read-only `GoalGraphModal`, the sent-suggestion status, the weeks-1–2 progress reassurance, and the "Suggest a new goal" action. Has a "← Home" back link at top (new i18n `patient.home.navHome`, EN "Home" / DA "Hjem"). Builds as `/en/goals` + `/da/goals` (page count 60 → 62).
+- **Home (`app/[locale]/page.tsx`) reworked:**
+  - The whole inline goals `<section>` (cards, reassurance, pending-status, suggest button) is gone, replaced by one prominent outlined **"Your goals" button** with a live count subtitle (new i18n `patient.home.goalsActiveCount` = `{count, plural, =0 {No goals yet} one {# active goal} other {# active goals}}`; DA first-pass). Button is outlined (`border-sage/50`), deliberately quieter than the filled check-in hero so the check-in stays the primary tap. Routes to `/goals`.
+  - **Top tightened** so Start check-in sits above the fold: greeting `text-[30px]` → `text-[24px]`; the "See what was treated" link moved from above the greeting down to below the goals button (quiet reference, `mt-4`). Catch-up card already sat directly under the check-in (unchanged).
+  - Visit-code chip kept on the home; the read-only `GoalGraphModal` + `GoalCard` import + `graphGoal` state removed from the home (now only on `/goals`). `TreatedMusclesModal` + `showMuscles` stay (the treated link).
+- **⚠ QA (cannot verify from here):** real navigation home→/goals and the "← Home" back button on Firefox mobile; the goals-button count rendering for 0 / 1 / many; that Start check-in now actually clears the fold on a real device; DA strings `navHome` / `goalsActiveCount` need native review (the DA plural for count=1 is first-pass).
+
 
 - **Zip:** `treatment-companion-simplify-cockpit-53.zip`  ·  **Tag:** `simplify-cockpit-53`  ·  **Migration: none (DB 0093).** Styling only, cumulative (supersedes 21–52).
 - **Goal cards = outlined, no fill.** The cockpit-51 bare divided-row treatment read as undefined ("no outlining"); reverted to the alternative discussed: each goal is a card with a full hairline `border border-stone` and transparent interior (the original `p-5` card minus `bg-cream-soft`), text back to 20px. The goals `<ul>` is `space-y-3` again (spaced cards, not `divide-y` rows), and the hairline rule under the "Your goals" heading is dropped (the cards now provide the definition). `GoalCard.tsx` + `app/[locale]/page.tsx` only.
