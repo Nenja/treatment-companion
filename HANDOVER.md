@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-47` (no migration; DB 0093). First patient-page polish: the weekly check-in opens the optional video in a pop-up (was inline, made the rating step tall) and the WizardLayout step bar is hidden so only 'Step X of X' shows. See §7._
+> _Last updated for build tag: `simplify-cockpit-48` (no migration; DB 0093). Patient check-in rating step decluttered: the goal is now the heading, the clinician question is the only prompt, and the generic title, helper line and 'last week you rated…' chip are removed. The week banner now appears only on a catch-up week. See §7._
 
 ---
 
@@ -848,6 +848,15 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Zip:** `treatment-companion-simplify-cockpit-48.zip`  ·  **Tag:** `simplify-cockpit-48`  ·  **Migration: none (DB 0093).** UI-only, cumulative (supersedes 21–47).
+- **Check-in rating step decluttered** (`app/[locale]/checkin`, `WizardLayout`, `GoalRatingPicker`, `GasGoalRatingPicker`):
+    - **Goal is the heading.** `WizardLayout` gained `hideHeader`; the check-in sets it on the goal-rating steps (not the training / comment steps), so the generic "How did this week go for this goal?" title and the "Tap the number…" helper no longer render. The picker's goal text is promoted to the page `<h1>` (22px) with the read-aloud button beside it; the clinician's NRS/GAS question is the single prompt below it.
+    - **Previous-rating chip removed.** The "Week N, you rated this X" line is gone from `GoalRatingPicker` (prop + render dropped) — it anchored/biased the new rating. `goal.previousRating` data is untouched, just no longer shown.
+    - **Week banner now conditional.** `{weekBanner}` → `{isCatchUp && weekBanner}` where `isCatchUp = Boolean(promptIdParam)`. On a normal current-week check-in (no `?promptId`) it's hidden; on a catch-up week reached from the home page (which routes via `?promptId=X`) it returns as the safety cue. ⚠ Limitation: if a behind patient's default check-in ever resolves to a past prompt with no promptId, the banner won't show — in practice the home page surfaces past weeks as catch-up prompts (promptId), so the default is the current week.
+    - **Video button subtitle** trimmed: `addVideoHint` "Optional — film the movement task" → "Optional" (EN) / "Valgfrit" (DA).
+    - **⚠ QA:** rating step is much shorter; heading = goal; only the clinician question remains as prose; no previous-score line; week line appears only when you open a catch-up week from home; training/comment steps still show their titles. The "0 · WORST / 10 · BEST" endpoint labels remain hardcoded English in the pickers (pre-existing, not addressed here).
+
 
 - **Zip:** `treatment-companion-simplify-cockpit-47.zip`  ·  **Tag:** `simplify-cockpit-47`  ·  **Migration: none (DB 0093).** UI-only, cumulative (supersedes 21–46).
 - First **patient-facing** change — weekly **check-in** (`app/[locale]/checkin`, phone wizard):
