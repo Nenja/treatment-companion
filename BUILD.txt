@@ -1,11 +1,11 @@
-BUILD: simplify-cockpit-46   (NO migration; DB 0093; treatment page: moved title/subtitle/Therapist-input into the rail top to remove the blank band above the form; added "Note for the therapist" to the rail nav.)
+BUILD: simplify-cockpit-47   (NO migration; DB 0093; patient check-in: optional video -> pop-up; WizardLayout step bar hidden so only "Step X of X" shows.)
 ==========================================================================
 WHY CUMULATIVE: the build sandbox reset itself between builds last session, so
 the zips tagged 21-26 were each built on a reverted base and are NOT cumulative
 (each missing pieces of the others). This zip re-applies the full intended set
 onto the known-good build-20 base in one pass.
 
-** DEPLOY THIS ZIP. DISCARD 21-31. **  Video chip moved into the goal-card header; video-delete is now a visible button in the player (open a "Since last visit" video -> Delete).
+** DEPLOY THIS ZIP. DISCARD 21-46. **  No migration (DB stays 0093). Patient check-in: video pop-up + simplified step bar.
 
 WHAT'S IN IT
 1. "What's still needed" checklist on new-goal + approve calibration forms,

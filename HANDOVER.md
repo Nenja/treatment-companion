@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-46` (no migration; DB 0093). Cumulative; supersedes 21–45. Treatment page: moved the page title/subtitle/Therapist-input into the top of the left rail (removes the blank band that left the form column starting low), and added 'Note for the therapist' to the rail section nav (jumps to the handoff). See §7._
+> _Last updated for build tag: `simplify-cockpit-47` (no migration; DB 0093). First patient-page polish: the weekly check-in opens the optional video in a pop-up (was inline, made the rating step tall) and the WizardLayout step bar is hidden so only 'Step X of X' shows. See §7._
 
 ---
 
@@ -848,6 +848,14 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Zip:** `treatment-companion-simplify-cockpit-47.zip`  ·  **Tag:** `simplify-cockpit-47`  ·  **Migration: none (DB 0093).** UI-only, cumulative (supersedes 21–46).
+- First **patient-facing** change — weekly **check-in** (`app/[locale]/checkin`, phone wizard):
+    - **Optional video is now a pop-up.** The inline recorder on a goal's rating step (which made the step tall) becomes a compact button ("Add a short video" / "Video added" once recorded) opening `CheckinVideoModal` (bottom-sheet on phone) with the baseline reference + recorder, kept inside the existing `PatientVideoConsentGate`. Recording lives in the same `videos` state, so closing/reopening keeps it.
+    - **Step bar simplified.** `WizardLayout` gained `hideStepBar`; the check-in passes it and drops `stepLabels`, so the named per-step list is gone — only "Step X of X" remains. `suggest-goal` (also uses WizardLayout) is unchanged.
+    - New i18n `patient.checkin`: addVideoTitle/addVideoHint, videoAddedTitle/videoAddedHint, videoModalTitle, videoModalDone (EN + DA, DA first-pass). (`tTraining('stepLabel')`/`t('summaryStepLabel')` now unused, left in.)
+    - **⚠ QA:** rating step shorter; button opens the pop-up, records, shows "Video added"; wizard top shows only Step X of X.
+
 
 - **Zip:** `treatment-companion-simplify-cockpit-46.zip`
 - **Tag:** `simplify-cockpit-46`  ·  **Migration: none (DB 0093).** UI-only.

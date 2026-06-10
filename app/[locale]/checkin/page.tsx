@@ -118,6 +118,7 @@ function CheckinPageInner() {
   // persisted draft) because Blobs can't be serialised to storage and
   // are only relevant in this session, right before submit.
   const [videos, setVideos] = useState<Record<string, RecordedVideo>>({});
+  const [videoModalGoalId, setVideoModalGoalId] = useState<string | null>(null);
   // Whether the "leave this check-in?" confirmation dialog is open. Must
   // live here, above every early return below, so the hook order is stable
   // across the loading → loaded transition (React rules of hooks).
@@ -399,29 +400,25 @@ function CheckinPageInner() {
         )}
         {picker}
         {showVideo && (
-          <PatientVideoConsentGate>
-            {goal.baselineVideoPath && (
-              <BaselineReference path={goal.baselineVideoPath} />
-            )}
-          <GoalVideoRecorder
-            value={videos[goal.id] ?? null}
-            protocol={{
-              instruction: goal.videoTaskInstruction,
-              setup: goal.videoTaskSetup,
-              seconds: goal.videoTaskSeconds
-            }}
-            onChange={(v) =>
-              setVideos((prev) => {
-                if (!v) {
-                  const next = { ...prev };
-                  delete next[goal.id];
-                  return next;
-                }
-                return { ...prev, [goal.id]: v };
-              })
-            }
-          />
-          </PatientVideoConsentGate>
+          <button
+            type="button"
+            onClick={() => setVideoModalGoalId(goal.id)}
+            className="mt-5 flex w-full items-center justify-between gap-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft px-4 py-3 text-left hover:bg-stone-soft/40"
+          >
+            <span className="min-w-0">
+              <span className="flex items-center gap-2 text-[15px] font-semibold text-ink">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <rect x="2" y="6" width="14" height="12" rx="2" />
+                  <path d="M16 10l6-3v10l-6-3z" />
+                </svg>
+                {videos[goal.id] ? t('videoAddedTitle') : t('addVideoTitle')}
+              </span>
+              <span className="mt-0.5 block text-[13px] text-ink-muted">
+                {videos[goal.id] ? t('videoAddedHint') : t('addVideoHint')}
+              </span>
+            </span>
+            <span aria-hidden className="shrink-0 text-[18px] text-ink-muted">›</span>
+          </button>
         )}
       </>
     );
@@ -525,6 +522,10 @@ function CheckinPageInner() {
     );
   }
 
+  const videoModalGoal = videoModalGoalId
+    ? (activeGoals.find((g) => g.id === videoModalGoalId) ?? null)
+    : null;
+
   return (
     <>
       <WizardLayout
@@ -536,22 +537,7 @@ function CheckinPageInner() {
         onCancel={onCancel}
         forgiving={false}
         helpPageKey="checkin"
-        stepLabels={[
-          ...activeGoals.map((g) => ({
-            label: g.patientFacingText,
-            done: typeof draft.ratings[g.id] === 'number'
-          })),
-          {
-            label: tTraining('stepLabel'),
-            done: step > trainingStep
-          },
-          {
-            label: t('summaryStepLabel'),
-            // The summary step is "done" only once submitted; while the
-            // patient is on it, it just shows as current.
-            done: false
-          }
-        ]}
+        hideStepBar
         primaryAction={{
           label: isLastStep
             ? submitMutation.isPending
@@ -569,6 +555,23 @@ function CheckinPageInner() {
         <CancelCheckinDialog
           onLeave={goHomeHard}
           onKeep={() => setConfirmLeave(false)}
+        />
+      )}
+      {videoModalGoal && (
+        <CheckinVideoModal
+          goal={videoModalGoal}
+          value={videos[videoModalGoal.id] ?? null}
+          onChange={(v) =>
+            setVideos((prev) => {
+              if (!v) {
+                const next = { ...prev };
+                delete next[videoModalGoal.id];
+                return next;
+              }
+              return { ...prev, [videoModalGoal.id]: v };
+            })
+          }
+          onClose={() => setVideoModalGoalId(null)}
         />
       )}
     </>
@@ -621,6 +624,80 @@ function CancelCheckinDialog({
             className="flex h-12 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
           >
             {t('cancelConfirmDiscard')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CheckinVideoModal({
+  goal,
+  value,
+  onChange,
+  onClose
+}: {
+  goal: {
+    id: string;
+    baselineVideoPath: string | null;
+    videoTaskInstruction: string | null;
+    videoTaskSetup: string | null;
+    videoTaskSeconds: number | null;
+  };
+  value: RecordedVideo | null;
+  onChange: (v: RecordedVideo | null) => void;
+  onClose: () => void;
+}) {
+  const t = useTranslations('patient.checkin');
+  const tA11y = useTranslations('a11y');
+  const containerRef = useModalA11y(onClose);
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 sm:items-center sm:p-4">
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('videoModalTitle')}
+        className="flex max-h-[92vh] w-full max-w-[480px] flex-col overflow-hidden rounded-t-[var(--radius-card)] border border-stone bg-cream sm:rounded-[var(--radius-card)]"
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-stone/70 px-5 py-3">
+          <span className="font-display text-[18px] text-ink">
+            {t('videoModalTitle')}
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={tA11y('close')}
+            className="rounded-full p-1 text-ink-muted hover:bg-stone-soft hover:text-ink"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="overflow-y-auto px-5 py-4">
+          <PatientVideoConsentGate>
+          {goal.baselineVideoPath && (
+            <BaselineReference path={goal.baselineVideoPath} />
+          )}
+          <GoalVideoRecorder
+            value={value}
+            protocol={{
+              instruction: goal.videoTaskInstruction,
+              setup: goal.videoTaskSetup,
+              seconds: goal.videoTaskSeconds
+            }}
+            onChange={onChange}
+          />
+          </PatientVideoConsentGate>
+        </div>
+        <div className="shrink-0 border-t border-stone/70 px-5 py-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft"
+          >
+            {t('videoModalDone')}
           </button>
         </div>
       </div>
