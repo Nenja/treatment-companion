@@ -78,20 +78,20 @@ export function GoalRatingPicker({
         {question}
       </p>
 
-      <div className="mt-6 flex flex-col items-center">
+      <div className="mt-4 flex flex-col items-center">
         {/* Big numeric display of the current pick. */}
         <div
           aria-live="polite"
           className="font-display tabular-nums leading-none"
         >
           <span
-            className={`text-[72px] ${
+            className={`text-[56px] ${
               interacted ? 'text-ink' : 'text-ink-muted'
             }`}
           >
             {interacted ? value : '\u2014'}
           </span>
-          <span className="ml-2 align-top text-[20px] text-ink-muted">
+          <span className="ml-2 align-top text-[16px] text-ink-muted">
             / 10
           </span>
         </div>
@@ -101,7 +101,7 @@ export function GoalRatingPicker({
         <div
           role="radiogroup"
           aria-label={ariaLabel}
-          className="mt-6 flex w-full max-w-[420px] flex-col gap-2"
+          className="mt-4 flex w-full max-w-[420px] flex-col gap-2"
         >
           {rows.map((row, rowIdx) => (
             <div key={rowIdx} className="flex justify-center gap-2">

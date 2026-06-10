@@ -1,37 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import {
-  useOwnVideoConsent,
-  useSetOwnVideoConsent
-} from '@/lib/supabase/patientInfo';
-import { useToast } from '@/components/feedback/Toast';
+
+interface VideoConsentSettingsProps {
+  clinical: boolean;
+  research: boolean;
+  onChange: (next: { clinical: boolean; research: boolean }) => void;
+}
 
 /**
- * Patient-facing video consent, managed from the profile. Two checkmarks the
- * patient can set or withdraw at any time (migration 0093). Wording is a first
- * pass pending study-team / DPO and native-Danish review.
+ * Patient video-consent checkboxes (migration 0093). Controlled by the
+ * profile page: the two values are staged there and persisted by the
+ * page's single "Save changes" button — this component holds no state
+ * and has no save button of its own. Wording is a first pass pending
+ * study-team / DPO and native-Danish review.
  */
-export function VideoConsentSettings() {
+export function VideoConsentSettings({
+  clinical,
+  research,
+  onChange
+}: VideoConsentSettingsProps) {
   const t = useTranslations('videoConsent');
-  const consent = useOwnVideoConsent(true);
-  const setConsent = useSetOwnVideoConsent();
-  const toast = useToast();
-
-  const [clinical, setClinical] = useState(false);
-  const [research, setResearch] = useState(false);
-
-  useEffect(() => {
-    if (consent.data) {
-      setClinical(consent.data.clinical);
-      setResearch(consent.data.research);
-    }
-  }, [consent.data]);
-
-  const dirty =
-    !!consent.data &&
-    (clinical !== consent.data.clinical || research !== consent.data.research);
 
   return (
     <div>
@@ -45,7 +34,7 @@ export function VideoConsentSettings() {
           <input
             type="checkbox"
             checked={clinical}
-            onChange={(e) => setClinical(e.target.checked)}
+            onChange={(e) => onChange({ clinical: e.target.checked, research })}
             className="mt-1 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
           />
           <span>
@@ -59,7 +48,7 @@ export function VideoConsentSettings() {
           <input
             type="checkbox"
             checked={research}
-            onChange={(e) => setResearch(e.target.checked)}
+            onChange={(e) => onChange({ clinical, research: e.target.checked })}
             className="mt-1 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
           />
           <span>
@@ -71,22 +60,7 @@ export function VideoConsentSettings() {
         </label>
       </div>
 
-      <button
-        type="button"
-        disabled={!dirty || setConsent.isPending}
-        onClick={async () => {
-          try {
-            await setConsent.mutateAsync({ clinical, research });
-            toast.success(t('saved'));
-          } catch {
-            toast.error(t('saveError'));
-          }
-        }}
-        className="mt-4 rounded-[var(--radius-button)] bg-sage-deep px-5 py-2.5 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
-      >
-        {setConsent.isPending ? t('saving') : t('save')}
-      </button>
-      <p className="mt-2 text-[12px] leading-relaxed text-ink-muted">
+      <p className="mt-4 text-[12px] leading-relaxed text-ink-muted">
         {t('withdrawNote')}
       </p>
     </div>

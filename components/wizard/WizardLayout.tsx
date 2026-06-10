@@ -85,7 +85,7 @@ export function WizardLayout({
           >
             {forgiving ? tc('saveAndFinishLater') : t('cancel')}
           </button>
-          <span className="eyebrow">
+          <span className="text-[14px] font-semibold text-sage-deep">
             {t('stepOf', { current: currentStep, total: totalSteps })}
           </span>
         </div>
