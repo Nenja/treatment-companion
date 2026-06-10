@@ -133,17 +133,22 @@ export function AccountMenu() {
                 {user.email}
               </p>
             )}
-            <p className="mt-0.5 text-[14px] uppercase tracking-wider text-ink-muted">
-              {roleLabel}
-            </p>
+            {profile.role !== 'patient' && (
+              <p className="mt-0.5 text-[14px] uppercase tracking-wider text-ink-muted">
+                {roleLabel}
+              </p>
+            )}
           </div>
 
-          {/* Text size picker. Stays in the menu — an accessibility
-              control a struggling reader needs immediately, without
-              navigating to the profile page. Colour appearance has
-              moved to the profile page. */}
+          {/* Display — text size + night mode grouped under one heading.
+              Text size is an accessibility control a struggling reader
+              needs immediately; the full colour palette lives on the
+              profile page. */}
           <div className="border-b border-stone/70 px-4 py-3">
-            <p className="text-[13px] font-semibold text-ink-soft">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
+              {tAppearance('displayLabel')}
+            </p>
+            <p className="mt-3 text-[13px] text-ink-soft">
               {tAppearance('textSize')}
             </p>
             <div className="mt-2 flex gap-1.5">
@@ -152,24 +157,12 @@ export function AccountMenu() {
               <TextScaleButton scale={1.5} label="A++" />
               <TextScaleButton scale={2.0} label="A+++" />
             </div>
-          </div>
-
-          {/* Night mode quick toggle. The full palette picker lives on
-              the profile page; this is just the day/night switch,
-              surfaced here for one-tap access. */}
-          <div className="border-b border-stone/70 px-4 py-3">
-            <p className="text-[13px] font-semibold text-ink-soft">
+            <p className="mt-3 text-[13px] text-ink-soft">
               {tAppearance('nightModeLabel')}
             </p>
             <div className="mt-2 flex gap-1.5">
-              <NightModeButton
-                night={false}
-                label={tAppearance('dayOption')}
-              />
-              <NightModeButton
-                night={true}
-                label={tAppearance('nightOption')}
-              />
+              <NightModeButton night={false} label={tAppearance('dayOption')} />
+              <NightModeButton night={true} label={tAppearance('nightOption')} />
             </div>
           </div>
 
@@ -212,7 +205,7 @@ export function AccountMenu() {
               );
             }}
             role="menuitem"
-            className="block w-full border-b border-stone/70 px-4 py-3 text-left text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+            className="block w-full border-b border-stone/50 px-4 py-3 text-left text-[14px] font-medium text-ink-soft hover:bg-stone-soft"
           >
             {tProfile('menuLink')}
           </button>
@@ -233,29 +226,9 @@ export function AccountMenu() {
                 );
               }}
               role="menuitem"
-              className="block w-full border-b border-stone/70 px-4 py-3 text-left text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+              className="block w-full border-b border-stone/50 px-4 py-3 text-left text-[14px] font-medium text-ink-soft hover:bg-stone-soft"
             >
               {tMenu('adminLink')}
-            </button>
-          )}
-
-          {/* Visit code — patient-only. A utility used at clinic
-              appointments, so it lives in the menu rather than on the
-              daily home screen. Clearly labelled so a patient can find
-              it quickly at the clinic counter. */}
-          {profile.role === 'patient' && (
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                router.push(
-                  locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
-                );
-              }}
-              role="menuitem"
-              className="block w-full border-t border-stone/70 px-4 py-3 text-left text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
-            >
-              {tMenu('visitCode')}
             </button>
           )}
 
@@ -277,30 +250,16 @@ export function AccountMenu() {
               router.push(locale === 'en' ? dest : `/${locale}${dest === '/' ? '' : dest}`);
             }}
             role="menuitem"
-            className="block w-full border-t border-stone/70 px-4 py-3 text-left text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+            className="block w-full border-b border-stone/50 px-4 py-3 text-left text-[14px] font-medium text-ink-soft hover:bg-stone-soft"
           >
             {tAppearance('showTutorialAgain')}
           </button>
 
           <button
             type="button"
-            onClick={() => {
-              setOpen(false);
-              router.push(
-                locale === 'en' ? '/privacy' : `/${locale}/privacy`
-              );
-            }}
-            role="menuitem"
-            className="block w-full border-t border-stone/70 px-4 py-3 text-left text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
-          >
-            Your data &amp; privacy
-          </button>
-
-          <button
-            type="button"
             onClick={doSignOut}
             role="menuitem"
-            className="block w-full px-4 py-3 text-left text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+            className="block w-full px-4 py-3 text-left text-[14px] font-medium text-ink-soft hover:bg-stone-soft"
           >
             {tMenu('signOut')}
           </button>
