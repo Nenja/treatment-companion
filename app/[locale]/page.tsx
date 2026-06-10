@@ -205,7 +205,6 @@ export default function PatientHomePage() {
     ? undefined
     : addDaysIso(data.cycle.startDate, weekNumber * 7);
 
-
   return (
     <AppShell helpPageKey="patientHome">
       {/* One-time orientation — shown only on a new patient's first visit. */}
@@ -240,6 +239,41 @@ export default function PatientHomePage() {
       {data.catchUpPrompts.length > 0 && data.goals.length > 0 && (
         <CatchUpCard prompts={data.catchUpPrompts} />
       )}
+
+      {/* Show visit code — moved up here as a utility row beside the
+          catch-up so it stays obvious. Visit-time only; navigates to the
+          code screen. */}
+      <button
+        type="button"
+        onClick={() =>
+          router.push(
+            locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
+          )
+        }
+        className="flex w-full items-center justify-between border-b border-stone/60 py-4 text-left"
+      >
+        <span className="flex items-center gap-2.5 text-[15px] font-semibold text-ink">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+            className="text-sage-deep"
+          >
+            <rect x="3" y="6" width="18" height="12" rx="2" />
+            <path d="M7 10v4M11 10v4M15 10v4M19 10v4" />
+          </svg>
+          {t('showVisitCode')}
+        </span>
+        <span aria-hidden className="text-[17px] text-ink-soft">
+          →
+        </span>
+      </button>
 
       {/* Notifications opt-in — secondary. Demoted below the check-in
           CTA and styled quietly so it doesn't compete with the primary
@@ -282,36 +316,6 @@ export default function PatientHomePage() {
         </button>
       )}
 
-      {/* Show visit code — infrequent, visit-time only; a quiet chip so
-          it doesn't compete with the daily actions. */}
-      <div className="mt-5 flex justify-center">
-        <button
-          type="button"
-          onClick={() =>
-            router.push(
-              locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
-            )
-          }
-          className="inline-flex items-center gap-1.5 rounded-full border border-stone px-4 py-1.5 text-[13px] font-medium text-ink-soft hover:bg-stone-soft hover:text-ink"
-        >
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <rect x="3" y="6" width="18" height="12" rx="2" />
-            <path d="M7 10v4M11 10v4M15 10v4M19 10v4" />
-          </svg>
-          {t('showVisitCode')}
-        </button>
-      </div>
-
       {/* Safety notice + a quiet data & privacy link — the two static
           informational items grouped at the foot of the home. */}
       <div className="mt-10">
@@ -321,7 +325,7 @@ export default function PatientHomePage() {
           onClick={() =>
             router.push(locale === 'en' ? '/privacy' : `/${locale}/privacy`)
           }
-          className="mt-4 flex w-full items-center justify-center text-[13px] font-medium text-ink-muted hover:text-ink-soft"
+          className="mt-4 inline-flex items-center text-[13px] font-medium text-ink-muted hover:text-ink-soft"
         >
           {t('dataPrivacy')}
         </button>
