@@ -191,7 +191,13 @@
       "baselineRefHint": "Here's the clip from the clinic. Record the same task the same way.",
       "itbTag": "ITB",
       "editAnswers": "Made a mistake? Edit my answers",
-      "editAnswersBusy": "Reopening…"
+      "editAnswersBusy": "Reopening…",
+      "addVideoTitle": "Add a short video",
+      "addVideoHint": "Optional — film the movement task",
+      "videoAddedTitle": "Video added",
+      "videoAddedHint": "Tap to review or redo",
+      "videoModalTitle": "Optional video",
+      "videoModalDone": "Done"
     }
   },
   "domain": {
