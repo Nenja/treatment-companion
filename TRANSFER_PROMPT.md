@@ -72,14 +72,21 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-11` — **no migration**. DB stays at **0088**.
-- **Just shipped:** training day-list shows directly in the drawer (no nested
-  collapsible, batch 10); #11 — therapist modules on the treatment page (input
-  button + handoff panel) now appear only once a therapist has engaged this
-  cycle (cockpit per-goal display was already data-gated).
+- **Latest build:** `simplify-cockpit-61` — **no migration**. DB stays at **0094**.
+- **Just shipped:** profile/settings page no longer auto-saves - name, profession,
+  sex, reminder day, and video consent all stage locally and persist only via one
+  "Save changes" button; leaving with unsaved edits warns (in-app dialog + browser
+  prompt). VideoConsentSettings is now controlled; Appearance stays live. Earlier in
+  this run: patient-facing redesign (home / goals route / check-in card) and the
+  notification reminder-day feature (migration 0094).
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.
   The original 11-item simplification list is complete (bar #4, parked).
+
+- **Outstanding deploy (not in the zip->Vercel flow):** the rewritten
+  `send-checkin-notifications` Edge Function (cockpit-57) still needs deploying via
+  the Supabase Dashboard. Until then the reminder *day* is stored/shown but not yet
+  honoured.
 
 **What's likely next**
 - **#4 muscle→function** (parked) — clinician-verifiable draft in `docs/`;

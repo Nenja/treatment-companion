@@ -1,37 +1,36 @@
-BUILD: simplify-cockpit-57   (MIGRATION 0094 — run 0094_notify_weekday.sql; DB 0093->0094. Reminder-day login modal + day picker + skip + re-prompt; profile.notify_weekday; settings control. EDGE FUNCTION send-checkin-notifications rewritten — NEEDS SEPARATE supabase functions deploy.)
-==========================================================================
-WHY CUMULATIVE: the build sandbox reset itself between builds last session, so
-the zips tagged 21-26 were each built on a reverted base and are NOT cumulative
-(each missing pieces of the others). This zip re-applies the full intended set
-onto the known-good build-20 base in one pass.
+BUILD: simplify-cockpit-61 (DB migration 0094) — profile page: no auto-save + single Save + unsaved-changes guard.
+DEPLOY THIS ZIP. DISCARD 21-60 and earlier.
 
-** DEPLOY THIS ZIP. DISCARD 21-56. **  RUN MIGRATION 0094 (DB 0093->0094). THEN DEPLOY THE EDGE FUNCTION (supabase functions deploy send-checkin-notifications) — without it the chosen day is stored but not yet acted on.
+WHAT CHANGED (cockpit-61)
+- Profile page no longer auto-saves anything. Name, profession (therapists), sex,
+  reminder day, and video consent (patients) all stage locally and are written only
+  when the single "Save changes" button (last on the page) is tapped.
+- Save is disabled until something actually changes (dirty-tracked).
+- Unsaved-changes warning when leaving with pending edits:
+    * Back button + "Change password" link -> styled in-app confirm dialog.
+    * Closing / refreshing the tab -> browser's native prompt (beforeunload).
+- VideoConsentSettings is now controlled by the page (no own save button).
+- Appearance (colour + night mode) intentionally stays live/instant — it is a
+  display preview preference, persists itself, and is NOT under Save.
+- Goals page: "goals sent" status line moved below the "Suggest a new goal" button.
 
-WHAT'S IN IT
-1. "What's still needed" checklist on new-goal + approve calibration forms,
-   shown from the start (no "started" gate).
-2. "Video task" chip on video-enabled goal cards (baseline set/needed).
-3. Compact layout option hidden for CLINICIANS (forced wide; toggle hidden in
-   account menu + onboarding). Therapists unchanged.
-4. Top alignment: empty lg:min-h-[39px] band keeps "since last visit" level with
-   the first goal graph.
-5. "Since last visit" lists each goal's MAX EFFECT only (goal name + one value;
-   GAS shows +/-2). No most-recent, no improved/declined verdict.
-6. Goal graphs stay clean (no value labels on the line).
-7. New Background card below "since last visit": demographics + treatment type +
-   medication. Demographics left the header, the modality pill left the top of
-   the column, medication left the visit footer -- all consolidated here.
+DEPLOY
+1. Unzip, push to GitHub (github.com/Nenja/treatment-companion). Vercel auto-builds.
+2. No new SQL this build — DB stays at migration 0094.
+3. STILL OUTSTANDING from cockpit-57 (separate from this zip): deploy the rewritten
+   Edge Function `send-checkin-notifications` via Supabase Dashboard -> Edge Functions
+   -> paste new index.ts -> Deploy. Until then the reminder DAY is stored/shown but
+   reminders don't yet honour it.
 
-VERIFIED LOCALLY
-- tsc --noEmit clean.
-- i18n parity: 0 key mismatches, 0 ICU mismatches.
-- Production build OK via the font-stub procedure. 60/60 pages.
+QA (cannot be verified here — please check on device)
+[ ] Profile: changing name/profession/sex/reminder/consent does NOT save until "Save changes".
+[ ] Save button is greyed out until you change something; re-greys after a successful save.
+[ ] Editing then tapping Back (or "Change password") shows the "Unsaved changes" dialog.
+    "Keep editing" stays; "Leave without saving" navigates away.
+[ ] Editing then closing/refreshing the browser tab shows the native leave prompt.
+[ ] Tapping Save persists ALL fields (name, profession, sex, reminder day, consent) in one go.
+[ ] Appearance still changes the palette instantly (no Save needed) and is not warned about.
+[ ] Goals page: "goals sent" text now sits below the Suggest button.
+[ ] DA strings profile.leaveTitle/leaveBody/leaveConfirm/leaveCancel read naturally (native review).
 
-** QA **
-- As a clinician: account menu has no wide/compact toggle; cockpit always
-  two-pane. As a therapist: the toggle still appears.
-- Each video-enabled goal card shows a "Video task" chip.
-- Open "Record a goal" with nothing filled: the checklist shows immediately.
-- "Since last visit" shows goal name + max effect only; graphs have no labels.
-- A "Background" card sits below "since last visit" with demographics, treatment
-  type and medication (with Edit).
+VERIFIED IN BUILD: tsc clean · next build 62/62 · i18n en/da parity 1530 keys · font-stub restored.

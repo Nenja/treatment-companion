@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-57` (**migration 0094 — DB 0093 → 0094**). Notification opt-in moved from an inline home card to a login-time modal that makes the patient pick a reminder weekday (with Skip; re-prompts every login until set). New `profile.notify_weekday`; settings control to change it; **send-checkin-notifications Edge Function rewritten to fire on the chosen weekday — needs a separate deploy.** See §7._
+> _Last updated for build tag: `simplify-cockpit-61` (no migration; DB 0094). Profile/settings page no longer auto-saves: name, profession, sex, reminder day, and video consent all stage in local state and persist only via a single "Save changes" button; leaving with unsaved changes warns (in-app dialog + browser prompt). VideoConsentSettings is now controlled; Appearance stays live. See §7._
 
 ---
 
@@ -476,6 +476,7 @@ on a page don't collide. Display-only; no DB/RPC/migration change.
   against (would need a new "days/week" field at goal/cycle setup).
 
 ### 5.7 UX/accessibility audits — `docs/audits/`
+
 Six face-module lens docs, a sample patient-page six-lens doc, and an
 **onboarding/intro-wizards audit** (`docs/audits/onboarding-and-intro-wizards-audit.md`)
 are written. The onboarding audit’s copy fixes are now **implemented** (build
@@ -849,6 +850,32 @@ new-goal + approve calibration forms; current).
 
 ## 7. Latest delivered build
 
+- **Zip:** `treatment-companion-simplify-cockpit-61.zip`  ·  **Tag:** `simplify-cockpit-61`  ·  **Migration: none (DB 0094).** Profile-page behaviour change, cumulative (supersedes 21-60).
+- **Profile/settings page no longer auto-saves.** Name, profession (therapist), sex, reminder day, and video consent (patient) all STAGE in local state; the single "Save changes" button (last on the page) writes them in one go via `updateProfile` + `setOwnSex` + `setOwnVideoConsent`. Dirty-tracked: Save is disabled until something changes and re-disables after a successful save (JSON snapshot vs a baseline seeded once the profile + patient sex/consent queries have loaded). `app/[locale]/profile/page.tsx`.
+- **Unsaved-changes guard.** `attemptLeave(nav)` routes the Back button and the "Change password" link through a styled in-app confirm dialog when there are pending edits; `beforeunload` covers tab close/refresh (native prompt). New i18n `profile.leaveTitle/leaveBody/leaveConfirm/leaveCancel` (DA first-pass).
+- **VideoConsentSettings is now controlled** (`components/settings/VideoConsentSettings.tsx`): props `clinical`/`research`/`onChange`, no internal state or save button.
+- **Appearance stays live.** Palette + night mode still apply instantly and persist themselves; intentionally NOT under Save and not part of the dirty check (display preview, not form data).
+- **Goals page:** the "goals sent" status line moved below the "Suggest a new goal" button.
+- **QA (cannot verify from here):** editing then Back/password shows the dialog and "Keep editing" / "Leave without saving" behave; tab-close prompts; Save persists all fields together then greys out; Appearance still previews instantly; DA leave* strings need native review.
+
+- **Zip:** `treatment-companion-simplify-cockpit-60.zip`  ·  **Tag:** `simplify-cockpit-60`  ·  **Migration: none (DB 0094).** Profile-page layout only, cumulative (supersedes 21–59).
+- **Profile/settings page reordered so Save is last.** The single "Save changes" button (it persists name + therapist profession; everything else auto-saves) previously sat mid-page, between the auto-saving fields and the video-consent / appearance sections. Now the VideoConsentSettings block and the Appearance (palette + night mode) block sit **above** the Save button, so Save reads as the final action. `app/[locale]/profile/page.tsx` only.
+- **First block compacted.** Tighter vertical rhythm (name `mt-7`→`mt-6`, email/password `mt-6`→`mt-5`) and the read-only email is now plain text (`mt-1 text-[15px] text-ink`) instead of a bordered/filled box — removes a heavy boxed row from the identity group. Helpers and labels kept.
+- Order is now: Name · Email · Password · Profession (therapist) · Sex (patient) · Reminder day (patient) · Video consent (patient) · Appearance · **Save**.
+- **⚠ QA (cannot verify from here):** the Save button at the very bottom still reads clearly as "save my name/profession"; the compact identity block looks balanced; nothing below Save is missing (video consent + appearance present above it).
+- _Note: name still requires the Save button while sex/reminder/appearance auto-save (pre-existing Save/auto-save inconsistency). If you'd rather, name could auto-save too and the Save button be dropped entirely — say the word._
+
+- **Zip:** `treatment-companion-simplify-cockpit-59.zip`  ·  **Tag:** `simplify-cockpit-59`  ·  **Migration: none (DB 0094).** Styling/layout only, cumulative (supersedes 21–58).
+- **Dropped "See which muscles were treated" from the home.** Removed the link, the `TreatedMusclesModal` render + import, and the now-dead `showMuscles` state from `app/[locale]/page.tsx`. The home foot is now just the visit-code row, then the safety notice + centred privacy link. (`TreatedMusclesModal.tsx` is now unused but left in the repo; the `patient.home.viewTreatedMuscles` i18n key is unused, kept for parity.)
+- **"Step X of X" made more obvious.** In `components/wizard/WizardLayout.tsx` the step counter changed from the muted `eyebrow` class to `text-[14px] font-semibold text-sage-deep` — larger, sage-accent, sentence case. It's the only progress cue on the check-in (the step bar is hidden there), so it now reads clearly. Affects both wizards (check-in + suggest-goal), which is consistent.
+- **⚠ QA (cannot verify from here):** home foot reads clean without the treated link; the step counter is clearly visible top-right in the check-in on a phone.
+- _Note: a slimmer in-flow progress bar could be reintroduced on the check-in if the counter alone isn't enough — not done (the bar was deliberately hidden earlier)._
+
+- **Zip:** `treatment-companion-simplify-cockpit-58.zip`  ·  **Tag:** `simplify-cockpit-58`  ·  **Migration: none (DB 0094).** Styling/i18n only, cumulative (supersedes 21–57).
+- **Check-in title shortened.** `patient.home.checkinReadyTitle`: EN "Your weekly check-in is ready" → "Your check-in is ready"; DA "Din ugentlige status er klar" → "Din status er klar". It was wrapping to two lines in the check-in card on a phone. (DA edit is first-pass — flag for native review.)
+- **NRS picker number smaller.** `components/wizard/GoalRatingPicker.tsx`: the big picked-number display went `text-[72px]` → `text-[56px]` and the "/ 10" `text-[20px]` → `text-[16px]`; the number block and the tap-scale both went `mt-6` → `mt-4`. This frees vertical room so the optional "Add a short video" button (shown weeks 6–8 for video-enabled goals) isn't crowded below the scale. The GAS picker was left unchanged (it has no big number). Tap targets (h-12 buttons) and stored values are untouched.
+- **⚠ QA (cannot verify from here):** the check-in title sits on one line on a narrow phone; the NRS number still reads clearly at 56px and the video button has room beneath the scale on a video week.
+
 - **Zip:** `treatment-companion-simplify-cockpit-57.zip`  ·  **Tag:** `simplify-cockpit-57`  ·  **⚠ MIGRATION 0094 — run `0094_notify_weekday.sql` in Supabase (DB 0093 → 0094).** Cumulative (supersedes 21–56).
 - **New feature: patient-chosen weekly reminder day.**
   - **Migration 0094:** `profile.notify_weekday smallint` (CHECK null or 0–6; 0=Sun..6=Sat = JS getUTCDay). NULL = not chosen. No new RLS/grant — patients already self-update `profile`, and the WITH CHECK only forbids role changes.
@@ -861,7 +888,6 @@ new-goal + approve calibration forms; current).
 - **⚠⚠ EDGE FUNCTION NEEDS A SEPARATE DEPLOY — NOT part of the zip→Vercel flow.** `supabase/functions/send-checkin-notifications/index.ts` was rewritten: instead of firing on each prompt's due_date, it now (per UTC day) finds patients whose `notify_weekday == today's weekday`, then their pending prompts (due_date ≤ today, not yet notified → initial; notified ≥ ~6 days ago, still pending, not reminded → reminder), and pushes. **Until this is deployed (`supabase functions deploy send-checkin-notifications`), the chosen day is stored and shown but reminders still behave as before / won't honor the day.** I could not run or test this Deno function here — verify with the `{ "dryRun": true }` POST before relying on it.
 - **⚠ QA (cannot verify from here):** modal appears on patient login when no day is set and not after; Skip re-prompts next login; "Turn on reminders" saves the day + drives the push permission flow (incl. iOS install path); settings select changes the day; edge function deploy + dryRun sanity check.
 
-
 - **Zip:** `treatment-companion-simplify-cockpit-56.zip`  ·  **Tag:** `simplify-cockpit-56`  ·  **Migration: none (DB 0093).** Patient-home + check-in-card layout only, cumulative (supersedes 21–55).
 - **Catch-up moved inside the check-in card.** `CheckinPromptCard` gained an optional `catchUp?: ReactNode` prop; the home now passes `<CatchUpCard>` into it instead of rendering it as a standalone sibling. It renders inside the card below the main action, separated by a hairline (`mt-5 border-t border-sage/25 pt-4`), in both the pending and the "all caught up" states. `CatchUpCard`'s own outer row styling was neutralised (`mt-2 border-b border-stone/60 px-0.5 py-3` → `px-0.5`) so the parent controls the divider/spacing. It's only used here, so this is safe.
 - **"Takes about two minutes" removed** from the pending check-in card (the `checkinReadyBody` `<p>`). The i18n key `checkinReadyBody` is now unused (left in `en/da` for now; parity unaffected).
@@ -870,14 +896,12 @@ new-goal + approve calibration forms; current).
 - Files: `components/cards/CheckinPromptCard.tsx`, `components/cards/CatchUpCard.tsx`, `app/[locale]/page.tsx`. No i18n change; page count unchanged at 62.
 - **⚠ QA (cannot verify from here):** the catch-up disclosure expands/collapses correctly *inside* the card and its divider reads well on both the sage (pending) and cream (caught-up) card backgrounds; on a real device the card looks balanced without the two-minutes line; visit-code row below the goals button reads right; centred privacy link looks correct.
 
-
 - **Zip:** `treatment-companion-simplify-cockpit-55.zip`  ·  **Tag:** `simplify-cockpit-55`  ·  **Migration: none (DB 0093).** Patient-home layout only, cumulative (supersedes 21–54).
 - **Visit code moved up.** The footer had three different treatments stacked (full-width goals button, a left-aligned link, a centred visit-code pill) which read as scattered. The "Show visit code" pill is removed from the footer and re-added as a **full-width utility row** (keypad icon + label + `→`, `border-b border-stone/60 py-4`) placed directly under the catch-up card, so the two utility rows group as a pair under the check-in. It stays obvious (full-width, icon, chevron) without competing with the check-in hero or the goals button. Note: the catch-up row is conditional, so on most days the visit-code row sits on its own directly under the check-in card — still a clear spot.
 - **Footer simplified.** What remains below the goals button is just the quiet "See which muscles were treated →" link and the safety notice; the "Your data & privacy" link is now left-aligned (`inline-flex`, no `w-full`/`justify-center`) so the whole region shares one left column edge. No centred elements left in that band.
 - `app/[locale]/page.tsx` only. No i18n change (reuses `showVisitCode`); page count unchanged at 62.
 - **⚠ QA (cannot verify from here):** on a real device, the visit-code row reads as obviously tappable and routes to `/visit-code`; the row looks right both with and without a catch-up above it; the de-scattered footer reads tidy on Firefox mobile.
 - _(Process note: first attempt aborted on a script error before writing — marker check `visitRow=0` caught it, nothing was shipped; rebuilt clean.)_
-
 
 - **Zip:** `treatment-companion-simplify-cockpit-54.zip`  ·  **Tag:** `simplify-cockpit-54`  ·  **Migration: none (DB 0093).** New route + UI restructure, cumulative (supersedes 21–53).
 - **Goals moved to their own page.** New `app/[locale]/goals/page.tsx` (patient-only, same auth guards + `usePatientHomeData` source as the home). It holds the goal cards, each goal's read-only `GoalGraphModal`, the sent-suggestion status, the weeks-1–2 progress reassurance, and the "Suggest a new goal" action. Has a "← Home" back link at top (new i18n `patient.home.navHome`, EN "Home" / DA "Hjem"). Builds as `/en/goals` + `/da/goals` (page count 60 → 62).
@@ -887,12 +911,10 @@ new-goal + approve calibration forms; current).
   - Visit-code chip kept on the home; the read-only `GoalGraphModal` + `GoalCard` import + `graphGoal` state removed from the home (now only on `/goals`). `TreatedMusclesModal` + `showMuscles` stay (the treated link).
 - **⚠ QA (cannot verify from here):** real navigation home→/goals and the "← Home" back button on Firefox mobile; the goals-button count rendering for 0 / 1 / many; that Start check-in now actually clears the fold on a real device; DA strings `navHome` / `goalsActiveCount` need native review (the DA plural for count=1 is first-pass).
 
-
 - **Zip:** `treatment-companion-simplify-cockpit-53.zip`  ·  **Tag:** `simplify-cockpit-53`  ·  **Migration: none (DB 0093).** Styling only, cumulative (supersedes 21–52).
 - **Goal cards = outlined, no fill.** The cockpit-51 bare divided-row treatment read as undefined ("no outlining"); reverted to the alternative discussed: each goal is a card with a full hairline `border border-stone` and transparent interior (the original `p-5` card minus `bg-cream-soft`), text back to 20px. The goals `<ul>` is `space-y-3` again (spaced cards, not `divide-y` rows), and the hairline rule under the "Your goals" heading is dropped (the cards now provide the definition). `GoalCard.tsx` + `app/[locale]/page.tsx` only.
 - Catch-up row and safety notice keep their hairline treatment; the check-in card stays the one filled hero. So the hierarchy is now: filled hero → outlined goal cards → quiet hairline rows.
 - **⚠ QA:** confirm the goals read as defined outlined cards (not bare rows, not heavy filled blocks) and the page still feels lighter than the original all-filled version.
-
 
 - **Zip:** `treatment-companion-simplify-cockpit-52.zip`  ·  **Tag:** `simplify-cockpit-52`  ·  **Migration: none (DB 0093).** UI + i18n, cumulative (supersedes 21–51).
 - **Patient account menu (`AccountMenu`) de-densified:**
@@ -904,7 +926,6 @@ new-goal + approve calibration forms; current).
     - Profile/settings page reviewed and left as-is (clean settings form, not blocky). Open minor item: for patients the Save button only persists the name while Sex auto-saves on change — left unchanged, can unify later if wanted.
     - **⚠ QA:** open the patient menu — no role line, one "Display" group, lighter link list, no visit-code or privacy rows; the home foot shows the safety notice + a quiet "Your data & privacy" link; both visit-code chip and privacy link route correctly. DA strings first-pass.
 
-
 - **Zip:** `treatment-companion-simplify-cockpit-51.zip`  ·  **Tag:** `simplify-cockpit-51`  ·  **Migration: none (DB 0093).** Styling only, cumulative (supersedes 21–50).
 - **Patient home visual hierarchy** — fixes the "stack of equal filled boxes" look. No logic/i18n changes; classNames only.
     - **One filled hero.** Only the check-in card keeps its fill. Everything below recedes to hairlines so the page reads as a list, not a stack.
@@ -912,7 +933,6 @@ new-goal + approve calibration forms; current).
     - **Catch-up + safety = hairline rows.** `CatchUpCard` container de-filled to a `border-b` row; `SafetyNotice` de-carded to a `border-t` top-rule (still the headline + "What to do" expander).
     - **Action hierarchy.** "Suggest a new goal" is now an outline button (fill removed); "Show visit code" returns from a bare text link to a small outlined pill chip with a keypad icon — visible/tappable without competing with Suggest.
     - **⚠ QA:** check the home reads as a divided list with the check-in clearly the anchor; confirm long goal text wraps tidily with the read-aloud/graph actions staying right-aligned; confirm the visit-code chip and safety expander still work.
-
 
 - **Zip:** `treatment-companion-simplify-cockpit-50.zip`  ·  **Tag:** `simplify-cockpit-50`  ·  **Migration: none (DB 0093).** UI-only, cumulative (supersedes 21–49).
 - **Patient home (`app/[locale]/page.tsx`, `SafetyNotice`) decluttered** after an element-by-element relevance review:
@@ -923,13 +943,11 @@ new-goal + approve calibration forms; current).
     - **Urgent-care notice → headline + expander.** `SafetyNotice` is now a client component: the "Not for urgent care" headline + amber "i" stay always visible with a "What to do ▾" toggle; the emergency-guidance body (and read-aloud) sit behind the tap. **Wording is verbatim/locked** — only presentation changed. New i18n `safety.whatToDo` (EN "What to do" / DA "Hvad du skal gøre", first-pass). Quieter card styling (hairline, lighter fill).
     - **⚠ QA / regulatory:** the safety body is collapsed by default — confirm a headline-always-visible + expandable detail meets the regulatory brief for this urgent-care notice. Also confirm reassurance appearing only weeks 1–2 is the intended rule.
 
-
 - **Zip:** `treatment-companion-simplify-cockpit-49.zip`  ·  **Tag:** `simplify-cockpit-49`  ·  **Migration: none (DB 0093).** UI + one query field, cumulative (supersedes 21–48).
 - **Catch-up week cue fixed and restyled** (`lib/supabase/checkin.ts`, `app/[locale]/checkin`, `WizardLayout`):
     - **Real current-week test.** cockpit-48 gated the cue on `Boolean(promptIdParam)`, but the home page passes `?promptId` on the normal current-week check-in too, so it showed every week. `useCheckinData` now selects `treatment_cycle.start_date` and returns `currentWeek` (same day-0-6=week-1 formula as the home page); the check-in computes `isCatchUp = prompt.weekNumber < currentWeek`. This also correctly flags a default check-in that resolves to an older pending week.
     - **Restyled to an eyebrow (option C).** The boxed "Week 6 check-in" field is removed. `WizardLayout` gained an `eyebrow?: string` prop rendered as a small uppercase amber line at the very top of the content, above the heading. The check-in passes `eyebrow={isCatchUp ? t('catchUpBanner', {week}) : undefined}`, so on a catch-up week it reads e.g. "EARLIER WEEK · WEEK 6" tucked above the goal; on the current week nothing shows. New i18n `patient.checkin.catchUpBanner` (EN "Earlier week · Week {week}" / DA "Tidligere uge · Uge {week}", first-pass). Old `weekBanner` key now unused (left in).
     - **⚠ QA:** open the current week → no week line; open an earlier week from the home catch-up card → eyebrow shows above the goal. Confirm the amber eyebrow reads clearly on the dark patient theme.
-
 
 - **Zip:** `treatment-companion-simplify-cockpit-48.zip`  ·  **Tag:** `simplify-cockpit-48`  ·  **Migration: none (DB 0093).** UI-only, cumulative (supersedes 21–47).
 - **Check-in rating step decluttered** (`app/[locale]/checkin`, `WizardLayout`, `GoalRatingPicker`, `GasGoalRatingPicker`):
@@ -939,14 +957,12 @@ new-goal + approve calibration forms; current).
     - **Video button subtitle** trimmed: `addVideoHint` "Optional — film the movement task" → "Optional" (EN) / "Valgfrit" (DA).
     - **⚠ QA:** rating step is much shorter; heading = goal; only the clinician question remains as prose; no previous-score line; week line appears only when you open a catch-up week from home; training/comment steps still show their titles. The "0 · WORST / 10 · BEST" endpoint labels remain hardcoded English in the pickers (pre-existing, not addressed here).
 
-
 - **Zip:** `treatment-companion-simplify-cockpit-47.zip`  ·  **Tag:** `simplify-cockpit-47`  ·  **Migration: none (DB 0093).** UI-only, cumulative (supersedes 21–46).
 - First **patient-facing** change — weekly **check-in** (`app/[locale]/checkin`, phone wizard):
     - **Optional video is now a pop-up.** The inline recorder on a goal's rating step (which made the step tall) becomes a compact button ("Add a short video" / "Video added" once recorded) opening `CheckinVideoModal` (bottom-sheet on phone) with the baseline reference + recorder, kept inside the existing `PatientVideoConsentGate`. Recording lives in the same `videos` state, so closing/reopening keeps it.
     - **Step bar simplified.** `WizardLayout` gained `hideStepBar`; the check-in passes it and drops `stepLabels`, so the named per-step list is gone — only "Step X of X" remains. `suggest-goal` (also uses WizardLayout) is unchanged.
     - New i18n `patient.checkin`: addVideoTitle/addVideoHint, videoAddedTitle/videoAddedHint, videoModalTitle, videoModalDone (EN + DA, DA first-pass). (`tTraining('stepLabel')`/`t('summaryStepLabel')` now unused, left in.)
     - **⚠ QA:** rating step shorter; button opens the pop-up, records, shows "Video added"; wizard top shows only Step X of X.
-
 
 - **Zip:** `treatment-companion-simplify-cockpit-46.zip`
 - **Tag:** `simplify-cockpit-46`  ·  **Migration: none (DB 0093).** UI-only.
@@ -2210,7 +2226,6 @@ have decided unilaterally:**
   (visit days / worked-on / adjustment requests); clinic-video results; ITB
   dose changes; and whether the dense GAS/NRS shorthand should read as plainer
   prose. Awaiting direction before reshaping the builder.
-
 
 **Recently completed epics (this session) — context for what's now done:**
 - **Therapist-signals epic — COMPLETE.** Driven by `therapist-workflow-audit.md`.
