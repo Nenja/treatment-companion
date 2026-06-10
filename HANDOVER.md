@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-52` (no migration; DB 0093). Patient account menu de-densified: role line dropped for patients, text-size + night-mode grouped under one 'Display' section, link rows lightened. Visit code removed from the menu (home chip is now the only entry). 'Your data & privacy' moved out of the menu to a quiet i18n'd link under the home safety notice. Profile page reviewed, left as-is. See §7._
+> _Last updated for build tag: `simplify-cockpit-53` (no migration; DB 0093). Patient home goals changed from bare divided rows to outlined (no-fill) cards — they read better with a hairline border for definition. Heading rule dropped. Styling only. See §7._
 
 ---
 
@@ -848,6 +848,12 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Zip:** `treatment-companion-simplify-cockpit-53.zip`  ·  **Tag:** `simplify-cockpit-53`  ·  **Migration: none (DB 0093).** Styling only, cumulative (supersedes 21–52).
+- **Goal cards = outlined, no fill.** The cockpit-51 bare divided-row treatment read as undefined ("no outlining"); reverted to the alternative discussed: each goal is a card with a full hairline `border border-stone` and transparent interior (the original `p-5` card minus `bg-cream-soft`), text back to 20px. The goals `<ul>` is `space-y-3` again (spaced cards, not `divide-y` rows), and the hairline rule under the "Your goals" heading is dropped (the cards now provide the definition). `GoalCard.tsx` + `app/[locale]/page.tsx` only.
+- Catch-up row and safety notice keep their hairline treatment; the check-in card stays the one filled hero. So the hierarchy is now: filled hero → outlined goal cards → quiet hairline rows.
+- **⚠ QA:** confirm the goals read as defined outlined cards (not bare rows, not heavy filled blocks) and the page still feels lighter than the original all-filled version.
+
 
 - **Zip:** `treatment-companion-simplify-cockpit-52.zip`  ·  **Tag:** `simplify-cockpit-52`  ·  **Migration: none (DB 0093).** UI + i18n, cumulative (supersedes 21–51).
 - **Patient account menu (`AccountMenu`) de-densified:**
