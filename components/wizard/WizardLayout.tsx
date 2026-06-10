@@ -35,6 +35,9 @@ interface WizardLayoutProps {
   forgiving?: boolean;
   /** Hide the progress strip, keeping only the "Step X of X" counter. */
   hideStepBar?: boolean;
+  /** Hide the page <h1>/helper block — used on rating steps where the
+   *  goal itself is the heading, rendered by the picker. */
+  hideHeader?: boolean;
   /** When set, a "?" help button appears next to the account menu,
    *  opening the help modal for that page. */
   helpPageKey?: string;
@@ -52,6 +55,7 @@ export function WizardLayout({
   stepLabels,
   forgiving = false,
   hideStepBar = false,
+  hideHeader = false,
   helpPageKey,
   children
 }: WizardLayoutProps) {
@@ -151,15 +155,19 @@ export function WizardLayout({
 
       {/* Body */}
       <main className="mx-auto max-w-[480px] px-5 pb-32 pt-6">
-        <h1 className="font-display text-[26px] leading-tight text-ink">
-          {title}
-        </h1>
-        {helper && (
-          <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
-            {helper}
-          </p>
+        {!hideHeader && (
+          <>
+            <h1 className="font-display text-[26px] leading-tight text-ink">
+              {title}
+            </h1>
+            {helper && (
+              <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
+                {helper}
+              </p>
+            )}
+          </>
         )}
-        <div className="mt-6">{children}</div>
+        <div className={hideHeader ? '' : 'mt-6'}>{children}</div>
       </main>
 
       {/* Sticky footer with back + primary */}

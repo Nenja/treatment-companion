@@ -12,14 +12,6 @@ interface GoalRatingPickerProps {
   /** Current value, 0-10. Undefined when not yet picked. */
   value: number | undefined;
   onChange: (value: number) => void;
-  /**
-   * Optional "last time" anchor — the patient's most recent prior
-   * rating for this goal. Shown as a quiet line so this week's rating
-   * is less abstract and more consistent. Omitted (or null) renders
-   * nothing. Deliberately just the number + week, no trend or
-   * judgement — the app must not editorialize the patient's scores.
-   */
-  previousRating?: { nrsValue: number; weekNumber: number } | null;
 }
 
 /**
@@ -52,8 +44,7 @@ export function GoalRatingPicker({
   question,
   direction,
   value,
-  onChange,
-  previousRating = null
+  onChange
 }: GoalRatingPickerProps) {
   const interacted = typeof value === 'number';
 
@@ -77,27 +68,15 @@ export function GoalRatingPicker({
     <div>
       {goalText && (
         <div className="flex items-start justify-between gap-2">
-          <p className="font-display text-[20px] leading-snug text-ink">
+          <h1 className="font-display text-[22px] leading-snug text-ink">
             {goalText}
-          </p>
+          </h1>
           <ReadAloudButton text={`${goalText}. ${question}`} />
         </div>
       )}
       <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
         {question}
       </p>
-
-      {/* "Last time" anchor — quiet, factual, no trend or judgement.
-          Helps the patient rate consistently and confirms they have
-          checked in before. */}
-      {previousRating && (
-        <p className="mt-3 inline-block rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[14px] text-ink-soft">
-          Week {previousRating.weekNumber}, you rated this{' '}
-          <span className="font-semibold text-ink">
-            {previousRating.nrsValue}
-          </span>
-        </p>
-      )}
 
       <div className="mt-6 flex flex-col items-center">
         {/* Big numeric display of the current pick. */}

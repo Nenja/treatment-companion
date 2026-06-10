@@ -68,9 +68,9 @@ export function GasGoalRatingPicker({
     <div>
       {goalText && (
         <div className="flex items-start justify-between gap-2">
-          <p className="font-display text-[20px] leading-snug text-ink">
+          <h1 className="font-display text-[22px] leading-snug text-ink">
             {goalText}
-          </p>
+          </h1>
           <ReadAloudButton text={`${goalText}. ${t('gasPrompt')}`} />
         </div>
       )}
