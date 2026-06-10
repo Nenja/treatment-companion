@@ -5,15 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { addDaysIso } from '@/lib/dates';
 import { useAuth } from '@/lib/supabase/auth';
-import {
-  usePatientHomeData,
-  type PatientHomeData
-} from '@/lib/supabase/patientHome';
+import { usePatientHomeData } from '@/lib/supabase/patientHome';
 import { AppShell } from '@/components/layout/AppShell';
 import { PatientHomeSkeleton } from '@/components/layout/PatientHomeSkeleton';
 import { SafetyNotice } from '@/components/layout/SafetyNotice';
-import { GoalCard } from '@/components/cards/GoalCard';
-import { GoalGraphModal } from '@/components/clinician/GoalGraphModal';
 import { TreatedMusclesModal } from '@/components/cards/TreatedMusclesModal';
 import { CheckinPromptCard } from '@/components/cards/CheckinPromptCard';
 import { CatchUpCard } from '@/components/cards/CatchUpCard';
@@ -29,10 +24,6 @@ export default function PatientHomePage() {
   const { user, profile, loading: authLoading } = useAuth();
   const homeQuery = usePatientHomeData(profile?.id ?? null, profile?.role);
 
-  // Which goal's read-only progress graph is open in a pop-up (null = none).
-  const [graphGoal, setGraphGoal] = useState<
-    PatientHomeData['goals'][number] | null
-  >(null);
   // Whether the read-only "treated muscles" pop-up is open.
   const [showMuscles, setShowMuscles] = useState(false);
 
@@ -227,21 +218,8 @@ export default function PatientHomePage() {
           week: weekNumber
         })}
       </div>
-      {/* See what was treated — quiet link tied to the treatment line,
-          for the patient who actively looks. Opens a read-only pop-up. */}
-      {data.latestTreatment && (
-        <button
-          type="button"
-          onClick={() => setShowMuscles(true)}
-          className="mb-3 inline-flex items-center gap-1 text-[13px] font-medium text-sage-deep hover:text-ink"
-        >
-          {t('viewTreatedMuscles')}
-          <span aria-hidden>→</span>
-        </button>
-      )}
-
       {/* Greeting */}
-      <h1 className="font-display text-[30px] leading-tight text-ink">
+      <h1 className="font-display text-[24px] leading-tight text-ink">
         {t('greeting', { name: data.patient.displayName })}
       </h1>
 
@@ -268,109 +246,71 @@ export default function PatientHomePage() {
           action. Hidden once subscribed or dismissed. */}
       <NotificationsCard profileId={data.patient.id} />
 
-      {/* Goals section */}
-      <section className="mt-9" aria-labelledby="goals-heading">
-        <h2
-          id="goals-heading"
-          className="font-display text-[22px] leading-tight text-ink"
-        >
-          {t('yourGoals')}
-        </h2>
+      {/* Your goals — one prominent entry to the dedicated goals page,
+          which holds the goal cards, progress graphs and the suggest
+          flow. Keeps the home short with goals one tap away. */}
+      <button
+        type="button"
+        onClick={() =>
+          router.push(locale === 'en' ? '/goals' : `/${locale}/goals`)
+        }
+        className="mt-8 flex w-full items-center justify-between gap-3 rounded-[var(--radius-card)] border border-sage/50 px-5 py-4 text-left hover:bg-sage-soft/30"
+      >
+        <span className="min-w-0">
+          <span className="block font-display text-[20px] leading-tight text-ink">
+            {t('yourGoals')}
+          </span>
+          <span className="mt-0.5 block text-[13px] text-ink-muted">
+            {t('goalsActiveCount', { count: data.goals.length })}
+          </span>
+        </span>
+        <span aria-hidden className="shrink-0 text-[20px] leading-none text-ink-soft">
+          →
+        </span>
+      </button>
 
-        {data.goals.length === 0 ? (
-          <div className="mt-4">
-            <Card tone="muted">
-              <p className="font-display text-[18px] text-ink">
-                {t('noActiveGoalsTitle')}
-              </p>
-              <p className="mt-1.5 text-[14px] leading-relaxed text-ink-soft">
-                {t('noSuggestionsBody')}
-              </p>
-            </Card>
-          </div>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {data.goals.map((g) => (
-              <li key={g.id}>
-                <GoalCard
-                  patientFacingText={g.patientFacingText}
-                  viewGraphLabel={
-                    g.ratings.length > 0 ? t('viewGraph') : undefined
-                  }
-                  onViewGraph={
-                    g.ratings.length > 0 ? () => setGraphGoal(g) : undefined
-                  }
-                />
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {/* Gentle, honest reassurance — progress in spasticity is slow and
-            uneven, so a few flat weeks shouldn't read as failure. Only shown
-            once there are goals being tracked. */}
-        {data.goals.length > 0 && weekNumber <= 2 && (
-          <p className="mt-4 text-[13px] leading-relaxed text-ink-muted">
-            {t('progressReassurance')}
-          </p>
-        )}
-
-        {/* Sent-suggestion status — so the patient knows their input was
-            received, without any clinic→patient messaging. */}
-        {data.pendingSuggestions > 0 && (
-          <p className="mt-4 text-[13px] leading-relaxed text-ink-muted">
-            {t('pendingSuggestions', { count: data.pendingSuggestions })}
-          </p>
-        )}
-
-        {/* Suggest a new goal — the one prominent patient action on the
-            home screen; sits after the goals so "add to these" reads
-            naturally. */}
+      {/* See what was treated — quiet reference link below the goals
+          entry. Opens a read-only pop-up. */}
+      {data.latestTreatment && (
         <button
           type="button"
-          onClick={() => {
-            router.push(
-              locale === 'en' ? '/suggest-goal' : `/${locale}/suggest-goal`
-            );
-          }}
-          className="mt-5 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] border border-sage/50 px-4 text-[15px] font-semibold text-sage-deep hover:bg-sage-soft/40"
+          onClick={() => setShowMuscles(true)}
+          className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-sage-deep hover:text-ink"
         >
-          <span aria-hidden className="mr-2 text-[17px] leading-none">
-            +
-          </span>
-          {t('suggestGoal')}
+          {t('viewTreatedMuscles')}
+          <span aria-hidden>→</span>
         </button>
-        {/* Show visit code — infrequent, visit-time only; demoted to a
-            quiet link so it doesn't compete with the daily actions. */}
-        <div className="mt-3 flex justify-center">
-          <button
-            type="button"
-            onClick={() =>
-              router.push(
-                locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
-              )
-            }
-            className="inline-flex items-center gap-1.5 rounded-full border border-stone px-4 py-1.5 text-[13px] font-medium text-ink-soft hover:bg-stone-soft hover:text-ink"
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <rect x="3" y="6" width="18" height="12" rx="2" />
-              <path d="M7 10v4M11 10v4M15 10v4M19 10v4" />
-            </svg>
-            {t('showVisitCode')}
-          </button>
-        </div>
+      )}
 
-      </section>
+      {/* Show visit code — infrequent, visit-time only; a quiet chip so
+          it doesn't compete with the daily actions. */}
+      <div className="mt-5 flex justify-center">
+        <button
+          type="button"
+          onClick={() =>
+            router.push(
+              locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
+            )
+          }
+          className="inline-flex items-center gap-1.5 rounded-full border border-stone px-4 py-1.5 text-[13px] font-medium text-ink-soft hover:bg-stone-soft hover:text-ink"
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <rect x="3" y="6" width="18" height="12" rx="2" />
+            <path d="M7 10v4M11 10v4M15 10v4M19 10v4" />
+          </svg>
+          {t('showVisitCode')}
+        </button>
+      </div>
 
       {/* Safety notice + a quiet data & privacy link — the two static
           informational items grouped at the foot of the home. */}
@@ -386,23 +326,6 @@ export default function PatientHomePage() {
           {t('dataPrivacy')}
         </button>
       </div>
-
-      {/* Read-only progress graph for one goal, opened from a goal card's
-          graph button. Reuses the clinician graph (no edit affordances);
-          physio assessments are omitted — the patient sees only their own
-          self-report. */}
-      {graphGoal && (
-        <GoalGraphModal
-          goalText={graphGoal.patientFacingText}
-          kind={graphGoal.kind}
-          currentWeek={data.currentWeek}
-          ratings={graphGoal.ratings}
-          physioRatings={[]}
-          nrsDirection={graphGoal.nrsDirection}
-          closeLabel={t('graphClose')}
-          onClose={() => setGraphGoal(null)}
-        />
-      )}
 
       {/* Read-only list of muscles treated at the last treatment. */}
       {showMuscles && data.latestTreatment && (

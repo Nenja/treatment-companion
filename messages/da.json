@@ -73,7 +73,9 @@
       "visitCodeBody": "Tag denne app med til din aftale. Åbn “Vis besøgskode”, så din kliniker kan åbne din journal.",
       "pendingSuggestions": "{count, plural, one {# mål sendt — din kliniker gennemgår det ved dit næste besøg.} other {# mål sendt — din kliniker gennemgår dem ved dit næste besøg.}}",
       "progressReassurance": "Fremgang kommer ofte i op- og nedture — en uge uden ændring er ikke en fiasko. Din kliniker ser på hele billedet over tid.",
-      "dataPrivacy": "Dine data og privatliv"
+      "dataPrivacy": "Dine data og privatliv",
+      "goalsActiveCount": "{count, plural, =0 {Ingen mål endnu} one {# aktivt mål} other {# aktive mål}}",
+      "navHome": "Hjem"
     },
     "visitCode": {
       "pageTitle": "Besøgskode",
