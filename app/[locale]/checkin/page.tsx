@@ -201,7 +201,7 @@ function CheckinPageInner() {
     return null;
   }
 
-  const { prompt, goals: activeGoals } = checkinQuery.data;
+  const { prompt, goals: activeGoals, currentWeek } = checkinQuery.data;
 
   if (activeGoals.length === 0) {
     return null;
@@ -326,12 +326,7 @@ function CheckinPageInner() {
   // The default check-in opens the current week, but a patient can also
   // reach an earlier (catch-up) week from the home page — without this
   // they could fill a past week without realising. Shown on every step.
-  const isCatchUp = Boolean(promptIdParam);
-  const weekBanner = (
-    <div className="mb-4 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[13px] font-semibold text-ink-soft">
-      {t('weekBanner', { week: prompt.weekNumber })}
-    </div>
-  );
+  const isCatchUp = prompt.weekNumber < currentWeek;
 
   if (isTrainingStep) {
     title = tTraining('title');
@@ -539,6 +534,9 @@ function CheckinPageInner() {
         helpPageKey="checkin"
         hideStepBar
         hideHeader={!isTrainingStep && !isLastStep}
+        eyebrow={
+          isCatchUp ? t('catchUpBanner', { week: prompt.weekNumber }) : undefined
+        }
         primaryAction={{
           label: isLastStep
             ? submitMutation.isPending
@@ -549,7 +547,6 @@ function CheckinPageInner() {
           disabled: !currentStepComplete || submitMutation.isPending
         }}
       >
-        {isCatchUp && weekBanner}
         {body}
       </WizardLayout>
       {confirmLeave && (

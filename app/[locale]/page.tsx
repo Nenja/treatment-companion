@@ -17,7 +17,6 @@ import { GoalGraphModal } from '@/components/clinician/GoalGraphModal';
 import { TreatedMusclesModal } from '@/components/cards/TreatedMusclesModal';
 import { CheckinPromptCard } from '@/components/cards/CheckinPromptCard';
 import { CatchUpCard } from '@/components/cards/CatchUpCard';
-import { CheckinDots } from '@/components/cards/CheckinDots';
 import { NotificationsCard } from '@/components/cards/NotificationsCard';
 import { Card } from '@/components/cards/Card';
 import { OnboardingWizard } from '@/components/feedback/OnboardingWizard';
@@ -215,7 +214,6 @@ export default function PatientHomePage() {
     ? undefined
     : addDaysIso(data.cycle.startDate, weekNumber * 7);
 
-  const completedWeeksSet = new Set(data.completedWeeks);
 
   return (
     <AppShell helpPageKey="patientHome">
@@ -229,6 +227,18 @@ export default function PatientHomePage() {
           week: weekNumber
         })}
       </div>
+      {/* See what was treated — quiet link tied to the treatment line,
+          for the patient who actively looks. Opens a read-only pop-up. */}
+      {data.latestTreatment && (
+        <button
+          type="button"
+          onClick={() => setShowMuscles(true)}
+          className="mb-3 inline-flex items-center gap-1 text-[13px] font-medium text-sage-deep hover:text-ink"
+        >
+          {t('viewTreatedMuscles')}
+          <span aria-hidden>→</span>
+        </button>
+      )}
 
       {/* Greeting */}
       <h1 className="font-display text-[30px] leading-tight text-ink">
@@ -267,17 +277,6 @@ export default function PatientHomePage() {
           {t('yourGoals')}
         </h2>
 
-        {/* Cycle progress — a quiet factual line under the heading,
-            where it reads as context for the goals below rather than
-            floating on its own. Only shown when there are goals. */}
-        {data.goals.length > 0 && (
-          <CheckinDots
-            currentWeek={weekNumber}
-            completedWeeks={completedWeeksSet}
-            pendingPromptWeek={data.currentPrompt?.weekNumber}
-          />
-        )}
-
         {data.goals.length === 0 ? (
           <div className="mt-4">
             <Card tone="muted">
@@ -310,7 +309,7 @@ export default function PatientHomePage() {
         {/* Gentle, honest reassurance — progress in spasticity is slow and
             uneven, so a few flat weeks shouldn't read as failure. Only shown
             once there are goals being tracked. */}
-        {data.goals.length > 0 && (
+        {data.goals.length > 0 && weekNumber <= 2 && (
           <p className="mt-4 text-[13px] leading-relaxed text-ink-muted">
             {t('progressReassurance')}
           </p>
@@ -324,78 +323,37 @@ export default function PatientHomePage() {
           </p>
         )}
 
-        {/* Occasional patient actions, paired side-by-side: showing
-            the visit code to a clinician, and suggesting a new goal.
-            Both are infrequent and patient-initiated, so they share
-            the same quiet visual weight, sitting after the goals so
-            "add to these" reads naturally for the suggest button. */}
-        <div className="mt-4 flex gap-2">
-          <button
-            type="button"
-            onClick={() =>
-              router.push(
-                locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
-              )
-            }
-            className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[var(--radius-button)] border border-sage/40 bg-cream-soft px-3 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <rect x="3" y="6" width="18" height="12" rx="2" />
-              <path d="M7 10v4M11 10v4M15 10v4M19 10v4" />
-            </svg>
-            {t('showVisitCode')}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              router.push(
-                locale === 'en' ? '/suggest-goal' : `/${locale}/suggest-goal`
-              );
-            }}
-            className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border border-sage/40 bg-cream-soft px-3 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
-          >
-            <span aria-hidden className="mr-2 text-[17px] leading-none">
-              +
-            </span>
-            {t('suggestGoal')}
-          </button>
-        </div>
+        {/* Suggest a new goal — the one prominent patient action on the
+            home screen; sits after the goals so "add to these" reads
+            naturally. */}
+        <button
+          type="button"
+          onClick={() => {
+            router.push(
+              locale === 'en' ? '/suggest-goal' : `/${locale}/suggest-goal`
+            );
+          }}
+          className="mt-5 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] border border-sage/40 bg-cream-soft px-4 text-[15px] font-semibold text-sage-deep hover:bg-sage-soft"
+        >
+          <span aria-hidden className="mr-2 text-[17px] leading-none">
+            +
+          </span>
+          {t('suggestGoal')}
+        </button>
+        {/* Show visit code — infrequent, visit-time only; demoted to a
+            quiet link so it doesn't compete with the daily actions. */}
+        <button
+          type="button"
+          onClick={() =>
+            router.push(
+              locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
+            )
+          }
+          className="mt-3 flex w-full items-center justify-center text-[13px] font-medium text-ink-soft hover:text-ink"
+        >
+          {t('showVisitCode')}
+        </button>
 
-        {/* Quiet, patient-initiated: see which muscles were treated at the
-            last treatment, in a read-only pop-up. Only shown when a
-            treatment is on record. */}
-        {data.latestTreatment && (
-          <button
-            type="button"
-            onClick={() => setShowMuscles(true)}
-            className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-button)] border border-sage/40 bg-cream-soft px-3 text-[14px] font-semibold text-sage-deep hover:bg-sage-soft"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-            </svg>
-            {t('viewTreatedMuscles')}
-          </button>
-        )}
       </section>
 
       {/* Safety notice */}

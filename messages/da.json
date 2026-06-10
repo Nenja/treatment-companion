@@ -26,7 +26,8 @@
   },
   "safety": {
     "title": "Ikke til akut hjælp",
-    "body": "Denne app overvåges ikke for akutte tilfælde. Hvis du oplever alvorlig muskelsvaghed, vejrtrækningsproblemer, synkebesvær, alvorlige fald eller andre akutte symptomer, kontakt da din klinik eller alarmcentralen."
+    "body": "Denne app overvåges ikke for akutte tilfælde. Hvis du oplever alvorlig muskelsvaghed, vejrtrækningsproblemer, synkebesvær, alvorlige fald eller andre akutte symptomer, kontakt da din klinik eller alarmcentralen.",
+    "whatToDo": "Hvad du skal gøre"
   },
   "patient": {
     "home": {
@@ -201,7 +202,8 @@
       "videoAddedTitle": "Video tilføjet",
       "videoAddedHint": "Tryk for at se eller optage igen",
       "videoModalTitle": "Valgfri video",
-      "videoModalDone": "Færdig"
+      "videoModalDone": "Færdig",
+      "catchUpBanner": "Tidligere uge · Uge {week}"
     }
   },
   "domain": {

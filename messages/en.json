@@ -22,7 +22,8 @@
   },
   "safety": {
     "title": "Not for urgent care",
-    "body": "This app is not monitored for urgent care. If you experience severe weakness, breathing problems, swallowing problems, serious falls, or other urgent symptoms, contact your clinic or emergency services."
+    "body": "This app is not monitored for urgent care. If you experience severe weakness, breathing problems, swallowing problems, serious falls, or other urgent symptoms, contact your clinic or emergency services.",
+    "whatToDo": "What to do"
   },
   "patient": {
     "home": {
@@ -197,7 +198,8 @@
       "videoAddedTitle": "Video added",
       "videoAddedHint": "Tap to review or redo",
       "videoModalTitle": "Optional video",
-      "videoModalDone": "Done"
+      "videoModalDone": "Done",
+      "catchUpBanner": "Earlier week · Week {week}"
     }
   },
   "domain": {
