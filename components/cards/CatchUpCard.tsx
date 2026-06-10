@@ -42,7 +42,7 @@ export function CatchUpCard({ prompts }: CatchUpCardProps) {
   };
 
   return (
-    <div className="mt-2 border-b border-stone/60 px-0.5 py-3">
+    <div className="px-0.5">
       <button
         type="button"
         onClick={() => setExpanded((p) => !p)}

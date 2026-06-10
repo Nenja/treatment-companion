@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { formatLongDate } from '@/lib/dates';
@@ -16,13 +17,20 @@ interface CheckinPromptCardProps {
    * Avoids routing the patient to a check-in flow with nothing to ask.
    */
   hasActiveGoals: boolean;
+  /**
+   * Optional content rendered inside the card, below the main action —
+   * the catch-up disclosure for earlier missed weeks. Kept in the same
+   * card so it reads as part of the check-in, not a separate item.
+   */
+  catchUp?: ReactNode;
 }
 
 export function CheckinPromptCard({
   pendingPromptId,
   nextDueDate,
   patientId,
-  hasActiveGoals
+  hasActiveGoals,
+  catchUp
 }: CheckinPromptCardProps) {
   const router = useRouter();
   const t = useTranslations('patient.home');
@@ -34,9 +42,6 @@ export function CheckinPromptCard({
         <h2 className="font-display text-[22px] leading-tight text-sage-deep">
           {t('checkinReadyTitle')}
         </h2>
-        <p className="mt-1.5 text-[15px] text-ink-soft">
-          {t('checkinReadyBody')}
-        </p>
         <button
           type="button"
           onClick={() => {
@@ -64,6 +69,9 @@ export function CheckinPromptCard({
             →
           </span>
         </button>
+        {catchUp && (
+          <div className="mt-5 border-t border-sage/25 pt-4">{catchUp}</div>
+        )}
       </section>
     );
   }
@@ -93,6 +101,9 @@ export function CheckinPromptCard({
             </p>
           </div>
         </div>
+        {catchUp && (
+          <div className="mt-5 border-t border-sage/25 pt-4">{catchUp}</div>
+        )}
       </section>
     );
   }
