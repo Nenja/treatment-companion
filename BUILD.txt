@@ -1,11 +1,11 @@
-BUILD: simplify-cockpit-48   (NO migration; DB 0093; check-in rating step decluttered: goal is the heading, single clinician question, no generic title/helper, no previous-rating chip; week banner only on catch-up weeks; video subtitle trimmed.)
+BUILD: simplify-cockpit-50   (NO migration; DB 0093; patient home declutter: one cycle-position line, occasional reassurance, prominent Suggest goal + demoted visit code, treated-muscles link moved up, safety notice = headline + expander with verbatim wording.)
 ==========================================================================
 WHY CUMULATIVE: the build sandbox reset itself between builds last session, so
 the zips tagged 21-26 were each built on a reverted base and are NOT cumulative
 (each missing pieces of the others). This zip re-applies the full intended set
 onto the known-good build-20 base in one pass.
 
-** DEPLOY THIS ZIP. DISCARD 21-47. **  No migration (DB stays 0093). Check-in rating step concision pass.
+** DEPLOY THIS ZIP. DISCARD 21-49. **  No migration (DB stays 0093). Patient home relevance/declutter pass.
 
 WHAT'S IN IT
 1. "What's still needed" checklist on new-goal + approve calibration forms,

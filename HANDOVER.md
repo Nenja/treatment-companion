@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-48` (no migration; DB 0093). Patient check-in rating step decluttered: the goal is now the heading, the clinician question is the only prompt, and the generic title, helper line and 'last week you rated…' chip are removed. The week banner now appears only on a catch-up week. See §7._
+> _Last updated for build tag: `simplify-cockpit-50` (no migration; DB 0093). Patient home decluttered per a full relevance pass: one cycle-position signal, reassurance only early-cycle, 'Suggest a goal' prominent with 'Show visit code' demoted, 'See what was treated' moved up to the treatment line, and the urgent-care notice collapsed to a headline + expander (wording verbatim). See §7._
 
 ---
 
@@ -848,6 +848,23 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Zip:** `treatment-companion-simplify-cockpit-50.zip`  ·  **Tag:** `simplify-cockpit-50`  ·  **Migration: none (DB 0093).** UI-only, cumulative (supersedes 21–49).
+- **Patient home (`app/[locale]/page.tsx`, `SafetyNotice`) decluttered** after an element-by-element relevance review:
+    - **One cycle-position signal.** Removed the "N check-ins this cycle" line (`CheckinDots` usage + import + `completedWeeksSet`); the "Week N since your last treatment" eyebrow is now the only cycle-position cue. `CheckinDots.tsx` and the `checkinsThisCycle` string are left in place but unused.
+    - **Reassurance is occasional.** The "progress comes in ups and downs" paragraph now shows only in weeks 1–2 of a cycle (`data.goals.length > 0 && weekNumber <= 2`) instead of every visit.
+    - **Action hierarchy.** "Suggest a new goal" is now a single prominent full-width button; "Show visit code" is demoted to a quiet centered text link beneath it (was an equal-weight half-width button).
+    - **"See what was treated" relocated.** Moved from a full-width button at the bottom of the goals section to a quiet link directly under the "Week N since…" treatment line (only when `data.latestTreatment` exists). Opens the same read-only `TreatedMusclesModal`.
+    - **Urgent-care notice → headline + expander.** `SafetyNotice` is now a client component: the "Not for urgent care" headline + amber "i" stay always visible with a "What to do ▾" toggle; the emergency-guidance body (and read-aloud) sit behind the tap. **Wording is verbatim/locked** — only presentation changed. New i18n `safety.whatToDo` (EN "What to do" / DA "Hvad du skal gøre", first-pass). Quieter card styling (hairline, lighter fill).
+    - **⚠ QA / regulatory:** the safety body is collapsed by default — confirm a headline-always-visible + expandable detail meets the regulatory brief for this urgent-care notice. Also confirm reassurance appearing only weeks 1–2 is the intended rule.
+
+
+- **Zip:** `treatment-companion-simplify-cockpit-49.zip`  ·  **Tag:** `simplify-cockpit-49`  ·  **Migration: none (DB 0093).** UI + one query field, cumulative (supersedes 21–48).
+- **Catch-up week cue fixed and restyled** (`lib/supabase/checkin.ts`, `app/[locale]/checkin`, `WizardLayout`):
+    - **Real current-week test.** cockpit-48 gated the cue on `Boolean(promptIdParam)`, but the home page passes `?promptId` on the normal current-week check-in too, so it showed every week. `useCheckinData` now selects `treatment_cycle.start_date` and returns `currentWeek` (same day-0-6=week-1 formula as the home page); the check-in computes `isCatchUp = prompt.weekNumber < currentWeek`. This also correctly flags a default check-in that resolves to an older pending week.
+    - **Restyled to an eyebrow (option C).** The boxed "Week 6 check-in" field is removed. `WizardLayout` gained an `eyebrow?: string` prop rendered as a small uppercase amber line at the very top of the content, above the heading. The check-in passes `eyebrow={isCatchUp ? t('catchUpBanner', {week}) : undefined}`, so on a catch-up week it reads e.g. "EARLIER WEEK · WEEK 6" tucked above the goal; on the current week nothing shows. New i18n `patient.checkin.catchUpBanner` (EN "Earlier week · Week {week}" / DA "Tidligere uge · Uge {week}", first-pass). Old `weekBanner` key now unused (left in).
+    - **⚠ QA:** open the current week → no week line; open an earlier week from the home catch-up card → eyebrow shows above the goal. Confirm the amber eyebrow reads clearly on the dark patient theme.
+
 
 - **Zip:** `treatment-companion-simplify-cockpit-48.zip`  ·  **Tag:** `simplify-cockpit-48`  ·  **Migration: none (DB 0093).** UI-only, cumulative (supersedes 21–47).
 - **Check-in rating step decluttered** (`app/[locale]/checkin`, `WizardLayout`, `GoalRatingPicker`, `GasGoalRatingPicker`):

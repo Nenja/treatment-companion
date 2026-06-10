@@ -66,6 +66,9 @@ export interface CheckinData {
     id: string;
     weekNumber: number;
   };
+  /** Current week of the active cycle (computed from start_date). Lets
+   *  the check-in tell a current-week fill from a catch-up (earlier) one. */
+  currentWeek: number;
   /** The current patient's id — used to namespace uploaded videos in
    *  Storage (the bucket's RLS requires the path's first folder to match). */
   patientId: string;
@@ -100,7 +103,7 @@ export function useCheckinData(
 
       const { data: cycleRow, error: cErr } = await supabase
         .from('treatment_cycle')
-        .select('id')
+        .select('id, start_date')
         .eq('patient_id', patientId)
         .eq('status', 'active')
         .order('cycle_number', { ascending: false })
@@ -110,6 +113,15 @@ export function useCheckinData(
       if (!cycleRow) return null;
 
       const cycleId = cycleRow.id as string;
+
+      // Current week of the cycle, mirroring the home page: day 0–6 =
+      // week 1, days 7–13 = week 2, etc. Used to tell whether the prompt
+      // being filled is the current week or an earlier (catch-up) one.
+      const startMs = new Date(cycleRow.start_date as string).getTime();
+      const daysSinceStart = Math.floor(
+        (Date.now() - startMs) / (24 * 60 * 60 * 1000)
+      );
+      const currentWeek = Math.max(1, Math.floor(daysSinceStart / 7) + 1);
 
       // Targeted prompt id (from ?promptId=X) takes priority — used for
       // the catch-up flow. Otherwise pick the oldest pending prompt.
@@ -267,6 +279,7 @@ export function useCheckinData(
           id: promptRow.id as string,
           weekNumber: promptRow.week_number as number
         },
+        currentWeek,
         patientId,
         goals
       };
