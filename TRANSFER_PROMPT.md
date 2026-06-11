@@ -72,11 +72,12 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-73` — no new migration (needs 0095 if not yet run). DB **0095**.
-- **Just shipped:** shrank the per-goal trend chart on the therapist page — in `bare` mode
-  it uses a wider viewBox (560 vs 360) so it renders short and full-width instead of ~280px
-  tall. Sits on top of cockpit-72 (info-left / action-right therapist cockpit). Clinician
-  charts unchanged. (Live site had been stuck on a pre-70 build — deploy/cache, not code.)
+- **Latest build:** `simplify-cockpit-74` — no new migration (needs 0095 if not yet run). DB **0095**.
+- **Just shipped:** the therapist visit form stopped reusing the patient's check-in
+  pickers. New CompactGoalRating control — dense one-row buttons (0-10 NRS, −2…+2 GAS),
+  no patient question / worst-best / tap-a-number; NRS shows a quiet "Higher is better"
+  line, GAS surfaces the level meaning + goal anchor on selection. No schema, no new i18n.
+  (Clinician-label-per-goal was considered and dropped.)
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.
   The original 11-item simplification list is complete (bar #4, parked).

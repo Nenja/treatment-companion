@@ -1,21 +1,30 @@
-BUILD: simplify-cockpit-73 — therapist trend-chart size fix.
-DEPLOY THIS ZIP. DISCARD 21-72 and earlier.
+BUILD: simplify-cockpit-74 — compact therapist rating control (no more patient pickers on the visit form).
+DEPLOY THIS ZIP. DISCARD 21-73 and earlier.
 
 MIGRATION: none new. Run 0095_therapist_note if you haven't.
 
-WHAT CHANGED (cockpit-73)
-- The per-goal trend chart on the therapist page was rendering far too tall (~280px) in the
-  wide right column. It now renders as a short, full-width trend strip (~180px). Same data,
-  same 0-10 / GAS layout, no distortion. The clinician treatment-page chart is unchanged.
+WHAT CHANGED (cockpit-74)
+- The therapist's per-goal rating was the PATIENT's check-in widget reused: a second-person
+  question as a heading, big two-row pills, "0 · WORST / 10 · BEST", "Tap a number to choose
+  your rating". Replaced with a compact clinician control:
+  * NRS: one row of small 0-10 buttons, with a quiet "Higher is better" / "Lower is better"
+    line instead of the patient question.
+  * GAS: one row of small −2…+2 buttons; when you pick a level it shows that level's meaning
+    and the goal's own anchor sentence.
+- The patient's own check-in is untouched — it still uses the full guided picker.
+- No database change, no new translation strings.
 
-DEPLOY: unzip, push to GitHub, Vercel auto-builds. (Still outstanding, cockpit-57: deploy
-the send-checkin-notifications Edge Function.)
+NOTE: the clinician-label-per-goal idea (a separate clinician-worded anchor) was dropped, so
+the NRS control shows the direction ("Higher is better") rather than goal-specific anchor text.
 
-REMINDER: make sure the deploy actually lands — the live site had been stuck on a pre-cockpit-70
-build. After pushing, confirm Vercel ran a fresh build and hard-refresh Firefox (Ctrl+Shift+R).
+DEPLOY: unzip, push to GitHub, Vercel auto-builds. (Still outstanding, cockpit-57: deploy the
+send-checkin-notifications Edge Function. And confirm Vercel rebuilds — the live site had been
+stuck on an old build; hard-refresh Firefox with Ctrl+Shift+R after deploying.)
 
 QA (cannot verify here)
-[ ] Therapist page: each goal's chart is a short, wide strip, not a tall block.
-[ ] Clinician treatment page: chart looks exactly as before.
+[ ] Therapist form: each goal's rating is one compact row of buttons, not the big patient picker.
+[ ] NRS shows "Higher/Lower is better", not the patient's question; no "worst/best", no "tap a number".
+[ ] GAS: picking a level shows its meaning (and the goal's anchor if set).
+[ ] Patient check-in still shows the full guided picker (unchanged).
 
 VERIFIED IN BUILD: tsc clean · next build 62/62 · i18n en/da parity 1568 keys · font-stub restored.

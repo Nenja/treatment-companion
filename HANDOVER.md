@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-73` (no new migration; needs 0095). Tiny fix on top of the info-left/action-right therapist cockpit (72): the per-goal trend chart was rendering ~280px tall in the wide right column, so `bare` charts now use a wider viewBox (560 vs 360) — same 0-10/GAS layout, but short and full-width. Clinician charts unchanged. See §7._
+> _Last updated for build tag: `simplify-cockpit-74` (no new migration; needs 0095). The therapist visit form no longer reuses the **patient** check-in pickers. New `CompactGoalRating` control: dense one-row buttons (0-10 for NRS, −2…+2 for GAS), no patient-facing question, no "worst/best", no "tap a number". NRS shows only a quiet "Higher/Lower is better" line; GAS surfaces the level meaning (+ the goal anchor) on selection. No schema, no new i18n. The clinician-label idea was dropped. See §7._
 
 ---
 
@@ -849,6 +849,13 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Zip:** `treatment-companion-simplify-cockpit-74.zip`  ·  **Tag:** `simplify-cockpit-74`  ·  **Migration: none (needs 0095 if not yet run).** Compact, clinician-oriented rating control on the therapist form.
+- **Problem:** the therapist visit form was reusing the *patient's* check-in pickers (`wizard/GoalRatingPicker`, `wizard/GasGoalRatingPicker`) — so a clinician doing quick entry got the patient's second-person question as a heading, big two-row pills, "0 · WORST / 10 · BEST", and "Tap a number to choose your rating".
+- **New `components/physio/CompactGoalRating.tsx`:** a dense therapist control. **NRS** = one wrapping row of small 0-10 buttons with a quiet "Higher is better / Lower is better" line above (reuses `clinician.approve.higherIsBetter|lowerIsBetter`). **GAS** = one row of small −2…+2 buttons (sage for better, amber for below, neutral for expected); the picked level's meaning (`patient.checkin.gasMeaning*`) and the goal's own anchor sentence appear in a small line on selection, with a faint "much less … much better than expected" hint before. Stored values are unchanged (0-10 / −2..2). No patient-facing question, reassurance labels, or helper text.
+- **`PhysioProgressForm.tsx`:** swapped the two wizard pickers for `CompactGoalRating` (both NRS and GAS branches); the patient wizard pickers are untouched and still used on the patient check-in.
+- **No schema, no new i18n keys** (reuses existing `clinician.approve.*` and `patient.checkin.gasMeaning*`; parity 1568). The clinician-label-per-goal idea was considered and dropped — would have needed a column + RPCs + a clinician edit surface.
+- **⚠ QA (cannot verify here):** the therapist's per-goal rating is now a single compact row of buttons, not the patient's big picker; NRS shows "Higher/Lower is better" not the patient question; GAS shows the meaning when you pick a level; the patient's own check-in still uses the full guided picker. DA copy is the existing (already-translated) strings.
 
 - **Zip:** `treatment-companion-simplify-cockpit-73.zip`  ·  **Tag:** `simplify-cockpit-73`  ·  **Migration: none (needs 0095 if not yet run).** Trend-chart size fix.
 - **Bare trend chart shrunk** (`components/clinician/GoalProgressView.tsx`): the chart is a fixed-aspect viewBox rendered `w-full`, so in the therapist's wide right column it scaled up to ~280px tall. In `bare` mode the viewBox width is now 560 (was 360) while height stays 160 — same 0-10 / GAS coordinate layout, just a flatter aspect, so it renders short (~180px) and full-width with no distortion. Non-bare (clinician page) charts are untouched at 360.
