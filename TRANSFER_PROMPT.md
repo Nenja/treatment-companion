@@ -72,12 +72,13 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-68` — no new migration (needs 0095 if not yet run). DB **0095**.
-- **Just shipped:** slice 4 polish — localised the last hardcoded English in the physio
-  pages (unlock errors + patient load-error block), added the "since your last visit"
-  recap to the therapist patient page, deleted dead PhysioPlanSection. The therapist epic
-  (cockpit + note round-trip + physician input panel) is complete. Remaining: native
-  Danish review of all first-pass strings; optionally a few eyebrow-heading tidies.
+- **Latest build:** `simplify-cockpit-71` — no new migration (needs 0095 if not yet run). DB **0095**.
+- **Just shipped:** the 1080 therapist cockpit layout — goals as horizontal bands (trend
+  left / rating right), the clinic note + patient comments as a top context row instead of
+  a left rail (rail retired), page widened 720->1080. Added a `bare` (borderless) mode to
+  GoalProgressView so the chart embeds in the band. Also fixed a cockpit-70 bug where three
+  treatment-change labels pointed at undefined message keys (now needsAdjustment /
+  adjustmentNoteLabel / adjustmentNotePlaceholder).
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.
   The original 11-item simplification list is complete (bar #4, parked).

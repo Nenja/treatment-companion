@@ -1,30 +1,33 @@
-BUILD: simplify-cockpit-68 — therapist surface slice 4: polish.
-DEPLOY THIS ZIP. DISCARD 21-67 and earlier.
+BUILD: simplify-cockpit-71 — the 1080 therapist cockpit layout (approved v2 mockup) + a fix.
+DEPLOY THIS ZIP. DISCARD 21-70 and earlier.
 
-MIGRATION: none new. Run 0095_therapist_note if you haven't (the note channel needs it).
+MIGRATION: none new. Run 0095_therapist_note if you haven't.
 
-WHAT CHANGED (cockpit-68)
-- The last bits of hardcoded English in the physiotherapist area are now translated:
-  the visit-code unlock error messages, and the "Could not load this patient" block on
-  the therapist patient page (title, body, and "Try again"). Danish is a first pass —
-  see the review note below.
-- New "Since your last visit" recap at the top of the therapist patient page: the date of
-  the therapist's last assessment, and how many patient check-ins have come in since. It
-  only appears once there's a prior visit.
-- Removed a dead, unused component (PhysioPlanSection).
+WHAT CHANGED (cockpit-71)
+- Goals are now HORIZONTAL BANDS on wide screens: the trend chart fills the left half, the
+  rating fills the right half, split by a hairline. One short row per goal instead of a tall
+  stack. On a phone the two halves stack.
+- The physician's clinic note and the patient's recent comments now sit SIDE BY SIDE across
+  the TOP (a context row), not in a left rail. The left rail is gone — this also removes the
+  big empty-gap problem you saw earlier.
+- The page (and its header) widened from 720 to 1080 to give the bands room.
+- GoalProgressView learned a borderless mode so the chart sits cleanly inside the band with
+  no card-inside-a-card.
 
-DEPLOY
-1. Unzip, push to GitHub. Vercel auto-builds.
-2. STILL OUTSTANDING (separate, cockpit-57): deploy the send-checkin-notifications Edge Function.
+FIX (this was a real bug in cockpit-70 — deploy 71 over it)
+- In cockpit-70 the "Suggest a treatment change" label, its question, and its placeholder
+  pointed at message keys that didn't exist, so they would have shown as raw text like
+  "suggestChange". Now wired to the correct keys; they read properly.
 
-NATIVE DANISH REVIEW (for you / a Danish speaker) — all first-pass, please check:
-  therapistNote.*  ·  physioForms.thisWeek  ·  clinician.patient.physio*
-  physio.unlockError* / loadError* / recap*
+DEPLOY: unzip, push to GitHub, Vercel auto-builds. (Still outstanding, cockpit-57: deploy
+the send-checkin-notifications Edge Function.)
 
-QA (cannot verify here — please check on device)
-[ ] /physio with a bad code → localised error (not English).
-[ ] Force a load failure on the patient page → localised block + "Try again".
-[ ] With a prior therapist assessment: the recap shows the last-visit date + new check-in count.
-[ ] With no prior assessment: no recap.
+QA (cannot verify here)
+[ ] Wide screen: each goal is one horizontal band — chart left, rating right.
+[ ] Clinic note + patient comments are a row across the top, not a side column.
+[ ] No large empty gap anywhere; page is ~1080 wide and matches the header width.
+[ ] Phone: band halves stack; context stacks; everything reachable.
+[ ] The treatment-change flag shows real wording (not "needsAdjustment"/etc.).
+[ ] DA copy reads naturally (first-pass).
 
-VERIFIED IN BUILD: tsc clean · next build 62/62 · i18n en/da parity 1566 keys · font-stub restored.
+VERIFIED IN BUILD: tsc clean · next build 62/62 · i18n en/da parity 1568 keys · font-stub restored.

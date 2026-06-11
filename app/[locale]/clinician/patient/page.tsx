@@ -584,14 +584,19 @@ export default function ClinicianPatientPage() {
   // What functions they're working on: a goal is "working on" if the most
   // recent assessment that mentions it has the flag set (assessments are
   // ascending, so the last match wins).
+  // A goal counts as one the therapist is working on if they have rated it
+  // in any assessment — rating it is the report that they engaged with it
+  // (there is no separate "working on" flag any more).
   const workingOnGoalIds = new Set<string>();
   for (const g of activeGoals) {
-    let flag = false;
-    for (const a of physioAssessments) {
-      const r = a.ratings.find((x) => x.approvedGoalId === g.id);
-      if (r) flag = r.workingOn;
-    }
-    if (flag) workingOnGoalIds.add(g.id);
+    const rated = physioAssessments.some((a) =>
+      a.ratings.some(
+        (x) =>
+          x.approvedGoalId === g.id &&
+          (x.nrsValue != null || x.gasValue != null)
+      )
+    );
+    if (rated) workingOnGoalIds.add(g.id);
   }
   // Feasibility help: adjustment requests, newest first.
   const adjustmentRequests = physioAssessments

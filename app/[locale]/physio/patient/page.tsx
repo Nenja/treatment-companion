@@ -64,10 +64,10 @@ export default function PhysioPatientPage() {
   // writing up), so it expands gracefully when wide and stays
   // single-column when compact or on a narrow screen.
   const headerWidthClass = wide
-    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-3 lg:max-w-[var(--max-w-page-mid)]'
+    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-3 lg:max-w-[var(--max-w-page-wide)]'
     : 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-3';
   const mainWidthClass = wide
-    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-16 pt-6 lg:max-w-[var(--max-w-page-mid)]'
+    ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-16 pt-6 lg:max-w-[var(--max-w-page-wide)]'
     : 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 pb-16 pt-6';
   // Page is capped at the mid width, so the body no longer needs its
   // own inner cap — the page width handles it.
@@ -284,6 +284,12 @@ export default function PhysioPatientPage() {
     ambulation: (k) => tAmb(k)
   });
 
+  // Does the context rail have anything worth a column of its own? It
+  // only carries the clinic note, recent patient comments, and the
+  // late-cycle hint — the week line aside. With none of those, a fixed
+  // 300px rail is just a big empty gutter, so we drop the two-pane and
+  // render a single comfortable column instead.
+
   return (
     <div className="min-h-dvh bg-cream">
       <header className="border-b border-stone/70 bg-cream-soft/50">
@@ -409,8 +415,8 @@ export default function PhysioPatientPage() {
             </div>
           </SkeletonScreen>
         ) : (
-          <div className={wide ? 'lg:grid lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8 lg:items-start' : ''}>
-            <div className={wide ? 'lg:sticky lg:top-6' : ''}>
+          <div>
+            <div>
             {/* Cycle context — name + summary now live in the header,
                 so the body starts directly here (matching the clinician
                 page, which also begins with cycle context under its
@@ -441,6 +447,9 @@ export default function PhysioPatientPage() {
               </div>
             )}
 
+            {/* Context across the top: the physician's note + the patient's
+                recent words, side by side at wide widths (not a side rail). */}
+            <div className={wide ? 'lg:grid lg:grid-cols-2 lg:gap-5 lg:items-start' : ''}>
             {/* Note from the treating clinic — the physician's handoff for
                 this cycle. The one downward channel: shown prominently (not
                 behind a panel) so the therapist sees what the physician did
@@ -506,6 +515,7 @@ export default function PhysioPatientPage() {
                   </ul>
                 </section>
               )}
+            </div>
 
             </div>
 
