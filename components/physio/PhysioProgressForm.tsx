@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { GoalRatingPicker } from '@/components/wizard/GoalRatingPicker';
 import { GasGoalRatingPicker } from '@/components/wizard/GasGoalRatingPicker';
+import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
 import { todayIso, formatLongDate } from '@/lib/dates';
@@ -24,6 +25,35 @@ interface PhysioProgressFormProps {
    * and the form simply stays put for further entries.
    */
   onSaved?: () => void;
+  /**
+   * Optional progress-trend data. When provided, each goal card shows its
+   * trend chart (and the physician's per-goal note) above the rating
+   * controls — the unified "rate beside the trend" cockpit cards. When
+   * omitted (the standalone /physio/progress page), the form renders the
+   * plain rating cards it always did.
+   */
+  currentWeek?: number;
+  ratingsByGoal?: Map<
+    string,
+    {
+      weekNumber: number;
+      value: -2 | -1 | 0 | 1 | 2 | null;
+      nrs: number | null;
+      reported: boolean;
+      comment?: string;
+      submitterLabel?: 'self' | 'caregiver';
+    }[]
+  >;
+  physioRatingsByGoal?: Map<
+    string,
+    {
+      weekNumber: number;
+      nrs: number;
+      value: -2 | -1 | 0 | 1 | 2;
+      note: string | null;
+    }[]
+  >;
+  goalHandoffNotes?: Map<string, string>;
 }
 
 /**
@@ -41,13 +71,19 @@ interface PhysioProgressFormProps {
 export function PhysioProgressForm({
   patientId,
   goals,
-  onSaved
+  onSaved,
+  currentWeek,
+  ratingsByGoal,
+  physioRatingsByGoal,
+  goalHandoffNotes
 }: PhysioProgressFormProps) {
   const toast = useToast();
   const locale = useLocale();
   const t = useTranslations('physioForms');
+  const tHandoff = useTranslations('clinician.goalHandoff');
   const submit = useSubmitPhysioAssessment();
   const recent = usePhysioAssessments(patientId, true);
+  const hasTrend = currentWeek != null;
 
   const [date, setDate] = useState<string>(todayIso());
   const [note, setNote] = useState('');
@@ -168,13 +204,37 @@ export function PhysioProgressForm({
             const isWorking = !!workingOn[g.id];
             const isAdj = !!needsAdj[g.id];
             return (
-              <div
-                key={g.id}
-                className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5"
-              >
-                <p className="font-display text-[16px] leading-snug text-ink">
-                  {g.patientFacingText}
-                </p>
+              <div key={g.id} className={hasTrend ? 'space-y-3' : ''}>
+                {hasTrend && currentWeek != null && (
+                  <>
+                    <GoalProgressView
+                      goalText={g.patientFacingText}
+                      kind={g.kind}
+                      currentWeek={currentWeek}
+                      ratings={ratingsByGoal?.get(g.id) ?? []}
+                      physioRatings={physioRatingsByGoal?.get(g.id) ?? []}
+                      nrsDirection={g.nrsDirection}
+                    />
+                    {goalHandoffNotes?.get(g.id) && (
+                      <div className="rounded-[var(--radius-button)] border border-sage-soft bg-sage-soft/20 px-3 py-2">
+                        <p className="text-[12px] font-semibold text-sage-deep">
+                          {tHandoff('fromPhysician')}
+                        </p>
+                        <p className="mt-0.5 whitespace-pre-line text-[13px] leading-relaxed text-ink-soft">
+                          {goalHandoffNotes.get(g.id)}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+                <div className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5">
+                  {hasTrend ? (
+                    <p className="eyebrow">{t('thisWeek')}</p>
+                  ) : (
+                    <p className="font-display text-[16px] leading-snug text-ink">
+                      {g.patientFacingText}
+                    </p>
+                  )}
 
                 {/* Signal toggles — taps, no typing. */}
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -275,6 +335,7 @@ export function PhysioProgressForm({
                     {t('notAssessedHint')}
                   </p>
                 )}
+                </div>
               </div>
             );
           })}
