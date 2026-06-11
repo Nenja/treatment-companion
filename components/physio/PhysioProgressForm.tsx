@@ -20,9 +20,8 @@ interface PhysioProgressFormProps {
   onSaved?: () => void;
   /**
    * Optional progress-trend data. When provided, each goal renders as a
-   * horizontal band — its trend chart on the left, the rating on the
-   * right. When omitted (the standalone /physio/progress page), each goal
-   * is a plain single-column rating card.
+   * card with its trend chart above the rating. When omitted (the
+   * standalone /physio/progress page), each goal is a plain rating card.
    */
   currentWeek?: number;
   ratingsByGoal?: Map<
@@ -161,8 +160,8 @@ export function PhysioProgressForm({
           {goals.map((g) => {
             const flagged = !!suggestChange[g.id];
 
-            // Rating control + treatment-change suggestion. Shared between the
-            // wide band layout and the plain single-column card.
+            // Rating control + treatment-change suggestion. Shared between
+            // the trend card and the plain card.
             const ratingBody = (
               <>
                 <div className="mt-4">
@@ -235,35 +234,33 @@ export function PhysioProgressForm({
               </>
             );
 
-            // Wide cockpit: a horizontal band — trend left, rating right.
+            // With trend: a stacked card — chart on top, rating below.
             if (hasTrend && currentWeek != null) {
               return (
                 <div
                   key={g.id}
-                  className="overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft lg:grid lg:grid-cols-2 lg:items-stretch"
+                  className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5"
                 >
-                  <div className="p-5 lg:border-r lg:border-stone">
-                    <GoalProgressView
-                      bare
-                      goalText={g.patientFacingText}
-                      kind={g.kind}
-                      currentWeek={currentWeek}
-                      ratings={ratingsByGoal?.get(g.id) ?? []}
-                      physioRatings={physioRatingsByGoal?.get(g.id) ?? []}
-                      nrsDirection={g.nrsDirection}
-                    />
-                    {goalHandoffNotes?.get(g.id) && (
-                      <div className="mt-3 rounded-[var(--radius-button)] border border-sage-soft bg-sage-soft/20 px-3 py-2">
-                        <p className="text-[12px] font-semibold text-sage-deep">
-                          {tHandoff('fromPhysician')}
-                        </p>
-                        <p className="mt-0.5 whitespace-pre-line text-[13px] leading-relaxed text-ink-soft">
-                          {goalHandoffNotes.get(g.id)}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="border-t border-stone p-5 lg:border-t-0">
+                  <GoalProgressView
+                    bare
+                    goalText={g.patientFacingText}
+                    kind={g.kind}
+                    currentWeek={currentWeek}
+                    ratings={ratingsByGoal?.get(g.id) ?? []}
+                    physioRatings={physioRatingsByGoal?.get(g.id) ?? []}
+                    nrsDirection={g.nrsDirection}
+                  />
+                  {goalHandoffNotes?.get(g.id) && (
+                    <div className="mt-3 rounded-[var(--radius-button)] border border-sage-soft bg-sage-soft/20 px-3 py-2">
+                      <p className="text-[12px] font-semibold text-sage-deep">
+                        {tHandoff('fromPhysician')}
+                      </p>
+                      <p className="mt-0.5 whitespace-pre-line text-[13px] leading-relaxed text-ink-soft">
+                        {goalHandoffNotes.get(g.id)}
+                      </p>
+                    </div>
+                  )}
+                  <div className="mt-4 border-t border-stone pt-4">
                     <div className="flex items-baseline justify-between gap-2">
                       <p className="eyebrow">{t('ratingHeading')}</p>
                       <span className="text-[12px] text-ink-muted">
