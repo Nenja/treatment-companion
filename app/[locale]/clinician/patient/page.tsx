@@ -44,6 +44,9 @@ import {
   type LastTreatment
 } from '@/components/clinician/LastTreatmentModal';
 import { BackgroundCard } from '@/components/clinician/BackgroundCard';
+import { TherapistNotesReview } from '@/components/clinician/TherapistNotesReview';
+import { useSetPhysioGoalSuggestionStatus } from '@/lib/supabase/physioGoalSuggestion';
+import { useSetPhysioMuscleSuggestionStatus } from '@/lib/supabase/physioMuscleSuggestion';
 import { ExportModal } from '@/components/clinician/ExportModal';
 import { NewCycleDialog } from '@/components/clinician/NewCycleDialog';
 import { ArchivedVideosModal } from '@/components/clinician/ArchivedVideosModal';
@@ -113,6 +116,8 @@ export default function ClinicianPatientPage() {
   const setVideoConsent = useSetPatientVideoConsent();
   const reactivateGoal = useReactivateGoal();
   const toast = useToast();
+  const setPhysioGoalStatus = useSetPhysioGoalSuggestionStatus();
+  const setPhysioMuscleStatus = useSetPhysioMuscleSuggestionStatus();
   const wide = useWideLayout();
   const navStyle = useNavStyle();
   // 'side' nav puts the action menu in a left rail beside the content;
@@ -191,7 +196,9 @@ export default function ClinicianPatientPage() {
   const [showLastTreatment, setShowLastTreatment] = useState(false);
   const [showRecordItbGoal, setShowRecordItbGoal] = useState(false);  // Which inline action panel is open under the action row, if any.
   // History and export are not panels — they navigate / open a modal.
-  const [openPanel, setOpenPanel] = useState<'medication' | 'training' | null>(
+  const [openPanel, setOpenPanel] = useState<
+    'medication' | 'training' | 'physio' | null
+  >(
     null
   );
   // Patient suggestions moved out of the action row to sit beside
@@ -1005,6 +1012,195 @@ export default function ClinicianPatientPage() {
 
         {/* Training panel — opens from the action row. Shows the weekly
             training-days overview (moved here from an always-on section). */}
+        {/* Therapist input panel — opens from the action row. Surfaces the
+            therapist's structured input: their goal/muscle suggestions
+            (accept or dismiss), their adjustment requests (read-only), and
+            how many times they've seen the patient this cycle. Their
+            free-text notes show separately in the left column; their goal
+            ratings show as the amber line on each goal chart. */}
+        {openPanel === 'physio' && (
+          <CockpitPanelDrawer onClose={() => setOpenPanel(null)}>
+            <h2 className="font-display text-[18px] leading-tight text-ink">
+              {t('physioPanelTitle')}
+            </h2>
+            <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">
+              {therapyVisitCount > 0
+                ? t('physioVisits', { count: therapyVisitCount })
+                : t('physioNoVisits')}
+            </p>
+
+            {physioGoalSuggestions.length > 0 && (
+              <div className="mt-5">
+                <h3 className="eyebrow">{t('physioGoalSuggestionsHeading')}</h3>
+                <ul className="mt-2 space-y-2">
+                  {physioGoalSuggestions.map((s) => (
+                    <li
+                      key={s.id}
+                      className="rounded-[var(--radius-card)] border border-stone bg-cream p-3"
+                    >
+                      <p className="text-[14px] font-semibold leading-snug text-ink">
+                        {s.suggestedGoal}
+                      </p>
+                      {s.rationale && (
+                        <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">
+                          {s.rationale}
+                        </p>
+                      )}
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            touch();
+                            setPhysioGoalStatus.mutate(
+                              { suggestionId: s.id, status: 'accepted' },
+                              {
+                                onSuccess: () =>
+                                  toast.success(t('physioAcceptedToast')),
+                                onError: () =>
+                                  toast.error(t('physioActionError'))
+                              }
+                            );
+                          }}
+                          disabled={setPhysioGoalStatus.isPending}
+                          className="rounded-[var(--radius-button)] bg-sage-deep px-3 py-1.5 text-[13px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
+                        >
+                          {t('physioAccept')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            touch();
+                            setPhysioGoalStatus.mutate(
+                              { suggestionId: s.id, status: 'dismissed' },
+                              {
+                                onSuccess: () =>
+                                  toast.success(t('physioDismissedToast')),
+                                onError: () =>
+                                  toast.error(t('physioActionError'))
+                              }
+                            );
+                          }}
+                          disabled={setPhysioGoalStatus.isPending}
+                          className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft disabled:opacity-50"
+                        >
+                          {t('physioDismiss')}
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {physioMuscleSuggestions.length > 0 && (
+              <div className="mt-5">
+                <h3 className="eyebrow">
+                  {t('physioMuscleSuggestionsHeading')}
+                </h3>
+                <ul className="mt-2 space-y-2">
+                  {physioMuscleSuggestions.map((s) => (
+                    <li
+                      key={s.id}
+                      className="rounded-[var(--radius-card)] border border-stone bg-cream p-3"
+                    >
+                      <p className="text-[14px] font-semibold leading-snug text-ink">
+                        {s.muscle} · {tSide(s.side)}
+                      </p>
+                      {s.rationale && (
+                        <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">
+                          {s.rationale}
+                        </p>
+                      )}
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            touch();
+                            setPhysioMuscleStatus.mutate(
+                              { suggestionId: s.id, status: 'reviewed' },
+                              {
+                                onSuccess: () =>
+                                  toast.success(t('physioConsideredToast')),
+                                onError: () =>
+                                  toast.error(t('physioActionError'))
+                              }
+                            );
+                          }}
+                          disabled={setPhysioMuscleStatus.isPending}
+                          className="rounded-[var(--radius-button)] bg-sage-deep px-3 py-1.5 text-[13px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
+                        >
+                          {t('physioConsidered')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            touch();
+                            setPhysioMuscleStatus.mutate(
+                              { suggestionId: s.id, status: 'dismissed' },
+                              {
+                                onSuccess: () =>
+                                  toast.success(t('physioDismissedToast')),
+                                onError: () =>
+                                  toast.error(t('physioActionError'))
+                              }
+                            );
+                          }}
+                          disabled={setPhysioMuscleStatus.isPending}
+                          className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft disabled:opacity-50"
+                        >
+                          {t('physioDismiss')}
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {adjustmentRequests.length > 0 && (
+              <div className="mt-5">
+                <h3 className="eyebrow">{t('physioAdjustmentsHeading')}</h3>
+                <ul className="mt-2 space-y-2">
+                  {adjustmentRequests.map((r, i) => {
+                    const goalText = activeGoals.find(
+                      (g) => g.id === r.goalId
+                    )?.patientFacingText;
+                    return (
+                      <li
+                        key={`${r.goalId}-${r.date}-${i}`}
+                        className="rounded-r-[var(--radius-button)] border-l-2 border-amber-deep/50 bg-amber-soft/30 px-3 py-2"
+                      >
+                        <div className="text-[11px] text-ink-muted">
+                          {formatLongDate(r.date, locale)}
+                        </div>
+                        {goalText && (
+                          <p className="mt-0.5 text-[13px] font-semibold text-ink">
+                            {goalText}
+                          </p>
+                        )}
+                        {r.note && (
+                          <p className="mt-0.5 text-[13px] leading-relaxed text-ink-soft">
+                            {r.note}
+                          </p>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
+            {physioGoalSuggestions.length === 0 &&
+              physioMuscleSuggestions.length === 0 &&
+              adjustmentRequests.length === 0 &&
+              therapyVisitCount === 0 && (
+                <p className="mt-4 text-[14px] text-ink-muted">
+                  {t('physioEmpty')}
+                </p>
+              )}
+          </CockpitPanelDrawer>
+        )}
+
         {openPanel === 'training' && (
           <CockpitPanelDrawer onClose={() => setOpenPanel(null)}>
             <h2 className="font-display text-[18px] leading-tight text-ink">
@@ -1130,6 +1326,7 @@ export default function ClinicianPatientPage() {
           </section>
         )}
 
+        <TherapistNotesReview patientId={patient.id} />
         </div>
 
         {/* Right column: the goals — the primary work surface. On the

@@ -411,7 +411,20 @@
       "videoConsentResearch": "Consent to use videos for research",
       "archivedVideosButton": "Archived videos",
       "actionVideo": "Video",
-      "actionShortVideo": "Video"
+      "actionShortVideo": "Video",
+      "physioPanelTitle": "Therapist input",
+      "physioVisits": "{count} therapist visits this cycle",
+      "physioNoVisits": "No therapist visits recorded yet this cycle.",
+      "physioGoalSuggestionsHeading": "Goal suggestions",
+      "physioMuscleSuggestionsHeading": "Muscle suggestions",
+      "physioAccept": "Accept",
+      "physioDismiss": "Dismiss",
+      "physioConsidered": "Mark considered",
+      "physioEmpty": "Nothing from the therapist yet.",
+      "physioAcceptedToast": "Goal suggestion accepted.",
+      "physioDismissedToast": "Dismissed.",
+      "physioConsideredToast": "Marked as considered.",
+      "physioActionError": "Couldn't save — please try again."
     },
     "review": {
       "title": "Review suggestion",
@@ -1004,7 +1017,16 @@
     "clinicNoteHeading": "Note from the treating clinic",
     "clinicNoteFrom": "From the treatment on {date}.",
     "clinicNoteChanged": "Treatment adjusted this visit",
-    "clinicNoteUnchanged": "No change to treatment this visit"
+    "clinicNoteUnchanged": "No change to treatment this visit",
+    "unlockErrorInvalidCode": "That visit code is not valid or has expired. Ask the patient for a fresh code.",
+    "unlockErrorNetwork": "Network problem. Check your connection and try again.",
+    "unlockErrorGeneric": "Something went wrong. Please try again.",
+    "loadErrorTitle": "Could not load this patient",
+    "loadErrorBody": "Please check your connection and try again. If it keeps happening, the patient may need to give you a fresh visit code.",
+    "loadErrorRetry": "Try again",
+    "recapHeading": "Since your last visit",
+    "recapLastVisit": "Your last visit was {date}.",
+    "recapNewCheckins": "{count, plural, one {# new check-in since then} other {# new check-ins since then}}"
   },
   "profile": {
     "title": "Your profile",
@@ -1401,7 +1423,8 @@
     "saveAssessment": "{count, plural, one {Save visit (# goal)} other {Save visit (# goals)}}",
     "recentTitle": "Recent visits",
     "recentEmpty": "No visits recorded yet this cycle.",
-    "recentGoalsRated": "{count, plural, one {# goal rated} other {# goals rated}}"
+    "recentGoalsRated": "{count, plural, one {# goal rated} other {# goals rated}}",
+    "thisWeek": "This week"
   },
   "notifications": {
     "regionAria": "Enable notifications",
@@ -1693,6 +1716,7 @@
     "sentHeading": "Sent",
     "seen": "Seen",
     "delivered": "Delivered",
-    "error": "Couldn't send — please try again."
+    "error": "Couldn't send — please try again.",
+    "reviewHeading": "From the therapist"
   }
 }

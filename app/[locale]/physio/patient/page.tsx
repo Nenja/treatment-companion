@@ -27,6 +27,7 @@ import {
 } from '@/components/physio/PhysioActionRow';
 import { PhysioGoalSuggestionForm } from '@/components/physio/PhysioGoalSuggestionForm';
 import { NoteToClinicCard } from '@/components/physio/NoteToClinicCard';
+import { PhysioProgressForm } from '@/components/physio/PhysioProgressForm';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import {
   SkeletonBlock,
@@ -378,19 +379,17 @@ export default function PhysioPatientPage() {
         {patientData.isError ? (
           <div className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
             <p className="font-display text-[18px] text-ink">
-              Could not load this patient
+              {t('loadErrorTitle')}
             </p>
             <p className="mt-1.5 text-[14px] leading-relaxed text-ink-soft">
-              Please check your connection and try again. If it keeps
-              happening, the patient may need to give you a fresh visit
-              code.
+              {t('loadErrorBody')}
             </p>
             <button
               type="button"
               onClick={() => patientData.refetch()}
               className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
             >
-              Try again
+              {t('loadErrorRetry')}
             </button>
           </div>
         ) : patientData.isLoading || !patientData.data ? (
@@ -513,6 +512,32 @@ export default function PhysioPatientPage() {
             <div className={wide ? 'lg:min-w-0' : ''}>
             {patientData.data.cycle ? (
               <>
+                {(() => {
+                  const visitDates = assessments
+                    .map((a) => a.assessmentDate)
+                    .sort();
+                  const lastVisit =
+                    visitDates[visitDates.length - 1] ?? null;
+                  if (!lastVisit) return null;
+                  const newCheckins = checkins.filter(
+                    (c) => new Date(c.submittedAt) > new Date(lastVisit)
+                  ).length;
+                  return (
+                    <div className="mb-5 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5">
+                      <p className="eyebrow">{t('recapHeading')}</p>
+                      <p className="mt-0.5 text-[13px] leading-relaxed text-ink-soft">
+                        {t('recapLastVisit', {
+                          date: formatLongDate(lastVisit, locale)
+                        })}
+                      </p>
+                      {newCheckins > 0 && (
+                        <p className="mt-0.5 text-[13px] leading-relaxed text-ink-soft">
+                          {t('recapNewCheckins', { count: newCheckins })}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
                 {/* Action row — always-visible secondary entry points,
                     placed high so they're not buried below goals.
                     Mirrors the clinician's PatientActionRow position. */}
@@ -598,25 +623,14 @@ export default function PhysioPatientPage() {
                     The form is substantial (per-goal ratings + note),
                     so a dedicated page beats inline expansion. Disabled
                     with a hint when the patient has no goals to rate. */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    router.push(
-                      locale === 'en'
-                        ? '/physio/progress'
-                        : `/${locale}/physio/progress`
-                    )
-                  }
-                  disabled={patientData.data.goals.length === 0}
-                  className="mt-5 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-soft"
-                >
-                  {t('reportProgress')}
-                </button>
-                {patientData.data.goals.length === 0 && (
-                  <p className="mt-2 text-[13px] text-ink-muted">
-                    {t('noGoalsToReport')}
-                  </p>
-                )}
+                <PhysioProgressForm
+                  patientId={patientData.data.patient.id}
+                  goals={patientData.data.goals}
+                  currentWeek={weekNumber}
+                  ratingsByGoal={ratingsByGoal}
+                  physioRatingsByGoal={physioRatingsByGoal}
+                  goalHandoffNotes={goalHandoffNotes.data}
+                />
 
                 <NoteToClinicCard patientId={patientData.data.patient.id} />
               </>
@@ -667,45 +681,6 @@ export default function PhysioPatientPage() {
               </div>
             )}
 
-            {/* Active goals with progress charts. Comes AFTER the
-                action row + report-progress button, matching the
-                clinician layout (action row up top, primary button,
-                then goals below). */}
-            <section className="mt-10">
-              <h2 className="font-display text-[18px] text-ink">
-                {t('goalsHeading')}
-              </h2>
-              {patientData.data.goals.length === 0 ? (
-                <p className="mt-3 text-[14px] text-ink-muted">
-                  {t('noGoals')}
-                </p>
-              ) : (
-                <ul className={goalsListClass}>
-                  {patientData.data.goals.map((g) => (
-                    <li key={g.id}>
-                      <GoalProgressView
-                        goalText={g.patientFacingText}
-                        kind={g.kind}
-                        currentWeek={weekNumber}
-                        ratings={ratingsByGoal.get(g.id) ?? []}
-                        physioRatings={physioRatingsByGoal.get(g.id) ?? []}
-                        nrsDirection={g.nrsDirection}
-                      />
-                      {goalHandoffNotes.data?.get(g.id) && (
-                        <div className="mt-2 rounded-[var(--radius-button)] border border-sage-soft bg-sage-soft/20 px-3 py-2">
-                          <p className="text-[12px] font-semibold text-sage-deep">
-                            {tHandoff('fromPhysician')}
-                          </p>
-                          <p className="mt-0.5 whitespace-pre-line text-[13px] leading-relaxed text-ink-soft">
-                            {goalHandoffNotes.data.get(g.id)}
-                          </p>
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
             </div>
 
           </div>

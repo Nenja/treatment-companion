@@ -415,7 +415,20 @@
       "videoConsentResearch": "Samtykke til at bruge videoer til forskning",
       "archivedVideosButton": "Arkiverede videoer",
       "actionVideo": "Video",
-      "actionShortVideo": "Video"
+      "actionShortVideo": "Video",
+      "physioPanelTitle": "Input fra terapeut",
+      "physioVisits": "{count} terapibesøg denne cyklus",
+      "physioNoVisits": "Ingen terapibesøg registreret i denne cyklus endnu.",
+      "physioGoalSuggestionsHeading": "Forslag til mål",
+      "physioMuscleSuggestionsHeading": "Forslag til muskler",
+      "physioAccept": "Acceptér",
+      "physioDismiss": "Afvis",
+      "physioConsidered": "Markér som overvejet",
+      "physioEmpty": "Intet fra terapeuten endnu.",
+      "physioAcceptedToast": "Målforslag accepteret.",
+      "physioDismissedToast": "Afvist.",
+      "physioConsideredToast": "Markeret som overvejet.",
+      "physioActionError": "Kunne ikke gemmes — prøv igen."
     },
     "review": {
       "title": "Gennemgå forslag",
@@ -1008,7 +1021,16 @@
     "clinicNoteHeading": "Besked fra den behandlende klinik",
     "clinicNoteFrom": "Fra behandlingen den {date}.",
     "clinicNoteChanged": "Behandlingen blev justeret ved dette besøg",
-    "clinicNoteUnchanged": "Ingen ændring af behandlingen ved dette besøg"
+    "clinicNoteUnchanged": "Ingen ændring af behandlingen ved dette besøg",
+    "unlockErrorInvalidCode": "Besøgskoden er ugyldig eller udløbet. Bed patienten om en ny kode.",
+    "unlockErrorNetwork": "Netværksproblem. Tjek din forbindelse og prøv igen.",
+    "unlockErrorGeneric": "Noget gik galt. Prøv igen.",
+    "loadErrorTitle": "Kunne ikke indlæse denne patient",
+    "loadErrorBody": "Tjek din forbindelse og prøv igen. Hvis det bliver ved, kan patienten give dig en ny besøgskode.",
+    "loadErrorRetry": "Prøv igen",
+    "recapHeading": "Siden dit sidste besøg",
+    "recapLastVisit": "Dit sidste besøg var {date}.",
+    "recapNewCheckins": "{count, plural, one {# nyt check-in siden} other {# nye check-ins siden}}"
   },
   "profile": {
     "title": "Din profil",
@@ -1405,7 +1427,8 @@
     "saveAssessment": "{count, plural, one {Gem besøg (# mål)} other {Gem besøg (# mål)}}",
     "recentTitle": "Seneste besøg",
     "recentEmpty": "Ingen besøg registreret i denne cyklus endnu.",
-    "recentGoalsRated": "{count, plural, one {# mål vurderet} other {# mål vurderet}}"
+    "recentGoalsRated": "{count, plural, one {# mål vurderet} other {# mål vurderet}}",
+    "thisWeek": "Denne uge"
   },
   "notifications": {
     "regionAria": "Aktivér notifikationer",
@@ -1697,6 +1720,7 @@
     "sentHeading": "Sendt",
     "seen": "Set",
     "delivered": "Leveret",
-    "error": "Kunne ikke sendes — prøv igen."
+    "error": "Kunne ikke sendes — prøv igen.",
+    "reviewHeading": "Fra terapeuten"
   }
 }

@@ -89,7 +89,7 @@ export default function PhysioUnlockPage() {
       await unlock.mutateAsync(input);
       router.replace(patientPath);
     } catch (err) {
-      toast.error(tFeedbackMessage(err));
+      toast.error(tPhysio(tFeedbackMessage(err)));
     }
   };
 
@@ -149,13 +149,11 @@ export default function PhysioUnlockPage() {
 function tFeedbackMessage(err: unknown): string {
   const msg = err instanceof Error ? err.message.toLowerCase() : '';
   if (/code|not found|invalid|expired/.test(msg)) {
-    return 'That visit code is not valid or has expired. Ask the patient for a fresh code.';
+    return 'unlockErrorInvalidCode';
   }
-  // Fall back to the generic classifier keys (English copy here since
-  // the physio area is not yet fully localised).
   const key = classifyError(err);
   if (key === 'errorNetwork') {
-    return 'Network problem. Check your connection and try again.';
+    return 'unlockErrorNetwork';
   }
-  return 'Something went wrong. Please try again.';
+  return 'unlockErrorGeneric';
 }
