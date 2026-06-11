@@ -160,7 +160,11 @@ export function GoalProgressView({
       : null;
 
   // SVG layout. Width is set by the parent; viewBox handles scaling.
-  const width = 360;
+  // In `bare` mode (the therapist's stacked card, which is much wider than
+  // the clinician's column) a wider viewBox keeps the same 0-10 / GAS layout
+  // but renders the chart shorter and full-width, instead of ballooning to
+  // ~280px tall. Clinician charts are unchanged.
+  const width = bare ? 560 : 360;
   const height = 160;
   const padLeft = 26; // room for y-axis labels
   const padRight = 8;
