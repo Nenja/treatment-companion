@@ -72,13 +72,15 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-71` — no new migration (needs 0095 if not yet run). DB **0095**.
-- **Just shipped:** the 1080 therapist cockpit layout — goals as horizontal bands (trend
-  left / rating right), the clinic note + patient comments as a top context row instead of
-  a left rail (rail retired), page widened 720->1080. Added a `bare` (borderless) mode to
-  GoalProgressView so the chart embeds in the band. Also fixed a cockpit-70 bug where three
-  treatment-change labels pointed at undefined message keys (now needsAdjustment /
-  adjustmentNoteLabel / adjustmentNotePlaceholder).
+- **Latest build:** `simplify-cockpit-72` — no new migration (needs 0095 if not yet run). DB **0095**.
+- **Just shipped:** therapist page reworked to information-left / actions-right (approved
+  option B). Sticky left column = clinical picture (cycle week, recap, clinic note, treated
+  muscles, patient comments); right column = the visit (rate goals, note to clinic, quiet
+  Suggest-a-goal button). Removed History (the inline trend is the history); folded treated
+  muscles into the left; dropped the 3-chip action row. Goals reverted from wide bands to
+  stacked cards (chart above rating) since the right column is narrower. Single-column
+  fallback when the left is thin or on phones. (Live site was still on a pre-70 build — a
+  deploy/cache issue, not the code.)
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.
   The original 11-item simplification list is complete (bar #4, parked).

@@ -21,10 +21,6 @@ import { useWideLayout } from '@/lib/useWideLayout';
 import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { nrsToGas } from '@/lib/types';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
-import {
-  PhysioActionRow,
-  type PhysioActionId
-} from '@/components/physio/PhysioActionRow';
 import { PhysioGoalSuggestionForm } from '@/components/physio/PhysioGoalSuggestionForm';
 import { NoteToClinicCard } from '@/components/physio/NoteToClinicCard';
 import { PhysioProgressForm } from '@/components/physio/PhysioProgressForm';
@@ -105,7 +101,7 @@ export default function PhysioPatientPage() {
   // at a time. Progress reporting is NOT in this set — it's a primary
   // action that navigates to its own page (/physio/progress), like
   // the clinician's start-new-cycle button goes to /clinician/treatment.
-  const [openPanel, setOpenPanel] = useState<PhysioActionId | null>(null);
+  const [suggestGoalOpen, setSuggestGoalOpen] = useState(false);
 
   const unlockPath = locale === 'en' ? '/physio' : `/${locale}/physio`;
 
@@ -272,6 +268,11 @@ export default function PhysioPatientPage() {
   // the therapist know to discuss with the patient. Threshold of 12
   // weeks is a soft default; therapists know their own patients best.
   const showLateCycleHint = !!cycle && weekNumber >= 12;
+  const leftHasContent =
+    showLateCycleHint ||
+    !!patientData.data?.handoff ||
+    !!patientData.data?.latestTreatment ||
+    recentCommentedCheckins.length > 0;
 
   // Patient name + summary live in the header. When data has not yet
   // loaded, render placeholders so the header keeps a stable size.
@@ -416,201 +417,225 @@ export default function PhysioPatientPage() {
           </SkeletonScreen>
         ) : (
           <div>
-            <div>
-            {/* Cycle context — name + summary now live in the header,
-                so the body starts directly here (matching the clinician
-                page, which also begins with cycle context under its
-                header). The label now includes the post-injection
-                week, a bare fact the therapist can interpret. */}
             {patientData.data.cycle ? (
-              <p className="text-[14px] text-ink-soft">
-                {t('cycleLabel', {
-                  week: weekNumber
-                })}
-              </p>
-            ) : (
-              <p className="text-[14px] text-ink-muted">
-                {t('noActiveCycle')}
-              </p>
-            )}
-
-            {/* Late-cycle hint — quiet amber advisory, only when the
-                cycle has reached the typical re-treatment window. Does
-                not pre-empt the physician's call; just nudges the
-                therapist that a conversation about the next visit may
-                be in order. */}
-            {showLateCycleHint && (
-              <div className="mt-3 rounded-[var(--radius-button)] border border-amber-deep/40 bg-amber-soft/40 px-3 py-2">
-                <p className="text-[13px] leading-snug text-ink-soft">
-                  ↻ {t('lateCycleHint')}
-                </p>
-              </div>
-            )}
-
-            {/* Context across the top: the physician's note + the patient's
-                recent words, side by side at wide widths (not a side rail). */}
-            <div className={wide ? 'lg:grid lg:grid-cols-2 lg:gap-5 lg:items-start' : ''}>
-            {/* Note from the treating clinic — the physician's handoff for
-                this cycle. The one downward channel: shown prominently (not
-                behind a panel) so the therapist sees what the physician did
-                and whether anything changed, before planning their work.
-                Only rendered when a note and/or a change flag is present. */}
-            {patientData.data.handoff && (
-              <section className="mt-5 rounded-[var(--radius-card)] border border-sage-soft bg-sage-soft/30 p-4">
-                <h2 className="text-[11px] font-semibold uppercase tracking-wider text-sage-deep">
-                  {t('clinicNoteHeading')}
-                </h2>
-                {patientData.data.handoff.treatmentDate && (
-                  <p className="mt-1 text-[12px] text-ink-muted">
-                    {t('clinicNoteFrom', {
-                      date: formatLongDate(
-                        patientData.data.handoff.treatmentDate,
-                        locale
-                      )
-                    })}
+              /* Active cycle — two columns: the clinical picture pinned on
+                 the left, the visit (rate + note) on the right. Collapses to
+                 one column when the left is thin or on phones. */
+              <div
+                className={
+                  wide && leftHasContent
+                    ? 'lg:grid lg:grid-cols-[330px_minmax(0,1fr)] lg:gap-8 lg:items-start'
+                    : ''
+                }
+              >
+                {/* LEFT — information, read once, kept in view while rating. */}
+                <div
+                  className={
+                    wide && leftHasContent
+                      ? 'lg:sticky lg:top-6 space-y-5'
+                      : 'space-y-5'
+                  }
+                >
+                  <p className="text-[14px] text-ink-soft">
+                    {t('cycleLabel', { week: weekNumber })}
                   </p>
-                )}
-                {patientData.data.handoff.treatmentChanged !== null && (
-                  <p className="mt-2 text-[14px] font-semibold text-ink">
-                    {patientData.data.handoff.treatmentChanged
-                      ? `↻ ${t('clinicNoteChanged')}`
-                      : `→ ${t('clinicNoteUnchanged')}`}
-                  </p>
-                )}
-                {patientData.data.handoff.note && (
-                  <p className="mt-2 whitespace-pre-wrap text-[14px] leading-relaxed text-ink">
-                    {patientData.data.handoff.note}
-                  </p>
-                )}
-              </section>
-            )}
 
-            {/* Patient's voice — comments from the last 14 days of
-                check-ins. Quoted with light styling so the therapist
-                reads them in the patient's own words. Hidden when
-                there are no recent comments (no empty heading). */}
-            {recentCommentedCheckins.length > 0 &&
-              patientNameForHeader && (
-                <section className="mt-5">
-                  <h2 className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
-                    {t('recentCommentsHeading')}
-                  </h2>
-                  <ul className="mt-2 space-y-2">
-                    {recentCommentedCheckins.map((c) => (
-                      <li
-                        key={c.id}
-                        className="rounded-r-[var(--radius-button)] border-l-2 border-sage/50 bg-cream-soft px-3 py-2"
-                      >
-                        <div className="text-[11px] text-ink-muted">
-                          {t('recentCommentsAttribution', {
-                            name: patientNameForHeader,
-                            week: c.weekNumber
-                          })}
-                        </div>
-                        <p className="mt-0.5 whitespace-pre-wrap text-[13px] italic leading-snug text-ink">
-                          “{c.comment}”
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-            </div>
-
-            </div>
-
-            <div className={wide ? 'lg:min-w-0' : ''}>
-            {patientData.data.cycle ? (
-              <>
-                {(() => {
-                  const visitDates = assessments
-                    .map((a) => a.assessmentDate)
-                    .sort();
-                  const lastVisit =
-                    visitDates[visitDates.length - 1] ?? null;
-                  if (!lastVisit) return null;
-                  const newCheckins = checkins.filter(
-                    (c) => new Date(c.submittedAt) > new Date(lastVisit)
-                  ).length;
-                  return (
-                    <div className="mb-5 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5">
-                      <p className="eyebrow">{t('recapHeading')}</p>
-                      <p className="mt-0.5 text-[13px] leading-relaxed text-ink-soft">
-                        {t('recapLastVisit', {
-                          date: formatLongDate(lastVisit, locale)
-                        })}
+                  {showLateCycleHint && (
+                    <div className="rounded-[var(--radius-button)] border border-amber-deep/40 bg-amber-soft/40 px-3 py-2">
+                      <p className="text-[13px] leading-snug text-ink-soft">
+                        ↻ {t('lateCycleHint')}
                       </p>
-                      {newCheckins > 0 && (
+                    </div>
+                  )}
+
+                  {(() => {
+                    const visitDates = assessments
+                      .map((a) => a.assessmentDate)
+                      .sort();
+                    const lastVisit =
+                      visitDates[visitDates.length - 1] ?? null;
+                    if (!lastVisit) return null;
+                    const newCheckins = checkins.filter(
+                      (c) => new Date(c.submittedAt) > new Date(lastVisit)
+                    ).length;
+                    return (
+                      <div className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5">
+                        <p className="eyebrow">{t('recapHeading')}</p>
                         <p className="mt-0.5 text-[13px] leading-relaxed text-ink-soft">
-                          {t('recapNewCheckins', { count: newCheckins })}
+                          {t('recapLastVisit', {
+                            date: formatLongDate(lastVisit, locale)
+                          })}
+                        </p>
+                        {newCheckins > 0 && (
+                          <p className="mt-0.5 text-[13px] leading-relaxed text-ink-soft">
+                            {t('recapNewCheckins', { count: newCheckins })}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {patientData.data.handoff && (
+                    <section className="rounded-[var(--radius-card)] border border-sage-soft bg-sage-soft/30 p-4">
+                      <h2 className="text-[11px] font-semibold uppercase tracking-wider text-sage-deep">
+                        {t('clinicNoteHeading')}
+                      </h2>
+                      {patientData.data.handoff.treatmentDate && (
+                        <p className="mt-1 text-[12px] text-ink-muted">
+                          {t('clinicNoteFrom', {
+                            date: formatLongDate(
+                              patientData.data.handoff.treatmentDate,
+                              locale
+                            )
+                          })}
                         </p>
                       )}
-                    </div>
-                  );
-                })()}
-                {/* Action row — always-visible secondary entry points,
-                    placed high so they're not buried below goals.
-                    Mirrors the clinician's PatientActionRow position. */}
-                <PhysioActionRow
-                  openPanel={openPanel}
-                  onSelect={(id) =>
-                    setOpenPanel((cur) => (cur === id ? null : id))
-                  }
-                  labels={{
-                    muscles: t('actionMuscles'),
-                    suggestGoal: t('actionSuggestGoal'),
-                    suggestMuscle: t('actionSuggestMuscle'),
-                    history: t('actionHistory')
-                  }}
-                  shortLabels={{
-                    muscles: t('actionShortMuscles'),
-                    suggestGoal: t('actionShortSuggestGoal'),
-                    suggestMuscle: t('actionShortSuggestMuscle'),
-                    history: t('actionShortHistory')
-                  }}
-                />
+                      {patientData.data.handoff.treatmentChanged !== null && (
+                        <p className="mt-2 text-[14px] font-semibold text-ink">
+                          {patientData.data.handoff.treatmentChanged
+                            ? `↻ ${t('clinicNoteChanged')}`
+                            : `→ ${t('clinicNoteUnchanged')}`}
+                        </p>
+                      )}
+                      {patientData.data.handoff.note && (
+                        <p className="mt-2 whitespace-pre-wrap text-[14px] leading-relaxed text-ink">
+                          {patientData.data.handoff.note}
+                        </p>
+                      )}
+                    </section>
+                  )}
 
-                {/* Inline panel — only one open at a time. Progress
-                    reporting is NOT in this set — that primary action
-                    has its own page (/physio/progress) so the form has
-                    room to breathe and the therapist's attention
-                    narrows to one task. */}
-                {openPanel === 'muscles' && (
-                  <div className="mt-3">
-                    {patientData.data.latestTreatment ? (
-                      <TreatedMusclesSection
-                        date={patientData.data.latestTreatment.date}
-                        muscles={patientData.data.latestTreatment.muscles}
-                        locale={locale}
-                      />
-                    ) : (
-                      <p className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4 text-[14px] text-ink-muted">
-                        {t('musclesNone')}
-                      </p>
+                  {patientData.data.latestTreatment && (
+                    <TreatedMusclesSection
+                      date={patientData.data.latestTreatment.date}
+                      muscles={patientData.data.latestTreatment.muscles}
+                      locale={locale}
+                    />
+                  )}
+
+                  {recentCommentedCheckins.length > 0 &&
+                    patientNameForHeader && (
+                      <section>
+                        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
+                          {t('recentCommentsHeading')}
+                        </h2>
+                        <ul className="mt-2 space-y-2">
+                          {recentCommentedCheckins.map((c) => (
+                            <li
+                              key={c.id}
+                              className="rounded-r-[var(--radius-button)] border-l-2 border-sage/50 bg-cream-soft px-3 py-2"
+                            >
+                              <div className="text-[11px] text-ink-muted">
+                                {t('recentCommentsAttribution', {
+                                  name: patientNameForHeader,
+                                  week: c.weekNumber
+                                })}
+                              </div>
+                              <p className="mt-0.5 whitespace-pre-wrap text-[13px] italic leading-snug text-ink">
+                                “{c.comment}”
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                    )}
+                </div>
+
+                {/* RIGHT — the visit: rate goals, note to clinic, suggest a goal. */}
+                <div className="lg:min-w-0">
+                  <PhysioProgressForm
+                    patientId={patientData.data.patient.id}
+                    goals={patientData.data.goals}
+                    currentWeek={weekNumber}
+                    ratingsByGoal={ratingsByGoal}
+                    physioRatingsByGoal={physioRatingsByGoal}
+                    goalHandoffNotes={goalHandoffNotes.data}
+                  />
+
+                  <NoteToClinicCard patientId={patientData.data.patient.id} />
+
+                  {/* Suggest a goal — quiet secondary action. The physician
+                      approves; the therapist only proposes. */}
+                  <div className="mt-6 border-t border-stone pt-5">
+                    <button
+                      type="button"
+                      onClick={() => setSuggestGoalOpen((v) => !v)}
+                      aria-expanded={suggestGoalOpen}
+                      className="inline-flex items-center gap-2 rounded-[var(--radius-button)] border border-dashed border-stone bg-transparent px-4 py-2.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
+                    >
+                      <span aria-hidden>＋</span>
+                      {t('actionSuggestGoal')}
+                    </button>
+                    {suggestGoalOpen && (
+                      <div className="mt-3">
+                        <PhysioGoalSuggestionForm
+                          patientId={patientData.data.patient.id}
+                        />
+                        {(goalSuggestions.data ?? []).length > 0 && (
+                          <div className="mt-4">
+                            <h3 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
+                              {t('sentGoalsHeading')}
+                            </h3>
+                            <ul className="mt-2 space-y-2">
+                              {goalSuggestions.data!.map((sg) => (
+                                <li
+                                  key={sg.id}
+                                  className="rounded-[var(--radius-button)] border border-stone/70 bg-cream p-2.5"
+                                >
+                                  <p className="text-[14px] font-semibold leading-snug text-ink">
+                                    {sg.suggestedGoal}
+                                  </p>
+                                  <p className="mt-1">
+                                    <SuggestionStatusBadge status={sg.status} />
+                                  </p>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-                {openPanel === 'suggestGoal' && (
-                  <div className="mt-3">
-                    <PhysioGoalSuggestionForm
-                      patientId={patientData.data.patient.id}
-                    />
+                </div>
+              </div>
+            ) : (
+              /* No active cycle — single column. */
+              <div>
+                <p className="text-[14px] text-ink-muted">
+                  {t('noActiveCycle')}
+                </p>
+                <div className="mt-10 rounded-[var(--radius-card)] border border-dashed border-stone bg-cream-soft/60 p-5">
+                  <p className="text-[14px] leading-relaxed text-ink-soft">
+                    {t('noCycleHint')}
+                  </p>
+                  <div className="mt-4 border-t border-stone/60 pt-4">
+                    <h3 className="font-display text-[15px] text-ink">
+                      {t('preCycleSuggestTitle')}
+                    </h3>
+                    <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">
+                      {t('preCycleSuggestHint')}
+                    </p>
+                    <div className="mt-4">
+                      <PhysioGoalSuggestionForm
+                        patientId={patientData.data.patient.id}
+                      />
+                    </div>
                     {(goalSuggestions.data ?? []).length > 0 && (
                       <div className="mt-4">
-                        <h3 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
+                        <h4 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
                           {t('sentGoalsHeading')}
-                        </h3>
+                        </h4>
                         <ul className="mt-2 space-y-2">
-                          {goalSuggestions.data!.map((s) => (
+                          {goalSuggestions.data!.map((sg) => (
                             <li
-                              key={s.id}
+                              key={sg.id}
                               className="rounded-[var(--radius-button)] border border-stone/70 bg-cream p-2.5"
                             >
                               <p className="text-[14px] font-semibold leading-snug text-ink">
-                                {s.suggestedGoal}
+                                {sg.suggestedGoal}
                               </p>
                               <p className="mt-1">
-                                <SuggestionStatusBadge status={s.status} />
+                                <SuggestionStatusBadge status={sg.status} />
                               </p>
                             </li>
                           ))}
@@ -618,81 +643,9 @@ export default function PhysioPatientPage() {
                       </div>
                     )}
                   </div>
-                )}
-                {openPanel === 'history' && (
-                  <AssessmentHistoryPanel
-                    assessments={patientData.data.assessments}
-                    goals={patientData.data.goals}
-                    locale={locale}
-                  />
-                )}
-
-                {/* PRIMARY ACTION — Report progress. Navigates to its
-                    own page (/physio/progress), mirroring the clinician's
-                    "Start new treatment cycle" → /clinician/treatment.
-                    The form is substantial (per-goal ratings + note),
-                    so a dedicated page beats inline expansion. Disabled
-                    with a hint when the patient has no goals to rate. */}
-                <PhysioProgressForm
-                  patientId={patientData.data.patient.id}
-                  goals={patientData.data.goals}
-                  currentWeek={weekNumber}
-                  ratingsByGoal={ratingsByGoal}
-                  physioRatingsByGoal={physioRatingsByGoal}
-                  goalHandoffNotes={goalHandoffNotes.data}
-                />
-
-                <NoteToClinicCard patientId={patientData.data.patient.id} />
-              </>
-            ) : (
-              <div className="mt-10 rounded-[var(--radius-card)] border border-dashed border-stone bg-cream-soft/60 p-5">
-                <p className="text-[14px] leading-relaxed text-ink-soft">
-                  {t('noCycleHint')}
-                </p>
-                {/* Even before a cycle exists, the therapist can suggest a
-                    goal or flag a muscle for the physician to weigh at the
-                    first injection. These record now and surface in the
-                    physician's review once a cycle is created. */}
-                <div className="mt-4 border-t border-stone/60 pt-4">
-                  <h3 className="font-display text-[15px] text-ink">
-                    {t('preCycleSuggestTitle')}
-                  </h3>
-                  <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">
-                    {t('preCycleSuggestHint')}
-                  </p>
-                  <div className="mt-4">
-                    <PhysioGoalSuggestionForm
-                      patientId={patientData.data.patient.id}
-                    />
-                  </div>
-                  {(goalSuggestions.data ?? []).length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
-                        {t('sentGoalsHeading')}
-                      </h4>
-                      <ul className="mt-2 space-y-2">
-                        {goalSuggestions.data!.map((s) => (
-                          <li
-                            key={s.id}
-                            className="rounded-[var(--radius-button)] border border-stone/70 bg-cream p-2.5"
-                          >
-                            <p className="text-[14px] font-semibold leading-snug text-ink">
-                              {s.suggestedGoal}
-                            </p>
-                            <p className="mt-1">
-                              <SuggestionStatusBadge status={s.status} />
-                            </p>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
-
-            </div>
-
           </div>
         )}
       </main>
