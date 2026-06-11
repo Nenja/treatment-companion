@@ -88,12 +88,7 @@ export function PhysioActionRow({
   shortLabels?: Record<PhysioActionId, string>;
 }) {
   const t = useTranslations('physioForms');
-  const items: PhysioActionId[] = [
-    'muscles',
-    'suggestGoal',
-    'suggestMuscle',
-    'history'
-  ];
+  const items: PhysioActionId[] = ['muscles', 'suggestGoal', 'history'];
 
   return (
     <div className="mt-5 flex gap-2" role="group" aria-label={t('actionsAria')}>

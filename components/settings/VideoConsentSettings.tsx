@@ -24,10 +24,8 @@ export function VideoConsentSettings({
 
   return (
     <div>
-      <h2 className="text-[13px] font-semibold text-ink-soft">
-        {t('profileHeading')}
-      </h2>
-      <p className="mt-0.5 text-[12px] text-ink-muted">{t('profileHelper')}</p>
+      <h2 className="eyebrow">{t('profileHeading')}</h2>
+      <p className="mt-2 text-[12px] text-ink-muted">{t('profileHelper')}</p>
 
       <div className="mt-3 flex flex-col gap-3">
         <label className="flex items-start gap-2.5 text-[14px] text-ink">

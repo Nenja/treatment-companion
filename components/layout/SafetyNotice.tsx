@@ -12,7 +12,7 @@ import { ReadAloudButton } from '@/components/feedback/ReadAloudButton';
  * never miss that an urgent-care caveat exists; only the detailed guidance
  * sits behind a tap, to keep the home screen compact.
  */
-export function SafetyNotice() {
+export function SafetyNotice({ topRule = true }: { topRule?: boolean }) {
   const t = useTranslations('safety');
   const [open, setOpen] = useState(false);
 
@@ -20,7 +20,9 @@ export function SafetyNotice() {
     <aside
       role="note"
       aria-label={t('title')}
-      className="border-t border-stone/60 px-0.5 pt-4 text-[14px] leading-relaxed text-ink-soft"
+      className={`px-0.5 text-[14px] leading-relaxed text-ink-soft${
+        topRule ? ' border-t border-stone/60 pt-4' : ''
+      }`}
     >
       <button
         type="button"
