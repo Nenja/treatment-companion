@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { GoalRatingPicker } from '@/components/wizard/GoalRatingPicker';
-import { GasGoalRatingPicker } from '@/components/wizard/GasGoalRatingPicker';
+import { CompactGoalRating } from '@/components/physio/CompactGoalRating';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
@@ -166,9 +165,9 @@ export function PhysioProgressForm({
               <>
                 <div className="mt-4">
                   {g.kind === 'gas' ? (
-                    <GasGoalRatingPicker
+                    <CompactGoalRating
                       ariaLabel={`GAS rating for ${g.patientFacingText}`}
-                      goalText=""
+                      kind="gas"
                       anchors={g.gas}
                       value={gasRatings[g.id]}
                       onChange={(v) =>
@@ -176,10 +175,9 @@ export function PhysioProgressForm({
                       }
                     />
                   ) : (
-                    <GoalRatingPicker
+                    <CompactGoalRating
                       ariaLabel={`NRS rating for ${g.patientFacingText}`}
-                      goalText=""
-                      question={g.nrsQuestion}
+                      kind="nrs"
                       direction={g.nrsDirection}
                       value={ratings[g.id]}
                       onChange={(v) =>
