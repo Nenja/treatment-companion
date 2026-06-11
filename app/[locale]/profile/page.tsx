@@ -224,8 +224,11 @@ export default function ProfilePage() {
           {t('title')}
         </h1>
 
+        {/* Account */}
+        <p className="eyebrow mt-7">{t('sectionAccount')}</p>
+
         {/* Name */}
-        <div className="mt-6">
+        <div className="mt-4">
           <label htmlFor="profile-name" className={fieldLabel}>
             {t('nameLabel')}
           </label>
@@ -309,9 +312,16 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* About you — patient accounts only (sex + reminder day). */}
+        {isPatient && (
+          <div className="mt-9 border-t border-stone/70 pt-7">
+            <p className="eyebrow">{t('sectionAbout')}</p>
+          </div>
+        )}
+
         {/* Sex — patient accounts only. */}
         {isPatient && (
-          <div className="mt-6">
+          <div className="mt-5">
             <label htmlFor="profile-sex" className={fieldLabel}>
               {t('sexLabel')}
             </label>
@@ -380,10 +390,8 @@ export default function ProfilePage() {
         {/* Appearance — colour palette + night mode. Applies live and
             persists itself; not under Save. */}
         <div className="mt-10 border-t border-stone/70 pt-7">
-          <h2 className="text-[13px] font-semibold text-ink-soft">
-            {t('appearanceHeading')}
-          </h2>
-          <p className={fieldHelper}>{t('appearanceHelper')}</p>
+          <p className="eyebrow">{t('sectionAccessibility')}</p>
+          <p className="mt-2 text-[12px] text-ink-muted">{t('appearanceHelper')}</p>
           <div className="mt-3">
             <AppearanceSettings />
           </div>

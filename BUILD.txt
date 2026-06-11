@@ -1,36 +1,28 @@
-BUILD: simplify-cockpit-61 (DB migration 0094) — profile page: no auto-save + single Save + unsaved-changes guard.
-DEPLOY THIS ZIP. DISCARD 21-60 and earlier.
+BUILD: simplify-cockpit-64 — therapist surface slice 2b-i: two-pane cockpit shell.
+DEPLOY THIS ZIP. DISCARD 21-63 and earlier.
 
-WHAT CHANGED (cockpit-61)
-- Profile page no longer auto-saves anything. Name, profession (therapists), sex,
-  reminder day, and video consent (patients) all stage locally and are written only
-  when the single "Save changes" button (last on the page) is tapped.
-- Save is disabled until something actually changes (dirty-tracked).
-- Unsaved-changes warning when leaving with pending edits:
-    * Back button + "Change password" link -> styled in-app confirm dialog.
-    * Closing / refreshing the tab -> browser's native prompt (beforeunload).
-- VideoConsentSettings is now controlled by the page (no own save button).
-- Appearance (colour + night mode) intentionally stays live/instant — it is a
-  display preview preference, persists itself, and is NOT under Save.
-- Goals page: "goals sent" status line moved below the "Suggest a new goal" button.
+MIGRATION: none new. If you have NOT yet run 0095_therapist_note (cockpit-63), run it —
+the note channel needs it. Otherwise nothing to run for this build.
+
+WHAT CHANGED (cockpit-64)
+- The therapist patient page is now a two-pane cockpit on a wide desktop: a sticky
+  left rail holds the context you read while you work (cycle/week, the clinic note,
+  the patient's recent comments); the right column holds the actions, report-progress
+  button, the note-to-clinic card, and the goals.
+- On a phone (or compact layout) it stays a single column, exactly as before.
+- Layout only — no behaviour changed. Reporting still happens via the "Report progress"
+  button for now; the next slice folds rating into the goal cards.
 
 DEPLOY
-1. Unzip, push to GitHub (github.com/Nenja/treatment-companion). Vercel auto-builds.
-2. No new SQL this build — DB stays at migration 0094.
-3. STILL OUTSTANDING from cockpit-57 (separate from this zip): deploy the rewritten
-   Edge Function `send-checkin-notifications` via Supabase Dashboard -> Edge Functions
-   -> paste new index.ts -> Deploy. Until then the reminder DAY is stored/shown but
-   reminders don't yet honour it.
+1. Unzip, push to GitHub. Vercel auto-builds. (Run 0095 first if you haven't.)
+2. STILL OUTSTANDING (separate, cockpit-57): deploy the send-checkin-notifications
+   Edge Function via the Supabase Dashboard.
 
-QA (cannot be verified here — please check on device)
-[ ] Profile: changing name/profession/sex/reminder/consent does NOT save until "Save changes".
-[ ] Save button is greyed out until you change something; re-greys after a successful save.
-[ ] Editing then tapping Back (or "Change password") shows the "Unsaved changes" dialog.
-    "Keep editing" stays; "Leave without saving" navigates away.
-[ ] Editing then closing/refreshing the browser tab shows the native leave prompt.
-[ ] Tapping Save persists ALL fields (name, profession, sex, reminder day, consent) in one go.
-[ ] Appearance still changes the palette instantly (no Save needed) and is not warned about.
-[ ] Goals page: "goals sent" text now sits below the Suggest button.
-[ ] DA strings profile.leaveTitle/leaveBody/leaveConfirm/leaveCancel read naturally (native review).
+QA (cannot verify here — please check on device)
+[ ] On a wide desktop with the wide layout on: context sits in a left rail and stays put
+    while the right column scrolls.
+[ ] On a phone: everything stacks in one column as before (no rail).
+[ ] The clinic note and patient comments read cleanly in the rail.
+[ ] Action row, report-progress, note card, and goals all still work.
 
-VERIFIED IN BUILD: tsc clean · next build 62/62 · i18n en/da parity 1530 keys · font-stub restored.
+VERIFIED IN BUILD: tsc clean · next build 62/62 · i18n parity 1542 keys · font-stub restored.

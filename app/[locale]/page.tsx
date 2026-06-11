@@ -311,10 +311,11 @@ export default function PatientHomePage() {
         </span>
       </button>
 
-      {/* Safety notice + a quiet data & privacy link — the two static
-          informational items grouped at the foot of the home. */}
-      <div className="mt-10">
-        <SafetyNotice />
+      {/* Safety notice + a quiet data & privacy link. The visit-code row's
+          hairline above acts as the divider, so this notice drops its own top
+          rule and sits close beneath it (no empty band, no double line). */}
+      <div className="mt-5">
+        <SafetyNotice topRule={false} />
         <button
           type="button"
           onClick={() =>

@@ -72,13 +72,12 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-61` — **no migration**. DB stays at **0094**.
-- **Just shipped:** profile/settings page no longer auto-saves - name, profession,
-  sex, reminder day, and video consent all stage locally and persist only via one
-  "Save changes" button; leaving with unsaved edits warns (in-app dialog + browser
-  prompt). VideoConsentSettings is now controlled; Appearance stays live. Earlier in
-  this run: patient-facing redesign (home / goals route / check-in card) and the
-  notification reminder-day feature (migration 0094).
+- **Latest build:** `simplify-cockpit-64` — no new migration (still needs 0095 if not yet run). DB **0095**.
+- **Just shipped:** therapist surface slice 2b-i — `/physio/patient` restructured into
+  the two-pane Direction-3 cockpit shell (sticky context rail + work column at wide/lg;
+  single column on phone), reusing today's reporting. Next: slice 2b-ii — unified
+  per-goal cards with inline optional ratings (rate beside the trend), the "since your
+  last visit" recap, note card moves below goals, and retire `/physio/progress`.
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.
   The original 11-item simplification list is complete (bar #4, parked).

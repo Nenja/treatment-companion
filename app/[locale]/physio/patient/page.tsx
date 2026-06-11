@@ -12,7 +12,6 @@ import {
 import { usePhysioPatientData } from '@/lib/supabase/physioPatient';
 import { useGoalHandoffNotes } from '@/lib/supabase/clinicianPatient';
 import { usePhysioGoalSuggestions } from '@/lib/supabase/physioGoalSuggestion';
-import { usePhysioMuscleSuggestions } from '@/lib/supabase/physioMuscleSuggestion';
 import {
   usePatientInfo,
   formatPatientSummary
@@ -27,7 +26,7 @@ import {
   type PhysioActionId
 } from '@/components/physio/PhysioActionRow';
 import { PhysioGoalSuggestionForm } from '@/components/physio/PhysioGoalSuggestionForm';
-import { PhysioMuscleSuggestionForm } from '@/components/physio/PhysioMuscleSuggestionForm';
+import { NoteToClinicCard } from '@/components/physio/NoteToClinicCard';
 import { AccountMenu } from '@/components/layout/AccountMenu';
 import {
   SkeletonBlock,
@@ -99,10 +98,6 @@ export default function PhysioPatientPage() {
   );
   const goalHandoffNotes = useGoalHandoffNotes(
     patientData.data?.cycle?.id ?? null
-  );
-  const muscleSuggestions = usePhysioMuscleSuggestions(
-    sessionQuery.data?.patientId ?? null,
-    !!sessionQuery.data
   );
 
   // Which inline panel is open under the action row, if any. Only one
@@ -415,7 +410,8 @@ export default function PhysioPatientPage() {
             </div>
           </SkeletonScreen>
         ) : (
-          <div className={bodyColumnClass}>
+          <div className={wide ? 'lg:grid lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8 lg:items-start' : ''}>
+            <div className={wide ? 'lg:sticky lg:top-6' : ''}>
             {/* Cycle context — name + summary now live in the header,
                 so the body starts directly here (matching the clinician
                 page, which also begins with cycle context under its
@@ -512,6 +508,9 @@ export default function PhysioPatientPage() {
                 </section>
               )}
 
+            </div>
+
+            <div className={wide ? 'lg:min-w-0' : ''}>
             {patientData.data.cycle ? (
               <>
                 {/* Action row — always-visible secondary entry points,
@@ -585,36 +584,6 @@ export default function PhysioPatientPage() {
                     )}
                   </div>
                 )}
-                {openPanel === 'suggestMuscle' && (
-                  <div className="mt-3">
-                    <PhysioMuscleSuggestionForm
-                      patientId={patientData.data.patient.id}
-                      goals={patientData.data.goals}
-                    />
-                    {(muscleSuggestions.data ?? []).length > 0 && (
-                      <div className="mt-4">
-                        <h3 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
-                          {t('sentMusclesHeading')}
-                        </h3>
-                        <ul className="mt-2 space-y-2">
-                          {muscleSuggestions.data!.map((s) => (
-                            <li
-                              key={s.id}
-                              className="rounded-[var(--radius-button)] border border-stone/70 bg-cream p-2.5"
-                            >
-                              <p className="text-[14px] font-semibold leading-snug text-ink">
-                                {s.muscle}
-                              </p>
-                              <p className="mt-1">
-                                <SuggestionStatusBadge status={s.status} />
-                              </p>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
                 {openPanel === 'history' && (
                   <AssessmentHistoryPanel
                     assessments={patientData.data.assessments}
@@ -648,6 +617,8 @@ export default function PhysioPatientPage() {
                     {t('noGoalsToReport')}
                   </p>
                 )}
+
+                <NoteToClinicCard patientId={patientData.data.patient.id} />
               </>
             ) : (
               <div className="mt-10 rounded-[var(--radius-card)] border border-dashed border-stone bg-cream-soft/60 p-5">
@@ -735,6 +706,7 @@ export default function PhysioPatientPage() {
                 </ul>
               )}
             </section>
+            </div>
 
           </div>
         )}
