@@ -1044,7 +1044,10 @@
     "leaveTitle": "Ikke-gemte ændringer",
     "leaveBody": "Du har ændringer, der ikke er gemt. Vil du forlade siden uden at gemme?",
     "leaveConfirm": "Forlad uden at gemme",
-    "leaveCancel": "Bliv og rediger"
+    "leaveCancel": "Bliv og rediger",
+    "sectionAccount": "Konto",
+    "sectionAbout": "Om dig",
+    "sectionAccessibility": "Tilgængelighed"
   },
   "help": {
     "buttonLabel": "Hjælp",
@@ -1684,5 +1687,16 @@
       "5": "Fredag",
       "6": "Lørdag"
     }
+  },
+  "therapistNote": {
+    "title": "Besked til klinikken",
+    "helper": "Skriv så meget du vil. Klinikken kan se den; patienten kan aldrig.",
+    "placeholder": "Skriv det, klinikken bør vide…",
+    "send": "Send",
+    "sending": "Sender…",
+    "sentHeading": "Sendt",
+    "seen": "Set",
+    "delivered": "Leveret",
+    "error": "Kunne ikke sendes — prøv igen."
   }
 }

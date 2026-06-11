@@ -1040,7 +1040,10 @@
     "leaveTitle": "Unsaved changes",
     "leaveBody": "You have changes that haven't been saved. Leave without saving?",
     "leaveConfirm": "Leave without saving",
-    "leaveCancel": "Keep editing"
+    "leaveCancel": "Keep editing",
+    "sectionAccount": "Account",
+    "sectionAbout": "About you",
+    "sectionAccessibility": "Accessibility"
   },
   "help": {
     "buttonLabel": "Help",
@@ -1680,5 +1683,16 @@
       "5": "Friday",
       "6": "Saturday"
     }
+  },
+  "therapistNote": {
+    "title": "Note to the clinic",
+    "helper": "Any length you like. The clinic sees it; the patient never does.",
+    "placeholder": "Share anything the clinic should know…",
+    "send": "Send",
+    "sending": "Sending…",
+    "sentHeading": "Sent",
+    "seen": "Seen",
+    "delivered": "Delivered",
+    "error": "Couldn't send — please try again."
   }
 }
