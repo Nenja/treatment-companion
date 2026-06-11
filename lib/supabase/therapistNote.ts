@@ -62,3 +62,26 @@ export function useSubmitTherapistNote() {
     }
   });
 }
+
+/**
+ * Marks all of a patient's unseen therapist notes seen — called when a
+ * PHYSICIAN opens the patient (mark-seen-on-open). Physician-only and
+ * idempotent server-side (migration 0095); returns the number marked.
+ * This is what flips the therapist's receipt from "Delivered" to "Seen".
+ */
+export function useMarkTherapistNotesSeen() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (patientId: string): Promise<number> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc('mark_therapist_notes_seen', {
+        p_patient_id: patientId
+      });
+      if (error) throw error;
+      return (data as number) ?? 0;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['therapistNotes'] });
+    }
+  });
+}

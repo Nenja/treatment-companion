@@ -1,28 +1,30 @@
-BUILD: simplify-cockpit-64 — therapist surface slice 2b-i: two-pane cockpit shell.
-DEPLOY THIS ZIP. DISCARD 21-63 and earlier.
+BUILD: simplify-cockpit-68 — therapist surface slice 4: polish.
+DEPLOY THIS ZIP. DISCARD 21-67 and earlier.
 
-MIGRATION: none new. If you have NOT yet run 0095_therapist_note (cockpit-63), run it —
-the note channel needs it. Otherwise nothing to run for this build.
+MIGRATION: none new. Run 0095_therapist_note if you haven't (the note channel needs it).
 
-WHAT CHANGED (cockpit-64)
-- The therapist patient page is now a two-pane cockpit on a wide desktop: a sticky
-  left rail holds the context you read while you work (cycle/week, the clinic note,
-  the patient's recent comments); the right column holds the actions, report-progress
-  button, the note-to-clinic card, and the goals.
-- On a phone (or compact layout) it stays a single column, exactly as before.
-- Layout only — no behaviour changed. Reporting still happens via the "Report progress"
-  button for now; the next slice folds rating into the goal cards.
+WHAT CHANGED (cockpit-68)
+- The last bits of hardcoded English in the physiotherapist area are now translated:
+  the visit-code unlock error messages, and the "Could not load this patient" block on
+  the therapist patient page (title, body, and "Try again"). Danish is a first pass —
+  see the review note below.
+- New "Since your last visit" recap at the top of the therapist patient page: the date of
+  the therapist's last assessment, and how many patient check-ins have come in since. It
+  only appears once there's a prior visit.
+- Removed a dead, unused component (PhysioPlanSection).
 
 DEPLOY
-1. Unzip, push to GitHub. Vercel auto-builds. (Run 0095 first if you haven't.)
-2. STILL OUTSTANDING (separate, cockpit-57): deploy the send-checkin-notifications
-   Edge Function via the Supabase Dashboard.
+1. Unzip, push to GitHub. Vercel auto-builds.
+2. STILL OUTSTANDING (separate, cockpit-57): deploy the send-checkin-notifications Edge Function.
+
+NATIVE DANISH REVIEW (for you / a Danish speaker) — all first-pass, please check:
+  therapistNote.*  ·  physioForms.thisWeek  ·  clinician.patient.physio*
+  physio.unlockError* / loadError* / recap*
 
 QA (cannot verify here — please check on device)
-[ ] On a wide desktop with the wide layout on: context sits in a left rail and stays put
-    while the right column scrolls.
-[ ] On a phone: everything stacks in one column as before (no rail).
-[ ] The clinic note and patient comments read cleanly in the rail.
-[ ] Action row, report-progress, note card, and goals all still work.
+[ ] /physio with a bad code → localised error (not English).
+[ ] Force a load failure on the patient page → localised block + "Try again".
+[ ] With a prior therapist assessment: the recap shows the last-visit date + new check-in count.
+[ ] With no prior assessment: no recap.
 
-VERIFIED IN BUILD: tsc clean · next build 62/62 · i18n parity 1542 keys · font-stub restored.
+VERIFIED IN BUILD: tsc clean · next build 62/62 · i18n en/da parity 1566 keys · font-stub restored.

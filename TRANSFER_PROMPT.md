@@ -72,12 +72,12 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-64` — no new migration (still needs 0095 if not yet run). DB **0095**.
-- **Just shipped:** therapist surface slice 2b-i — `/physio/patient` restructured into
-  the two-pane Direction-3 cockpit shell (sticky context rail + work column at wide/lg;
-  single column on phone), reusing today's reporting. Next: slice 2b-ii — unified
-  per-goal cards with inline optional ratings (rate beside the trend), the "since your
-  last visit" recap, note card moves below goals, and retire `/physio/progress`.
+- **Latest build:** `simplify-cockpit-68` — no new migration (needs 0095 if not yet run). DB **0095**.
+- **Just shipped:** slice 4 polish — localised the last hardcoded English in the physio
+  pages (unlock errors + patient load-error block), added the "since your last visit"
+  recap to the therapist patient page, deleted dead PhysioPlanSection. The therapist epic
+  (cockpit + note round-trip + physician input panel) is complete. Remaining: native
+  Danish review of all first-pass strings; optionally a few eyebrow-heading tidies.
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.
   The original 11-item simplification list is complete (bar #4, parked).
