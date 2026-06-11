@@ -65,6 +65,9 @@ interface GoalProgressViewProps {
   /** Optional status chip shown in the card header under the title — used by the
    *  clinician cockpit for the "video task" indicator. Other call sites omit it. */
   headerBadge?: ReactNode;
+  /** When true, render without the outer card border/background/padding so
+   * the chart can be embedded inside another card (e.g. a goal band). */
+  bare?: boolean;
 }
 
 /**
@@ -101,7 +104,8 @@ export function GoalProgressView({
   nrsTarget,
   clinicPoints = [],
   doseMarkers = [],
-  headerBadge
+  headerBadge,
+  bare = false
 }: GoalProgressViewProps) {
   const t = useTranslations('treatment');
   const tA11y = useTranslations('a11y');
@@ -276,7 +280,13 @@ export function GoalProgressView({
   );
 
   return (
-    <article className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+    <article
+      className={
+        bare
+          ? ''
+          : 'rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4'
+      }
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-display text-[16px] leading-snug text-ink">

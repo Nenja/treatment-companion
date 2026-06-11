@@ -1,16 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { GoalRatingPicker } from '@/components/wizard/GoalRatingPicker';
 import { GasGoalRatingPicker } from '@/components/wizard/GasGoalRatingPicker';
 import { GoalProgressView } from '@/components/clinician/GoalProgressView';
 import { useToast } from '@/components/feedback/Toast';
 import { classifyError } from '@/lib/feedback';
-import { todayIso, formatLongDate } from '@/lib/dates';
+import { todayIso } from '@/lib/dates';
 import {
   useSubmitPhysioAssessment,
-  usePhysioAssessments,
   type PhysioGoalRatingInput
 } from '@/lib/supabase/physioAssessment';
 import type { PhysioPatientData } from '@/lib/supabase/physioPatient';
@@ -18,19 +17,12 @@ import type { PhysioPatientData } from '@/lib/supabase/physioPatient';
 interface PhysioProgressFormProps {
   patientId: string;
   goals: PhysioPatientData['goals'];
-  /**
-   * Called after a successful submission, after the form has reset for
-   * the next entry. When the form is on its own page, the caller uses
-   * this to navigate back; when the form is inline, it can be omitted
-   * and the form simply stays put for further entries.
-   */
   onSaved?: () => void;
   /**
-   * Optional progress-trend data. When provided, each goal card shows its
-   * trend chart (and the physician's per-goal note) above the rating
-   * controls — the unified "rate beside the trend" cockpit cards. When
-   * omitted (the standalone /physio/progress page), the form renders the
-   * plain rating cards it always did.
+   * Optional progress-trend data. When provided, each goal renders as a
+   * horizontal band — its trend chart on the left, the rating on the
+   * right. When omitted (the standalone /physio/progress page), each goal
+   * is a plain single-column rating card.
    */
   currentWeek?: number;
   ratingsByGoal?: Map<
@@ -57,16 +49,17 @@ interface PhysioProgressFormProps {
 }
 
 /**
- * Physiotherapist progress-reporting surface.
+ * Physiotherapist visit-rating surface.
  *
- * The physiotherapist records one assessment = one visit. They pick a
- * date, optionally write one visit-level clinical note, and rate
- * whichever goals are relevant on the same 0-10 NRS scale the patient
- * uses. Goals they don't assess are simply left un-rated (skip = the
- * goal's card stays collapsed; no rating is sent for it).
+ * One assessment = one visit. The therapist picks a date and rates the
+ * goals they assessed today on the same scale the patient uses. Rating a
+ * goal IS the report that they engaged with it (no separate "working on"
+ * step); a goal left un-rated simply wasn't reported this visit. Per goal
+ * they can also suggest a treatment change — a constructive note to the
+ * physician, who decides the dose.
  *
- * Below the form, recent assessments for this patient are listed so
- * the physiotherapist can see what's already been logged this cycle.
+ * Free-text notes to the clinic live in their own channel
+ * (NoteToClinicCard), not here; this surface is the structured visit.
  */
 export function PhysioProgressForm({
   patientId,
@@ -78,45 +71,22 @@ export function PhysioProgressForm({
   goalHandoffNotes
 }: PhysioProgressFormProps) {
   const toast = useToast();
-  const locale = useLocale();
   const t = useTranslations('physioForms');
   const tHandoff = useTranslations('clinician.goalHandoff');
   const submit = useSubmitPhysioAssessment();
-  const recent = usePhysioAssessments(patientId, true);
   const hasTrend = currentWeek != null;
 
   const [date, setDate] = useState<string>(todayIso());
-  const [note, setNote] = useState('');
-  // Per-goal state. A goal is "included" in the visit if it has a rating,
-  // is marked working-on, or is flagged for adjustment — any one signal.
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [gasRatings, setGasRatings] = useState<Record<string, number>>({});
-  const [openGoals, setOpenGoals] = useState<Record<string, boolean>>({});
-  const [workingOn, setWorkingOn] = useState<Record<string, boolean>>({});
-  const [needsAdj, setNeedsAdj] = useState<Record<string, boolean>>({});
-  const [adjNote, setAdjNote] = useState<Record<string, string>>({});
-
-  const toggleGoal = (goalId: string) => {
-    setOpenGoals((prev) => ({ ...prev, [goalId]: !prev[goalId] }));
-    // If collapsing, drop any rating for that goal — collapsed = skipped.
-    if (openGoals[goalId]) {
-      setRatings((prev) => {
-        const next = { ...prev };
-        delete next[goalId];
-        return next;
-      });
-      setGasRatings((prev) => {
-        const next = { ...prev };
-        delete next[goalId];
-        return next;
-      });
-    }
-  };
+  const [suggestChange, setSuggestChange] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [changeNote, setChangeNote] = useState<Record<string, string>>({});
 
   const isRated = (id: string) =>
     typeof ratings[id] === 'number' || typeof gasRatings[id] === 'number';
-  const isIncluded = (id: string) =>
-    isRated(id) || !!workingOn[id] || !!needsAdj[id];
+  const isIncluded = (id: string) => isRated(id) || !!suggestChange[id];
   const includedCount = goals.filter((g) => isIncluded(g.id)).length;
   const canSubmit = includedCount > 0 && !!date && !submit.isPending;
 
@@ -136,25 +106,18 @@ export function PhysioProgressForm({
           g.kind === 'gas' && typeof gasRatings[g.id] === 'number'
             ? gasRatings[g.id]
             : null,
-        workingOn: !!workingOn[g.id],
-        needsAdjustment: !!needsAdj[g.id],
-        adjustmentNote: needsAdj[g.id] ? adjNote[g.id]?.trim() || null : null
+        needsAdjustment: !!suggestChange[g.id],
+        adjustmentNote: suggestChange[g.id]
+          ? changeNote[g.id]?.trim() || null
+          : null
       }));
     try {
-      await submit.mutateAsync({
-        patientId,
-        date,
-        note: note.trim() || undefined,
-        ratings: ratingInputs
-      });
+      await submit.mutateAsync({ patientId, date, ratings: ratingInputs });
       toast.success(t('progressToast'));
       setRatings({});
       setGasRatings({});
-      setOpenGoals({});
-      setWorkingOn({});
-      setNeedsAdj({});
-      setAdjNote({});
-      setNote('');
+      setSuggestChange({});
+      setChangeNote({});
       setDate(todayIso());
       onSaved?.();
     } catch (err) {
@@ -190,24 +153,98 @@ export function PhysioProgressForm({
             value={date}
             max={todayIso()}
             onChange={(e) => setDate(e.target.value)}
-            className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] text-ink focus:border-sage focus:outline-none"
+            className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] text-ink focus:border-sage focus:outline-none lg:max-w-xs"
           />
         </div>
 
-        {/* Per-goal cards */}
         <div className="mt-6 space-y-3">
           {goals.map((g) => {
-            const isOpen = !!openGoals[g.id];
-            const rated =
-              typeof ratings[g.id] === 'number' ||
-              typeof gasRatings[g.id] === 'number';
-            const isWorking = !!workingOn[g.id];
-            const isAdj = !!needsAdj[g.id];
-            return (
-              <div key={g.id} className={hasTrend ? 'space-y-3' : ''}>
-                {hasTrend && currentWeek != null && (
-                  <>
+            const flagged = !!suggestChange[g.id];
+
+            // Rating control + treatment-change suggestion. Shared between the
+            // wide band layout and the plain single-column card.
+            const ratingBody = (
+              <>
+                <div className="mt-4">
+                  {g.kind === 'gas' ? (
+                    <GasGoalRatingPicker
+                      ariaLabel={`GAS rating for ${g.patientFacingText}`}
+                      goalText=""
+                      anchors={g.gas}
+                      value={gasRatings[g.id]}
+                      onChange={(v) =>
+                        setGasRatings((prev) => ({ ...prev, [g.id]: v }))
+                      }
+                    />
+                  ) : (
+                    <GoalRatingPicker
+                      ariaLabel={`NRS rating for ${g.patientFacingText}`}
+                      goalText=""
+                      question={g.nrsQuestion}
+                      direction={g.nrsDirection}
+                      value={ratings[g.id]}
+                      onChange={(v) =>
+                        setRatings((prev) => ({ ...prev, [g.id]: v }))
+                      }
+                    />
+                  )}
+                </div>
+
+                <div className="mt-4 border-t border-stone pt-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSuggestChange((p) => ({ ...p, [g.id]: !p[g.id] }))
+                    }
+                    aria-pressed={flagged}
+                    className={`inline-flex items-center gap-2 text-[13px] font-semibold ${
+                      flagged
+                        ? 'text-amber-deep'
+                        : 'text-ink-soft hover:text-ink'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3.5 w-3.5 rounded-[4px] border-[1.5px] border-amber-deep ${
+                        flagged ? 'bg-amber-deep' : ''
+                      }`}
+                      aria-hidden
+                    />
+                    {t('needsAdjustment')}
+                  </button>
+                  {flagged && (
+                    <div className="mt-2.5">
+                      <label className="block text-[13px] font-semibold text-ink-soft">
+                        {t('adjustmentNoteLabel')}
+                      </label>
+                      <textarea
+                        value={changeNote[g.id] ?? ''}
+                        onChange={(e) =>
+                          setChangeNote((p) => ({
+                            ...p,
+                            [g.id]: e.target.value
+                          }))
+                        }
+                        rows={2}
+                        maxLength={2000}
+                        placeholder={t('adjustmentNotePlaceholder')}
+                        className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+                      />
+                    </div>
+                  )}
+                </div>
+              </>
+            );
+
+            // Wide cockpit: a horizontal band — trend left, rating right.
+            if (hasTrend && currentWeek != null) {
+              return (
+                <div
+                  key={g.id}
+                  className="overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft lg:grid lg:grid-cols-2 lg:items-stretch"
+                >
+                  <div className="p-5 lg:border-r lg:border-stone">
                     <GoalProgressView
+                      bare
                       goalText={g.patientFacingText}
                       kind={g.kind}
                       currentWeek={currentWeek}
@@ -216,7 +253,7 @@ export function PhysioProgressForm({
                       nrsDirection={g.nrsDirection}
                     />
                     {goalHandoffNotes?.get(g.id) && (
-                      <div className="rounded-[var(--radius-button)] border border-sage-soft bg-sage-soft/20 px-3 py-2">
+                      <div className="mt-3 rounded-[var(--radius-button)] border border-sage-soft bg-sage-soft/20 px-3 py-2">
                         <p className="text-[12px] font-semibold text-sage-deep">
                           {tHandoff('fromPhysician')}
                         </p>
@@ -225,141 +262,33 @@ export function PhysioProgressForm({
                         </p>
                       </div>
                     )}
-                  </>
-                )}
-                <div className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5">
-                  {hasTrend ? (
-                    <p className="eyebrow">{t('thisWeek')}</p>
-                  ) : (
-                    <p className="font-display text-[16px] leading-snug text-ink">
-                      {g.patientFacingText}
-                    </p>
-                  )}
-
-                {/* Signal toggles — taps, no typing. */}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setWorkingOn((p) => ({ ...p, [g.id]: !p[g.id] }))
-                    }
-                    aria-pressed={isWorking}
-                    className={`rounded-[var(--radius-button)] border px-3 py-1.5 text-[13px] font-semibold ${
-                      isWorking
-                        ? 'border-sage-deep bg-sage-deep text-on-accent'
-                        : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
-                    }`}
-                  >
-                    {t('workingOn')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toggleGoal(g.id)}
-                    aria-expanded={isOpen}
-                    className={`rounded-[var(--radius-button)] border px-3 py-1.5 text-[13px] font-semibold ${
-                      isOpen
-                        ? 'border-sage bg-sage-soft text-sage-deep'
-                        : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
-                    }`}
-                  >
-                    {isOpen ? t('progressRating') : t('progressRate')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setNeedsAdj((p) => ({ ...p, [g.id]: !p[g.id] }))
-                    }
-                    aria-pressed={isAdj}
-                    className={`rounded-[var(--radius-button)] border px-3 py-1.5 text-[13px] font-semibold ${
-                      isAdj
-                        ? 'border-amber-deep bg-amber-soft text-ink'
-                        : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
-                    }`}
-                  >
-                    {t('needsAdjustment')}
-                  </button>
-                </div>
-
-                {isOpen && (
-                  <div className="mt-5">
-                    {g.kind === 'gas' ? (
-                      <GasGoalRatingPicker
-                        ariaLabel={`GAS rating for ${g.patientFacingText}`}
-                        goalText=""
-                        anchors={g.gas}
-                        value={gasRatings[g.id]}
-                        onChange={(v) =>
-                          setGasRatings((prev) => ({ ...prev, [g.id]: v }))
-                        }
-                      />
-                    ) : (
-                      <GoalRatingPicker
-                        ariaLabel={`NRS rating for ${g.patientFacingText}`}
-                        goalText=""
-                        question={g.nrsQuestion}
-                        direction={g.nrsDirection}
-                        value={ratings[g.id]}
-                        onChange={(v) =>
-                          setRatings((prev) => ({ ...prev, [g.id]: v }))
-                        }
-                      />
-                    )}
-                    {!rated && (
-                      <p className="mt-2 text-[13px] text-ink-muted">
-                        {t('setValueHint')}
-                      </p>
-                    )}
                   </div>
-                )}
-
-                {isAdj && (
-                  <div className="mt-3">
-                    <label className="block text-[13px] font-semibold text-ink-soft">
-                      {t('adjustmentNoteLabel')}
-                    </label>
-                    <textarea
-                      value={adjNote[g.id] ?? ''}
-                      onChange={(e) =>
-                        setAdjNote((p) => ({ ...p, [g.id]: e.target.value }))
-                      }
-                      rows={2}
-                      maxLength={2000}
-                      placeholder={t('adjustmentNotePlaceholder')}
-                      className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
-                    />
+                  <div className="border-t border-stone p-5 lg:border-t-0">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="eyebrow">{t('ratingHeading')}</p>
+                      <span className="text-[12px] text-ink-muted">
+                        {t('ratingOptional')}
+                      </span>
+                    </div>
+                    {ratingBody}
                   </div>
-                )}
-
-                {!isOpen && !isWorking && !isAdj && (
-                  <p className="mt-2 text-[13px] text-ink-muted">
-                    {t('notAssessedHint')}
-                  </p>
-                )}
                 </div>
+              );
+            }
+
+            // Standalone /physio/progress (no trend): plain single card.
+            return (
+              <div
+                key={g.id}
+                className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5"
+              >
+                <p className="font-display text-[16px] leading-snug text-ink">
+                  {g.patientFacingText}
+                </p>
+                {ratingBody}
               </div>
             );
           })}
-        </div>
-
-        {/* Visit-level note */}
-        <div className="mt-6">
-          <label
-            htmlFor="physio-note"
-            className="block text-[14px] font-semibold text-ink"
-          >
-            {t('noteLabel')}{' '}
-            <span className="text-ink-muted">{t('noteOptional')}</span>
-          </label>
-          <p className="mt-0.5 text-[14px] text-ink-muted">{t('noteHint')}</p>
-          <textarea
-            id="physio-note"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            rows={4}
-            maxLength={2000}
-            className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
-            placeholder={t('progressNotePlaceholder')}
-          />
         </div>
 
         <button
@@ -374,43 +303,6 @@ export function PhysioProgressForm({
               ? t('saveAssessment', { count: includedCount })
               : t('progressRateAtLeastOne')}
         </button>
-      </section>
-
-      {/* Recent assessments */}
-      <section className="mt-12">
-        <h2 className="font-display text-[20px] text-ink">
-          {t('recentTitle')}
-        </h2>
-        {recent.isLoading ? (
-          <p className="mt-3 text-[14px] text-ink-muted">{t('loading')}</p>
-        ) : !recent.data || recent.data.length === 0 ? (
-          <p className="mt-3 text-[14px] text-ink-muted">{t('recentEmpty')}</p>
-        ) : (
-          <ul className="mt-3 space-y-3">
-            {recent.data.map((a) => (
-              <li
-                key={a.id}
-                className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
-              >
-                <p className="text-[14px] font-semibold text-ink">
-                  {formatLongDate(a.assessmentDate, locale)}
-                </p>
-                <p className="mt-0.5 text-[13px] text-ink-muted">
-                  {t('recentGoalsRated', {
-                    count: a.ratings.filter(
-                      (r) => r.nrsValue != null || r.gasValue != null
-                    ).length
-                  })}
-                </p>
-                {a.note && (
-                  <p className="mt-2 rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1.5 text-[14px] leading-relaxed text-ink">
-                    {a.note}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
       </section>
     </div>
   );
