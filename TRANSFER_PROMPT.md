@@ -72,15 +72,11 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-72` — no new migration (needs 0095 if not yet run). DB **0095**.
-- **Just shipped:** therapist page reworked to information-left / actions-right (approved
-  option B). Sticky left column = clinical picture (cycle week, recap, clinic note, treated
-  muscles, patient comments); right column = the visit (rate goals, note to clinic, quiet
-  Suggest-a-goal button). Removed History (the inline trend is the history); folded treated
-  muscles into the left; dropped the 3-chip action row. Goals reverted from wide bands to
-  stacked cards (chart above rating) since the right column is narrower. Single-column
-  fallback when the left is thin or on phones. (Live site was still on a pre-70 build — a
-  deploy/cache issue, not the code.)
+- **Latest build:** `simplify-cockpit-73` — no new migration (needs 0095 if not yet run). DB **0095**.
+- **Just shipped:** shrank the per-goal trend chart on the therapist page — in `bare` mode
+  it uses a wider viewBox (560 vs 360) so it renders short and full-width instead of ~280px
+  tall. Sits on top of cockpit-72 (info-left / action-right therapist cockpit). Clinician
+  charts unchanged. (Live site had been stuck on a pre-70 build — deploy/cache, not code.)
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.
   The original 11-item simplification list is complete (bar #4, parked).

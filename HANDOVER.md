@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-72` (no new migration; needs 0095). The therapist cockpit reworked to **information-left / actions-right**: a sticky left column holds the clinical picture (cycle week, since-last-visit recap, clinic note, treated muscles, patient comments) while the right column holds the visit (rate goals, note to clinic, suggest a goal). **History was removed** (the inline trend already is the rating history); **treated muscles moved into the left column** (no longer behind a chip); **Suggest goal demoted** to a quiet button. The action-row of chips is gone. Goals reverted from wide bands to **stacked cards** (chart above rating) since the right column is narrower. Collapses to one column when the left is thin or on phones. See §7._
+> _Last updated for build tag: `simplify-cockpit-73` (no new migration; needs 0095). Tiny fix on top of the info-left/action-right therapist cockpit (72): the per-goal trend chart was rendering ~280px tall in the wide right column, so `bare` charts now use a wider viewBox (560 vs 360) — same 0-10/GAS layout, but short and full-width. Clinician charts unchanged. See §7._
 
 ---
 
@@ -849,6 +849,11 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Zip:** `treatment-companion-simplify-cockpit-73.zip`  ·  **Tag:** `simplify-cockpit-73`  ·  **Migration: none (needs 0095 if not yet run).** Trend-chart size fix.
+- **Bare trend chart shrunk** (`components/clinician/GoalProgressView.tsx`): the chart is a fixed-aspect viewBox rendered `w-full`, so in the therapist's wide right column it scaled up to ~280px tall. In `bare` mode the viewBox width is now 560 (was 360) while height stays 160 — same 0-10 / GAS coordinate layout, just a flatter aspect, so it renders short (~180px) and full-width with no distortion. Non-bare (clinician page) charts are untouched at 360.
+- No i18n, no schema, no other changes. Builds on cockpit-72.
+- **⚠ QA:** on the therapist page the per-goal chart should now be a short, wide trend strip rather than a tall block; the clinician treatment page chart should look exactly as before.
 
 - **Zip:** `treatment-companion-simplify-cockpit-72.zip`  ·  **Tag:** `simplify-cockpit-72`  ·  **Migration: none (needs 0095 if not yet run).** Therapist page reworked to information-left / actions-right (approved from `therapist-layout-options.html`, option B).
 - **Two-column split** (`app/[locale]/physio/patient/page.tsx`): when a cycle is active and there's context to show, the body is a `lg:grid lg:grid-cols-[330px_minmax(0,1fr)]`. **Left (sticky)** = the clinical picture, read once and kept in view while rating: cycle-week line, the since-last-visit recap, the physician's clinic note, the treated-muscle list, and the patient's recent comments. **Right** = the visit: the rating form, the note-to-clinic card, and a quiet "Suggest a goal" button. Collapses to a single column when `!wide` (phones) or `!leftHasContent` (new patient with no note / no treatment / no comments) — `leftHasContent` gates both the grid and the sticky wrapper, so there's no empty-rail.

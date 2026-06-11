@@ -1,35 +1,21 @@
-BUILD: simplify-cockpit-72 — therapist page: information left, actions right (approved option B).
-DEPLOY THIS ZIP. DISCARD 21-71 and earlier.
+BUILD: simplify-cockpit-73 — therapist trend-chart size fix.
+DEPLOY THIS ZIP. DISCARD 21-72 and earlier.
 
 MIGRATION: none new. Run 0095_therapist_note if you haven't.
 
-WHAT CHANGED (cockpit-72)
-- Two columns on a wide screen. LEFT (stays in view as you scroll): the clinical picture —
-  week since injection, "since your last visit", the clinic note, the treated-muscle list,
-  and the patient's recent comments. RIGHT: the visit — rate the goals, note to the clinic,
-  and a quiet "Suggest a goal" button.
-- History is gone. The trend chart next to each goal already is its rating history (tap a
-  dot for the value), so a separate History list was redundant on this page.
-- The treated-muscle list now lives in the left column instead of behind a "Muscles" chip.
-- "Suggest a goal" is now one quiet button that opens the form, not a chip in a row.
-- Goals are stacked cards again (chart on top, rating below) — the right column isn't wide
-  enough for the side-by-side band, which only made sense in the full-width layout.
-- New / near-empty patients and phones fall back to a single column (no empty side panel).
+WHAT CHANGED (cockpit-73)
+- The per-goal trend chart on the therapist page was rendering far too tall (~280px) in the
+  wide right column. It now renders as a short, full-width trend strip (~180px). Same data,
+  same 0-10 / GAS layout, no distortion. The clinician treatment-page chart is unchanged.
 
 DEPLOY: unzip, push to GitHub, Vercel auto-builds. (Still outstanding, cockpit-57: deploy
 the send-checkin-notifications Edge Function.)
 
-IMPORTANT — about your screenshot: the live site was showing an OLD build ("Record a visit",
-"working on", "treatment needs adjusting", goals on the right with an empty left). That copy
-was removed back in cockpit-70. So the deployed site wasn't running 70 or 71. Before judging
-this build, make sure the zip actually replaced the repo source, Vercel finished a new build,
-and you hard-refresh Firefox (Ctrl+Shift+R). The source in this zip is correct.
+REMINDER: make sure the deploy actually lands — the live site had been stuck on a pre-cockpit-70
+build. After pushing, confirm Vercel ran a fresh build and hard-refresh Firefox (Ctrl+Shift+R).
 
 QA (cannot verify here)
-[ ] Wide: information on the left, the visit on the right; left stays put while you scroll goals.
-[ ] No History anywhere; treated muscles are in the left column; "Suggest a goal" is one button.
-[ ] Each goal is a stacked card (chart above the rating).
-[ ] Brand-new patient (no note/treatment/comments) and phone view collapse to one column.
-[ ] DA copy reads naturally (first-pass).
+[ ] Therapist page: each goal's chart is a short, wide strip, not a tall block.
+[ ] Clinician treatment page: chart looks exactly as before.
 
 VERIFIED IN BUILD: tsc clean · next build 62/62 · i18n en/da parity 1568 keys · font-stub restored.
