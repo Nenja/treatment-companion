@@ -943,7 +943,15 @@
     "accountCreated": "Account created: {email}",
     "accountCreatedRole": "Role: {role}. Share the temporary password with them; they should change it at first sign-in.",
     "copyPassword": "Copy",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "purgeTitle": "Research consent — pending deletion",
+    "purgeHelper": "Patients who withdrew research consent. Confirm deletion once their exported study records have been removed; this records your authorisation and clears them from the queue.",
+    "purgeEmpty": "No withdrawals pending deletion.",
+    "purgeWithdrawnOn": "Withdrew consent on {date}",
+    "purgeConfirmAction": "Confirm deletion",
+    "purgeConfirm": "Confirm that this patient's exported research records have been deleted? This is recorded as your authorisation and cannot be undone.",
+    "purgeDone": "Deletion confirmed.",
+    "purgeError": "Couldn't confirm deletion. Please try again."
   },
   "patientInfo": {
     "subtitle": "Clinical background",

@@ -21,6 +21,7 @@ import {
   useReactivateGoal,
   useSetPatientMedication,
   useSetPatientVideoConsent,
+  useSetPatientResearchConsent,
   type GoalOutcome,
   type ClinicianPatientGoal
 } from '@/lib/supabase/clinicianPatient';
@@ -114,6 +115,8 @@ export default function ClinicianPatientPage() {
   const setStatus = useSetSuggestionStatus();
   const retireGoal = useRetireGoal();
   const setVideoConsent = useSetPatientVideoConsent();
+  const setResearchConsent = useSetPatientResearchConsent();
+  const tRC = useTranslations('researchConsent');
   const reactivateGoal = useReactivateGoal();
   const toast = useToast();
   const setPhysioGoalStatus = useSetPhysioGoalSuggestionStatus();
@@ -1286,13 +1289,32 @@ export default function ClinicianPatientPage() {
               null
             }
             onEditMedication={() => setOpenPanel('medication')}
+            researchConsent={patient.researchConsent}
+            researchWithdrawn={
+              !patient.researchConsent && !!patient.researchConsentWithdrawnAt
+            }
+            onToggleResearchConsent={() => {
+              const next = !patient.researchConsent;
+              if (!next && !window.confirm(tRC('withdrawConfirm'))) return;
+              touch();
+              void setResearchConsent.mutateAsync({
+                patientId: patient.id,
+                consent: next
+              });
+            }}
             labels={{
               title: t('backgroundTitle'),
               treatment: t('backgroundTreatment'),
               medication: t('banner.medication'),
               devices: t('banner.devices'),
               edit: t('medEdit'),
-              medicationNone: t('medNotRecordedYet')
+              medicationNone: t('medNotRecordedYet'),
+              research: tRC('heading'),
+              researchOn: tRC('statusConsented'),
+              researchOff: tRC('statusNone'),
+              researchWithdrawn: tRC('statusWithdrawn'),
+              researchGrant: tRC('grant'),
+              researchWithdrawAction: tRC('withdraw')
             }}
           />
         </div>
@@ -1869,14 +1891,14 @@ export default function ClinicianPatientPage() {
         <VideoEnableGuide
           goalText={guideGoal.text}
           consentClinical={patient.videoConsentClinical}
-          consentResearch={patient.videoConsentResearch}
+          consentEducational={patient.videoConsentEducational}
           hasBaseline={!!guideGoal.baselineVideoPath}
-          onSetConsent={(clinical, research) => {
+          onSetConsent={(clinical, educational) => {
             touch();
             void setVideoConsent.mutateAsync({
               patientId: patient.id,
               clinical,
-              research
+              educational
             });
           }}
           onFilmBaseline={() => {
@@ -1938,13 +1960,13 @@ export default function ClinicianPatientPage() {
       {showVideoPanel && (
         <ClinicianVideoModal
           consentClinical={patient.videoConsentClinical}
-          consentResearch={patient.videoConsentResearch}
-          onSetConsent={(clinical, research) => {
+          consentEducational={patient.videoConsentEducational}
+          onSetConsent={(clinical, educational) => {
             touch();
             void setVideoConsent.mutateAsync({
               patientId: patient.id,
               clinical,
-              research
+              educational
             });
           }}
           onOpenArchive={() => {

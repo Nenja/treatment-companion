@@ -947,7 +947,15 @@
     "accountCreated": "Konto oprettet: {email}",
     "accountCreatedRole": "Rolle: {role}. Del den midlertidige adgangskode med dem; de bør ændre den ved første login.",
     "copyPassword": "Kopiér",
-    "dismiss": "Afvis"
+    "dismiss": "Afvis",
+    "purgeTitle": "Forskningssamtykke — afventer sletning",
+    "purgeHelper": "Patienter, der har trukket deres forskningssamtykke tilbage. Bekræft sletning, når deres eksporterede studiedata er fjernet; dette registrerer din godkendelse og fjerner dem fra køen.",
+    "purgeEmpty": "Ingen tilbagetrækninger afventer sletning.",
+    "purgeWithdrawnOn": "Trak samtykke tilbage den {date}",
+    "purgeConfirmAction": "Bekræft sletning",
+    "purgeConfirm": "Bekræft, at denne patients eksporterede forskningsdata er blevet slettet? Dette registreres som din godkendelse og kan ikke fortrydes.",
+    "purgeDone": "Sletning bekræftet.",
+    "purgeError": "Kunne ikke bekræfte sletning. Prøv igen."
   },
   "patientInfo": {
     "subtitle": "Klinisk baggrund",

@@ -14,9 +14,12 @@ import {
   useDeleteAccount,
   useResetPassword,
   useActiveAccess,
+  useResearchPurgeQueue,
+  useConfirmResearchPurge,
   generateTempPassword,
   type AdminAccount,
-  type ActiveAccessSession
+  type ActiveAccessSession,
+  type ResearchPurgeEntry
 } from '@/lib/supabase/admin';
 import { useToast } from '@/components/feedback/Toast';
 import { SkeletonBlock } from '@/components/feedback/Skeleton';
@@ -120,6 +123,8 @@ export default function AdminPage() {
         </section>
 
         <AccessSection enabled={!!profile && profile.isAdmin} />
+
+        <ResearchPurgeSection enabled={!!profile && profile.isAdmin} />
       </main>
     </div>
   );
@@ -1011,5 +1016,84 @@ function Field({
       {helper && <p className="mt-1 text-[14px] text-ink-muted">{helper}</p>}
       {children}
     </div>
+  );
+}
+
+/**
+ * Research-consent purge queue (migration 0098). Lists patients who
+ * withdrew research consent and whose already-exported records have not
+ * yet been deleted; an admin confirms each deletion (confirm_research_purge),
+ * which stamps research_consent_purged_at and removes the row from the queue.
+ * The actual REDCap delete is carried out by the export job; this is the
+ * admin's authorisation/attestation that it may proceed.
+ */
+function ResearchPurgeSection({ enabled }: { enabled: boolean }) {
+  const tAdmin = useTranslations('admin');
+  const toast = useToast();
+  const queue = useResearchPurgeQueue(enabled);
+  const confirmPurge = useConfirmResearchPurge();
+
+  const onConfirm = async (entry: ResearchPurgeEntry) => {
+    if (!window.confirm(tAdmin('purgeConfirm'))) return;
+    try {
+      await confirmPurge.mutateAsync({ patientId: entry.patientId });
+      toast.success(tAdmin('purgeDone'));
+    } catch (err) {
+      toast.error((err as Error).message ?? tAdmin('purgeError'));
+    }
+  };
+
+  return (
+    <section className="mt-10">
+      <h2 className="font-display text-[18px] text-ink">{tAdmin('purgeTitle')}</h2>
+      <p className="mt-1 text-[13px] text-ink-soft">{tAdmin('purgeHelper')}</p>
+
+      {queue.isLoading && (
+        <div className="mt-3 space-y-2">
+          {[0, 1].map((i) => (
+            <SkeletonBlock key={i} width="w-full" height="h-12" shape="rounded-[var(--radius-card)]" />
+          ))}
+        </div>
+      )}
+      {queue.isError && (
+        <p className="mt-3 text-[14px] text-amber-deep">
+          {(queue.error as Error).message}
+        </p>
+      )}
+      {queue.data && queue.data.length === 0 && (
+        <p className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft px-4 py-3 text-[14px] text-ink-muted">
+          {tAdmin('purgeEmpty')}
+        </p>
+      )}
+      {queue.data && queue.data.length > 0 && (
+        <ul className="mt-3 divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-amber-soft bg-cream-soft">
+          {queue.data.map((entry) => (
+            <li
+              key={entry.patientId}
+              className="flex items-center justify-between gap-3 px-4 py-3"
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-[14px] font-semibold text-ink">
+                  {entry.displayName ?? entry.patientId}
+                </span>
+                <span className="mt-0.5 block text-[12px] text-amber-deep">
+                  {tAdmin('purgeWithdrawnOn', {
+                    date: new Date(entry.withdrawnAt).toLocaleDateString()
+                  })}
+                </span>
+              </span>
+              <button
+                type="button"
+                disabled={confirmPurge.isPending}
+                onClick={() => void onConfirm(entry)}
+                className="shrink-0 rounded-[var(--radius-button)] border border-amber-deep bg-cream px-3 py-1.5 text-[13px] font-semibold text-amber-deep hover:bg-amber-soft/30 disabled:opacity-60"
+              >
+                {tAdmin('purgeConfirmAction')}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

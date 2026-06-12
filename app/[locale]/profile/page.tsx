@@ -10,7 +10,9 @@ import {
   useSetOwnSex,
   type Sex,
   useOwnVideoConsent,
-  useSetOwnVideoConsent
+  useSetOwnVideoConsent,
+  useOwnResearchConsent,
+  useSetOwnResearchConsent
 } from '@/lib/supabase/patientInfo';
 import { useToast } from '@/components/feedback/Toast';
 import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
@@ -50,6 +52,9 @@ export default function ProfilePage() {
   const setOwnSex = useSetOwnSex();
   const ownConsent = useOwnVideoConsent(!!isPatient);
   const setOwnConsent = useSetOwnVideoConsent();
+  const ownResearch = useOwnResearchConsent(!!isPatient);
+  const setOwnResearch = useSetOwnResearchConsent();
+  const tRC = useTranslations('researchConsent');
   const tSex = useTranslations('sex');
   const tWeekday = useTranslations('weekday');
   const SEX_OPTS: Sex[] = ['female', 'male', 'other', 'preferNotToSay'];
@@ -63,7 +68,8 @@ export default function ProfilePage() {
   const [sex, setSex] = useState<Sex | null>(null);
   const [reminderDay, setReminderDay] = useState<number | null>(null);
   const [clinical, setClinical] = useState(false);
-  const [research, setResearch] = useState(false);
+  const [educational, setEducational] = useState(false);
+  const [researchConsent, setResearchConsent] = useState(false);
 
   const [seeded, setSeeded] = useState(false);
   const [baseline, setBaseline] = useState('');
@@ -79,7 +85,8 @@ export default function ProfilePage() {
     sex: Sex | null;
     reminderDay: number | null;
     clinical: boolean;
-    research: boolean;
+    educational: boolean;
+    researchConsent: boolean;
   }) =>
     JSON.stringify({
       n: v.name.trim(),
@@ -88,7 +95,8 @@ export default function ProfilePage() {
       sx: v.sex,
       rd: v.reminderDay,
       cc: v.clinical,
-      cr: v.research
+      ce: v.educational,
+      rc: v.researchConsent
     });
 
   const current = snapshot({
@@ -98,14 +106,17 @@ export default function ProfilePage() {
     sex,
     reminderDay,
     clinical,
-    research
+    educational,
+    researchConsent
   });
   const dirty = seeded && current !== baseline;
 
   // Everything the user can edit is loaded? (Sex + consent are async
   // patient queries; for non-patients they are disabled and idle.)
   const ready =
-    !!profile && (!isPatient || (!ownSex.isLoading && !ownConsent.isLoading));
+    !!profile &&
+    (!isPatient ||
+      (!ownSex.isLoading && !ownConsent.isLoading && !ownResearch.isLoading));
 
   // Seed staged state + the baseline once, when ready.
   useEffect(() => {
@@ -117,7 +128,8 @@ export default function ProfilePage() {
       sex: (ownSex.data ?? null) as Sex | null,
       reminderDay: profile.notifyWeekday ?? null,
       clinical: ownConsent.data?.clinical ?? false,
-      research: ownConsent.data?.research ?? false
+      educational: ownConsent.data?.educational ?? false,
+      researchConsent: ownResearch.data?.consent ?? false
     };
     setName(seedVals.name);
     setProfession(seedVals.profession);
@@ -125,10 +137,11 @@ export default function ProfilePage() {
     setSex(seedVals.sex);
     setReminderDay(seedVals.reminderDay);
     setClinical(seedVals.clinical);
-    setResearch(seedVals.research);
+    setEducational(seedVals.educational);
+    setResearchConsent(seedVals.researchConsent);
     setBaseline(snapshot(seedVals));
     setSeeded(true);
-  }, [seeded, ready, profile, ownSex.data, ownConsent.data]);
+  }, [seeded, ready, profile, ownSex.data, ownConsent.data, ownResearch.data]);
 
   // Not signed in → send to login once auth has resolved.
   useEffect(() => {
@@ -191,7 +204,8 @@ export default function ProfilePage() {
       });
       if (isPatient) {
         await setOwnSex.mutateAsync(sex);
-        await setOwnConsent.mutateAsync({ clinical, research });
+        await setOwnConsent.mutateAsync({ clinical, educational });
+        await setOwnResearch.mutateAsync({ consent: researchConsent });
       }
       setBaseline(saved);
       toast.success(t('saved'));
@@ -376,12 +390,38 @@ export default function ProfilePage() {
             the page's Save button. */}
         {isPatient && (
           <div className="mt-10 border-t border-stone/70 pt-7">
+            <h2 className="eyebrow">{tRC('patientHeading')}</h2>
+            <p className="mt-2 text-[12px] text-ink-muted">
+              {tRC('patientHelper')}
+            </p>
+            <label className="mt-3 flex items-start gap-2.5 text-[14px] text-ink">
+              <input
+                type="checkbox"
+                checked={researchConsent}
+                onChange={(e) => setResearchConsent(e.target.checked)}
+                className="mt-1 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
+              />
+              <span>
+                {tRC('label')}
+                <span className="mt-0.5 block text-[13px] text-ink-muted">
+                  {tRC('desc')}
+                </span>
+              </span>
+            </label>
+            <p className="mt-4 text-[12px] leading-relaxed text-ink-muted">
+              {tRC('withdrawNote')}
+            </p>
+          </div>
+        )}
+
+        {isPatient && (
+          <div className="mt-10 border-t border-stone/70 pt-7">
             <VideoConsentSettings
               clinical={clinical}
-              research={research}
+              educational={educational}
               onChange={(next) => {
                 setClinical(next.clinical);
-                setResearch(next.research);
+                setEducational(next.educational);
               }}
             />
           </div>
