@@ -21,7 +21,7 @@ import { useModalA11y } from '@/lib/useModalA11y';
 export function VideoEnableGuide({
   goalText,
   consentClinical,
-  consentResearch,
+  consentEducational,
   hasBaseline,
   onSetConsent,
   onFilmBaseline,
@@ -29,7 +29,7 @@ export function VideoEnableGuide({
 }: {
   goalText: string;
   consentClinical: boolean;
-  consentResearch: boolean;
+  consentEducational: boolean;
   hasBaseline: boolean;
   onSetConsent: (clinical: boolean, research: boolean) => void;
   onFilmBaseline: () => void;
@@ -92,7 +92,7 @@ export function VideoEnableGuide({
                 type="checkbox"
                 checked={consentClinical}
                 onChange={(e) =>
-                  onSetConsent(e.target.checked, consentResearch)
+                  onSetConsent(e.target.checked, consentEducational)
                 }
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
               />
@@ -101,13 +101,13 @@ export function VideoEnableGuide({
             <label className="mt-2 flex items-start gap-2 text-[13px] text-ink-soft">
               <input
                 type="checkbox"
-                checked={consentResearch}
+                checked={consentEducational}
                 onChange={(e) =>
                   onSetConsent(consentClinical, e.target.checked)
                 }
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
               />
-              <span>{tPatient('videoConsentResearch')}</span>
+              <span>{tPatient('videoConsentEducational')}</span>
             </label>
             {!consentClinical && (
               <p className="mt-2 text-[12px] leading-relaxed text-ink-muted">

@@ -15,13 +15,13 @@ import { useModalA11y } from '@/lib/useModalA11y';
  */
 export function ClinicianVideoModal({
   consentClinical,
-  consentResearch,
+  consentEducational,
   onSetConsent,
   onOpenArchive,
   onClose
 }: {
   consentClinical: boolean;
-  consentResearch: boolean;
+  consentEducational: boolean;
   onSetConsent: (clinical: boolean, research: boolean) => void;
   onOpenArchive: () => void;
   onClose: () => void;
@@ -83,7 +83,7 @@ export function ClinicianVideoModal({
                 type="checkbox"
                 checked={consentClinical}
                 onChange={(e) =>
-                  onSetConsent(e.target.checked, consentResearch)
+                  onSetConsent(e.target.checked, consentEducational)
                 }
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
               />
@@ -92,13 +92,13 @@ export function ClinicianVideoModal({
             <label className="flex items-start gap-2 text-[13px] text-ink-soft">
               <input
                 type="checkbox"
-                checked={consentResearch}
+                checked={consentEducational}
                 onChange={(e) =>
                   onSetConsent(consentClinical, e.target.checked)
                 }
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
               />
-              <span>{tPatient('videoConsentResearch')}</span>
+              <span>{tPatient('videoConsentEducational')}</span>
             </label>
             <p className="text-[12px] leading-relaxed text-ink-muted">
               {t('consentHint')}

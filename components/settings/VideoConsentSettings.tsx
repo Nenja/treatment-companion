@@ -4,8 +4,8 @@ import { useTranslations } from 'next-intl';
 
 interface VideoConsentSettingsProps {
   clinical: boolean;
-  research: boolean;
-  onChange: (next: { clinical: boolean; research: boolean }) => void;
+  educational: boolean;
+  onChange: (next: { clinical: boolean; educational: boolean }) => void;
 }
 
 /**
@@ -17,7 +17,7 @@ interface VideoConsentSettingsProps {
  */
 export function VideoConsentSettings({
   clinical,
-  research,
+  educational,
   onChange
 }: VideoConsentSettingsProps) {
   const t = useTranslations('videoConsent');
@@ -32,7 +32,7 @@ export function VideoConsentSettings({
           <input
             type="checkbox"
             checked={clinical}
-            onChange={(e) => onChange({ clinical: e.target.checked, research })}
+            onChange={(e) => onChange({ clinical: e.target.checked, educational })}
             className="mt-1 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
           />
           <span>
@@ -45,14 +45,14 @@ export function VideoConsentSettings({
         <label className="flex items-start gap-2.5 text-[14px] text-ink">
           <input
             type="checkbox"
-            checked={research}
-            onChange={(e) => onChange({ clinical, research: e.target.checked })}
+            checked={educational}
+            onChange={(e) => onChange({ clinical, educational: e.target.checked })}
             className="mt-1 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
           />
           <span>
-            {t('researchLabel')}
+            {t('educationalLabel')}
             <span className="mt-0.5 block text-[13px] text-ink-muted">
-              {t('researchDesc')}
+              {t('educationalDesc')}
             </span>
           </span>
         </label>

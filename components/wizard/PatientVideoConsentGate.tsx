@@ -24,7 +24,7 @@ export function PatientVideoConsentGate({
   const t = useTranslations('videoConsent');
   const consent = useOwnVideoConsent(true);
   const setConsent = useSetOwnVideoConsent();
-  const [research, setResearch] = useState(false);
+  const [educational, setEducational] = useState(false);
 
   if (consent.isLoading) {
     return <p className="text-[14px] text-ink-muted">{t('loading')}</p>;
@@ -47,14 +47,14 @@ export function PatientVideoConsentGate({
       <label className="mt-3 flex items-start gap-2.5 text-[14px] text-ink">
         <input
           type="checkbox"
-          checked={research}
-          onChange={(e) => setResearch(e.target.checked)}
+          checked={educational}
+          onChange={(e) => setEducational(e.target.checked)}
           className="mt-1 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
         />
         <span>
-          {t('researchLabel')}
+          {t('educationalLabel')}
           <span className="mt-0.5 block text-[13px] text-ink-muted">
-            {t('researchDesc')}
+            {t('educationalDesc')}
           </span>
         </span>
       </label>
@@ -62,7 +62,7 @@ export function PatientVideoConsentGate({
         type="button"
         disabled={setConsent.isPending}
         onClick={() =>
-          void setConsent.mutateAsync({ clinical: true, research })
+          void setConsent.mutateAsync({ clinical: true, educational })
         }
         className="mt-4 rounded-[var(--radius-button)] bg-sage-deep px-5 py-2.5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-60"
       >

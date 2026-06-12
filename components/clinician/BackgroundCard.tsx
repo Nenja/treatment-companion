@@ -8,6 +8,10 @@ interface BackgroundCardProps {
   medication?: string | null;
   devices?: string | null;
   onEditMedication?: () => void;
+  /** General research consent (migration 0098). Undefined hides the row. */
+  researchConsent?: boolean;
+  researchWithdrawn?: boolean;
+  onToggleResearchConsent?: () => void;
   labels: {
     title: string;
     treatment: string;
@@ -15,6 +19,12 @@ interface BackgroundCardProps {
     devices: string;
     edit: string;
     medicationNone: string;
+    research: string;
+    researchOn: string;
+    researchOff: string;
+    researchWithdrawn: string;
+    researchGrant: string;
+    researchWithdrawAction: string;
   };
 }
 
@@ -31,6 +41,9 @@ export function BackgroundCard({
   medication,
   devices,
   onEditMedication,
+  researchConsent,
+  researchWithdrawn,
+  onToggleResearchConsent,
   labels
 }: BackgroundCardProps) {
   return (
@@ -73,6 +86,37 @@ export function BackgroundCard({
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[13px]">
             <span className="text-ink-muted">{labels.devices}</span>
             <span className="text-ink-soft">{devices}</span>
+          </div>
+        )}
+        {researchConsent !== undefined && (
+          <div className="flex items-start justify-between gap-2 text-[13px]">
+            <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <span className="text-ink-muted">{labels.research}</span>
+              <span
+                className={
+                  researchConsent
+                    ? 'inline-flex items-center rounded-full border border-sage-soft bg-sage-soft/40 px-2.5 py-0.5 text-[12px] font-semibold text-sage-deep'
+                    : researchWithdrawn
+                      ? 'inline-flex items-center rounded-full border border-amber-soft bg-amber-soft/40 px-2.5 py-0.5 text-[12px] font-semibold text-amber-deep'
+                      : 'inline-flex items-center rounded-full border border-stone bg-stone-soft px-2.5 py-0.5 text-[12px] font-semibold text-ink-soft'
+                }
+              >
+                {researchConsent
+                  ? labels.researchOn
+                  : researchWithdrawn
+                    ? labels.researchWithdrawn
+                    : labels.researchOff}
+              </span>
+            </span>
+            {onToggleResearchConsent && (
+              <button
+                type="button"
+                onClick={onToggleResearchConsent}
+                className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-sage-deep hover:bg-stone-soft"
+              >
+                {researchConsent ? labels.researchWithdrawAction : labels.researchGrant}
+              </button>
+            )}
           </div>
         )}
       </div>

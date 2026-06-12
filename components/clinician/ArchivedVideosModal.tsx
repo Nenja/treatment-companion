@@ -126,14 +126,14 @@ export function ArchivedVideosModal({
                         </span>
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                            v.consentResearch
+                            v.consentEducational
                               ? 'bg-sage-soft text-sage-deep'
                               : 'border border-stone text-ink-muted'
                           }`}
                         >
-                          {v.consentResearch
-                            ? t('consentResearchYes')
-                            : t('consentResearchNo')}
+                          {v.consentEducational
+                            ? t('consentEducationalYes')
+                            : t('consentEducationalNo')}
                         </span>
                       </p>
                     </div>
