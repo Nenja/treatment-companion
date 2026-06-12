@@ -72,12 +72,12 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-74` — no new migration (needs 0095 if not yet run). DB **0095**.
-- **Just shipped:** the therapist visit form stopped reusing the patient's check-in
-  pickers. New CompactGoalRating control — dense one-row buttons (0-10 NRS, −2…+2 GAS),
-  no patient question / worst-best / tap-a-number; NRS shows a quiet "Higher is better"
-  line, GAS surfaces the level meaning + goal anchor on selection. No schema, no new i18n.
-  (Clinician-label-per-goal was considered and dropped.)
+- **Latest build:** `simplify-cockpit-76` — no new migration (needs 0095 if not yet run). DB **0095**.
+- **Just shipped:** therapist goals are now a collapsed, click-to-rate list — each goal is a
+  closed row that opens to its chart + compact rating + treatment-change flag. Opening a goal
+  is the deliberate "I assessed this" act; un-opened goals aren't reported, and the page stays
+  short as goal counts grow. Rated rows show a "✓ value" chip. Added GoalProgressView
+  `hideTitle` so the chart doesn't repeat the row's goal name.
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.
   The original 11-item simplification list is complete (bar #4, parked).

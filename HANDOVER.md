@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-74` (no new migration; needs 0095). The therapist visit form no longer reuses the **patient** check-in pickers. New `CompactGoalRating` control: dense one-row buttons (0-10 for NRS, −2…+2 for GAS), no patient-facing question, no "worst/best", no "tap a number". NRS shows only a quiet "Higher/Lower is better" line; GAS surfaces the level meaning (+ the goal anchor) on selection. No schema, no new i18n. The clinician-label idea was dropped. See §7._
+> _Last updated for build tag: `simplify-cockpit-76` (no new migration; needs 0095). Therapist goals are now a **collapsed list — open a goal to rate it**. All goals start closed; tapping a row reveals its trend chart + compact rating + treatment-change flag. Opening a goal is the deliberate "I assessed this" act, so irrelevant goals stay out of the way and the page stays short with many goals. Each row shows a "✓ value" chip once rated (or "Flagged" if only a change was suggested). `GoalProgressView` gained `hideTitle` so the chart doesn't repeat the row's goal name. See §7._
 
 ---
 
@@ -849,6 +849,21 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Zip:** `treatment-companion-simplify-cockpit-76.zip`  ·  **Tag:** `simplify-cockpit-76`  ·  **Migration: none (needs 0095 if not yet run).** Therapist goals → collapsed, click-to-rate list (Variant A from `therapist-goal-list-options.html`).
+- **Collapsible goal rows** (`components/physio/PhysioProgressForm.tsx`, rewritten): each goal is a closed row — goal name + a status chip + chevron. Tapping it expands to the trend chart (`GoalProgressView bare hideTitle`), the physician's per-goal note, and the compact rating + treatment-change flag. New state `openGoals` (all closed by default; cleared on submit). Rationale (per Nikolaj): a therapist usually assesses only some goals, so opening one is a deliberate "I worked on this" act; un-opened/un-rated goals are simply not reported, and the list stays short as goal counts grow.
+- **Status chip on the row:** once rated, the row shows `✓ <value>` (e.g. `✓ 7`, `✓ +1`) in sage; if only a treatment change was suggested (not rated), it shows `Flagged` in amber; otherwise a quiet `Rate` hint. So progress is visible without expanding.
+- **`GoalProgressView` `hideTitle` prop** (`components/clinician/GoalProgressView.tsx`): optional, default false. Suppresses the goal-title line (the row already names the goal); `weeksReported` and the chart still render. Clinician-page uses unaffected.
+- i18n: added `physioForms.rateShort` ("Rate") and `physioForms.flaggedShort` ("Flagged"), en/da (parity 1570). No schema.
+- **⚠ QA (cannot verify here):** goals show as a list of closed rows; tapping one opens its chart + rating; rating a goal shows a `✓ value` chip on the collapsed row; the chart no longer repeats the goal name; Save still counts rated/flagged goals; on submit everything (incl. open state) resets. Works for NRS and GAS; the standalone `/physio/progress` (no trend) opens straight to the rating.
+
+- **Zip:** `treatment-companion-simplify-cockpit-75.zip`  ·  **Tag:** `simplify-cockpit-75`  ·  **Migration: none (needs 0095 if not yet run).** Therapist-cockpit refinements.
+- **Suggest a goal moved up** (`PhysioProgressForm.tsx` + `app/[locale]/physio/patient/page.tsx`): the form gained two optional slots — `dateAside` (rendered beside the visit-date field) and `afterDate` (a panel beneath the date row). The page now passes the quiet "Suggest a goal" button as `dateAside` and the suggestion form + sent-list as `afterDate`, and the old bottom block is gone — so **the page ends on the note-to-clinic Send**, and the suggest action is visible up top rather than buried.
+- **Chart legend always identifies the patient series** (`GoalProgressView.tsx`): the legend was gated on `physioWeeks.length > 0 || clinicWeeks.length > 0`, so a goal with only patient self-reports rendered dots with no "Patient self-report" label. Gate is now `reportedCount > 0 || physioWeeks… || clinicWeeks…`, so the patient swatch shows whenever there's patient data; therapist (amber diamond) and clinic (ink square) entries still appear only when present.
+- **Treated muscles collapsed by default** (`TreatedMusclesSection` in the page): when it lived behind the old Muscles chip it rendered open (the chip controlled visibility). Now that it sits always-present in the left context column, it has its own foldout — header button (title + count + date + chevron) collapsed by default, list revealed on tap. New local state `musclesOpen`.
+- No schema, no new i18n keys (parity 1568).
+- **⚠ QA (cannot verify here):** "Suggest a goal" sits beside the Date of visit and opens the form there; the last thing on the page is the note-to-clinic Send; a goal with only patient data now shows a "Patient self-report" legend; the treated-muscle list starts collapsed and expands on click.
+- **Open design question (not built):** when a patient has many goals, a full trend chart per goal makes the right column very long. Candidate directions logged for discussion — compact summary rows that expand to rate, a show-graph toggle, or a patient-page-style list. No decision yet.
 
 - **Zip:** `treatment-companion-simplify-cockpit-74.zip`  ·  **Tag:** `simplify-cockpit-74`  ·  **Migration: none (needs 0095 if not yet run).** Compact, clinician-oriented rating control on the therapist form.
 - **Problem:** the therapist visit form was reusing the *patient's* check-in pickers (`wizard/GoalRatingPicker`, `wizard/GasGoalRatingPicker`) — so a clinician doing quick entry got the patient's second-person question as a heading, big two-row pills, "0 · WORST / 10 · BEST", and "Tap a number to choose your rating".

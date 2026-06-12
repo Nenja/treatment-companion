@@ -1,30 +1,24 @@
-BUILD: simplify-cockpit-74 — compact therapist rating control (no more patient pickers on the visit form).
-DEPLOY THIS ZIP. DISCARD 21-73 and earlier.
+BUILD: simplify-cockpit-76 — therapist goals as a collapsed, click-to-rate list.
+DEPLOY THIS ZIP. DISCARD 21-75 and earlier.
 
 MIGRATION: none new. Run 0095_therapist_note if you haven't.
 
-WHAT CHANGED (cockpit-74)
-- The therapist's per-goal rating was the PATIENT's check-in widget reused: a second-person
-  question as a heading, big two-row pills, "0 · WORST / 10 · BEST", "Tap a number to choose
-  your rating". Replaced with a compact clinician control:
-  * NRS: one row of small 0-10 buttons, with a quiet "Higher is better" / "Lower is better"
-    line instead of the patient question.
-  * GAS: one row of small −2…+2 buttons; when you pick a level it shows that level's meaning
-    and the goal's own anchor sentence.
-- The patient's own check-in is untouched — it still uses the full guided picker.
-- No database change, no new translation strings.
-
-NOTE: the clinician-label-per-goal idea (a separate clinician-worded anchor) was dropped, so
-the NRS control shows the direction ("Higher is better") rather than goal-specific anchor text.
+WHAT CHANGED (cockpit-76)
+- Goals are now a list of closed rows. Tap a goal to open it; that reveals its trend chart
+  and the rating. Opening a goal is the deliberate "I assessed this one" step — the goals you
+  don't work on stay closed and out of the way, and the page stays short even with many goals.
+- Once you rate a goal, its row shows a "✓ value" chip (e.g. ✓ 7, ✓ +1) so you can see what
+  you've done without opening it. If you only suggested a treatment change, it shows "Flagged".
+- The chart no longer repeats the goal's name (the row already shows it).
 
 DEPLOY: unzip, push to GitHub, Vercel auto-builds. (Still outstanding, cockpit-57: deploy the
-send-checkin-notifications Edge Function. And confirm Vercel rebuilds — the live site had been
-stuck on an old build; hard-refresh Firefox with Ctrl+Shift+R after deploying.)
+send-checkin-notifications Edge Function. Confirm Vercel rebuilds + hard-refresh Firefox.)
 
 QA (cannot verify here)
-[ ] Therapist form: each goal's rating is one compact row of buttons, not the big patient picker.
-[ ] NRS shows "Higher/Lower is better", not the patient's question; no "worst/best", no "tap a number".
-[ ] GAS: picking a level shows its meaning (and the goal's anchor if set).
-[ ] Patient check-in still shows the full guided picker (unchanged).
+[ ] Goals appear as closed rows; tapping one opens its chart + rating.
+[ ] Rating a goal puts a "✓ value" chip on its row; "Flagged" if only a change was suggested.
+[ ] The chart inside a row doesn't repeat the goal name.
+[ ] Save still counts the goals you rated/flagged; submitting resets and re-collapses everything.
+[ ] Works for both 0-10 (NRS) and GAS goals.
 
-VERIFIED IN BUILD: tsc clean · next build 62/62 · i18n en/da parity 1568 keys · font-stub restored.
+VERIFIED IN BUILD: tsc clean · next build 62/62 · i18n en/da parity 1570 keys · font-stub restored.

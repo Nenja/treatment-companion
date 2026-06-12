@@ -550,52 +550,51 @@ export default function PhysioPatientPage() {
                     ratingsByGoal={ratingsByGoal}
                     physioRatingsByGoal={physioRatingsByGoal}
                     goalHandoffNotes={goalHandoffNotes.data}
+                    dateAside={
+                      <button
+                        type="button"
+                        onClick={() => setSuggestGoalOpen((v) => !v)}
+                        aria-expanded={suggestGoalOpen}
+                        className="inline-flex items-center gap-2 rounded-[var(--radius-button)] border border-dashed border-stone bg-transparent px-4 py-2.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
+                      >
+                        <span aria-hidden>＋</span>
+                        {t('actionSuggestGoal')}
+                      </button>
+                    }
+                    afterDate={
+                      suggestGoalOpen ? (
+                        <div>
+                          <PhysioGoalSuggestionForm
+                            patientId={patientData.data.patient.id}
+                          />
+                          {(goalSuggestions.data ?? []).length > 0 && (
+                            <div className="mt-4">
+                              <h3 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
+                                {t('sentGoalsHeading')}
+                              </h3>
+                              <ul className="mt-2 space-y-2">
+                                {goalSuggestions.data!.map((sg) => (
+                                  <li
+                                    key={sg.id}
+                                    className="rounded-[var(--radius-button)] border border-stone/70 bg-cream p-2.5"
+                                  >
+                                    <p className="text-[14px] font-semibold leading-snug text-ink">
+                                      {sg.suggestedGoal}
+                                    </p>
+                                    <p className="mt-1">
+                                      <SuggestionStatusBadge status={sg.status} />
+                                    </p>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      ) : null
+                    }
                   />
 
                   <NoteToClinicCard patientId={patientData.data.patient.id} />
-
-                  {/* Suggest a goal — quiet secondary action. The physician
-                      approves; the therapist only proposes. */}
-                  <div className="mt-6 border-t border-stone pt-5">
-                    <button
-                      type="button"
-                      onClick={() => setSuggestGoalOpen((v) => !v)}
-                      aria-expanded={suggestGoalOpen}
-                      className="inline-flex items-center gap-2 rounded-[var(--radius-button)] border border-dashed border-stone bg-transparent px-4 py-2.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
-                    >
-                      <span aria-hidden>＋</span>
-                      {t('actionSuggestGoal')}
-                    </button>
-                    {suggestGoalOpen && (
-                      <div className="mt-3">
-                        <PhysioGoalSuggestionForm
-                          patientId={patientData.data.patient.id}
-                        />
-                        {(goalSuggestions.data ?? []).length > 0 && (
-                          <div className="mt-4">
-                            <h3 className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
-                              {t('sentGoalsHeading')}
-                            </h3>
-                            <ul className="mt-2 space-y-2">
-                              {goalSuggestions.data!.map((sg) => (
-                                <li
-                                  key={sg.id}
-                                  className="rounded-[var(--radius-button)] border border-stone/70 bg-cream p-2.5"
-                                >
-                                  <p className="text-[14px] font-semibold leading-snug text-ink">
-                                    {sg.suggestedGoal}
-                                  </p>
-                                  <p className="mt-1">
-                                    <SuggestionStatusBadge status={sg.status} />
-                                  </p>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
             ) : (
@@ -681,6 +680,7 @@ function TreatedMusclesSection({
   const t = useTranslations('physio');
   const grouped = groupTreatedMuscles(muscles);
   const isEmpty = grouped.length === 0;
+  const [musclesOpen, setMusclesOpen] = useState(false);
 
   // Map a grouped muscle's side key to its localised label.
   const sideLabel = (key: 'left' | 'right' | 'leftRight' | 'both') => {
@@ -696,34 +696,54 @@ function TreatedMusclesSection({
     }
   };
 
-  // No internal foldout: this section is shown only when the
-  // therapist taps the "Muscles" icon in the action row. The row
-  // already controls visibility — an extra chevron here would be a
-  // redundant fold-inside-a-fold. Render straight content instead.
+  // Collapsed by default: the list can be long, and on the therapist page
+  // it sits in the left context column — so it opens only on demand.
   return (
-    <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-      <h3 className="font-display text-[16px] leading-tight text-ink">
-        {t('musclesTreatedTitle')}
-      </h3>
-      <p className="mt-0.5 text-[13px] text-ink-muted">
-        {t('musclesTreatedFrom', { date: formatLongDate(date, locale) })}
-      </p>
-      {isEmpty ? (
-        <p className="mt-2 text-[14px] text-ink-muted">{t('musclesNone')}</p>
-      ) : (
-        <ul className="mt-3 divide-y divide-stone/70 rounded-[var(--radius-button)] border border-stone bg-cream">
-          {grouped.map((g) => (
-            <li
-              key={g.muscle}
-              className="flex items-baseline justify-between gap-3 px-4 py-2.5"
-            >
-              <span className="text-[14px] text-ink">{g.muscle}</span>
-              <span className="shrink-0 text-[13px] text-ink-muted">
-                {sideLabel(g.sideKey)}
-              </span>
-            </li>
-          ))}
-        </ul>
+    <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft">
+      <button
+        type="button"
+        onClick={() => setMusclesOpen((o) => !o)}
+        aria-expanded={musclesOpen}
+        className="flex w-full items-center justify-between gap-3 p-4 text-left"
+      >
+        <span className="min-w-0">
+          <span className="block font-display text-[16px] leading-tight text-ink">
+            {t('musclesTreatedTitle')}
+            {!isEmpty ? ` (${grouped.length})` : ''}
+          </span>
+          <span className="mt-0.5 block text-[13px] text-ink-muted">
+            {t('musclesTreatedFrom', { date: formatLongDate(date, locale) })}
+          </span>
+        </span>
+        <span
+          aria-hidden
+          className={`shrink-0 text-ink-muted transition-transform ${
+            musclesOpen ? 'rotate-180' : ''
+          }`}
+        >
+          ▾
+        </span>
+      </button>
+      {musclesOpen && (
+        <div className="px-4 pb-4">
+          {isEmpty ? (
+            <p className="text-[14px] text-ink-muted">{t('musclesNone')}</p>
+          ) : (
+            <ul className="divide-y divide-stone/70 rounded-[var(--radius-button)] border border-stone bg-cream">
+              {grouped.map((g) => (
+                <li
+                  key={g.muscle}
+                  className="flex items-baseline justify-between gap-3 px-4 py-2.5"
+                >
+                  <span className="text-[14px] text-ink">{g.muscle}</span>
+                  <span className="shrink-0 text-[13px] text-ink-muted">
+                    {sideLabel(g.sideKey)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
     </section>
   );
