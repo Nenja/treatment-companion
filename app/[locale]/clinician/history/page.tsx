@@ -35,6 +35,7 @@ export default function ClinicianHistoryPage() {
   const locale = useLocale();
   const prefix = locale === 'en' ? '' : `/${locale}`;
   const t = useTranslations('clinician.history');
+  const tEt = useTranslations('etiology');
   const { profile, loading: authLoading } = useAuth();
   const sessionQuery = useCurrentClinicianSession(profile?.id ?? null, profile?.role ?? null);
   const patientId = sessionQuery.data?.patientId ?? null;
@@ -104,6 +105,11 @@ export default function ClinicianHistoryPage() {
         <p className="mt-1.5 text-[14px] leading-relaxed text-ink-soft">{t('subtitle')}</p>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
+          {history.data?.etiology && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-sage-soft bg-sage-soft/40 px-3 py-1 text-[12.5px] text-ink-soft">
+              {t('diagnosisLabel')}: <span className="font-semibold text-ink">{tEt(history.data.etiology)}</span>{history.data.etiologyDetail ? <span className="text-ink-muted"> · {history.data.etiologyDetail}</span> : null}
+            </span>
+          )}
           {history.data?.medCurrent && (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-stone bg-cream-soft px-3 py-1 text-[12.5px] text-ink-soft">
               {t('medCurrent')}: <span className="font-semibold text-ink">{history.data.medCurrent}</span>

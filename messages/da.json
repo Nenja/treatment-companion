@@ -326,7 +326,8 @@
       "raterPatient": "Patientens selvrapportering",
       "raterClinician": "Klinikerens video",
       "raterPhysio": "Fysioterapeut",
-      "peakAt": "top {value} i uge {week}"
+      "peakAt": "top {value} i uge {week}",
+      "diagnosisLabel": "Diagnose"
     },
     "patient": {
       "viewingLabel": "Ser på",
@@ -989,6 +990,7 @@
     "multipleSclerosis": "Multipel sklerose",
     "spinalCordInjury": "Rygmarvsskade",
     "hereditarySpasticParaplegia": "Hereditær spastisk paraplegi",
+    "anoxic": "Anoksisk / hypoksisk hjerneskade",
     "other": "Andet"
   },
   "ambulation": {

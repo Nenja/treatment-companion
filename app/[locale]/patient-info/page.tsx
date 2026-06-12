@@ -31,6 +31,7 @@ const ETIOLOGY_VALUES: Etiology[] = [
   'multipleSclerosis',
   'spinalCordInjury',
   'hereditarySpasticParaplegia',
+  'anoxic',
   'other'
 ];
 

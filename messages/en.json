@@ -322,7 +322,8 @@
       "raterPatient": "Patient self-report",
       "raterClinician": "Clinician video",
       "raterPhysio": "Physiotherapist",
-      "peakAt": "peak {value} at wk {week}"
+      "peakAt": "peak {value} at wk {week}",
+      "diagnosisLabel": "Diagnosis"
     },
     "patient": {
       "viewingLabel": "Viewing",
@@ -985,6 +986,7 @@
     "multipleSclerosis": "Multiple sclerosis",
     "spinalCordInjury": "Spinal cord injury",
     "hereditarySpasticParaplegia": "Hereditary spastic paraplegia",
+    "anoxic": "Anoxic / hypoxic brain injury",
     "other": "Other"
   },
   "ambulation": {
