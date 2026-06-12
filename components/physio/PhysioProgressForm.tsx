@@ -187,7 +187,13 @@ export function PhysioProgressForm({
             return (
               <div
                 key={g.id}
-                className="overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft"
+                className={`overflow-hidden rounded-[var(--radius-card)] border bg-cream-soft ${
+                  rated
+                    ? 'border-stone border-l-[3px] border-l-sage-deep'
+                    : flagged
+                      ? 'border-stone border-l-[3px] border-l-amber-deep'
+                      : 'border-stone'
+                }`}
               >
                 <button
                   type="button"
@@ -201,11 +207,11 @@ export function PhysioProgressForm({
                     {g.patientFacingText}
                   </span>
                   {rated ? (
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sage-soft px-2.5 py-0.5 text-[12px] font-semibold text-sage-deep">
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sage-deep px-2.5 py-0.5 text-[12px] font-semibold text-on-accent">
                       ✓ {ratedLabel}
                     </span>
                   ) : flagged ? (
-                    <span className="inline-flex shrink-0 items-center rounded-full border border-amber-deep/40 bg-amber-soft/50 px-2.5 py-0.5 text-[12px] font-semibold text-amber-deep">
+                    <span className="inline-flex shrink-0 items-center rounded-full bg-amber-deep px-2.5 py-0.5 text-[12px] font-semibold text-on-accent">
                       {t('flaggedShort')}
                     </span>
                   ) : (
