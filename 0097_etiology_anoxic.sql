@@ -1,0 +1,21 @@
+-- ============================================================================
+-- 0097 — Add 'anoxic' (anoxic / hypoxic brain injury) to the etiology enum.
+--
+-- The etiology picklist (created in 0047) covers the common adult causes of
+-- spasticity but was missing anoxic / hypoxic brain injury — a distinct
+-- etiology (e.g. post-cardiac-arrest, near-drowning) that clinicians need to
+-- record separately rather than fold into "Other". This adds the single
+-- missing value. No data migration; existing rows are unaffected.
+--
+-- The display ORDER of the picklist is controlled in the app
+-- (ETIOLOGY_VALUES in app/[locale]/patient-info/page.tsx), not by the enum's
+-- internal order, so appending the value at the end of the type is fine —
+-- the UI places it just before "Other".
+--
+-- NOTE on running this: `alter type ... add value` must be its own statement
+-- and (on older Postgres) cannot be used in the same transaction in which it
+-- is added. In the Supabase SQL editor, run this file on its own. It is
+-- idempotent via `if not exists`, so re-running is safe.
+-- ============================================================================
+
+alter type etiology add value if not exists 'anoxic';
