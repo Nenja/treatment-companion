@@ -1,35 +1,44 @@
-BUILD: simplify-cockpit-84 — ADMIN RESEARCH-CONSENT PURGE QUEUE. Completes the cockpit-83
-withdrawal lifecycle: an admin can now see who withdrew research consent and confirm deletion.
-NO NEW MIGRATION (pure app code on top of 0098).
+BUILD: simplify-cockpit-85 — CLINICIAN-PAGE REFINEMENTS. Single "Mark considered" action for
+therapist suggestions; handoff note de-cluttered; wrong "Therapist only" badge removed.
+NO MIGRATION (app + i18n only).
 
-DISCARD 21-83 (superseded). Keep this zip.
+DISCARD 21-84 (superseded). Keep this zip.
 
-DB STATE — no new migration in this build. Still run any PENDING ones in order:
+DB STATE — no new migration. Still run any PENDING ones in order:
   • 0090, 0095, 0096, 0097, 0098  (paste schema_audit.sql to see which are still MISSING)
-  0098 (cockpit-83) is the one that matters for this feature — the purge queue calls its
-  confirm_research_purge RPC and reads its research_consent_withdrawn_at / _purged_at columns.
+  Note: the badge fix below assumes 0096 is/will be applied (it grants the patient read access
+  to the care-team notes). The fix is correct regardless, but the patient only actually sees
+  the note once 0096 is live.
 
 WHAT CHANGED:
-  • /clinician/admin gains a "Research consent — pending deletion" section: a queue of patients
-      with research_consent_withdrawn_at set and research_consent_purged_at null, each with a
-      Confirm-deletion button (guarded by a confirm dialog).
-  • Confirming calls confirm_research_purge (admin-only, migration 0098) → stamps
-      research_consent_purged_at and removes the row from the queue. It records the admin's
-      authorisation to delete; the actual REDCap delete will be done by the export job.
-  • No schema change: the queue reads the patient table via the admin's existing patient_admin_all
-      RLS (migration 0037). New hooks useResearchPurgeQueue / useConfirmResearchPurge in
-      lib/supabase/admin.ts. New admin.purge* i18n (en + da; Danish is first-pass).
+  1) Therapist-suggestion review — ONE action now.
+       The two buttons "Mark considered" and "Dismiss" set different statuses but did the same
+       thing. Collapsed to a single "Mark considered" (sets accepted/reviewed; item leaves the
+       review queue, shows "Considered"). Done in all four places: both TherapistInputPanel
+       widgets (goal + muscle) and both inline lists on the clinician patient/cockpit page.
+       (The goal list's old "Accept" label is now "Mark considered" for consistency.)
+       Old "dismissed" records still display "Dismissed". Dismiss i18n keys left in place.
 
-NOTE: the queue is forward-looking — it stays EMPTY until the REDCap export exists and a
-  consented patient withdraws. It's shipped now so the lifecycle is complete and callable.
+  2) Physician -> therapist handoff note — just the written note.
+       Dropped the "Did you change the treatment this visit?" (Adjusted / No change / Not
+       specified) toggle. Save now always sends treatment_changed = null. The RPC and DB column
+       are UNCHANGED (no migration) — old values preserved; new notes simply have no flag.
+
+  3) Audience label fixed.
+       Removed the "Therapist only" badge on that note. It contradicted the hint right below it,
+       and was wrong: migration 0096 gives the patient read access to these care-team notes
+       (their own care record). The hint ("...the patient can read it too") stays. Also fixed a
+       stale "never patient-visible" code comment in GoalHandoffNotes.tsx. Removed the dead
+       handoffChanged* / handoffAudienceBadge i18n keys (en + da).
+
+  DIRECTION NOTE: I resolved the badge/hint contradiction toward "patient can read" because that
+  is the deliberate 0096 design. If you meant these notes to be therapist-ONLY, that's the
+  opposite change (drop the 0096 patient-read policies) — tell me and I'll flip it.
 
 CANNOT BE VERIFIED HERE (your QA):
-  • Dark-mode contrast of the amber queue card.
-  • Native-Danish review of the admin.purge* strings.
-  • Live admin RLS read of the queue (Method-D covers the RPC logic, not your live policies).
+  • Native-Danish review (no new strings here, but the handoff hint wording is worth a glance).
+  • That the suggestion queue + receipts read well with a single action on real screens.
 
-BUILD VERIFICATION (this end): next build → 62/62; tsc --noEmit clean; i18n parity en/da equal
-  (only _meta differs); font-stub restored.
+BUILD VERIFICATION (this end): next build -> 62/62; tsc --noEmit clean; i18n parity en/da equal.
 
-DEPLOY: unzip → GitHub → Vercel. No SQL to run for this build (beyond any still-pending 0090–0098).
-  Hard-refresh Firefox (Ctrl+Shift+R) if the live site looks stale.
+DEPLOY: unzip -> GitHub -> Vercel. No SQL for this build (beyond any still-pending 0090-0098).

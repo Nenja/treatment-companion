@@ -72,14 +72,14 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-84` — **no migration** (admin purge queue, pure app code on top of 0098). Pending migrations to run in order: **0090, 0095, 0096, 0097, 0098** (use schema_audit.sql to see which are still needed).
-- **Just shipped:** the **admin research-consent purge queue**, closing the cockpit-83
-  withdrawal lifecycle. The `/clinician/admin` page now lists patients who withdrew research
-  consent and aren't yet purged, with a guarded Confirm-deletion button calling the existing
-  `confirm_research_purge` RPC. No schema change (reads via the admin's `patient_admin_all` RLS;
-  hooks `useResearchPurgeQueue` / `useConfirmResearchPurge`). The queue stays empty until the
-  REDCap export exists and a consented patient withdraws. Export build itself still pending
-  (needs the REDCap URL, API-token handling, and a hash salt; dictionary is at v1).
+- **Latest build:** `simplify-cockpit-85` — **no migration** (clinician-page refinements: single Mark-considered action; handoff note de-cluttered; wrong "Therapist only" badge removed). Pending migrations to run in order: **0090, 0095, 0096, 0097, 0098** (schema_audit.sql shows which).
+- **Just shipped:** three clinician-page consistency fixes. (1) The therapist-suggestion review
+  collapses *Mark considered* + *Dismiss* (functionally identical) into a single **Mark considered**
+  action — all four spots (both TherapistInputPanel widgets + both inline cockpit lists). (2) The
+  physician→therapist **handoff note** drops the "Did you change the treatment?" toggle — just the
+  written note (save sends `treatment_changed = null`; RPC/column untouched). (3) Removed the wrong
+  **"Therapist only"** badge on that note — it's patient-readable by design (0096), which the hint
+  states correctly. No schema change.
 
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
