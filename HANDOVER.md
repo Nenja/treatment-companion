@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-79` (no new migration — needs 0096 run). Slice 2 of “patient can read the care-team notes”: the patient now sees a quiet, collapsed “Notes from your care team” section low on the home page, showing all three channels verbatim and read-only; and the clinician copy that promised the patient would never see these notes has been flipped. See §7._
+> _Last updated for build tag: `simplify-cockpit-80` (no new migration). Bugfix: a therapist rating saved on the patient cockpit vanished after “Save visit” and never reappeared. Two causes — the page never refetched its data after a save, and the row badge read only local state (cleared on submit). Both fixed. See §7._
 
 ---
 
@@ -849,6 +849,16 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Zip:** `treatment-companion-simplify-cockpit-80.zip`  ·  **Tag:** `simplify-cockpit-80`  ·  no new migration. **Bugfix — therapist ratings now persist visibly.**
+- **Symptom:** on the physio cockpit, rating a goal showed the value before “Save visit”, but after saving the badge disappeared and reopening the goal/chart showed nothing — as if it never saved.
+- **Root cause (two faults, both real):**
+  1. **Stale read.** The save mutation (`useSubmitPhysioAssessment`) invalidates `['physioAssessments']`, but the cockpit reads everything (goals, charts, the therapist points in `physioRatingsByGoal`) from `usePhysioPatientData` (key `['physioPatient', profileId]`). `<PhysioProgressForm>` was rendered with **no `onSaved`**, so nothing refetched that query — the RPC *did* insert the row, but the screen kept showing pre-save data until a full reload.
+  2. **Local-only badge.** The row's “✓ value” badge and sage left-edge derived purely from local `ratings`/`gasRatings` state, which `doSubmit` clears (`setRatings({})` … `setOpenGoals({})`). So even with a refetch, the just-saved goal would collapse back to “Rate”.
+- **Fix:**
+  1. `app/[locale]/physio/patient/page.tsx` — pass `onSaved={() => void patientData.refetch()}` to `PhysioProgressForm`. After a save the cockpit re-reads `physio_assessment`, rebuilds `physioRatingsByGoal`, and the chart shows the new therapist point.
+  2. `components/physio/PhysioProgressForm.tsx` — the row's display `rated`/`ratedLabel` now fall back to the **latest persisted** physio rating (`physioRatingsByGoal.get(id)` last point: `nrs` for NRS goals, signed `value` for GAS) when there's no pending local pick. So a saved goal keeps its “✓ value” badge and sage edge after the form collapses. **Submit inclusion is unchanged** — it still uses the local-only `isRated`/`isIncluded`, so a previously-saved goal is never silently re-submitted on the next save.
+- **Verified:** tsc clean; `next build` 62/62. NOT verifiable here: the live save→refetch round-trip (needs an unlocked patient + a real therapist rating) — QA item.
 
 - **Zip:** `treatment-companion-simplify-cockpit-79.zip`  ·  **Tag:** `simplify-cockpit-79`  ·  no new migration (needs **0096** run from cockpit-78). Slice 2 — the patient-facing read of the care-team notes.
 - **Patient read** `lib/supabase/careTeamNotes.ts` — `usePatientCareTeamNotes()` reads all three channels for the signed-in patient (`treatment_handoff`, `goal_handoff_note` joined to `approved_goal.patient_facing_text`, `therapist_note`) and merges them newest-first into `CareTeamNote { id, kind: 'physicianCycle'|'physicianGoal'|'therapist', date, text, treatmentChanged?, goalText? }`. No `patient_id` filter — RLS (0096) already limits each table to the patient's own rows. Read-only; the patient cannot write to any of these tables.
