@@ -68,6 +68,9 @@ interface GoalProgressViewProps {
   /** When true, render without the outer card border/background/padding so
    * the chart can be embedded inside another card (e.g. a goal band). */
   bare?: boolean;
+  /** Hide the goal-title line (e.g. when the surrounding row already
+   * labels the goal). weeksReported and the chart still render. */
+  hideTitle?: boolean;
 }
 
 /**
@@ -105,7 +108,8 @@ export function GoalProgressView({
   clinicPoints = [],
   doseMarkers = [],
   headerBadge,
-  bare = false
+  bare = false,
+  hideTitle = false
 }: GoalProgressViewProps) {
   const t = useTranslations('treatment');
   const tA11y = useTranslations('a11y');
@@ -293,9 +297,11 @@ export function GoalProgressView({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-display text-[16px] leading-snug text-ink">
-            {goalText}
-          </p>
+          {!hideTitle && (
+            <p className="font-display text-[16px] leading-snug text-ink">
+              {goalText}
+            </p>
+          )}
           <p className="mt-0.5 text-[14px] text-ink-muted">
             {t('weeksReported', { reported: reportedCount, total: currentWeek })}
           </p>
@@ -766,7 +772,9 @@ export function GoalProgressView({
       </svg>
 
 
-      {(physioWeeks.length > 0 || clinicWeeks.length > 0) && (
+      {(reportedCount > 0 ||
+        physioWeeks.length > 0 ||
+        clinicWeeks.length > 0) && (
         <div className="mt-1 flex flex-wrap gap-4 text-[13px] text-ink-muted">
           <span className="flex items-center gap-1.5">
             <span
