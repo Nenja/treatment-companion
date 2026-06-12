@@ -1,24 +1,27 @@
-BUILD: simplify-cockpit-76 — therapist goals as a collapsed, click-to-rate list.
-DEPLOY THIS ZIP. DISCARD 21-75 and earlier.
+BUILD: simplify-cockpit-79 — patient can now READ the care-team notes (slice 2 of 2).
+DEPLOY THIS ZIP. DISCARD 21-78 and earlier.
 
-MIGRATION: none new. Run 0095_therapist_note if you haven't.
+*** Requires migration 0096 (from cockpit-78). If you haven't run it yet, run
+    0096_patient_care_team_notes.sql in the Supabase SQL editor first. ***
 
-WHAT CHANGED (cockpit-76)
-- Goals are now a list of closed rows. Tap a goal to open it; that reveals its trend chart
-  and the rating. Opening a goal is the deliberate "I assessed this one" step — the goals you
-  don't work on stay closed and out of the way, and the page stays short even with many goals.
-- Once you rate a goal, its row shows a "✓ value" chip (e.g. ✓ 7, ✓ +1) so you can see what
-  you've done without opening it. If you only suggested a treatment change, it shows "Flagged".
-- The chart no longer repeats the goal's name (the row already shows it).
+WHAT'S NEW
+- The patient home gains a quiet "Notes from your care team" section, low on the page,
+  collapsed by default and hidden entirely when there are no notes. Open it and the patient
+  sees, verbatim and read-only:
+    * the physician's per-visit handoff note (with a "Treatment adjusted" tag when flagged),
+    * the physician's per-goal notes (tagged with the goal),
+    * the physiotherapist's notes to the clinic.
+  Physician notes carry a sage left edge, the therapist's an amber one. The patient cannot
+  reply to or edit any of them.
+- The clinician wording is corrected to match: the note-to-clinic box, the per-goal note hint,
+  and the per-visit handoff hint no longer say "the patient never sees this" — they now say the
+  patient can read it too. (Both English and Danish.)
 
-DEPLOY: unzip, push to GitHub, Vercel auto-builds. (Still outstanding, cockpit-57: deploy the
-send-checkin-notifications Edge Function. Confirm Vercel rebuilds + hard-refresh Firefox.)
+WHAT TO CHECK ON THE LIVE SITE (can't be verified here)
+- Run migration 0096 first, then with a patient that has at least one note, confirm the section
+  appears and the notes read correctly. With no notes, the section should be absent.
+- Dark-mode contrast of the section (left edges, chips, the count pill).
+- Danish strings are a first pass — worth a native read of the new section + flipped hints.
 
-QA (cannot verify here)
-[ ] Goals appear as closed rows; tapping one opens its chart + rating.
-[ ] Rating a goal puts a "✓ value" chip on its row; "Flagged" if only a change was suggested.
-[ ] The chart inside a row doesn't repeat the goal name.
-[ ] Save still counts the goals you rated/flagged; submitting resets and re-collapses everything.
-[ ] Works for both 0-10 (NRS) and GAS goals.
-
-VERIFIED IN BUILD: tsc clean · next build 62/62 · i18n en/da parity 1570 keys · font-stub restored.
+DEPLOY: unzip + push to GitHub (Vercel auto-builds). Still outstanding: cockpit-57
+send-checkin-notifications Edge Function; confirm Vercel rebuilds + hard-refresh (Ctrl+Shift+R).

@@ -15,6 +15,7 @@ import { NotificationDayModal } from '@/components/cards/NotificationDayModal';
 import { pushSupported } from '@/lib/pwa';
 import { Card } from '@/components/cards/Card';
 import { OnboardingWizard } from '@/components/feedback/OnboardingWizard';
+import { CareTeamNotes } from '@/components/patient/CareTeamNotes';
 
 export default function PatientHomePage() {
   const router = useRouter();
@@ -310,6 +311,8 @@ export default function PatientHomePage() {
           →
         </span>
       </button>
+
+      <CareTeamNotes />
 
       {/* Safety notice + a quiet data & privacy link. The visit-code row's
           hairline above acts as the divider, so this notice drops its own top

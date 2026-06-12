@@ -72,12 +72,12 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-76` — no new migration (needs 0095 if not yet run). DB **0095**.
-- **Just shipped:** therapist goals are now a collapsed, click-to-rate list — each goal is a
-  closed row that opens to its chart + compact rating + treatment-change flag. Opening a goal
-  is the deliberate "I assessed this" act; un-opened goals aren't reported, and the page stays
-  short as goal counts grow. Rated rows show a "✓ value" chip. Added GoalProgressView
-  `hideTitle` so the chart doesn't repeat the row's goal name.
+- **Latest build:** `simplify-cockpit-79` — no new migration (run 0096 from cockpit-78 if not yet). DB **0096**.
+- **Just shipped:** slice 2 of "patient can read the care-team notes" — a quiet, collapsed
+  "Notes from your care team" section on the patient home (`components/patient/CareTeamNotes.tsx`
+  + `lib/supabase/careTeamNotes.ts`) showing all three channels verbatim and read-only, hidden
+  when empty; plus the clinician copy flip (therapistNote.helper, goalHandoff.hint, handoffHint)
+  from "the patient never sees this" to "the patient can read it too". Needs migration 0096 run.
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.
   The original 11-item simplification list is complete (bar #4, parked).
