@@ -16,6 +16,7 @@ export type Etiology =
   | 'multipleSclerosis'
   | 'spinalCordInjury'
   | 'hereditarySpasticParaplegia'
+  | 'anoxic'
   | 'other';
 
 export type AmbulationStatus =

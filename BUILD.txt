@@ -1,32 +1,32 @@
-BUILD: simplify-cockpit-81 — clinician history redesigned into a per-cycle clinical record (newest-first cycle cards; per-goal GAS sparklines with peak/fade; latest patient/clinician/physio ratings; symptom line with side effects flagged; summary strip on top). No new migration.
+BUILD: simplify-cockpit-82 — diagnosis capture completed (added missing 'anoxic' etiology value) and surfaced in the clinician history header. Fixes a cockpit-81 medication-column bug. Migration 0097.
 
-DISCARD 21-80 (superseded). Keep this zip.
+DISCARD 21-81 (superseded). Keep this zip.
 
-DB STATE — RUN THESE IN SUPABASE IF NOT DONE:
-  • 0095_therapist_note.sql        (from cockpit-77/78 — still pending on your side)
-  • 0096_patient_care_team_notes.sql (from cockpit-78 — still pending on your side)
-  cockpit-81 adds NO new migration.
+DB STATE — RUN THESE IN SUPABASE IF NOT DONE (in order):
+  • 0095_therapist_note.sql           (still pending on your side)
+  • 0096_patient_care_team_notes.sql  (still pending on your side)
+  • 0097_etiology_anoxic.sql          (NEW — run on its own; it's an enum ALTER TYPE)
 
-WHAT CHANGED (code only, no DB):
-  • NEW lib/supabase/patientHistory.ts — usePatientHistory(patientId): one read assembling
-    cycles (newest first), injection per cycle, each goal's weekly self-report trajectory
-    (GAS points + peak/fade), the latest patient/clinician/physio rating, a symptom summary
-    (pain/stiffness first→last + side-effect week count), and weeks-to-next-cycle.
-  • NEW components/clinician/GoalSparkline.tsx — compact SVG GAS(-2..2) line, zero baseline
-    dashed, peak point sage-deep, fade point amber-deep, themeable for dark mode.
-  • REWROTE app/[locale]/clinician/history/page.tsx — per-cycle cards + summary strip,
-    current cycle open by default, older cycles collapsed. Old five charts/tables removed
-    from this page (their hooks/components remain in the repo, now unused).
-  • i18n: ~30 new keys under clinician.history (en + da, first-pass Danish). Parity 1609/1609.
+WHAT CHANGED:
+  • MIGRATION 0097: alter type etiology add value if not exists 'anoxic';
+      Adds anoxic / hypoxic brain injury to the etiology picklist. Idempotent, no data change.
+      Run it as its own statement (enum add-value shouldn't share a transaction).
+  • Diagnosis capture ALREADY existed (etiology + etiology_detail on patient, written by
+      set_patient_info, edited in the patient-info form). This build only filled the one
+      missing picklist value and the read/display path — no new columns.
+  • App: Etiology type + ETIOLOGY_VALUES gain 'anoxic' (placed before 'Other');
+      etiology i18n label added (en + da, first-pass Danish).
+  • History header now shows a DIAGNOSIS pill (etiology + optional detail) when present.
+  • BUGFIX (from cockpit-81): usePatientHistory read 'current_antispastic_medication',
+      which migration 0061 renamed to 'current_medication'. The med pill would have been
+      blank. Fixed; usePatientHistory now also returns etiology + etiologyDetail.
 
-VERIFIED: next build 62/62 pages · tsc --noEmit clean · i18n parity OK.
+VERIFIED: next build 62/62 · tsc --noEmit clean · i18n parity 1611/1611.
 
 CANNOT verify from here (QA on your side):
-  • Dark-mode contrast of sparkline points + summary/outcome chips.
-  • The page against real multi-cycle data (rendered layout, sparkline shape).
-  • Physio rater column populates once physio ratings exist.
+  • Saving 'anoxic' in the patient-info form and seeing it persist.
+  • The diagnosis pill rendering in history against real data.
+  • Dark-mode contrast of the sage diagnosis pill.
 
-DEFERRED (noted, not built): enum labels (guidance/modality/spasm-frequency/daily-care);
-diagnosis header (column not yet in schema — pending the diagnosis-capture field).
-
-DEPLOY: unzip → push to GitHub → Vercel auto-builds. Hard-refresh Firefox (Ctrl+Shift+R).
+DEPLOY: run 0097 in Supabase → unzip → push to GitHub → Vercel auto-builds →
+        hard-refresh Firefox (Ctrl+Shift+R).

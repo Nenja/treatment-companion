@@ -72,15 +72,13 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-81` — no new migration (run 0095 + 0096 if not yet). DB **0095, 0096**.
-- **Just shipped:** the clinician **history** page, redesigned from five abstract cross-cycle
-  charts into a **per-cycle clinical record** — newest-first cycle cards (current open, older
-  collapsed), each with the injection, every goal's weekly self-report **sparkline** (peak/fade
-  annotated), the latest **patient / clinician / physio** rating, a quiet symptom line with
-  **side effects always flagged**, and notes; a summary strip on top keeps the cross-cycle
-  numbers. New `lib/supabase/patientHistory.ts` + `components/clinician/GoalSparkline.tsx`;
-  history page rewritten to consume only `usePatientHistory`. Physio ratings now surface here.
-  No migration. Deferred: enum labels + the diagnosis header (diagnosis column not built yet).
+- **Latest build:** `simplify-cockpit-82` — **migration 0097** (run 0095 + 0096 + 0097 if not yet). DB **0095, 0096, 0097**.
+- **Just shipped:** completed **diagnosis capture** and surfaced it in the clinician history
+  header. The field already existed (`etiology` enum + `etiology_detail`, written by
+  `set_patient_info`, edited in the patient-info form), so this added only the one **missing
+  picklist value** — `anoxic` (anoxic / hypoxic brain injury), migration **0097** — plus the
+  history **diagnosis pill**. Also fixed a cockpit-81 bug: `usePatientHistory` read the
+  pre-0061 medication column name (`current_antispastic_medication` → now `current_medication`).
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.

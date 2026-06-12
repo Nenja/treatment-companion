@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from './browser';
 import { nrsToGas, type NrsConfig, type NrsDirection } from '../types';
 import type { GoalOutcome } from './clinicianPatient';
+import type { Etiology } from './patientInfo';
 
 const FADE_THRESHOLD = 2;
 
@@ -26,7 +27,7 @@ export interface HistoryCycle {
   txDate: string | null; lengthWeeks: number | null; weeksToNext: number | null;
   injections: HistoryInjection[]; goals: HistoryGoal[]; symptoms: HistorySymptoms; notes: string[];
 }
-export interface PatientHistory { patientId: string; medCurrent: string | null; cycles: HistoryCycle[]; }
+export interface PatientHistory { patientId: string; medCurrent: string | null; etiology: Etiology | null; etiologyDetail: string | null; cycles: HistoryCycle[]; }
 
 function gasEquiv(ratingValue: number | null, nrsValue: number | null, cfg: NrsConfig | null): number | null {
   if (ratingValue !== null && ratingValue !== undefined) return ratingValue;
@@ -43,15 +44,17 @@ export function usePatientHistory(patientId: string | null) {
       const supabase = createSupabaseBrowserClient();
 
       const [patientRes, cycleRes] = await Promise.all([
-        supabase.from('patient').select('current_antispastic_medication').eq('id', patientId).maybeSingle(),
+        supabase.from('patient').select('current_medication, etiology, etiology_detail').eq('id', patientId).maybeSingle(),
         supabase.from('treatment_cycle')
           .select('id, cycle_number, start_date, length_weeks, status, clinician_note')
           .eq('patient_id', patientId).order('cycle_number', { ascending: true })
       ]);
       if (cycleRes.error) throw cycleRes.error;
-      const medCurrent = (patientRes.data?.current_antispastic_medication as string | null) ?? null;
+      const medCurrent = (patientRes.data?.current_medication as string | null) ?? null;
+      const etiology = (patientRes.data?.etiology as Etiology | null) ?? null;
+      const etiologyDetail = (patientRes.data?.etiology_detail as string | null) ?? null;
       const cycleRows = cycleRes.data ?? [];
-      if (cycleRows.length === 0) return { patientId, medCurrent, cycles: [] };
+      if (cycleRows.length === 0) return { patientId, medCurrent, etiology, etiologyDetail, cycles: [] };
       const cycleIds = cycleRows.map((c) => c.id as string);
 
       const [sessRes, goalRes, ciRes, handoffRes] = await Promise.all([
@@ -175,7 +178,7 @@ export function usePatientHistory(patientId: string | null) {
         };
       });
       out.reverse();
-      return { patientId, medCurrent, cycles: out };
+      return { patientId, medCurrent, etiology, etiologyDetail, cycles: out };
     }
   });
 }

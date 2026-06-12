@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-81` (no new migration). The clinician **history** page was redesigned from five abstract cross-cycle charts into a **per-cycle clinical record**: newest-first cycle cards, each showing the injection, every goal's weekly self-report trajectory as a sparkline with peak/fade annotated, the latest patient / clinician / physio rating side by side, a quiet symptom line with side effects always flagged, and notes. A summary strip on top keeps the cross-cycle numbers. Physio ratings now appear here once present. See §7._
+> _Last updated for build tag: `simplify-cockpit-82` (**migration 0097**). Adds the missing **anoxic / hypoxic brain injury** value to the existing `etiology` enum, and surfaces the patient's **diagnosis (etiology + detail)** in the clinician history header — the placeholder left in cockpit-81. Also fixes a cockpit-81 bug: the history medication pill read the pre-0061 column name (`current_antispastic_medication`) and is now `current_medication`. Diagnosis capture itself already existed (enum + `set_patient_info` + the patient-info form); this build only fills the one missing value and the read path. See §7._
 
 ---
 
@@ -849,6 +849,14 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Zip:** `treatment-companion-simplify-cockpit-82.zip`  ·  **Tag:** `simplify-cockpit-82`  ·  **migration `0097_etiology_anoxic.sql`.** **Diagnosis capture completed + surfaced in history.**
+- **Context / correction:** the plan was to "add a diagnosis field." On inspection the field **already exists** — `etiology` (enum, from 0047) + `etiology_detail` (free text) on `patient`, written by `set_patient_info`, edited in the patient-info form. So this build did **not** add new columns. It (a) added the one **missing enum value** the clinician picklist lacked — `anoxic` (anoxic / hypoxic brain injury) — and (b) surfaced the diagnosis in the clinician **history** header, which cockpit-81 had left as a placeholder.
+- **Migration 0097:** `alter type etiology add value if not exists 'anoxic';` — run on its own in the Supabase SQL editor (an enum `add value` shouldn't share a transaction). Idempotent. No data change.
+- **App changes:** `Etiology` type + `ETIOLOGY_VALUES` picklist gain `anoxic` (placed just before "Other"); `etiology` i18n namespace gains the label (en + da). The history header now shows a **diagnosis pill** (etiology label + optional detail) when present, alongside the medication pill.
+- **Bug fixed (introduced in cockpit-81):** `usePatientHistory` read `patient.current_antispastic_medication`, but migration **0061** renamed that column to `current_medication`. The medication pill would have been blank/erroring. Corrected to `current_medication`; `usePatientHistory` now also returns `etiology` + `etiologyDetail`.
+- **REDCap:** the dictionary's "diagnosis" maps to the app's `etiology` (coded) + `etiology_detail` (free text, de-ID on export). This is recorded for the deferred dictionary revision — the live export is still not built.
+- **QA for you:** pick `anoxic` in the patient-info form and confirm it saves and shows; confirm the diagnosis pill renders in history; dark-mode contrast of the sage diagnosis pill.
 
 - **Zip:** `treatment-companion-simplify-cockpit-81.zip`  ·  **Tag:** `simplify-cockpit-81`  ·  no new migration. **Clinician history redesigned into a per-cycle clinical record.**
 - **Why:** the old history page was five abstract cross-cycle views (dose-per-cycle chart, goals breakdown, benefit-duration table, muscle-dose chart, retreatment-timing table). It answered aggregate questions but buried the one thing a reviewing clinician actually reads a history for — *the shape of each cycle's response*: onset, peak, and especially when benefit faded.
