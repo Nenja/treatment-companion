@@ -1,42 +1,34 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { formatLongDate } from '@/lib/dates';
 import { useAuth } from '@/lib/supabase/auth';
 import { useCurrentClinicianSession } from '@/lib/supabase/clinicianSession';
-import { usePatientTrend } from '@/lib/supabase/patientTrend';
-import { usePatientCycleAnalysis } from '@/lib/supabase/patientCycleAnalysis';
 import {
-  DosePerCycleChart,
-  CycleGoalsBreakdown
-} from '@/components/clinician/CycleTrendCharts';
-import {
-  BenefitDurationTable,
-  MuscleDoseChart,
-  RetreatmentTimingTable
-} from '@/components/clinician/CycleAnalysisViews';
+  usePatientHistory,
+  type HistoryCycle,
+  type HistoryGoal,
+  type HistoryRater
+} from '@/lib/supabase/patientHistory';
+import { GoalSparkline } from '@/components/clinician/GoalSparkline';
 import { SkeletonScreen, SkeletonBlock } from '@/components/feedback/Skeleton';
 import { useWideLayout } from '@/lib/useWideLayout';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
 
+type T = ReturnType<typeof useTranslations>;
+const SIDE_ABBR: Record<string, string> = { left: 'L', right: 'R', bilateral: 'L+R' };
+const sign = (v: number | null | undefined) => (v == null ? '—' : v > 0 ? `+${v}` : `${v}`);
+
 /**
- * Longitudinal trend page — physician only.
- *
- * Reached from the clinician patient page ("View history across
- * cycles"). Shows, for the patient in the current session, how total
- * dose and goal outcome have changed across all of their treatment
- * cycles.
- *
- * It uses the SAME active clinician session as the patient page — the
- * physician has already unlocked the patient — so it reads the
- * patient id from the session rather than taking it in the URL.
- *
- * Session guard mirrors the patient page: it only redirects to the
- * unlock screen on a SETTLED no-session result (status 'success' +
- * null data), never on a transient null during a background refetch.
+ * Longitudinal clinical record — physician only. For each cycle: the
+ * injection, how each goal responded (patient / clinician / physiotherapist)
+ * with its trajectory and benefit duration, a symptom summary, side-effect
+ * flag, notes, and time to next treatment. The cross-cycle numbers sit in a
+ * summary strip on top. Reads only from usePatientHistory.
  */
 export default function ClinicianHistoryPage() {
   const router = useRouter();
@@ -44,53 +36,21 @@ export default function ClinicianHistoryPage() {
   const prefix = locale === 'en' ? '' : `/${locale}`;
   const t = useTranslations('clinician.history');
   const { profile, loading: authLoading } = useAuth();
-
-  const sessionQuery = useCurrentClinicianSession(
-    profile?.id ?? null,
-    profile?.role ?? null
-  );
+  const sessionQuery = useCurrentClinicianSession(profile?.id ?? null, profile?.role ?? null);
   const patientId = sessionQuery.data?.patientId ?? null;
-  const trend = usePatientTrend(patientId);
-  const analysis = usePatientCycleAnalysis(patientId);
+  const history = usePatientHistory(patientId);
   const wide = useWideLayout();
-  // Width + layout classes gated on the user's layout preference.
-  // When wide: header/main expand at lg; the two summary charts sit
-  // side-by-side; the two analysis tables also pair up. When compact:
-  // everything stays single-column on every screen. The history page
-  // is the data-dense exception among review pages — two summary
-  // charts, a muscle chart, two analysis tables. To use the space
-  // well (less scrolling, dose vs outcome comparable at a glance) it
-  // uses the full wide width and pairs its charts and tables, like the
-  // treatment page is the wide exception for entry work.
-  const headerWidthClass = wide
-    ? 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4 lg:max-w-[var(--max-w-page-wide)]'
-    : 'mx-auto flex max-w-[var(--max-w-page-narrow)] items-center justify-between px-5 py-4';
+
   const mainWidthClass = wide
     ? 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-8 lg:max-w-[var(--max-w-page-wide)]'
     : 'mx-auto max-w-[var(--max-w-page-narrow)] px-5 py-8';
-  // At the wide width, the two summary charts pair side-by-side
-  // (~520px each — comfortable), and so do the two analysis tables.
-  // Single column when compact or narrow.
-  const chartPairClass = wide
-    ? 'grid gap-6 lg:grid-cols-2'
-    : 'space-y-8';
-  const tablePairClass = wide
-    ? 'grid gap-6 lg:grid-cols-2'
-    : 'space-y-8';
 
-  // Auth + role gate.
   useEffect(() => {
     if (authLoading) return;
-    if (!profile) {
-      router.replace(prefix ? `${prefix}/login` : '/login');
-      return;
-    }
-    if (profile.role !== 'clinician') {
-      router.replace(prefix ? `${prefix}/` : '/');
-    }
+    if (!profile) { router.replace(prefix ? `${prefix}/login` : '/login'); return; }
+    if (profile.role !== 'clinician') router.replace(prefix ? `${prefix}/` : '/');
   }, [authLoading, profile, router, prefix]);
 
-  // No active session → back to the unlock screen. Settled result only.
   useEffect(() => {
     if (sessionQuery.status === 'success' && sessionQuery.data === null) {
       if (isSessionEndingDeliberately()) return;
@@ -98,13 +58,7 @@ export default function ClinicianHistoryPage() {
     }
   }, [sessionQuery.status, sessionQuery.data, router, prefix]);
 
-  if (
-    authLoading ||
-    !profile ||
-    profile.role !== 'clinician' ||
-    sessionQuery.isLoading ||
-    !sessionQuery.data
-  ) {
+  if (authLoading || !profile || profile.role !== 'clinician' || sessionQuery.isLoading || !sessionQuery.data) {
     return (
       <SkeletonScreen>
         <SkeletonBlock width="w-2/3" height="h-8" />
@@ -114,173 +68,208 @@ export default function ClinicianHistoryPage() {
     );
   }
 
-  const patientPath = prefix
-    ? `${prefix}/clinician/patient`
-    : '/clinician/patient';
+  const patientPath = prefix ? `${prefix}/clinician/patient` : '/clinician/patient';
+  const cycles = history.data?.cycles ?? [];
 
-  const cycles = trend.data?.cycles ?? [];
+  const isCurrent = (c: HistoryCycle) => c.status === 'active';
+
+  const goalsSummary = (c: HistoryCycle) => {
+    if (c.goals.length === 0) return <span className="text-ink-muted">—</span>;
+    const a = c.goals.filter((g) => g.outcome === 'achieved').length;
+    const p = c.goals.filter((g) => g.outcome === 'partial').length;
+    const ongoing = c.goals.filter((g) => g.outcome === null).length;
+    return (
+      <span className="inline-flex flex-wrap gap-1">
+        {a > 0 && <span className="rounded-full bg-sage-soft px-2 py-0.5 text-[11px] font-bold text-sage-deep">{a} {t('outcomeAchievedShort')}</span>}
+        {p > 0 && <span className="rounded-full bg-amber-soft/50 px-2 py-0.5 text-[11px] font-bold text-amber-deep">{p} {t('outcomePartialShort')}</span>}
+        {ongoing > 0 && <span className="rounded-full border border-stone px-2 py-0.5 text-[11px] text-ink-soft">{ongoing} {t('outcomeOngoingShort')}</span>}
+      </span>
+    );
+  };
+
+  const benefitSummary = (c: HistoryCycle) => {
+    if (isCurrent(c)) return <span className="text-ink-muted">{t('inProgress')}</span>;
+    const held = c.goals.some((g) => g.benefitHeld);
+    const fades = c.goals.map((g) => g.fadeWeek).filter((w): w is number => w != null);
+    if (held && fades.length === 0) return <span className="rounded-full bg-sage-soft px-2 py-0.5 text-[11px] font-bold text-sage-deep">{t('benefitHeldShort')}</span>;
+    if (fades.length) return <span className="rounded-full border border-stone bg-stone-soft px-2 py-0.5 text-[11px] text-ink-soft">{t('fadedWk', { week: Math.min(...fades) })}</span>;
+    return <span className="text-ink-muted">—</span>;
+  };
 
   return (
     <div className="min-h-dvh bg-cream">
-      <AppHeader
-        width="narrowToWide"
-        back={{ label: t('back'), onClick: () => router.push(patientPath) }}
-        actions={<EndSessionButton role="clinician" />}
-        helpPageKey="history"
-      />
-
+      <AppHeader width="narrowToWide" back={{ label: t('back'), onClick: () => router.push(patientPath) }} actions={<EndSessionButton role="clinician" />} helpPageKey="history" />
       <main className={mainWidthClass}>
-        <h1 className="font-display text-[24px] leading-tight text-ink">
-          {t('title')}
-        </h1>
-        <p className="mt-1.5 text-[14px] leading-relaxed text-ink-soft">
-          {t('subtitle')}
-        </p>
+        <h1 className="font-display text-[24px] leading-tight text-ink">{t('title')}</h1>
+        <p className="mt-1.5 text-[14px] leading-relaxed text-ink-soft">{t('subtitle')}</p>
 
-        {/* Total cycles count — the one place where cycle number is
-            meaningful (longitudinal context). Other pages have dropped
-            the cycle number; it lives here. */}
-        {!trend.isLoading && cycles.length > 0 && (
-          <p className="mt-3 text-[13px] text-ink-muted">
-            {t('totalCycles', { count: cycles.length })}
-          </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {history.data?.medCurrent && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-stone bg-cream-soft px-3 py-1 text-[12.5px] text-ink-soft">
+              {t('medCurrent')}: <span className="font-semibold text-ink">{history.data.medCurrent}</span>
+            </span>
+          )}
+          {!history.isLoading && cycles.length > 0 && (
+            <span className="text-[13px] text-ink-muted">{t('totalCycles', { count: cycles.length })}</span>
+          )}
+        </div>
+
+        {history.isLoading && <SkeletonBlock height="h-40" className="mt-6" />}
+
+        {!history.isLoading && cycles.length === 0 && (
+          <p className="mt-8 rounded-[var(--radius-card)] border border-dashed border-stone bg-cream-soft/60 p-5 text-[14px] leading-relaxed text-ink-soft">{t('noData')}</p>
         )}
 
-        {trend.isLoading && (
-          <SkeletonBlock height="h-40" className="mt-6" />
-        )}
+        {!history.isLoading && cycles.length > 0 && (
+          <>
+            <section className="mt-7 overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
+              <div className="flex items-baseline justify-between gap-3 px-4 py-3">
+                <h2 className="font-display text-[16px] text-ink">{t('summaryHeading')}</h2>
+                <span className="text-[12px] text-ink-muted">{t('summaryOrient')}</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-[13px]">
+                  <thead>
+                    <tr className="bg-stone-soft text-left text-[11px] uppercase tracking-wide text-ink-muted">
+                      <th className="px-4 py-2 font-bold">{t('cycleShort')}</th>
+                      <th className="px-4 py-2 font-bold">{t('colStart')}</th>
+                      <th className="px-4 py-2 font-bold">{t('colUnits')}</th>
+                      <th className="px-4 py-2 font-bold">{t('colGoals')}</th>
+                      <th className="px-4 py-2 font-bold">{t('colBenefit')}</th>
+                      <th className="px-4 py-2 font-bold">{t('colInterval')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cycles.map((c) => (
+                      <tr key={c.id} className="border-t border-stone">
+                        <td className="px-4 py-2.5 font-semibold text-ink">{c.cycleNumber}{isCurrent(c) && <span className="ml-1 font-normal text-ink-muted">({t('currentLower')})</span>}</td>
+                        <td className="px-4 py-2.5 text-ink-soft">{formatLongDate(c.startDate, locale)}</td>
+                        <td className="px-4 py-2.5 tabular-nums text-ink">{c.totalUnits != null ? `${c.totalUnits} U` : '—'}</td>
+                        <td className="px-4 py-2.5">{goalsSummary(c)}</td>
+                        <td className="px-4 py-2.5">{benefitSummary(c)}</td>
+                        <td className="px-4 py-2.5 tabular-nums text-ink-soft">{c.weeksToNext != null ? t('weeksN', { weeks: c.weeksToNext }) : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
 
-        {!trend.isLoading && cycles.length === 0 && (
-          <p className="mt-8 rounded-[var(--radius-card)] border border-dashed border-stone bg-cream-soft/60 p-5 text-[14px] leading-relaxed text-ink-soft">
-            {t('noData')}
-          </p>
-        )}
-
-        {/* One cycle only — trends need at least two. Still show the
-            single cycle's charts, but explain there is no trend yet. */}
-        {!trend.isLoading && cycles.length === 1 && (
-          <p className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft px-4 py-3 text-[13px] leading-relaxed text-ink-soft">
-            {t('empty')}
-          </p>
-        )}
-
-        {!trend.isLoading && cycles.length >= 1 && (
-          <div className="mt-7 space-y-8">
-            {/* Two summary charts — dose + outcome. Side-by-side at
-                the wide width so they're comparable at a glance;
-                stacked when compact or narrow. */}
-            <div className={chartPairClass}>
-              <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-                <DosePerCycleChart
-                  cycles={cycles}
-                  unitsLabel={t('doseChartTitle')}
-                  locale={locale}
-                />
-              </section>
-
-              <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-                <h2 className="mb-1 text-[13px] font-semibold text-ink-soft">
-                  {t('goalsByCycleTitle')}
-                </h2>
-                <CycleGoalsBreakdown
-                  cycles={cycles}
-                  locale={locale}
-                  labels={{
-                    achieved: t('outcomeAchieved'),
-                    partial: t('outcomePartial'),
-                    noLongerSuitable: t('outcomeNoLongerSuitable'),
-                    ongoing: t('outcomeOngoing'),
-                    retired: t('outcomeRetired'),
-                    noGoals: t('goalsByCycleNone'),
-                    gasTag: t('goalKindGas'),
-                    nrsTag: t('goalKindNrs')
-                  }}
-                />
-                <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
-                  {t('goalsByCycleNote')}
-                </p>
-              </section>
+            <div className="mt-8 mb-3 flex items-baseline gap-2.5">
+              <h2 className="font-display text-[20px] text-ink">{t('cycleByCycle')}</h2>
+              <span className="text-[12.5px] text-ink-muted">{t('mostRecentFirst')}</span>
             </div>
-
-            {/* --- Deeper analysis: only meaningful with 2+ cycles --- */}
-            {(analysis.data?.cycles.length ?? 0) >= 2 && (
-              <>
-                {/* Per-muscle dose — full width on every layout; the
-                    grouped-bar chart benefits from horizontal room. */}
-                <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-                  <h2 className="text-[13px] font-semibold text-ink-soft">
-                    {t('muscleTitle')}
-                  </h2>
-                  <div className="mt-3">
-                    <MuscleDoseChart
-                      trends={analysis.data!.muscleTrends}
-                      cycleLabel={t('cycleShort')}
-                      emptyLabel={t('muscleEmpty')}
-                      allHiddenLabel={t('muscleAllHidden')}
-                    />
-                  </div>
-                  <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
-                    {t('muscleNote')}
-                  </p>
-                </section>
-
-                {/* Two analysis tables — benefit duration + retreatment
-                    timing. Paired side-by-side at the wide width. */}
-                <div className={tablePairClass}>
-                  {/* Benefit duration */}
-                  <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-                    <h2 className="text-[13px] font-semibold text-ink-soft">
-                      {t('benefitTitle')}
-                    </h2>
-                    <div className="mt-3">
-                      <BenefitDurationTable
-                        cycles={analysis.data!.cycles}
-                        labels={{
-                          cycle: t('cycleShort'),
-                          peak: t('colPeak'),
-                          duration: t('colDuration'),
-                          weeks: t('colWeeks'),
-                          held: t('benefitHeld'),
-                          noData: t('noData')
-                        }}
-                      />
-                    </div>
-                    <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
-                      {t('benefitNote')}
-                    </p>
-                  </section>
-
-                  {/* Re-treatment timing */}
-                  <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-                    <h2 className="text-[13px] font-semibold text-ink-soft">
-                      {t('retreatTitle')}
-                    </h2>
-                    <div className="mt-3">
-                      <RetreatmentTimingTable
-                        cycles={analysis.data!.cycles}
-                        labels={{
-                          cycle: t('cycleShort'),
-                          interval: t('colInterval'),
-                          fadeVsRetreat: t('colTiming'),
-                          weeks: t('colWeeks'),
-                          held: t('benefitHeld'),
-                          noNext: t('retreatNoNext'),
-                          faded: t('retreatFaded'),
-                          onTime: t('retreatOnTime'),
-                          late: t('retreatLate')
-                        }}
-                      />
-                    </div>
-                    <p className="mt-3 text-[12px] leading-relaxed text-ink-muted">
-                      {t('retreatNote')}
-                    </p>
-                  </section>
-                </div>
-              </>
-            )}
-          </div>
+            <div className="space-y-4">
+              {cycles.map((c, i) => <CycleCard key={c.id} c={c} defaultOpen={i === 0} t={t} locale={locale} />)}
+            </div>
+          </>
         )}
       </main>
+    </div>
+  );
+}
+
+function CycleCard({ c, defaultOpen, t, locale }: { c: HistoryCycle; defaultOpen: boolean; t: T; locale: string }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const current = c.status === 'active';
+  return (
+    <section className={`overflow-hidden rounded-[var(--radius-card)] border bg-cream-soft ${current ? 'border-sage' : 'border-stone'}`}>
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4 text-left hover:bg-cream">
+        <div>
+          <div className="font-display text-[18px] text-ink">{t('cycleShort')} {c.cycleNumber}</div>
+          <div className="mt-1 flex flex-wrap gap-x-3.5 gap-y-1 text-[13px] text-ink-soft">
+            <span>{formatLongDate(c.startDate, locale)}</span>
+            {c.drugProduct && <span className="text-ink">{c.drugProduct}</span>}
+            {c.totalUnits != null && <span className="font-semibold tabular-nums text-ink">{c.totalUnits} U</span>}
+            {c.dilution && <span>{c.dilution}</span>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {current ? (
+            <span className="rounded-full border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-ink-soft">{t('currentCycleTag')}</span>
+          ) : c.weeksToNext != null ? (
+            <span className="rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep">{t('nextAfter', { weeks: c.weeksToNext })}</span>
+          ) : null}
+          <span aria-hidden className={`text-ink-muted transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+        </div>
+      </button>
+
+      {open && (
+        <div className="border-t border-stone px-5 pb-5 pt-1">
+          <div className="mb-2 mt-4 text-[11px] font-bold uppercase tracking-wider text-ink-muted">{t('injectionHeading')}</div>
+          {c.injections.length === 0 ? (
+            <p className="text-[13px] text-ink-muted">{t('noInjections')}</p>
+          ) : (
+            <div className="grid gap-x-7 gap-y-1 sm:grid-cols-2">
+              {c.injections.map((inj, i) => (
+                <div key={i} className="flex items-baseline gap-2 border-b border-dotted border-stone py-1 text-[13.5px]">
+                  <span className="w-9 text-[11px] font-bold text-ink-muted">{inj.side ? (SIDE_ABBR[inj.side] ?? inj.side) : ''}</span>
+                  <span className="flex-1 text-ink">{inj.muscle}</span>
+                  <span className="font-semibold tabular-nums text-ink">{inj.doseUnits} U</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="mb-2 mt-5 text-[11px] font-bold uppercase tracking-wider text-ink-muted">{t('goalsHeading')}</div>
+          {c.goals.length === 0 ? (
+            <p className="text-[13px] text-ink-muted">{t('noGoalsCycle')}</p>
+          ) : (
+            <div className="divide-y divide-stone">{c.goals.map((g) => <GoalRow key={g.id} g={g} t={t} />)}</div>
+          )}
+
+          <div className="mb-2 mt-5 text-[11px] font-bold uppercase tracking-wider text-ink-muted">{t('symptomHeading')}</div>
+          <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-[13px]">
+            {c.symptoms.painFirst != null && <span className="text-ink-soft">{t('painLabel')} <b className="tabular-nums text-ink">{c.symptoms.painFirst}→{c.symptoms.painLast}</b></span>}
+            {c.symptoms.stiffFirst != null && <span className="text-ink-soft">{t('stiffnessLabel')} <b className="tabular-nums text-ink">{c.symptoms.stiffFirst}→{c.symptoms.stiffLast}</b></span>}
+            {c.symptoms.painFirst == null && c.symptoms.stiffFirst == null && <span className="text-ink-muted">{t('noSymptoms')}</span>}
+            {c.symptoms.sideEffectCount > 0 && <span className="font-semibold text-amber-deep">⚠ {t('sideEffectsFlag', { count: c.symptoms.sideEffectCount })}</span>}
+          </div>
+
+          {c.notes.length > 0 && (
+            <>
+              <div className="mb-2 mt-5 text-[11px] font-bold uppercase tracking-wider text-ink-muted">{t('notesHeading')}</div>
+              <div className="space-y-2">
+                {c.notes.map((n, i) => <p key={i} className="border-l-2 border-sage pl-3 text-[13.5px] leading-relaxed text-ink">{n}</p>)}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function GoalRow({ g, t }: { g: HistoryGoal; t: T }) {
+  const outcomeLabel =
+    g.outcome === 'achieved' ? t('outcomeAchieved')
+      : g.outcome === 'partial' ? t('outcomePartial')
+        : g.outcome === 'noLongerSuitable' ? t('outcomeNoLongerSuitable')
+          : null;
+  const rater = (r: HistoryRater) => (g.kind === 'nrs' && r.nrs != null ? `NRS ${r.nrs}` : sign(r.gas));
+  return (
+    <div className="py-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <span className="max-w-[58ch] font-display text-[15.5px] text-ink">{g.text}</span>
+        <span className="text-[10.5px] font-bold uppercase tracking-wide text-ink-muted">{g.kind === 'gas' ? t('goalKindGas') : t('goalKindNrs')}</span>
+      </div>
+      {g.points.length > 0 && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+          <GoalSparkline points={g.points} peakWeek={g.peakWeek} fadeWeek={g.fadeWeek} />
+          <span className="text-[12px] text-ink-soft">
+            {g.peakGas != null && g.peakWeek != null && t('peakAt', { value: sign(g.peakGas), week: g.peakWeek })}
+            {g.benefitHeld ? ` · ${t('benefitHeldShort')}` : g.fadeWeek != null ? ` · ${t('fadedWk', { week: g.fadeWeek })}` : ''}
+            {outcomeLabel ? ` · ${outcomeLabel}` : ''}
+          </span>
+        </div>
+      )}
+      {(g.patientLatest || g.clinicianLatest || g.physioLatest) && (
+        <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-[11.5px] text-ink-muted">
+          {g.patientLatest && <span>{t('raterPatient')} <b className="text-sage-deep">{rater(g.patientLatest)}</b></span>}
+          {g.clinicianLatest && <span>{t('raterClinician')} <b className="text-sage-deep">{rater(g.clinicianLatest)}</b></span>}
+          {g.physioLatest && <span>{t('raterPhysio')} <b className="text-sage-deep">{rater(g.physioLatest)}</b></span>}
+        </div>
+      )}
     </div>
   );
 }

@@ -549,6 +549,9 @@ export default function PhysioPatientPage() {
                     currentWeek={weekNumber}
                     ratingsByGoal={ratingsByGoal}
                     physioRatingsByGoal={physioRatingsByGoal}
+                    onSaved={() => {
+                      void patientData.refetch();
+                    }}
                     goalHandoffNotes={goalHandoffNotes.data}
                     dateAside={
                       <button
