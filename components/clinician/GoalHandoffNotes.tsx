@@ -16,8 +16,9 @@ interface GoalHandoffNotesProps {
 
 /**
  * Optional, short, goal-specific notes the physician leaves for the weekly
- * therapist (e.g. "raised dose for this goal — push range"). Therapist-only,
- * never patient-visible (enforced by RLS on goal_handoff_note). Each note
+ * therapist (e.g. "raised dose for this goal — push range"). Written by the
+ * physician; readable by the therapist and by the patient themselves (patient
+ * self-read added in migration 0096). Each note
  * saves on blur when it changes; an emptied note clears the row.
  */
 export function GoalHandoffNotes({ cycleId, goals }: GoalHandoffNotesProps) {

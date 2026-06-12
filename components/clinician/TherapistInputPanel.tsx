@@ -289,14 +289,6 @@ function PhysioGoalSuggestionActions({
       >
         {t('suggestionActionConsider')}
       </button>
-      <button
-        type="button"
-        onClick={() => act('dismissed')}
-        disabled={setStatus.isPending}
-        className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft disabled:opacity-50"
-      >
-        {t('suggestionActionDismiss')}
-      </button>
     </div>
   );
 }
@@ -344,14 +336,6 @@ function PhysioMuscleSuggestionActions({
         className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
       >
         {t('suggestionActionConsider')}
-      </button>
-      <button
-        type="button"
-        onClick={() => act('dismissed')}
-        disabled={setStatus.isPending}
-        className="flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft disabled:opacity-50"
-      >
-        {t('suggestionActionDismiss')}
       </button>
     </div>
   );
