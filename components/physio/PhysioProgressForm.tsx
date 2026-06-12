@@ -172,9 +172,19 @@ export function PhysioProgressForm({
           {goals.map((g) => {
             const isGas = g.kind === 'gas';
             const flagged = !!suggestChange[g.id];
-            const rated = isRated(g.id);
+            // "Rated" for display = a pending local pick OR the latest saved
+            // therapist rating for this goal. (Submit inclusion still uses the
+            // local-only isRated, so a previously-saved goal is never silently
+            // re-submitted.)
+            const localRated = isRated(g.id);
+            const physioPts = physioRatingsByGoal?.get(g.id);
+            const lastPhysio =
+              physioPts && physioPts.length
+                ? physioPts[physioPts.length - 1]
+                : null;
+            const rated = localRated || !!lastPhysio;
             const open = !!openGoals[g.id];
-            const ratedLabel = isGas
+            const localLabel = isGas
               ? typeof gasRatings[g.id] === 'number'
                 ? gasRatings[g.id] > 0
                   ? `+${gasRatings[g.id]}`
@@ -183,6 +193,14 @@ export function PhysioProgressForm({
               : typeof ratings[g.id] === 'number'
                 ? `${ratings[g.id]}`
                 : null;
+            const persistedLabel = lastPhysio
+              ? isGas
+                ? lastPhysio.value > 0
+                  ? `+${lastPhysio.value}`
+                  : `${lastPhysio.value}`
+                : `${lastPhysio.nrs}`
+              : null;
+            const ratedLabel = localLabel ?? persistedLabel;
 
             return (
               <div
