@@ -289,7 +289,7 @@ export function useSetOwnDateOfBirth() {
  *  readable via the patient's own-row RLS. */
 export interface OwnVideoConsent {
   clinical: boolean;
-  research: boolean;
+  educational: boolean;
 }
 
 export function useOwnVideoConsent(enabled: boolean) {
@@ -300,12 +300,12 @@ export function useOwnVideoConsent(enabled: boolean) {
       const supabase = createSupabaseBrowserClient();
       const { data, error } = await supabase
         .from('patient')
-        .select('video_consent_clinical, video_consent_research')
+        .select('video_consent_clinical, video_consent_educational')
         .maybeSingle();
       if (error) throw error;
       return {
         clinical: !!(data?.video_consent_clinical as boolean | null),
-        research: !!(data?.video_consent_research as boolean | null)
+        educational: !!(data?.video_consent_educational as boolean | null)
       };
     }
   });
@@ -317,17 +317,51 @@ export function useSetOwnVideoConsent() {
   return useMutation({
     mutationFn: async (input: {
       clinical: boolean;
-      research: boolean;
+      educational: boolean;
     }): Promise<void> => {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.rpc('set_own_video_consent', {
         p_clinical: input.clinical,
-        p_research: input.research
+        p_educational: input.educational
       });
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['ownVideoConsent'] });
+    }
+  });
+}
+
+/** Patient reads their own general research-consent status (migration 0098). */
+export function useOwnResearchConsent(enabled: boolean) {
+  return useQuery({
+    enabled,
+    queryKey: ['ownResearchConsent'],
+    queryFn: async (): Promise<{ consent: boolean }> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase
+        .from('patient')
+        .select('research_consent')
+        .maybeSingle();
+      if (error) throw error;
+      return { consent: !!(data?.research_consent as boolean | null) };
+    }
+  });
+}
+
+/** Patient grants or withdraws their OWN general research consent. */
+export function useSetOwnResearchConsent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { consent: boolean }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_own_research_consent', {
+        p_consent: input.consent
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ownResearchConsent'] });
     }
   });
 }

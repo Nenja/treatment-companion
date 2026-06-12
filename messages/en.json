@@ -442,7 +442,6 @@
       "railTitle": "Tools",
       "videoConsentTitle": "Video consent",
       "videoConsentClinical": "Consent to record & store videos",
-      "videoConsentResearch": "Consent to use videos for research",
       "archivedVideosButton": "Archived videos",
       "actionVideo": "Video",
       "actionShortVideo": "Video",
@@ -458,7 +457,8 @@
       "physioAcceptedToast": "Goal suggestion accepted.",
       "physioDismissedToast": "Dismissed.",
       "physioConsideredToast": "Marked as considered.",
-      "physioActionError": "Couldn't save — please try again."
+      "physioActionError": "Couldn't save — please try again.",
+      "videoConsentEducational": "Consent to use videos for educational purposes"
     },
     "review": {
       "title": "Review suggestion",
@@ -703,14 +703,14 @@
       "score": "Clinic score",
       "consentClinicalYes": "Recording consent ✓",
       "consentClinicalNo": "No recording consent",
-      "consentResearchYes": "Research consent ✓",
-      "consentResearchNo": "No research consent",
       "play": "Play",
       "unarchive": "Restore",
       "delete": "Delete",
       "deleteConfirm": "Delete permanently",
       "deleting": "Deleting…",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "consentEducationalYes": "Educational consent ✓",
+      "consentEducationalNo": "No educational consent"
     },
     "videoHub": {
       "title": "Video",
@@ -1714,8 +1714,6 @@
     "intro": "Before recording, please confirm your consent. Your care team uses these short videos to see how your treatment is working.",
     "recordingDesc": "By continuing you agree that videos of you doing your goal task may be recorded and stored, and seen by your care team.",
     "recordingLabel": "I consent to recording and storing my videos",
-    "researchLabel": "I also allow my videos to be used for research (optional)",
-    "researchDesc": "Optional. You can record and use videos without agreeing to this.",
     "consentCta": "I consent — continue",
     "saving": "Saving…",
     "saved": "Consent updated",
@@ -1724,7 +1722,9 @@
     "loading": "Loading…",
     "profileHeading": "Video consent",
     "profileHelper": "Choose whether your care team may record videos of you, and whether they may be used for research. You can change this at any time.",
-    "save": "Save consent"
+    "save": "Save consent",
+    "educationalLabel": "I also allow my videos to be used for educational purposes (optional)",
+    "educationalDesc": "Optional. You can record and use videos without agreeing to this."
   },
   "weekday": {
     "short": {
@@ -1765,5 +1765,20 @@
     "authorTherapist": "Your physiotherapist",
     "treatmentChanged": "Treatment adjusted",
     "goalContext": "Goal · {goal}"
+  },
+  "researchConsent": {
+    "heading": "Research participation",
+    "helper": "Whether this patient's data may be used for research. The study export only includes patients who have consented.",
+    "patientHeading": "Research participation",
+    "patientHelper": "Choose whether your data may be used for research. You can withdraw at any time, and your care won't change either way.",
+    "label": "Consent to use my data for research",
+    "desc": "Optional. Withdrawing stops any further use of your data for research.",
+    "statusConsented": "Consented to research",
+    "statusNone": "No research consent on file",
+    "statusWithdrawn": "Research consent withdrawn — pending deletion",
+    "grant": "Record research consent",
+    "withdraw": "Withdraw research consent",
+    "withdrawNote": "Withdrawing stops the study export immediately. Records already shared are removed once an administrator confirms deletion.",
+    "withdrawConfirm": "Withdraw this patient's research consent? The study export will stop immediately, and shared records are removed once an administrator confirms deletion."
   }
 }

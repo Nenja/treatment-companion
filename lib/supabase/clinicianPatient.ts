@@ -162,7 +162,10 @@ export interface ClinicianPatientData {
      *  clinical = permission to record & store videos; research = permission to
      *  use them for research. */
     videoConsentClinical: boolean;
-    videoConsentResearch: boolean;
+    videoConsentEducational: boolean;
+    researchConsent: boolean;
+    researchConsentWithdrawnAt: string | null;
+    researchConsentPurgedAt: string | null;
   };
   cycle: {
     id: string;
@@ -213,7 +216,7 @@ export function useClinicianPatientData(
       const { data: pRow, error: pErr } = await supabase
         .from('patient')
         .select(
-          'id, share_muscles_with_physio, physio_exercise_plan, physio_assistive_devices, current_medication, previous_medication, video_consent_clinical, video_consent_research, profile:profile_id (display_name)'
+          'id, share_muscles_with_physio, physio_exercise_plan, physio_assistive_devices, current_medication, previous_medication, video_consent_clinical, video_consent_educational, research_consent, research_consent_withdrawn_at, research_consent_purged_at, profile:profile_id (display_name)'
         )
         .eq('id', patientId!)
         .maybeSingle();
@@ -239,8 +242,13 @@ export function useClinicianPatientData(
           (pRow.previous_medication as string | null) ?? null,
         videoConsentClinical:
           (pRow.video_consent_clinical as boolean | null) ?? false,
-        videoConsentResearch:
-          (pRow.video_consent_research as boolean | null) ?? false
+        videoConsentEducational:
+          (pRow.video_consent_educational as boolean | null) ?? false,
+        researchConsent: (pRow.research_consent as boolean | null) ?? false,
+        researchConsentWithdrawnAt:
+          (pRow.research_consent_withdrawn_at as string | null) ?? null,
+        researchConsentPurgedAt:
+          (pRow.research_consent_purged_at as string | null) ?? null
       };
 
       // 2. Active cycle
@@ -1536,13 +1544,35 @@ export function useSetPatientVideoConsent() {
     mutationFn: async (input: {
       patientId: string;
       clinical: boolean;
-      research: boolean;
+      educational: boolean;
     }): Promise<void> => {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.rpc('set_patient_video_consent', {
         p_patient_id: input.patientId,
         p_clinical: input.clinical,
-        p_research: input.research
+        p_educational: input.educational
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
+/** Clinician records or withdraws a patient's general RESEARCH consent
+ *  (migration 0098). Gating column for the REDCap export. */
+export function useSetPatientResearchConsent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      patientId: string;
+      consent: boolean;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_patient_research_consent', {
+        p_patient_id: input.patientId,
+        p_consent: input.consent
       });
       if (error) throw error;
     },

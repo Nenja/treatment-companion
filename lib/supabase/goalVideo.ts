@@ -114,7 +114,7 @@ export interface ArchivedGoalVideo {
   clinicUnusable: boolean;
   nrsValue: number | null;
   consentClinical: boolean;
-  consentResearch: boolean;
+  consentEducational: boolean;
   note: string | null;
   archivedAt: string;
 }
@@ -129,7 +129,7 @@ export function useArchivedVideos(patientId: string | null) {
       const { data, error } = await supabase
         .from('archived_goal_video')
         .select(
-          'id, source, approved_goal_id, rating_id, video_path, clinic_video_rating, clinic_video_unusable, nrs_value, consent_clinical, consent_research, note, archived_at, approved_goal:approved_goal_id (patient_facing_text)'
+          'id, source, approved_goal_id, rating_id, video_path, clinic_video_rating, clinic_video_unusable, nrs_value, consent_clinical, consent_educational, note, archived_at, approved_goal:approved_goal_id (patient_facing_text)'
         )
         .eq('patient_id', patientId as string)
         .order('archived_at', { ascending: false });
@@ -148,7 +148,7 @@ export function useArchivedVideos(patientId: string | null) {
           clinicUnusable: (row.clinic_video_unusable as boolean | null) ?? false,
           nrsValue: (row.nrs_value as number | null) ?? null,
           consentClinical: (row.consent_clinical as boolean | null) ?? false,
-          consentResearch: (row.consent_research as boolean | null) ?? false,
+          consentEducational: (row.consent_educational as boolean | null) ?? false,
           note: (row.note as string | null) ?? null,
           archivedAt: row.archived_at as string
         };

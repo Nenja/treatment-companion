@@ -446,7 +446,6 @@
       "railTitle": "Værktøjer",
       "videoConsentTitle": "Videosamtykke",
       "videoConsentClinical": "Samtykke til at optage og gemme videoer",
-      "videoConsentResearch": "Samtykke til at bruge videoer til forskning",
       "archivedVideosButton": "Arkiverede videoer",
       "actionVideo": "Video",
       "actionShortVideo": "Video",
@@ -462,7 +461,8 @@
       "physioAcceptedToast": "Målforslag accepteret.",
       "physioDismissedToast": "Afvist.",
       "physioConsideredToast": "Markeret som overvejet.",
-      "physioActionError": "Kunne ikke gemmes — prøv igen."
+      "physioActionError": "Kunne ikke gemmes — prøv igen.",
+      "videoConsentEducational": "Samtykke til at bruge videoer til undervisningsformål"
     },
     "review": {
       "title": "Gennemgå forslag",
@@ -707,14 +707,14 @@
       "score": "Klinikscore",
       "consentClinicalYes": "Optagesamtykke ✓",
       "consentClinicalNo": "Intet optagesamtykke",
-      "consentResearchYes": "Forskningssamtykke ✓",
-      "consentResearchNo": "Intet forskningssamtykke",
       "play": "Afspil",
       "unarchive": "Gendan",
       "delete": "Slet",
       "deleteConfirm": "Slet permanent",
       "deleting": "Sletter…",
-      "cancel": "Annullér"
+      "cancel": "Annullér",
+      "consentEducationalYes": "Undervisningssamtykke ✓",
+      "consentEducationalNo": "Intet undervisningssamtykke"
     },
     "videoHub": {
       "title": "Video",
@@ -1718,8 +1718,6 @@
     "intro": "Før du optager, bekræft venligst dit samtykke. Dit behandlingsteam bruger disse korte videoer til at se, hvordan din behandling virker.",
     "recordingDesc": "Ved at fortsætte accepterer du, at videoer af dig, der udfører din måløvelse, må optages og gemmes og ses af dit behandlingsteam.",
     "recordingLabel": "Jeg samtykker til at optage og gemme mine videoer",
-    "researchLabel": "Jeg tillader også, at mine videoer bruges til forskning (valgfrit)",
-    "researchDesc": "Valgfrit. Du kan optage og bruge videoer uden at acceptere dette.",
     "consentCta": "Jeg samtykker – fortsæt",
     "saving": "Gemmer…",
     "saved": "Samtykke opdateret",
@@ -1728,7 +1726,9 @@
     "loading": "Indlæser…",
     "profileHeading": "Videosamtykke",
     "profileHelper": "Vælg, om dit behandlingsteam må optage videoer af dig, og om de må bruges til forskning. Du kan ændre dette når som helst.",
-    "save": "Gem samtykke"
+    "save": "Gem samtykke",
+    "educationalLabel": "Jeg tillader også, at mine videoer bruges til undervisningsformål (valgfrit)",
+    "educationalDesc": "Valgfrit. Du kan optage og bruge videoer uden at acceptere dette."
   },
   "weekday": {
     "short": {
@@ -1769,5 +1769,20 @@
     "authorTherapist": "Din fysioterapeut",
     "treatmentChanged": "Behandling justeret",
     "goalContext": "Mål · {goal}"
+  },
+  "researchConsent": {
+    "heading": "Deltagelse i forskning",
+    "helper": "Om denne patients data må bruges til forskning. Eksporten til studiet omfatter kun patienter, der har givet samtykke.",
+    "patientHeading": "Deltagelse i forskning",
+    "patientHelper": "Vælg, om dine data må bruges til forskning. Du kan trække samtykket tilbage når som helst, og din behandling ændres ikke.",
+    "label": "Samtykke til at bruge mine data til forskning",
+    "desc": "Valgfrit. Hvis du trækker samtykket tilbage, stopper enhver yderligere brug af dine data til forskning.",
+    "statusConsented": "Har givet samtykke til forskning",
+    "statusNone": "Intet forskningssamtykke registreret",
+    "statusWithdrawn": "Forskningssamtykke trukket tilbage — afventer sletning",
+    "grant": "Registrér forskningssamtykke",
+    "withdraw": "Træk forskningssamtykke tilbage",
+    "withdrawNote": "Tilbagetrækning stopper eksporten til studiet med det samme. Allerede delte data fjernes, når en administrator bekræfter sletningen.",
+    "withdrawConfirm": "Træk denne patients forskningssamtykke tilbage? Eksporten til studiet stopper med det samme, og delte data fjernes, når en administrator bekræfter sletningen."
   }
 }
