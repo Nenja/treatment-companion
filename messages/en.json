@@ -653,7 +653,7 @@
     },
     "goalHandoff": {
       "heading": "Goal-specific notes for the therapist",
-      "hint": "Optional, per goal — only shown to the therapist, never the patient.",
+      "hint": "Optional, per goal. Guides the therapist's work — and the patient can read it too.",
       "placeholder": "e.g. raised dose for this goal — push range of motion",
       "fromPhysician": "Note from the treating physician"
     },
@@ -1224,7 +1224,7 @@
     "nrsTargetTick": "target",
     "clinicVideoLine": "Clinic video",
     "handoffTitle": "Note for the therapist",
-    "handoffHint": "Shared with the patient’s therapist to guide their work between visits. Not shown to the patient.",
+    "handoffHint": "Shared with the patient’s therapist to guide their work between visits. The patient can read it too.",
     "handoffChangedLabel": "Did you change the treatment this visit?",
     "handoffChangedYes": "Adjusted",
     "handoffChangedNo": "No change",
@@ -1713,7 +1713,7 @@
   },
   "therapistNote": {
     "title": "Note to the clinic",
-    "helper": "Any length you like. The clinic sees it; the patient never does.",
+    "helper": "Any length you like. The note goes to the clinic — and the patient can read it too.",
     "placeholder": "Share anything the clinic should know…",
     "send": "Send",
     "sending": "Sending…",
@@ -1722,5 +1722,13 @@
     "delivered": "Delivered",
     "error": "Couldn't send — please try again.",
     "reviewHeading": "From the therapist"
+  },
+  "careTeamNotes": {
+    "heading": "Notes from your care team",
+    "intro": "These are notes your physician and physiotherapist write to each other about your treatment. You can read them here — they may use clinical wording.",
+    "authorPhysician": "Your physician",
+    "authorTherapist": "Your physiotherapist",
+    "treatmentChanged": "Treatment adjusted",
+    "goalContext": "Goal · {goal}"
   }
 }

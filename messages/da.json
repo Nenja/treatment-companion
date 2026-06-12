@@ -657,7 +657,7 @@
     },
     "goalHandoff": {
       "heading": "Målspecifikke noter til terapeuten",
-      "hint": "Valgfrit, per mål — vises kun til terapeuten, aldrig til patienten.",
+      "hint": "Valgfri, pr. mål. Vejleder terapeutens arbejde — og patienten kan også læse den.",
       "placeholder": "f.eks. øget dosis for dette mål — arbejd med bevægeudslag",
       "fromPhysician": "Note fra den behandlende læge"
     },
@@ -1228,7 +1228,7 @@
     "nrsTargetTick": "mål",
     "clinicVideoLine": "Klinikvideo",
     "handoffTitle": "Besked til terapeuten",
-    "handoffHint": "Deles med patientens terapeut for at vejlede arbejdet mellem besøg. Vises ikke til patienten.",
+    "handoffHint": "Deles med patientens terapeut for at vejlede arbejdet mellem besøg. Patienten kan også læse den.",
     "handoffChangedLabel": "Ændrede du behandlingen ved dette besøg?",
     "handoffChangedYes": "Justeret",
     "handoffChangedNo": "Ingen ændring",
@@ -1717,7 +1717,7 @@
   },
   "therapistNote": {
     "title": "Besked til klinikken",
-    "helper": "Skriv så meget du vil. Klinikken kan se den; patienten kan aldrig.",
+    "helper": "Skriv så meget du vil. Noten går til klinikken — og patienten kan også læse den.",
     "placeholder": "Skriv det, klinikken bør vide…",
     "send": "Send",
     "sending": "Sender…",
@@ -1726,5 +1726,13 @@
     "delivered": "Leveret",
     "error": "Kunne ikke sendes — prøv igen.",
     "reviewHeading": "Fra terapeuten"
+  },
+  "careTeamNotes": {
+    "heading": "Noter fra dit behandlingsteam",
+    "intro": "Det er noter, som din læge og fysioterapeut skriver til hinanden om din behandling. Du kan læse dem her — de kan indeholde fagsprog.",
+    "authorPhysician": "Din læge",
+    "authorTherapist": "Din fysioterapeut",
+    "treatmentChanged": "Behandling justeret",
+    "goalContext": "Mål · {goal}"
   }
 }
