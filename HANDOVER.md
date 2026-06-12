@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-80` (no new migration). Bugfix: a therapist rating saved on the patient cockpit vanished after “Save visit” and never reappeared. Two causes — the page never refetched its data after a save, and the row badge read only local state (cleared on submit). Both fixed. See §7._
+> _Last updated for build tag: `simplify-cockpit-81` (no new migration). The clinician **history** page was redesigned from five abstract cross-cycle charts into a **per-cycle clinical record**: newest-first cycle cards, each showing the injection, every goal's weekly self-report trajectory as a sparkline with peak/fade annotated, the latest patient / clinician / physio rating side by side, a quiet symptom line with side effects always flagged, and notes. A summary strip on top keeps the cross-cycle numbers. Physio ratings now appear here once present. See §7._
 
 ---
 
@@ -849,6 +849,15 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Zip:** `treatment-companion-simplify-cockpit-81.zip`  ·  **Tag:** `simplify-cockpit-81`  ·  no new migration. **Clinician history redesigned into a per-cycle clinical record.**
+- **Why:** the old history page was five abstract cross-cycle views (dose-per-cycle chart, goals breakdown, benefit-duration table, muscle-dose chart, retreatment-timing table). It answered aggregate questions but buried the one thing a reviewing clinician actually reads a history for — *the shape of each cycle's response*: onset, peak, and especially when benefit faded.
+- **New shape:** newest-first **cycle cards**. The current cycle is expanded by default; older cycles collapse to a row and open on click. A **summary strip** on top still carries the cross-cycle numbers (start date, units, goal count, benefit, interval, outcome chips).
+- **Per cycle:** the injection (side · muscle · dose); for each goal a **GAS sparkline** of the weekly self-reports with the **peak** point (sage-deep) and **fade** point (amber-deep) annotated, a peak/fade/outcome line, and the **latest patient / clinician / physio** rating side by side; a one-line symptom course (pain, stiffness) with **side effects always surfaced** as an amber flag; notes; weeks-to-next-cycle.
+- **New files:** `lib/supabase/patientHistory.ts` (`usePatientHistory(patientId)` — one comprehensive read assembling cycles, injections, per-goal trajectories with peak/fade, the three latest raters, symptoms, intervals) and `components/clinician/GoalSparkline.tsx` (compact themeable SVG line). `app/[locale]/clinician/history/page.tsx` rewritten to consume only `usePatientHistory`; scaffolding (auth/role gate, session guard, AppHeader, wide layout, skeleton) preserved.
+- **Physio ratings** now appear on the history page (third rater) once physio data exists for a goal.
+- **Deliberately deferred (v1):** enum-label rendering for guidance / modality / spasm-frequency / daily-care (kept off to avoid raw enum codes — easy follow-up once a label map exists); the **diagnosis** header (the column doesn't exist yet — pending the diagnosis-capture field, decided but not built). The old history hooks/components (`usePatientTrend`, `usePatientCycleAnalysis`, the five chart/table components) are now unused but left in the repo.
+- **QA for you:** dark-mode contrast of the sparkline points + summary chips; confirm the per-cycle record reads correctly against real multi-cycle data; the physio rater column stays blank until physio ratings exist.
 
 - **Zip:** `treatment-companion-simplify-cockpit-80.zip`  ·  **Tag:** `simplify-cockpit-80`  ·  no new migration. **Bugfix — therapist ratings now persist visibly.**
 - **Symptom:** on the physio cockpit, rating a goal showed the value before “Save visit”, but after saving the badge disappeared and reopening the goal/chart showed nothing — as if it never saved.

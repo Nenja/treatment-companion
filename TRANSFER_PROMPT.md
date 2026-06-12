@@ -72,12 +72,16 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-79` — no new migration (run 0096 from cockpit-78 if not yet). DB **0096**.
-- **Just shipped:** slice 2 of "patient can read the care-team notes" — a quiet, collapsed
-  "Notes from your care team" section on the patient home (`components/patient/CareTeamNotes.tsx`
-  + `lib/supabase/careTeamNotes.ts`) showing all three channels verbatim and read-only, hidden
-  when empty; plus the clinician copy flip (therapistNote.helper, goalHandoff.hint, handoffHint)
-  from "the patient never sees this" to "the patient can read it too". Needs migration 0096 run.
+- **Latest build:** `simplify-cockpit-81` — no new migration (run 0095 + 0096 if not yet). DB **0095, 0096**.
+- **Just shipped:** the clinician **history** page, redesigned from five abstract cross-cycle
+  charts into a **per-cycle clinical record** — newest-first cycle cards (current open, older
+  collapsed), each with the injection, every goal's weekly self-report **sparkline** (peak/fade
+  annotated), the latest **patient / clinician / physio** rating, a quiet symptom line with
+  **side effects always flagged**, and notes; a summary strip on top keeps the cross-cycle
+  numbers. New `lib/supabase/patientHistory.ts` + `components/clinician/GoalSparkline.tsx`;
+  history page rewritten to consume only `usePatientHistory`. Physio ratings now surface here.
+  No migration. Deferred: enum labels + the diagnosis header (diagnosis column not built yet).
+
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.
   The original 11-item simplification list is complete (bar #4, parked).

@@ -1,27 +1,32 @@
-BUILD: simplify-cockpit-79 — patient can now READ the care-team notes (slice 2 of 2).
-DEPLOY THIS ZIP. DISCARD 21-78 and earlier.
+BUILD: simplify-cockpit-81 — clinician history redesigned into a per-cycle clinical record (newest-first cycle cards; per-goal GAS sparklines with peak/fade; latest patient/clinician/physio ratings; symptom line with side effects flagged; summary strip on top). No new migration.
 
-*** Requires migration 0096 (from cockpit-78). If you haven't run it yet, run
-    0096_patient_care_team_notes.sql in the Supabase SQL editor first. ***
+DISCARD 21-80 (superseded). Keep this zip.
 
-WHAT'S NEW
-- The patient home gains a quiet "Notes from your care team" section, low on the page,
-  collapsed by default and hidden entirely when there are no notes. Open it and the patient
-  sees, verbatim and read-only:
-    * the physician's per-visit handoff note (with a "Treatment adjusted" tag when flagged),
-    * the physician's per-goal notes (tagged with the goal),
-    * the physiotherapist's notes to the clinic.
-  Physician notes carry a sage left edge, the therapist's an amber one. The patient cannot
-  reply to or edit any of them.
-- The clinician wording is corrected to match: the note-to-clinic box, the per-goal note hint,
-  and the per-visit handoff hint no longer say "the patient never sees this" — they now say the
-  patient can read it too. (Both English and Danish.)
+DB STATE — RUN THESE IN SUPABASE IF NOT DONE:
+  • 0095_therapist_note.sql        (from cockpit-77/78 — still pending on your side)
+  • 0096_patient_care_team_notes.sql (from cockpit-78 — still pending on your side)
+  cockpit-81 adds NO new migration.
 
-WHAT TO CHECK ON THE LIVE SITE (can't be verified here)
-- Run migration 0096 first, then with a patient that has at least one note, confirm the section
-  appears and the notes read correctly. With no notes, the section should be absent.
-- Dark-mode contrast of the section (left edges, chips, the count pill).
-- Danish strings are a first pass — worth a native read of the new section + flipped hints.
+WHAT CHANGED (code only, no DB):
+  • NEW lib/supabase/patientHistory.ts — usePatientHistory(patientId): one read assembling
+    cycles (newest first), injection per cycle, each goal's weekly self-report trajectory
+    (GAS points + peak/fade), the latest patient/clinician/physio rating, a symptom summary
+    (pain/stiffness first→last + side-effect week count), and weeks-to-next-cycle.
+  • NEW components/clinician/GoalSparkline.tsx — compact SVG GAS(-2..2) line, zero baseline
+    dashed, peak point sage-deep, fade point amber-deep, themeable for dark mode.
+  • REWROTE app/[locale]/clinician/history/page.tsx — per-cycle cards + summary strip,
+    current cycle open by default, older cycles collapsed. Old five charts/tables removed
+    from this page (their hooks/components remain in the repo, now unused).
+  • i18n: ~30 new keys under clinician.history (en + da, first-pass Danish). Parity 1609/1609.
 
-DEPLOY: unzip + push to GitHub (Vercel auto-builds). Still outstanding: cockpit-57
-send-checkin-notifications Edge Function; confirm Vercel rebuilds + hard-refresh (Ctrl+Shift+R).
+VERIFIED: next build 62/62 pages · tsc --noEmit clean · i18n parity OK.
+
+CANNOT verify from here (QA on your side):
+  • Dark-mode contrast of sparkline points + summary/outcome chips.
+  • The page against real multi-cycle data (rendered layout, sparkline shape).
+  • Physio rater column populates once physio ratings exist.
+
+DEFERRED (noted, not built): enum labels (guidance/modality/spasm-frequency/daily-care);
+diagnosis header (column not yet in schema — pending the diagnosis-capture field).
+
+DEPLOY: unzip → push to GitHub → Vercel auto-builds. Hard-refresh Firefox (Ctrl+Shift+R).
