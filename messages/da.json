@@ -1272,10 +1272,6 @@
     "clinicVideoLine": "Klinikvideo",
     "handoffTitle": "Besked til terapeuten",
     "handoffHint": "Deles med patientens terapeut for at vejlede arbejdet mellem besøg. Patienten kan også læse den.",
-    "handoffChangedLabel": "Ændrede du behandlingen ved dette besøg?",
-    "handoffChangedYes": "Justeret",
-    "handoffChangedNo": "Ingen ændring",
-    "handoffChangedUnset": "Ikke angivet",
     "handoffNoteLabel": "Fokusnote",
     "handoffNotePlaceholder": "f.eks. Reduceret dosis i lægmuskel — gå let til tung belastning indtil videre.",
     "chartLegendPatient": "Patient",
@@ -1287,8 +1283,7 @@
     "runningTotalLabel": "Løbende total",
     "adjustTotal": "Justér total",
     "muscleSumLabel": "Muskelsum:",
-    "useTheSum": "brug summen",
-    "handoffAudienceBadge": "Kun terapeut"
+    "useTheSum": "brug summen"
   },
   "goalVideo": {
     "introTitle": "Optag en kort video (valgfrit)",

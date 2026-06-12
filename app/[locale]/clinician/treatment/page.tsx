@@ -240,12 +240,8 @@ function TreatmentRecordInner() {
   const [notes, setNotes] = useState('');
   // Physician → therapist handoff for this cycle (the one downward channel,
   // therapist-only and never patient-visible). The note is the physician's
-  // short focus message; treatmentChanged answers "did treatment change this
-  // visit?" — true (adjusted) / false (no change) / null (not stated).
+  // Short focus note for the therapist (also readable by the patient).
   const [therapistNote, setTherapistNote] = useState('');
-  const [treatmentChanged, setTreatmentChanged] = useState<boolean | null>(
-    null
-  );
   const [injections, setInjections] = useState<InjectionDraft[]>([
     emptyInjection()
   ]);
@@ -293,7 +289,6 @@ function TreatmentRecordInner() {
       setGuidance(existing.guidance as GuidanceMethod);
       setNotes(existing.notes ?? '');
       setTherapistNote(existing.therapistNote ?? '');
-      setTreatmentChanged(existing.treatmentChanged ?? null);
       // Option A: standard injections have no position; face marks carry
       // a normalised pos_x/pos_y. Split the cycle's injections so the
       // muscle list and the face map each hydrate from their own.
@@ -659,7 +654,7 @@ function TreatmentRecordInner() {
       await setHandoff.mutateAsync({
         cycleId: handoffCycleId,
         note: therapistNote,
-        treatmentChanged
+        treatmentChanged: null
       });
       touchSession.mutate();
       toast.success(tFeedback('successTreatment'));
@@ -1284,48 +1279,10 @@ function TreatmentRecordInner() {
             <h3 className="font-display text-[15px] text-ink">
               {t('handoffTitle')}
             </h3>
-            <span className="rounded-full bg-sage-soft/50 px-2 py-0.5 text-[11px] font-semibold text-sage-deep">
-              {t('handoffAudienceBadge')}
-            </span>
           </div>
           <p className="mt-0.5 text-[13px] leading-snug text-ink-muted">
             {t('handoffHint')}
           </p>
-
-          <div className="mt-3">
-            <span className="block text-[14px] font-semibold text-ink">
-              {t('handoffChangedLabel')}
-            </span>
-            <div className="mt-1.5 flex flex-wrap gap-2">
-              {(
-                [
-                  { val: true as boolean | null, label: t('handoffChangedYes') },
-                  { val: false as boolean | null, label: t('handoffChangedNo') },
-                  {
-                    val: null as boolean | null,
-                    label: t('handoffChangedUnset')
-                  }
-                ] as const
-              ).map((opt) => {
-                const active = treatmentChanged === opt.val;
-                return (
-                  <button
-                    key={String(opt.val)}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => setTreatmentChanged(opt.val)}
-                    className={
-                      active
-                        ? 'rounded-[var(--radius-button)] border border-sage-deep bg-sage-deep px-3 py-2 text-[14px] font-semibold text-on-accent'
-                        : 'rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink-soft hover:bg-stone-soft'
-                    }
-                  >
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
 
           <div className="mt-4">
             <label

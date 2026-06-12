@@ -1063,7 +1063,7 @@ export default function ClinicianPatientPage() {
                               { suggestionId: s.id, status: 'accepted' },
                               {
                                 onSuccess: () =>
-                                  toast.success(t('physioAcceptedToast')),
+                                  toast.success(t('physioConsideredToast')),
                                 onError: () =>
                                   toast.error(t('physioActionError'))
                               }
@@ -1072,26 +1072,7 @@ export default function ClinicianPatientPage() {
                           disabled={setPhysioGoalStatus.isPending}
                           className="rounded-[var(--radius-button)] bg-sage-deep px-3 py-1.5 text-[13px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
                         >
-                          {t('physioAccept')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            touch();
-                            setPhysioGoalStatus.mutate(
-                              { suggestionId: s.id, status: 'dismissed' },
-                              {
-                                onSuccess: () =>
-                                  toast.success(t('physioDismissedToast')),
-                                onError: () =>
-                                  toast.error(t('physioActionError'))
-                              }
-                            );
-                          }}
-                          disabled={setPhysioGoalStatus.isPending}
-                          className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft disabled:opacity-50"
-                        >
-                          {t('physioDismiss')}
+                          {t('physioConsidered')}
                         </button>
                       </div>
                     </li>
@@ -1138,25 +1119,6 @@ export default function ClinicianPatientPage() {
                           className="rounded-[var(--radius-button)] bg-sage-deep px-3 py-1.5 text-[13px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
                         >
                           {t('physioConsidered')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            touch();
-                            setPhysioMuscleStatus.mutate(
-                              { suggestionId: s.id, status: 'dismissed' },
-                              {
-                                onSuccess: () =>
-                                  toast.success(t('physioDismissedToast')),
-                                onError: () =>
-                                  toast.error(t('physioActionError'))
-                              }
-                            );
-                          }}
-                          disabled={setPhysioMuscleStatus.isPending}
-                          className="rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft disabled:opacity-50"
-                        >
-                          {t('physioDismiss')}
                         </button>
                       </div>
                     </li>

@@ -1268,10 +1268,6 @@
     "clinicVideoLine": "Clinic video",
     "handoffTitle": "Note for the therapist",
     "handoffHint": "Shared with the patient’s therapist to guide their work between visits. The patient can read it too.",
-    "handoffChangedLabel": "Did you change the treatment this visit?",
-    "handoffChangedYes": "Adjusted",
-    "handoffChangedNo": "No change",
-    "handoffChangedUnset": "Not specified",
     "handoffNoteLabel": "Focus note",
     "handoffNotePlaceholder": "e.g. Reduced calf dose — ease off heavy loading for now.",
     "chartLegendPatient": "Patient",
@@ -1283,8 +1279,7 @@
     "runningTotalLabel": "Running total",
     "adjustTotal": "Adjust total",
     "muscleSumLabel": "Muscle sum:",
-    "useTheSum": "use the sum",
-    "handoffAudienceBadge": "Therapist only"
+    "useTheSum": "use the sum"
   },
   "goalVideo": {
     "introTitle": "Record a short video (optional)",
