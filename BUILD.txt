@@ -1,32 +1,35 @@
-BUILD: simplify-cockpit-82 — diagnosis capture completed (added missing 'anoxic' etiology value) and surfaced in the clinician history header. Fixes a cockpit-81 medication-column bug. Migration 0097.
+BUILD: simplify-cockpit-84 — ADMIN RESEARCH-CONSENT PURGE QUEUE. Completes the cockpit-83
+withdrawal lifecycle: an admin can now see who withdrew research consent and confirm deletion.
+NO NEW MIGRATION (pure app code on top of 0098).
 
-DISCARD 21-81 (superseded). Keep this zip.
+DISCARD 21-83 (superseded). Keep this zip.
 
-DB STATE — RUN THESE IN SUPABASE IF NOT DONE (in order):
-  • 0095_therapist_note.sql           (still pending on your side)
-  • 0096_patient_care_team_notes.sql  (still pending on your side)
-  • 0097_etiology_anoxic.sql          (NEW — run on its own; it's an enum ALTER TYPE)
+DB STATE — no new migration in this build. Still run any PENDING ones in order:
+  • 0090, 0095, 0096, 0097, 0098  (paste schema_audit.sql to see which are still MISSING)
+  0098 (cockpit-83) is the one that matters for this feature — the purge queue calls its
+  confirm_research_purge RPC and reads its research_consent_withdrawn_at / _purged_at columns.
 
 WHAT CHANGED:
-  • MIGRATION 0097: alter type etiology add value if not exists 'anoxic';
-      Adds anoxic / hypoxic brain injury to the etiology picklist. Idempotent, no data change.
-      Run it as its own statement (enum add-value shouldn't share a transaction).
-  • Diagnosis capture ALREADY existed (etiology + etiology_detail on patient, written by
-      set_patient_info, edited in the patient-info form). This build only filled the one
-      missing picklist value and the read/display path — no new columns.
-  • App: Etiology type + ETIOLOGY_VALUES gain 'anoxic' (placed before 'Other');
-      etiology i18n label added (en + da, first-pass Danish).
-  • History header now shows a DIAGNOSIS pill (etiology + optional detail) when present.
-  • BUGFIX (from cockpit-81): usePatientHistory read 'current_antispastic_medication',
-      which migration 0061 renamed to 'current_medication'. The med pill would have been
-      blank. Fixed; usePatientHistory now also returns etiology + etiologyDetail.
+  • /clinician/admin gains a "Research consent — pending deletion" section: a queue of patients
+      with research_consent_withdrawn_at set and research_consent_purged_at null, each with a
+      Confirm-deletion button (guarded by a confirm dialog).
+  • Confirming calls confirm_research_purge (admin-only, migration 0098) → stamps
+      research_consent_purged_at and removes the row from the queue. It records the admin's
+      authorisation to delete; the actual REDCap delete will be done by the export job.
+  • No schema change: the queue reads the patient table via the admin's existing patient_admin_all
+      RLS (migration 0037). New hooks useResearchPurgeQueue / useConfirmResearchPurge in
+      lib/supabase/admin.ts. New admin.purge* i18n (en + da; Danish is first-pass).
 
-VERIFIED: next build 62/62 · tsc --noEmit clean · i18n parity 1611/1611.
+NOTE: the queue is forward-looking — it stays EMPTY until the REDCap export exists and a
+  consented patient withdraws. It's shipped now so the lifecycle is complete and callable.
 
-CANNOT verify from here (QA on your side):
-  • Saving 'anoxic' in the patient-info form and seeing it persist.
-  • The diagnosis pill rendering in history against real data.
-  • Dark-mode contrast of the sage diagnosis pill.
+CANNOT BE VERIFIED HERE (your QA):
+  • Dark-mode contrast of the amber queue card.
+  • Native-Danish review of the admin.purge* strings.
+  • Live admin RLS read of the queue (Method-D covers the RPC logic, not your live policies).
 
-DEPLOY: run 0097 in Supabase → unzip → push to GitHub → Vercel auto-builds →
-        hard-refresh Firefox (Ctrl+Shift+R).
+BUILD VERIFICATION (this end): next build → 62/62; tsc --noEmit clean; i18n parity en/da equal
+  (only _meta differs); font-stub restored.
+
+DEPLOY: unzip → GitHub → Vercel. No SQL to run for this build (beyond any still-pending 0090–0098).
+  Hard-refresh Firefox (Ctrl+Shift+R) if the live site looks stale.

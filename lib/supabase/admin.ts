@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createSupabaseBrowserClient } from './browser';
 
 export interface AdminAccount {
   id: string;
@@ -271,4 +272,65 @@ export function generateTempPassword(): string {
     out += chars[buf[i] % chars.length];
   }
   return out;
+}
+
+export interface ResearchPurgeEntry {
+  patientId: string;
+  displayName: string | null;
+  withdrawnAt: string;
+}
+
+/**
+ * Admin queue of patients who WITHDREW research consent and whose
+ * already-exported records have not yet been purged (migration 0098:
+ * research_consent_withdrawn_at set, research_consent_purged_at null).
+ * Read directly via the admin's patient RLS (patient_admin_all, 0037).
+ */
+export function useResearchPurgeQueue(enabled: boolean) {
+  return useQuery({
+    queryKey: ['researchPurgeQueue'],
+    enabled,
+    queryFn: async (): Promise<ResearchPurgeEntry[]> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase
+        .from('patient')
+        .select(
+          'id, research_consent_withdrawn_at, profile:profile_id (display_name)'
+        )
+        .not('research_consent_withdrawn_at', 'is', null)
+        .is('research_consent_purged_at', null)
+        .order('research_consent_withdrawn_at', { ascending: true });
+      if (error) throw error;
+      return (data ?? []).map((r): ResearchPurgeEntry => {
+        const row = r as Record<string, unknown>;
+        const prof = row.profile as { display_name?: string } | null;
+        return {
+          patientId: row.id as string,
+          displayName: prof?.display_name ?? null,
+          withdrawnAt: row.research_consent_withdrawn_at as string
+        };
+      });
+    }
+  });
+}
+
+/**
+ * Admin confirms deletion of a withdrawn patient's already-exported
+ * research records (stamps research_consent_purged_at via the
+ * confirm_research_purge RPC, migration 0098).
+ */
+export function useConfirmResearchPurge() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { patientId: string }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('confirm_research_purge', {
+        p_patient_id: input.patientId
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['researchPurgeQueue'] });
+    }
+  });
 }

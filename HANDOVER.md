@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for build tag: `simplify-cockpit-83` (**migration 0098 — consent model**). Adds a **general research consent** (the gate for the planned REDCap export) with a full withdraw → admin-confirmed-purge lifecycle, and **renames** the video `…_research` consent to `…_educational` so "research" now means exactly one thing. Clinician records/withdraws it on the patient's BackgroundCard; the patient self-serves it in their profile. Method-D verified. This is a **coordinated DB+app deploy** (run 0098 with this build). See §7._
+> _Last updated for build tag: `simplify-cockpit-84` (**no migration**). Completes the consent lifecycle from cockpit-83: an **admin research-consent purge queue** on the `/clinician/admin` page lists patients who withdrew consent (and aren't yet purged) and lets an admin confirm deletion via the existing `confirm_research_purge` RPC. Reads through the admin's `patient_admin_all` RLS; no schema change. See §7._
 
 ---
 
@@ -850,6 +850,11 @@ new-goal + approve calibration forms; current).
 
 ## 7. Latest delivered build
 
+- **Zip:** `treatment-companion-simplify-cockpit-84.zip`  ·  **Tag:** `simplify-cockpit-84`  ·  **no migration.** **Admin research-consent purge queue — closes the cockpit-83 lifecycle.**
+  - cockpit-83 shipped the withdraw → admin-confirmed-purge lifecycle and the `confirm_research_purge` RPC, but nothing **called** it. This adds the caller: a **purge queue** section on the existing `/clinician/admin` page listing patients with `research_consent_withdrawn_at` set and `research_consent_purged_at` null, each with a guarded **Confirm deletion** button.
+  - **No schema change.** The queue reads the `patient` table directly through the admin's existing `patient_admin_all` RLS (0037); confirmation goes through the existing `confirm_research_purge` RPC (0098). New hooks `useResearchPurgeQueue` / `useConfirmResearchPurge` in `lib/supabase/admin.ts` (first browser-client reads in that file, which is otherwise API-route based — fine, since this is RLS-readable patient data). New `admin.purge*` i18n (en + da, first-pass Danish).
+  - **Semantics:** confirming stamps `research_consent_purged_at` and clears the row from the queue. It records the admin's **authorisation** to delete; the actual REDCap delete is carried out by the (not-yet-built) export job. The queue is forward-looking — it stays empty until the export exists and a consented patient withdraws.
+  - **QA:** dark-mode contrast of the amber queue card; native-DA review of the new strings; confirm uses native `window.confirm`.
 - **Zip:** `treatment-companion-simplify-cockpit-83.zip`  ·  **Tag:** `simplify-cockpit-83`  ·  **migration `0098_consent_model.sql`.** **Consent model: general research consent + video-consent rename.**
   - **Three consents, three meanings.** (1) `research_consent` — NEW general consent, the gate for the REDCap export. (2) `video_consent_clinical` — record & store videos (unchanged). (3) `video_consent_educational` — use videos for educational purposes; this is the **rename** of the old `video_consent_research` (and `archived_goal_video.consent_research` → `consent_educational`), so a future export can never gate on a video column by mistake.
   - **Lifecycle.** consented (`research_consent=true`) → withdrawn (`research_consent=false`, `research_consent_withdrawn_at` set — export stops immediately) → purged (`research_consent_purged_at`, stamped by an **admin** via `confirm_research_purge`). Export filter = `research_consent=true`; admin purge queue = `withdrawn_at not null and purged_at is null`.

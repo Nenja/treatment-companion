@@ -72,13 +72,15 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-82` — **migration 0097** (run 0095 + 0096 + 0097 if not yet). DB **0095, 0096, 0097**.
-- **Just shipped:** completed **diagnosis capture** and surfaced it in the clinician history
-  header. The field already existed (`etiology` enum + `etiology_detail`, written by
-  `set_patient_info`, edited in the patient-info form), so this added only the one **missing
-  picklist value** — `anoxic` (anoxic / hypoxic brain injury), migration **0097** — plus the
-  history **diagnosis pill**. Also fixed a cockpit-81 bug: `usePatientHistory` read the
-  pre-0061 medication column name (`current_antispastic_medication` → now `current_medication`).
+- **Latest build:** `simplify-cockpit-84` — **no migration** (admin purge queue, pure app code on top of 0098). Pending migrations to run in order: **0090, 0095, 0096, 0097, 0098** (use schema_audit.sql to see which are still needed).
+- **Just shipped:** the **admin research-consent purge queue**, closing the cockpit-83
+  withdrawal lifecycle. The `/clinician/admin` page now lists patients who withdrew research
+  consent and aren't yet purged, with a guarded Confirm-deletion button calling the existing
+  `confirm_research_purge` RPC. No schema change (reads via the admin's `patient_admin_all` RLS;
+  hooks `useResearchPurgeQueue` / `useConfirmResearchPurge`). The queue stays empty until the
+  REDCap export exists and a consented patient withdraws. Export build itself still pending
+  (needs the REDCap URL, API-token handling, and a hash salt; dictionary is at v1).
+
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.
