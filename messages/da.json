@@ -1430,7 +1430,9 @@
     "recentGoalsRated": "{count, plural, one {# mål vurderet} other {# mål vurderet}}",
     "thisWeek": "Denne uge",
     "ratingHeading": "Din vurdering i dag",
-    "ratingOptional": "valgfrit"
+    "ratingOptional": "valgfrit",
+    "rateShort": "Vurdér",
+    "flaggedShort": "Markeret"
   },
   "notifications": {
     "regionAria": "Aktivér notifikationer",

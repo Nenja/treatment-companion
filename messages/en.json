@@ -1426,7 +1426,9 @@
     "recentGoalsRated": "{count, plural, one {# goal rated} other {# goals rated}}",
     "thisWeek": "This week",
     "ratingHeading": "Your rating today",
-    "ratingOptional": "optional"
+    "ratingOptional": "optional",
+    "rateShort": "Rate",
+    "flaggedShort": "Flagged"
   },
   "notifications": {
     "regionAria": "Enable notifications",
