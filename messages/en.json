@@ -1783,5 +1783,12 @@
     "withdraw": "Withdraw research consent",
     "withdrawNote": "Withdrawing stops the study export immediately. Records already shared are removed once an administrator confirms deletion.",
     "withdrawConfirm": "Withdraw this patient's research consent? The study export will stop immediately, and shared records are removed once an administrator confirms deletion."
+  },
+  "educationalConsent": {
+    "heading": "Educational use of video",
+    "statusOn": "Consented to educational use",
+    "statusOff": "No educational-use consent",
+    "grant": "Allow educational use",
+    "withdraw": "Withdraw"
   }
 }

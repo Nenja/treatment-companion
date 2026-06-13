@@ -24,7 +24,7 @@ export interface HistorySymptoms {
 export interface HistoryCycle {
   id: string; cycleNumber: number; startDate: string; status: string;
   totalUnits: number | null; drugProduct: string | null; dilution: string | null;
-  txDate: string | null; lengthWeeks: number | null; weeksToNext: number | null;
+  txDate: string | null; weeksToNext: number | null;
   injections: HistoryInjection[]; goals: HistoryGoal[]; symptoms: HistorySymptoms; notes: string[];
 }
 export interface PatientHistory { patientId: string; medCurrent: string | null; etiology: Etiology | null; etiologyDetail: string | null; cycles: HistoryCycle[]; }
@@ -46,7 +46,7 @@ export function usePatientHistory(patientId: string | null) {
       const [patientRes, cycleRes] = await Promise.all([
         supabase.from('patient').select('current_medication, etiology, etiology_detail').eq('id', patientId).maybeSingle(),
         supabase.from('treatment_cycle')
-          .select('id, cycle_number, start_date, length_weeks, status, clinician_note')
+          .select('id, cycle_number, start_date, status, clinician_note')
           .eq('patient_id', patientId).order('cycle_number', { ascending: true })
       ]);
       if (cycleRes.error) throw cycleRes.error;
@@ -174,7 +174,7 @@ export function usePatientHistory(patientId: string | null) {
           id: cid, cycleNumber: c.cycle_number as number, startDate: c.start_date as string, status: c.status as string,
           totalUnits: sess ? Number(sess.total_units) : null, drugProduct: sess ? ((sess.drug_product as string | null) ?? null) : null,
           dilution: sess ? ((sess.dilution as string | null) ?? null) : null, txDate: sess ? (sess.date as string) : null,
-          lengthWeeks: (c.length_weeks as number | null) ?? null, weeksToNext, injections: injByCycle.get(cid) ?? [], goals, symptoms, notes
+          weeksToNext, injections: injByCycle.get(cid) ?? [], goals, symptoms, notes
         };
       });
       out.reverse();

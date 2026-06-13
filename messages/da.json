@@ -1787,5 +1787,12 @@
     "withdraw": "Træk forskningssamtykke tilbage",
     "withdrawNote": "Tilbagetrækning stopper eksporten til studiet med det samme. Allerede delte data fjernes, når en administrator bekræfter sletningen.",
     "withdrawConfirm": "Træk denne patients forskningssamtykke tilbage? Eksporten til studiet stopper med det samme, og delte data fjernes, når en administrator bekræfter sletningen."
+  },
+  "educationalConsent": {
+    "heading": "Brug af video til undervisning",
+    "statusOn": "Samtykke til undervisningsbrug",
+    "statusOff": "Intet samtykke til undervisningsbrug",
+    "grant": "Tillad undervisningsbrug",
+    "withdraw": "Træk tilbage"
   }
 }
