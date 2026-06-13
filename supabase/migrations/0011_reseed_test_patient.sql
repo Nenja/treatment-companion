@@ -1,3 +1,4 @@
+-- ci:skip — dev reseed; executes seed logic requiring test accounts, not applied in CI.
 -- ============================================================================
 -- Re-seed test@example.com's patient data with a realistic cycle.
 --

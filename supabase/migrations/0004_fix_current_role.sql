@@ -17,7 +17,7 @@
 -- 1. Drop the broken function if it exists. It probably doesn't,
 --    because the original CREATE failed, but be safe.
 -- ---------------------------------------------------------------------------
-drop function if exists current_role();
+drop function if exists "current_role"();  -- quoted: current_role is a reserved word
 
 -- ---------------------------------------------------------------------------
 -- 2. Recreate under the new name.

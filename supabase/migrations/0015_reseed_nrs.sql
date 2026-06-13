@@ -1,3 +1,4 @@
+-- ci:skip — dev reseed; executes seed logic requiring test accounts, not applied in CI.
 -- ============================================================================
 -- 0015 — Re-seed test@example.com with NRS-based goals + history.
 --

@@ -95,5 +95,5 @@ grant execute on function submit_weekly_checkin(uuid, weekly_goal_rating_input[]
   to authenticated;
 
 comment on function submit_weekly_checkin(uuid, weekly_goal_rating_input[], text) is
-  'Atomically submit a patient''s weekly check-in: create checkin row, ' ||
+  'Atomically submit a patient''s weekly check-in: create checkin row, '
   'insert all goal ratings, mark prompt as completed. All-or-nothing.';
