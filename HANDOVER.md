@@ -850,6 +850,10 @@ new-goal + approve calibration forms; current).
 
 ## 7. Latest delivered build
 
+- **Zip:** `treatment-companion-simplify-cockpit-90.zip`  ·  **Tag:** `simplify-cockpit-90`  ·  **no migration.** **Consent-button labels + dictionary v3.**
+  - Background card: `researchConsent.withdraw` "Withdraw research consent" → **"Withdraw"** (matches the educational row's button); `educationalConsent.grant` "Allow educational use" → **"Record consent for educational use"** (matches "Record research consent"). en + da. `tRC('withdraw')` is only used on this card, so nothing else is affected.
+  - **REDCap dictionary v3** (`treatment_companion_datadictionary_v3.csv`, 84 fields): removed `cycle_length_weeks` and `cycle_review_date` — both mapped to `treatment_cycle` columns that were dropped in migration 0010, so the export could never have populated them. treatment_cycle form is now cycle_index / cycle_start_date / cycle_status / cycle_modality. Repo `redcap/` copy refreshed to v3.
+  - Build 62/62, tsc clean, parity 1632/1634.
 - **Zip:** `treatment-companion-simplify-cockpit-89.zip`  ·  **Tag:** `simplify-cockpit-89`  ·  **no migration.** **History page 400 fix — stale `length_weeks` column.**
   - Symptom: `GET /treatment_cycle?select=...,length_weeks,...` → 400, history page blank. Cause: `treatment_cycle.length_weeks` (and `review_date`) were **dropped in migration 0010** and never re-added, but the cockpit-81 history hook (`patientHistory.ts`) still selected `length_weeks`. PostgREST rejects the whole request, so history never loaded — on **any** current DB, not a missing-migration issue.
   - `lengthWeeks` was only selected and stored on the cycle object; nothing rendered it (`weeksToNext`, which *is* shown, is computed from session dates, not from `length_weeks`). Removed it from the select string, the row mapping, and the `HistoryCycle` type. No behaviour lost.

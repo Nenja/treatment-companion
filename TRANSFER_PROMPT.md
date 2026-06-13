@@ -72,13 +72,12 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-89` — **no migration**: fixes the history page 400 (the hook selected `treatment_cycle.length_weeks`, dropped back in migration 0010). History now loads. Pending migrations: **0090, 0095, 0096, 0097, 0098, 0099, 0100** (schema_audit.sql shows which); 0099 + reseed needed for demo history *data*.
-- **Just shipped:** history-page 400 fix. The cockpit-81 history hook selected
-  `treatment_cycle.length_weeks`, but that column (and `review_date`) was dropped in migration 0010
-  and never re-added — so the query 400'd and history stayed blank on any current DB. `lengthWeeks`
-  was unused downstream (`weeksToNext` is computed from session dates), so it was removed from the
-  select/mapping/type. KNOWN FOLLOW-UP: the REDCap dictionary v2 still maps `cycle_length_weeks` /
-  `cycle_review_date` to those dropped columns — remove/remap them before wiring the export (v3).
+- **Latest build:** `simplify-cockpit-90` — **no migration**: consent-button label tweaks (research "Withdraw"; educational "Record consent for educational use") + REDCap dictionary v3 (drops the two cycle fields that mapped to columns dropped in 0010). Pending migrations: **0090, 0095, 0096, 0098, 0100** etc. — use schema_audit.sql.
+- **Just shipped:** Background-card consent labels (research button "Withdraw"; educational grant
+  "Record consent for educational use") + REDCap **dictionary v3** (84 fields) which removes
+  `cycle_length_weeks` / `cycle_review_date` (they mapped to treatment_cycle columns dropped in 0010).
+  Dictionary is now consistent with the schema. Export build still pending (needs REDCap URL, token
+  handling, hash salt).
 
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);

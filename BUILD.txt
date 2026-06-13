@@ -1,36 +1,21 @@
-BUILD: simplify-cockpit-89 — fix the clinician HISTORY page 400 (stale length_weeks column).
-No migration.
+BUILD: simplify-cockpit-90 — consent-button label tweaks + REDCap dictionary v3. No migration.
 
-DISCARD 21-88 (superseded). Keep this zip.
+DISCARD 21-89 (superseded). Keep this zip.
 
-THE PROBLEM YOU HIT:
-  GET /rest/v1/treatment_cycle?select=id,cycle_number,start_date,length_weeks,status,clinician_note
-  -> 400, history page blank.
+WHAT CHANGED (app):
+  • Background card, research row: the Withdraw button is now just "Withdraw" (was "Withdraw
+    research consent") — matches the educational row's button.
+  • Background card, educational row: the grant button is now "Record consent for educational use"
+    (was "Allow educational use") — matches "Record research consent".
+  • en + da. No schema change.
 
-CAUSE:
-  treatment_cycle.length_weeks (and review_date) were DROPPED in migration 0010 and never re-added.
-  The history hook (lib/supabase/patientHistory.ts, from cockpit-81) still selected length_weeks, so
-  PostgREST rejected the whole query. This breaks history on ANY current database — it is NOT a
-  missing-migration problem.
+WHAT CHANGED (REDCap dictionary -> v3, treatment_companion_datadictionary_v3.csv, 84 fields):
+  • Removed cycle_length_weeks and cycle_review_date. Both mapped to treatment_cycle columns that
+    were DROPPED in migration 0010, so the export could never populate them. treatment_cycle form
+    is now: cycle_index, cycle_start_date, cycle_status, cycle_modality.
+  • The repo copy (redcap/treatment_companion_datadictionary.csv) was refreshed to v3.
 
-FIX (this build, app only):
-  Removed length_weeks from the history hook's select string, its row mapping, and the HistoryCycle
-  type. It was selected and stored but never rendered (the "weeks to next" figure shown in history is
-  computed from injection-session dates, not from length_weeks), so nothing is lost.
+DB STATE — no new migration. Confirm the backlog with schema_audit.sql if unsure.
 
-AFTER DEPLOYING THIS: history should load. If it STILL 400s, the only other non-core column in that
-  select is clinician_note (added by migration 0065) — run 0065 if it's still outstanding.
-
-SEPARATE — to actually SEE demo history DATA, the enrichment must be applied:
-  run 0099 (needs 0097 first), THEN reseed. Verify:
-    select p.email, pt.current_medication, pt.etiology,
-           (select count(*) from physio_assessment a where a.patient_id = pt.id) as physio_rows
-    from profile p join patient pt on pt.profile_id = p.id
-    where p.email like 'test%@example.com' order by p.email;
-
-KNOWN FOLLOW-UP (REDCap dictionary): v2 still maps cycle_length_weeks and cycle_review_date to the
-  dropped treatment_cycle columns. Those two fields can't be populated by the app and should be
-  removed or remapped before the export is wired (dictionary v3). Say the word and I'll do it.
-
-VERIFIED (this end): next build 62/62; tsc --noEmit clean.
+VERIFIED (this end): next build 62/62; tsc --noEmit clean; i18n parity en/da equal.
 DEPLOY: unzip -> GitHub -> Vercel. No SQL for this build.
