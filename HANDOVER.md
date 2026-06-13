@@ -850,6 +850,19 @@ new-goal + approve calibration forms; current).
 
 ## 7. Latest delivered build
 
+- **Zip:** `treatment-companion-simplify-cockpit-91.zip`  ·  **Tag:** `simplify-cockpit-91`  ·  **no migration to run.** **CI + migration validation (critical-path item #1).**
+  - **`.github/workflows/ci.yml`** — runs on every push to `main` and every PR, no secrets:
+    - **verify** job: `npm ci` → `npm run typecheck` → `node scripts/check-i18n-parity.mjs` → `npm run build` (placeholder public Supabase env). Catches type errors, i18n drift, and build breaks before Vercel.
+    - **migrations** job: `postgres:16` service → apply `supabase/ci/bootstrap.sql` → apply every `supabase/migrations/[0-9]*.sql` in order with `ON_ERROR_STOP`, skipping any file containing `ci:skip`. Validates the schema migration set applies cleanly from scratch. Never touches the production DB.
+  - **`supabase/ci/bootstrap.sql`** — recreates the Supabase primitives the migrations assume: `anon`/`authenticated`/`service_role` roles; a minimal `auth` schema (`auth.users` + `auth.uid/jwt/role` stubs); a minimal `storage` schema (`storage.buckets`, `storage.objects`, `storage.foldername()`). CI-only; never run against Supabase.
+  - **`scripts/check-i18n-parity.mjs`** — flattens `messages/{en,da}.json`, fails on any key mismatch (ignores `_meta`). New npm scripts: `check:i18n` and `verify` (typecheck + i18n + build).
+  - **Pre-existing migration bugs the CI surfaced and we fixed** (these never applied cleanly from scratch — they'd been hand-patched in the Supabase editor, so the committed files had drifted):
+    - `0004_fix_current_role.sql`: `drop function if exists current_role()` → `"current_role"()` (the word is a reserved keyword; unquoted it's a *syntax error*, not a no-op).
+    - `0006_submit_checkin_rpc.sql`: a `COMMENT ON … IS '…' || '…'` used the `||` operator, which COMMENT doesn't accept; switched to implicit adjacent-string concatenation.
+    - `0011_reseed_test_patient.sql`, `0015_reseed_nrs.sql`: marked `-- ci:skip` — they execute reseed logic that requires test accounts and can't run in a from-scratch apply (they are dev data, not schema).
+  - **Verified locally:** all 98 schema migrations apply cleanly from scratch (2 dev-seed skipped); build 62/62; tsc clean; parity 1632.
+  - **`DEPLOY.md`** gained three sections: the migration-before-app release rule (+ schema_audit.sql), how to read the CI checks, and an optional future path to auto-applying migrations via the Supabase CLI (with the baseline-reconciliation caveat, since migrations have been hand-run).
+  - ⚠️ **When uploading this build, include the `.github` folder** so CI activates. No SQL to run on the live DB — the 0004/0006 fixes only affect future from-scratch applies; your live DB is already past them.
 - **Zip:** `treatment-companion-simplify-cockpit-90.zip`  ·  **Tag:** `simplify-cockpit-90`  ·  **no migration.** **Consent-button labels + dictionary v3.**
   - Background card: `researchConsent.withdraw` "Withdraw research consent" → **"Withdraw"** (matches the educational row's button); `educationalConsent.grant` "Allow educational use" → **"Record consent for educational use"** (matches "Record research consent"). en + da. `tRC('withdraw')` is only used on this card, so nothing else is affected.
   - **REDCap dictionary v3** (`treatment_companion_datadictionary_v3.csv`, 84 fields): removed `cycle_length_weeks` and `cycle_review_date` — both mapped to `treatment_cycle` columns that were dropped in migration 0010, so the export could never have populated them. treatment_cycle form is now cycle_index / cycle_start_date / cycle_status / cycle_modality. Repo `redcap/` copy refreshed to v3.

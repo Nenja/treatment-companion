@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:i18n": "node scripts/check-i18n-parity.mjs",
+    "verify": "npm run typecheck && npm run check:i18n && npm run build"
   },
   "dependencies": {
     "@sentry/nextjs": "8.42.0",

@@ -72,12 +72,16 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-90` — **no migration**: consent-button label tweaks (research "Withdraw"; educational "Record consent for educational use") + REDCap dictionary v3 (drops the two cycle fields that mapped to columns dropped in 0010). Pending migrations: **0090, 0095, 0096, 0098, 0100** etc. — use schema_audit.sql.
-- **Just shipped:** Background-card consent labels (research button "Withdraw"; educational grant
-  "Record consent for educational use") + REDCap **dictionary v3** (84 fields) which removes
-  `cycle_length_weeks` / `cycle_review_date` (they mapped to treatment_cycle columns dropped in 0010).
-  Dictionary is now consistent with the schema. Export build still pending (needs REDCap URL, token
-  handling, hash salt).
+- **Latest build:** `simplify-cockpit-91` — **adds CI** (verify + from-scratch migration apply) and fixes pre-existing migration syntax bugs (0004, 0006) found by it; dev-reseed migrations 0011/0015 marked `ci:skip`. No SQL to run on the live DB. Upload must include the `.github` folder for CI to run.
+- **Just shipped:** the first piece of the production-readiness work from the state-of-the-app
+  evaluation — **CI**. `.github/workflows/ci.yml` runs type-check + i18n parity + production build,
+  and a separate job applies every numbered migration to a throwaway Postgres from scratch (via
+  `supabase/ci/bootstrap.sql`, which mocks the Supabase auth + storage schemas), skipping files marked
+  `ci:skip`. Reaching a green baseline surfaced real pre-existing migration bugs — 0004 (reserved word
+  `current_role`) and 0006 (`||` in a COMMENT) — now fixed; 0011/0015 (dev reseeds) marked `ci:skip`.
+  `DEPLOY.md` now documents the migration-before-app release order and how to read the CI checks.
+  NEXT production-readiness items (from the evaluation, in order): E2E smoke tests (Playwright, three
+  role journeys) → staging env → compliance program → ops hardening.
 
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);

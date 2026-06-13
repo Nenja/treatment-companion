@@ -105,6 +105,67 @@ For the Danish version, add `/da` to the end:
 
 ---
 
+## Database changes (migrations) — the order matters
+
+Some deliveries include **SQL files** (named like `0098_…sql`). These change the
+database, and the app expects those changes to already be there. The golden rule:
+
+> **Run the database SQL *before* (or at the same time as) you upload the new app.**
+> Never upload an app that is "ahead" of the database.
+
+Most of the broken-page problems we have hit came from doing this out of order —
+the app went live expecting a column the database didn't have yet, and the page
+either hung on a loading spinner or showed a network error.
+
+How to do it:
+
+1. Open your Supabase project → **SQL editor**.
+2. Run each delivered `.sql` file **in number order** (0095, then 0096, then
+   0098, …). Paste the contents, click **Run**, check it says success.
+3. If you're not sure which ones you've already run, paste **`schema_audit.sql`**
+   (delivered separately) and run it — it lists every table, column and function
+   and flags anything missing, so you can see exactly what still needs running.
+4. *Then* upload the new app zip to GitHub.
+5. After Vercel finishes building, **hard-refresh** the page (Ctrl+Shift+R) so
+   your browser loads the new version rather than a cached old one.
+
+---
+
+## The automatic checks (CI)
+
+Every time files are uploaded to GitHub, GitHub now runs a set of **automatic
+checks** (defined in `.github/workflows/ci.yml`). You'll see either a green
+check ✓ or a red ✗ next to your upload on the GitHub page. The checks are:
+
+- **Type-check** — catches programming mistakes.
+- **i18n parity** — makes sure the English and Danish texts have exactly the
+  same set of entries (no missing translations).
+- **Production build** — builds the app the same way Vercel will, so build
+  breaks are caught here first.
+- **Migrations apply cleanly** — takes all the numbered SQL files and applies
+  them to a fresh throwaway database, in order, to prove there are no ordering
+  or syntax errors. (It does **not** touch your real database. Dev-only "reseed"
+  files marked `ci:skip` are excluded.)
+
+**What to do:** if you see a red ✗, click it, copy the error text, and paste it
+to me. A green ✓ means the basics are sound. (This is a safety net, not a
+guarantee the screens look right — visual/behaviour checking still happens on
+the live site.)
+
+---
+
+## Later, optional: applying migrations automatically
+
+It's possible to have GitHub apply the database SQL to Supabase automatically on
+every upload (via the Supabase CLI). We are **not** doing that yet, on purpose:
+because the migrations have been run by hand so far, the automatic tool's record
+of "what's already applied" isn't set up, and switching over needs a careful
+one-time reconciliation first (telling it which migrations are already in place).
+When you'd like to remove the manual SQL step entirely, tell me and we'll do that
+reconciliation as its own task.
+
+---
+
 ## If something goes wrong
 
 - **The build failed** — copy the red error text from the build log and
