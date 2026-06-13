@@ -57,17 +57,23 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
  * Convert the VAPID public key from base64url string to a Uint8Array,
  * which is what PushManager.subscribe() requires.
  */
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+function urlBase64ToApplicationServerKey(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding)
     .replace(/-/g, '+')
     .replace(/_/g, '/');
   const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
+  // Allocate a concrete ArrayBuffer and fill it through a view. Returning an
+  // ArrayBuffer (not a Uint8Array) keeps the type assignable to the Push API's
+  // `applicationServerKey: BufferSource` across TypeScript / @types versions:
+  // newer libs type `new Uint8Array(n)` as Uint8Array<ArrayBufferLike>, which —
+  // because of SharedArrayBuffer — no longer satisfies BufferSource.
+  const buffer = new ArrayBuffer(rawData.length);
+  const bytes = new Uint8Array(buffer);
   for (let i = 0; i < rawData.length; i++) {
-    outputArray[i] = rawData.charCodeAt(i);
+    bytes[i] = rawData.charCodeAt(i);
   }
-  return outputArray;
+  return buffer;
 }
 
 export interface SubscribeResult {
@@ -121,7 +127,7 @@ export async function subscribeToPush(
     } else {
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+        applicationServerKey: urlBase64ToApplicationServerKey(vapidPublicKey)
       });
     }
   } catch (err) {
