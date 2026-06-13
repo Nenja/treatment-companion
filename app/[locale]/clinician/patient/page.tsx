@@ -117,6 +117,7 @@ export default function ClinicianPatientPage() {
   const setVideoConsent = useSetPatientVideoConsent();
   const setResearchConsent = useSetPatientResearchConsent();
   const tRC = useTranslations('researchConsent');
+  const tEC = useTranslations('educationalConsent');
   const reactivateGoal = useReactivateGoal();
   const toast = useToast();
   const setPhysioGoalStatus = useSetPhysioGoalSuggestionStatus();
@@ -1264,6 +1265,15 @@ export default function ClinicianPatientPage() {
                 consent: next
               });
             }}
+            educationalConsent={patient.videoConsentEducational}
+            onToggleEducationalConsent={() => {
+              touch();
+              void setVideoConsent.mutateAsync({
+                patientId: patient.id,
+                clinical: patient.videoConsentClinical,
+                educational: !patient.videoConsentEducational
+              });
+            }}
             labels={{
               title: t('backgroundTitle'),
               treatment: t('backgroundTreatment'),
@@ -1276,7 +1286,12 @@ export default function ClinicianPatientPage() {
               researchOff: tRC('statusNone'),
               researchWithdrawn: tRC('statusWithdrawn'),
               researchGrant: tRC('grant'),
-              researchWithdrawAction: tRC('withdraw')
+              researchWithdrawAction: tRC('withdraw'),
+              educational: tEC('heading'),
+              educationalOn: tEC('statusOn'),
+              educationalOff: tEC('statusOff'),
+              educationalGrant: tEC('grant'),
+              educationalWithdrawAction: tEC('withdraw')
             }}
           />
         </div>

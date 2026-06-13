@@ -1,36 +1,36 @@
-BUILD: simplify-cockpit-86 — DEV SEED: demo patients now populate the clinician HISTORY page.
-Migration 0099 (DEV SEED ONLY — touches only test*@example.com). No app/build change.
+BUILD: simplify-cockpit-89 — fix the clinician HISTORY page 400 (stale length_weeks column).
+No migration.
 
-DISCARD 21-85 (superseded). Keep this zip.
+DISCARD 21-88 (superseded). Keep this zip.
 
-DB STATE — RUN IN SUPABASE (in order; 0099 is new this build):
-  • 0090, 0095, 0096, 0097, 0098   (run any still pending — schema_audit.sql shows which)
-  • 0099_dev_seed_history_extras.sql  (NEW — DEPENDS ON 0097 for the 'anoxic' etiology value)
+THE PROBLEM YOU HIT:
+  GET /rest/v1/treatment_cycle?select=id,cycle_number,start_date,length_weeks,status,clinician_note
+  -> 400, history page blank.
 
-THEN: trigger a reseed so the new data is applied —
-  open the dev Scenarios page and use its reseed, or call dev_reseed_all() (service role).
-  dev_reseed_all() now runs b1..b8 THEN dev_seed_history_extras().
+CAUSE:
+  treatment_cycle.length_weeks (and review_date) were DROPPED in migration 0010 and never re-added.
+  The history hook (lib/supabase/patientHistory.ts, from cockpit-81) still selected length_weeks, so
+  PostgREST rejected the whole query. This breaks history on ANY current database — it is NOT a
+  missing-migration problem.
 
-WHAT 0099 ADDS (to test1..test6, so the history page can be checked):
-  • patient.etiology + etiology_detail  -> the DIAGNOSIS pill (varies per patient; test6 = anoxic)
-  • patient.current_medication / previous_medication -> the medication line
-  • weekly_goal_rating.clinic_video_rating / _nrs   -> the CLINICIAN rating on each goal's trend
-  • physio_assessment (per cycle) + physio_goal_rating (per goal) -> the PHYSIO rating column
-  • a side effect on one mid-cycle check-in -> the amber side-effect flag
-  • treatment_handoff note per cycle -> the per-cycle note shown in history
+FIX (this build, app only):
+  Removed length_weeks from the history hook's select string, its row mapping, and the HistoryCycle
+  type. It was selected and stored but never rendered (the "weeks to next" figure shown in history is
+  computed from injection-session dates, not from length_weeks), so nothing is lost.
 
-  Best scenario to inspect: "Longitudinal history — clinician view" (test6: 3 completed + 1 active).
+AFTER DEPLOYING THIS: history should load. If it STILL 400s, the only other non-core column in that
+  select is clinician_note (added by migration 0065) — run 0065 if it's still outstanding.
 
-VERIFIED (Method-D, local Postgres): all six field groups populate; re-running the function does
-  NOT duplicate (base seed cascades cycle deletes; the function also clears its own rows first).
+SEPARATE — to actually SEE demo history DATA, the enrichment must be applied:
+  run 0099 (needs 0097 first), THEN reseed. Verify:
+    select p.email, pt.current_medication, pt.etiology,
+           (select count(*) from physio_assessment a where a.patient_id = pt.id) as physio_rows
+    from profile p join patient pt on pt.profile_id = p.id
+    where p.email like 'test%@example.com' order by p.email;
 
-SEPARATE (not in this build) — REDCap data-dictionary completeness review (see chat):
-  • Fix: `sex` is stored by the app (patient.sex) but the dict marks it study-team-entered —
-      should auto-source (female=1, male=2, other/preferNotToSay=3).
-  • Fix: `diagnosis` field-note says "app does not store this" but the annotation correctly
-      sources patient.etiology — stale note, clean it up.
-  • Decide: goal baseline NRS, clinician video ratings, "other" side-effect text, face-module
-      fields (includes_face / pos_x), per-cycle & per-muscle notes — captured but not exported.
-  Tell me which to fold in and I'll update the dictionary.
+KNOWN FOLLOW-UP (REDCap dictionary): v2 still maps cycle_length_weeks and cycle_review_date to the
+  dropped treatment_cycle columns. Those two fields can't be populated by the app and should be
+  removed or remapped before the export is wired (dictionary v3). Say the word and I'll do it.
 
-DEPLOY: unzip -> GitHub -> Vercel (no app change, so nothing to rebuild). Run 0099 + reseed in Supabase.
+VERIFIED (this end): next build 62/62; tsc --noEmit clean.
+DEPLOY: unzip -> GitHub -> Vercel. No SQL for this build.
