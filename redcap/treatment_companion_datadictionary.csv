@@ -11,8 +11,6 @@
 "enrol_date","enrolment","","text","Date of enrolment","","Entered by the study team.","date_ymd","","","","","","","","","","STUDY-TEAM ENTERED."
 "cycle_index","treatment_cycle","Treatment cycle","text","Cycle number","","SOURCE treatment_cycle.cycle_number. One instance per cycle.","integer","1","99","","","y","","","","","REPEATING INSTRUMENT. cycle_index is the link key used by goal/checkin/treatment/goal_rating instruments."
 "cycle_start_date","treatment_cycle","","text","Cycle start date","","","date_ymd","","","","","y","","","","","SOURCE treatment_cycle.start_date"
-"cycle_review_date","treatment_cycle","","text","Planned review date","","","date_ymd","","","","","","","","","","SOURCE treatment_cycle.review_date"
-"cycle_length_weeks","treatment_cycle","","text","Planned cycle length (weeks)","","","integer","1","52","","","","","","","","SOURCE treatment_cycle.length_weeks"
 "cycle_status","treatment_cycle","","radio","Cycle status","1, Active | 2, Completed","","","","","","","","","","","","SOURCE treatment_cycle.status"
 "cycle_modality","treatment_cycle","","radio","Treatment modality","1, Botulinum toxin | 2, Baclofen pump (ITB) | 3, Surgery | 4, Other","","","","","","","","","","","","SOURCE treatment_cycle.modality. Recode: botulinum_toxin=1, baclofen_pump=2, surgery=3, other=4."
 "tx_cycle_index","treatment","Injection session","text","Belongs to cycle number","","Links this session to its cycle.","integer","1","99","","","y","","","","","REPEATING INSTRUMENT. Link key = cycle_index."

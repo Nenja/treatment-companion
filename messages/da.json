@@ -1784,7 +1784,7 @@
     "statusNone": "Intet forskningssamtykke registreret",
     "statusWithdrawn": "Forskningssamtykke trukket tilbage — afventer sletning",
     "grant": "Registrér forskningssamtykke",
-    "withdraw": "Træk forskningssamtykke tilbage",
+    "withdraw": "Træk tilbage",
     "withdrawNote": "Tilbagetrækning stopper eksporten til studiet med det samme. Allerede delte data fjernes, når en administrator bekræfter sletningen.",
     "withdrawConfirm": "Træk denne patients forskningssamtykke tilbage? Eksporten til studiet stopper med det samme, og delte data fjernes, når en administrator bekræfter sletningen."
   },
@@ -1792,7 +1792,7 @@
     "heading": "Brug af video til undervisning",
     "statusOn": "Samtykke til undervisningsbrug",
     "statusOff": "Intet samtykke til undervisningsbrug",
-    "grant": "Tillad undervisningsbrug",
+    "grant": "Registrér samtykke til undervisningsbrug",
     "withdraw": "Træk tilbage"
   }
 }
