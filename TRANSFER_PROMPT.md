@@ -72,16 +72,16 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-93` — **no migration**: stability/query-error handling. Adds `ErrorState` + a route error boundary, and `isError`→ErrorState branches on 7 data pages that previously hung on a failed query (the infinite-skeleton bug). Upload must include `.github`.
-- **Just shipped:** global query-error handling (stability). Data pages used to render the loading
-  skeleton forever when a query errored (isLoading false + data undefined). Added a shared `ErrorState`
-  component, a route-level error boundary (`app/[locale]/error.tsx`) for render crashes, and additive
-  `isError`→ErrorState retry branches on the 7 data pages that lacked them (clinician patient/history/
-  treatment/suggestion, patient-info, checkin, physio/progress). suggest-goal needs none (local gate);
-  the 8 pages already handling isError inline were left as-is. tsc/build/parity/schema-contract green.
-  Remaining hardening: security (headers/CSP, Dependabot, rate-limit the visit-code unlock), then ops
-  (alerting, tested backup-restore), then the mobile-app track (App Store/Play Store — likely Capacitor
-  wrapping the web app; needs a deliberate decision). Staging + Playwright E2E deferred per Nikolaj.
+- **Latest build:** `simplify-cockpit-94` — **no migration**: security headers (HSTS, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy keeping camera/mic, poweredByHeader off) + Report-Only CSP scaffold in next.config.ts + `.github/dependabot.yml`. Upload must include `.github`.
+- **Just shipped:** security hardening — enforced response headers (HSTS, X-Frame-Options DENY,
+  X-Content-Type-Options nosniff, Referrer-Policy, Permissions-Policy allowing camera/mic for the video
+  recorder + denying the rest, poweredByHeader off) and a Report-Only CSP scaffold in next.config.ts
+  (validate in-browser, then rename the header to enforce). Plus `.github/dependabot.yml` (monthly
+  grouped updates). NEXT security item: rate-limit the visit-code unlock RPC (`unlock_with_visit_code`)
+  — needs a migration + Method-D verification since it touches the critical unlock path; note prod
+  codes are already single-use + short-lived (the reusable TEST01–06 codes are demo-only), so this is
+  defence-in-depth. After security: ops (Sentry alerting, tested backup-restore runbook), then the
+  mobile App Store/Play Store track (likely Capacitor wrapping the web app — needs a decision).
 
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);

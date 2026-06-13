@@ -1,39 +1,44 @@
-BUILD: simplify-cockpit-93 — stability: pages no longer hang on a loading skeleton when a query
-fails. They now show a calm "Something went wrong / Try again" instead. No migration.
+BUILD: simplify-cockpit-94 — security hardening: response headers + dependency scanning.
+No migration. No visible app change.
 
-DISCARD 21-92 (superseded). Keep this zip.
+DISCARD 21-93 (superseded). Keep this zip.
 
-⚠️ Upload must include the ".github" folder (CI). If you're on GitHub Desktop now, just drop the
-   files into your cloned folder, review the change list, Commit, Push.
+⚠️ Upload must include the ".github" folder (it now also holds dependabot.yml). On GitHub Desktop:
+   drop the files into your clone, review, Commit, Push.
 
->>> CHANGED FILES IN THIS BUILD (12) — also packaged as the "...CHANGED-FILES.zip" alongside <<<
+>>> CHANGED FILES IN THIS BUILD (5) — also packaged as the "...CHANGED-FILES.zip" alongside <<<
   NEW:
-    components/feedback/ErrorState.tsx
-    app/[locale]/error.tsx
-  MODIFIED (code/i18n):
-    messages/en.json
-    messages/da.json
-    app/[locale]/clinician/patient/page.tsx
-    app/[locale]/clinician/history/page.tsx
-    app/[locale]/clinician/treatment/page.tsx
-    app/[locale]/clinician/suggestion/page.tsx
-    app/[locale]/patient-info/page.tsx
-    app/[locale]/checkin/page.tsx
-    app/[locale]/physio/progress/page.tsx
+    .github/dependabot.yml
+  MODIFIED:
+    next.config.ts
   DOCS:
     HANDOVER.md, BUILD.txt, TRANSFER_PROMPT.md
   (No files were deleted or renamed.)
 
 WHAT CHANGED & WHY:
-  Several pages showed the grey loading skeleton until data arrived. But if the data request FAILED
-  (e.g. the column/migration problems we hit earlier), there was no "arrived" — so the skeleton
-  stayed forever, with no error and no way to retry. That was the real reason pages "got stuck
-  loading."
-  Now: a failed load shows a small, calm "Something went wrong — Try again" panel (with a retry
-  button) instead of an endless skeleton. Also added a safety net that catches unexpected crashes
-  inside a page and shows the same panel rather than a blank screen. Nothing changes when things load
-  normally.
+  1) Security headers — the app now sends standard protective headers on every response
+     (HTTPS-only/HSTS, anti-clickjacking, no MIME sniffing, referrer privacy, a permissions policy
+     that keeps the camera/microphone available for video recording but blocks the rest, and it no
+     longer advertises that it's built with Next.js). These are safe and on by default.
+  2) Content-Security-Policy — included in "report-only" mode: the browser will REPORT anything
+     unexpected (visible in developer tools) but will NOT block anything yet, so it cannot break the
+     app. Your developer should click through all three roles + record a video with the browser
+     console open, confirm there are no real violations, then switch it on for real (one-line change,
+     noted in next.config.ts).
+  3) Dependabot — a small config so GitHub checks monthly for outdated/vulnerable dependencies and
+     opens a single grouped update PR. ALSO (one-time): in the repo Settings → Advanced Security,
+     turn on "Dependabot alerts" and "Dependabot security updates" so urgent security fixes are
+     flagged immediately.
 
-DO I NEED TO RUN ANY SQL?  No. App-only change.
+HOW TO CONFIRM IT WORKED (after deploy): open the site, F12 → Network tab → click the first
+  (document) request → Response Headers; you should see Strict-Transport-Security, X-Frame-Options,
+  etc. Or paste the URL into securityheaders.com.
+
+NEXT SECURITY ITEM (separate build): rate-limit the patient "visit code" unlock so codes can't be
+  brute-forced. It touches the unlock logic (a database migration + careful testing), so it's its own
+  change. Note: real visit codes are already single-use and expire quickly — the reusable TEST01–06
+  codes are demo-only — so this is extra defence, not an open hole.
+
+DO I NEED TO RUN ANY SQL?  No. Config-only change.
+VERIFIED (this end): build 62/62; tsc clean.
 DEPLOY: drop files into the repo (GitHub Desktop) -> Commit -> Push. No SQL.
-VERIFIED (this end): build 62/62; tsc clean; i18n parity 1635; schema-contract passing.

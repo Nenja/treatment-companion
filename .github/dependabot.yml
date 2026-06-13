@@ -1,0 +1,22 @@
+# Dependabot — keeps dependencies and CI actions current and surfaces known
+# vulnerabilities. Updates arrive as occasional grouped pull requests (monthly,
+# bundled into one PR) to keep the noise low for a solo maintainer.
+#
+# Security fixes: also turn on "Dependabot alerts" and "Dependabot security
+# updates" in the repo Settings → Advanced Security (one-time toggle). Those
+# raise urgent fixes outside this monthly schedule.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"

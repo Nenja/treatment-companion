@@ -850,6 +850,12 @@ new-goal + approve calibration forms; current).
 
 ## 7. Latest delivered build
 
+- **Zip:** `treatment-companion-simplify-cockpit-94.zip`  ·  **Tag:** `simplify-cockpit-94`  ·  **no migration.** **Security — response headers + dependency scanning.**
+  - **`next.config.ts`** now sets, on every response: `Strict-Transport-Security` (1y, includeSubDomains), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(self), microphone=(self), geolocation=(), browsing-topics=()` (camera/mic stay enabled for `GoalVideoRecorder`), `X-DNS-Prefetch-Control: on`, and `poweredByHeader: false`. All enforced and low-risk.
+  - **CSP** is included as `Content-Security-Policy-Report-Only` (a single policy string in `next.config.ts`). Report-Only means it reports violations to the devtools console but blocks nothing, so it can't break the app. **To enforce:** validate in a browser (click through all roles, record a video, watch the console for violations, widen any wrongly-blocked origin), then rename the header to `Content-Security-Policy`. connect-src already allows Supabase REST + realtime (wss) and Sentry ingest; media/img allow Supabase Storage + blobs.
+  - **`.github/dependabot.yml`** — monthly, grouped npm + github-actions update PRs (limit 5), low-noise. One-time: also enable **Dependabot alerts + security updates** in repo Settings → Advanced Security for urgent fixes outside the schedule.
+  - Verify headers after deploy: browser devtools → Network → click the document request → Response Headers, or run the URL through securityheaders.com.
+  - Build 62/62; tsc clean. (Pre-existing benign `@opentelemetry`/Sentry "Critical dependency" warning is unrelated.)
 - **Zip:** `treatment-companion-simplify-cockpit-93.zip`  ·  **Tag:** `simplify-cockpit-93`  ·  **no migration.** **Stability — global query-error handling (no more infinite skeletons).**
   - Problem: data pages gated on `query.isLoading || !query.data`. When a query *errors*, `isLoading` is false and `data` is undefined → the page rendered the loading **skeleton forever** with no error and no retry. This was the real mechanism behind the "stuck on loading" reports during the consent-column / `length_weeks` 400s.
   - **`components/feedback/ErrorState.tsx`** (new): calm, on-brand, accessible (`role="alert"`) error panel with a "Try again" button; copy matches the app's error voice. New `errorState` i18n namespace (en + da).
