@@ -72,14 +72,15 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-85` — **no migration** (clinician-page refinements: single Mark-considered action; handoff note de-cluttered; wrong "Therapist only" badge removed). Pending migrations to run in order: **0090, 0095, 0096, 0097, 0098** (schema_audit.sql shows which).
-- **Just shipped:** three clinician-page consistency fixes. (1) The therapist-suggestion review
-  collapses *Mark considered* + *Dismiss* (functionally identical) into a single **Mark considered**
-  action — all four spots (both TherapistInputPanel widgets + both inline cockpit lists). (2) The
-  physician→therapist **handoff note** drops the "Did you change the treatment?" toggle — just the
-  written note (save sends `treatment_changed = null`; RPC/column untouched). (3) Removed the wrong
-  **"Therapist only"** badge on that note — it's patient-readable by design (0096), which the hint
-  states correctly. No schema change.
+- **Latest build:** `simplify-cockpit-86` — **migration 0099 (DEV SEED ONLY)**: demo patients now populate the clinician history page. Run pending migrations in order: **0090, 0095, 0096, 0097, 0098, 0099** (0099 depends on 0097 for the `anoxic` value), then trigger a dev reseed.
+- **Just shipped:** migration 0099 (dev seed only) — `dev_seed_history_extras()`, wired into
+  `dev_reseed_all()`, enriches test1–test6 with the fields the **history** page reads that the base
+  seed omitted: diagnosis + medication, clinician video ratings, physio assessments + ratings,
+  check-in side effects, and per-cycle handoff notes. Run 0099, then reseed; test6 is the richest.
+  Also: a REDCap **data-dictionary completeness review** (in chat) — two accuracy bugs (`sex`
+  app-stored but marked study-team-entered; `diagnosis` note contradicts its annotation) + optional
+  gaps (goal baseline NRS, clinician video ratings, "other" side-effect text, face-module fields).
+  Not yet applied — awaiting which to fold in.
 
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
