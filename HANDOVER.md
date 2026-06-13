@@ -850,6 +850,13 @@ new-goal + approve calibration forms; current).
 
 ## 7. Latest delivered build
 
+- **Zip:** `treatment-companion-simplify-cockpit-92.zip`  ·  **Tag:** `simplify-cockpit-92`  ·  **no migration.** **Schema-contract check (production-readiness item #2, smoke-test layer).**
+  - **`scripts/check-schema-contract.mjs`** — scans the data layer (`lib/`, `app/`, `components/`) for `.from('table')` + the paired `.select('…')` and for `.rpc('fn')`, and verifies against a schema snapshot that (a) the table exists, (b) each selected bare column exists on it, (c) the function exists. Embedded PostgREST resources (`alias:fk (cols)`) are skipped to keep it false-positive-free.
+  - **`supabase/ci/dump-schema.sql`** — emits the public schema as JSON (`{tables:{name:[cols]}, functions:[…]}`); invoke `psql -tA -f … > schema.json`.
+  - **CI wiring:** the `migrations` job now gains a Node step; after applying migrations it snapshots the schema and runs the contract check. Pure-Node script (no deps, no npm install, no backend).
+  - **Why this is the right smoke test for our bug class:** the page breakages this session were app↔DB contract mismatches — `treatment_cycle.length_weeks` (dropped in 0010, still selected) and the consent columns (selected before 0098 was applied). This check catches both *before* deploy, deterministically, with no running backend or test accounts. It complements (doesn't replace) browser E2E.
+  - **Browser-level E2E (Playwright) deferred — on purpose.** Login is email+password (`signInWithPassword`), so the three role journeys (patient check-in; clinician unlock-via-visit-code → patient + history; physiotherapist note) are scriptable — but they need a running app + a seeded backend with real accounts. The clean place to run that without risking prod is the **staging environment** (next item). Building E2E together with staging means it can actually be executed and verified, rather than shipped blind.
+  - **Verified locally:** migrations apply → schema snapshot (26 tables, 139 functions) → contract check passes with **0 mismatches** (confirming no other dropped/missing-column references remain). Build 62/62; tsc clean; parity 1632.
 - **Zip:** `treatment-companion-simplify-cockpit-91.zip`  ·  **Tag:** `simplify-cockpit-91`  ·  **no migration to run.** **CI + migration validation (critical-path item #1).**
   - **`.github/workflows/ci.yml`** — runs on every push to `main` and every PR, no secrets:
     - **verify** job: `npm ci` → `npm run typecheck` → `node scripts/check-i18n-parity.mjs` → `npm run build` (placeholder public Supabase env). Catches type errors, i18n drift, and build breaks before Vercel.

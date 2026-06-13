@@ -72,16 +72,18 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-91` — **adds CI** (verify + from-scratch migration apply) and fixes pre-existing migration syntax bugs (0004, 0006) found by it; dev-reseed migrations 0011/0015 marked `ci:skip`. No SQL to run on the live DB. Upload must include the `.github` folder for CI to run.
-- **Just shipped:** the first piece of the production-readiness work from the state-of-the-app
-  evaluation — **CI**. `.github/workflows/ci.yml` runs type-check + i18n parity + production build,
-  and a separate job applies every numbered migration to a throwaway Postgres from scratch (via
-  `supabase/ci/bootstrap.sql`, which mocks the Supabase auth + storage schemas), skipping files marked
-  `ci:skip`. Reaching a green baseline surfaced real pre-existing migration bugs — 0004 (reserved word
-  `current_role`) and 0006 (`||` in a COMMENT) — now fixed; 0011/0015 (dev reseeds) marked `ci:skip`.
-  `DEPLOY.md` now documents the migration-before-app release order and how to read the CI checks.
-  NEXT production-readiness items (from the evaluation, in order): E2E smoke tests (Playwright, three
-  role journeys) → staging env → compliance program → ops hardening.
+- **Latest build:** `simplify-cockpit-92` — **no migration**: adds a schema-contract check to CI (every `.from`/`.select` column and `.rpc` the app uses is verified against the migrated schema; catches the dropped/missing-column bug class with no backend). Browser E2E (Playwright) intentionally deferred to pair with staging. Upload must include `.github`.
+- **Just shipped:** the smoke-test layer (production-readiness item #2), implemented as a
+  **schema-contract check** rather than browser E2E — because the bugs that broke pages this session
+  were app↔DB contract mismatches (a dropped column still selected; consent columns selected before
+  their migration ran), and a static contract check catches that class deterministically with no
+  backend and no flakiness, running in the CI we already have. `scripts/check-schema-contract.mjs`
+  pairs every `.from('table').select('…')` and every `.rpc('fn')` against a schema snapshot from
+  `supabase/ci/dump-schema.sql`. Verified locally: 0 mismatches. Browser E2E (Playwright) is the
+  next layer and is intentionally bundled with the STAGING environment (next item), since it needs a
+  running app + seeded backend to execute — login is email+password, so the journeys are scriptable.
+  Remaining production-readiness items: staging env (+ Playwright E2E) → compliance program → ops
+  hardening (alerting, dep scanning, tested backup-restore, rate-limiting, global query-error UI).
 
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);

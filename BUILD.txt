@@ -1,38 +1,31 @@
-BUILD: simplify-cockpit-91 — adds CI (automatic checks) + a from-scratch migration validator,
-and fixes pre-existing migration syntax bugs the validator found. NO migration to run on your DB.
+BUILD: simplify-cockpit-92 — adds a "schema-contract" check to CI. No migration. No app change.
 
-DISCARD 21-90 (superseded). Keep this zip.
+DISCARD 21-91 (superseded). Keep this zip.
 
-⚠️ IMPORTANT WHEN UPLOADING:
-  This build adds a folder named ".github" (it holds the CI configuration). When you drag the
-  project files into GitHub, MAKE SURE ".github" is included. If GitHub doesn't show a green ✓ or
-  red ✗ on your upload, the .github folder probably didn't get uploaded — tell me and we'll fix it.
+⚠️ As with the last build, when you upload, INCLUDE the ".github" folder (it holds the CI config).
 
-WHAT THIS ADDS (no change to how the app looks or behaves):
-  • Automatic checks on every GitHub upload (.github/workflows/ci.yml):
-      - type-check, English/Danish text parity, and a full production build;
-      - a separate check that applies ALL the numbered SQL migrations to a fresh throwaway database,
-        in order, to prove there are no ordering/syntax errors. It does NOT touch your real database.
-    You'll see a green ✓ (good) or red ✗ (paste me the error) next to each upload on GitHub.
-  • supabase/ci/bootstrap.sql — used ONLY by that check to stand up a Supabase-like test database.
-    Never run this against your real Supabase.
-  • scripts/check-i18n-parity.mjs + two npm scripts (check:i18n, verify) for local use.
-  • DEPLOY.md now explains: run database SQL BEFORE uploading the app, how to read the checks, and
-    (optional, later) how to auto-apply migrations.
+WHAT THIS ADDS:
+  A new automatic check that directly targets the bug that broke your pages this session — the app
+  asking the database for a column that doesn't exist (e.g. length_weeks), or one from a migration
+  you hadn't run yet (the consent columns).
 
-PRE-EXISTING MIGRATION BUGS FIXED (these are why a clean re-apply had never worked — they were
-hand-patched in the Supabase editor previously, so the saved files had drifted):
-  • 0004_fix_current_role.sql — "drop function ... current_role()" is a syntax error because
-    current_role is a reserved word; quoted it.
-  • 0006_submit_checkin_rpc.sql — a COMMENT used "||" to join text, which isn't allowed in a
-    COMMENT; fixed.
-  • 0011_reseed_test_patient.sql and 0015_reseed_nrs.sql — marked "ci:skip" because they are dev
-    data-reseed scripts that need test accounts and can't run on a blank database.
+  How it works (all inside CI, no real database involved):
+    1. The migrations check applies all the SQL to a throwaway database (as before).
+    2. It then takes a snapshot of that database's shape.
+    3. scripts/check-schema-contract.mjs reads every place the app asks the database for data
+       (.from('table').select('columns') and .rpc('function')) and confirms each table, column and
+       function actually exists in the snapshot.
+  If the app ever references something that isn't there, CI goes red and names it — before it can
+  reach a real page.
 
-DO I NEED TO RUN ANY SQL?  No. Your live database is already past 0004/0006 (you ran them, in some
-  form, long ago). These fixes only matter for fresh/automated re-applies (the CI check, new
-  environments). Nothing to run now.
+VERIFIED (this end): applied all migrations, snapshotted the schema (26 tables, 139 functions), ran
+  the check — 0 mismatches (your app is clean). Build 62/62; tsc clean; i18n parity 1632 keys.
 
-VERIFIED (this end): all 98 schema migrations apply cleanly from scratch (2 dev-seed skipped);
-  next build 62/62; tsc --noEmit clean; i18n parity 1632 keys aligned.
+NOT IN THIS BUILD (on purpose): browser-clicking tests (Playwright) for the patient / clinician /
+  physiotherapist journeys. Those need a running copy of the app with a test database and test
+  logins. The right place to run them safely (not against your live site) is a STAGING environment,
+  which is the next thing to set up — so we'll build those tests together with staging, where they
+  can actually run. Login is email+password, so the journeys are straightforward to script.
+
+DO I NEED TO RUN ANY SQL?  No. This build changes only the automatic checks, not the app or database.
 DEPLOY: unzip -> GitHub (include .github!) -> Vercel. No SQL for this build.
