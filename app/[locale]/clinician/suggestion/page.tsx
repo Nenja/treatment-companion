@@ -1,4 +1,5 @@
 'use client';
+import { ErrorState } from '@/components/feedback/ErrorState';
 
 import { Suspense, useEffect, useState } from 'react';
 import { AppHeader } from '@/components/layout/AppHeader';
@@ -131,6 +132,14 @@ function Inner() {
     !sessionQuery.data
   ) {
     return <div className="min-h-dvh bg-cream" />;
+  }
+
+  if (suggestionQuery.isError) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-cream">
+        <ErrorState onRetry={() => { suggestionQuery.refetch(); }} />
+      </div>
+    );
   }
 
   if (suggestionQuery.isLoading) {

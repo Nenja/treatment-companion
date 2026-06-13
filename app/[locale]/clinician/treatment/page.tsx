@@ -1,4 +1,5 @@
 'use client';
+import { ErrorState } from '@/components/feedback/ErrorState';
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { AppHeader } from '@/components/layout/AppHeader';
@@ -326,6 +327,14 @@ function TreatmentRecordInner() {
     }
     setHydrated(true);
   }, [dataQuery.data, hydrated, isNewCycle, newCycleDate]);
+
+  if (sessionQuery.isError || dataQuery.isError) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-cream">
+        <ErrorState onRetry={() => { sessionQuery.refetch(); dataQuery.refetch(); }} />
+      </div>
+    );
+  }
 
   if (
     authLoading ||

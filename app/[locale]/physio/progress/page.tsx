@@ -1,4 +1,5 @@
 'use client';
+import { ErrorState } from '@/components/feedback/ErrorState';
 
 import { useEffect } from 'react';
 import { AppHeader } from '@/components/layout/AppHeader';
@@ -68,6 +69,14 @@ export default function PhysioProgressPage() {
     router.push(
       locale === 'en' ? '/physio/patient' : `/${locale}/physio/patient`
     );
+
+  if (sessionQuery.isError || patientData.isError) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-cream">
+        <ErrorState onRetry={() => { sessionQuery.refetch(); patientData.refetch(); }} />
+      </div>
+    );
+  }
 
   if (
     authLoading ||

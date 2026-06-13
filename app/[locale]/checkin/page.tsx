@@ -1,4 +1,5 @@
 'use client';
+import { ErrorState } from '@/components/feedback/ErrorState';
 
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -197,6 +198,14 @@ function CheckinPageInner() {
 
   // Query errored or there's no pending prompt → redirect home (the
   // effect above triggers the redirect; render nothing until it does).
+  if (checkinQuery.isError) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-cream">
+        <ErrorState onRetry={() => { checkinQuery.refetch(); }} />
+      </div>
+    );
+  }
+
   if (!checkinQuery.data) {
     return null;
   }

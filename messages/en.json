@@ -1790,5 +1790,10 @@
     "statusOff": "No educational-use consent",
     "grant": "Record consent for educational use",
     "withdraw": "Withdraw"
+  },
+  "errorState": {
+    "title": "Something went wrong",
+    "body": "We couldn't load this. Please try again — if it keeps happening, contact your clinic.",
+    "retry": "Try again"
   }
 }

@@ -1,4 +1,5 @@
 'use client';
+import { ErrorState } from '@/components/feedback/ErrorState';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -171,6 +172,14 @@ export default function PatientInfoPage() {
       <AppShell wide>
         <LoadingState />
       </AppShell>
+    );
+  }
+
+  if (sessionQuery.isError || info.isError) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-cream">
+        <ErrorState onRetry={() => { sessionQuery.refetch(); info.refetch(); }} />
+      </div>
     );
   }
 

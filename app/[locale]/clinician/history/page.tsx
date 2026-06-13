@@ -15,6 +15,8 @@ import {
 } from '@/lib/supabase/patientHistory';
 import { GoalSparkline } from '@/components/clinician/GoalSparkline';
 import { SkeletonScreen, SkeletonBlock } from '@/components/feedback/Skeleton';
+import { ErrorState } from '@/components/feedback/ErrorState';
+
 import { useWideLayout } from '@/lib/useWideLayout';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
@@ -58,6 +60,14 @@ export default function ClinicianHistoryPage() {
       router.replace(prefix ? `${prefix}/clinician` : '/clinician');
     }
   }, [sessionQuery.status, sessionQuery.data, router, prefix]);
+
+  if (sessionQuery.isError || history.isError) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-cream">
+        <ErrorState onRetry={() => { sessionQuery.refetch(); history.refetch(); }} />
+      </div>
+    );
+  }
 
   if (authLoading || !profile || profile.role !== 'clinician' || sessionQuery.isLoading || !sessionQuery.data) {
     return (

@@ -66,6 +66,8 @@ import {
   SkeletonBlock,
   SkeletonScreen
 } from '@/components/feedback/Skeleton';
+import { ErrorState } from '@/components/feedback/ErrorState';
+
 import { useModalA11y } from '@/lib/useModalA11y';
 import { useWideLayout } from '@/lib/useWideLayout';
 import { useNavStyle } from '@/lib/useNavStyle';
@@ -292,6 +294,14 @@ export default function ClinicianPatientPage() {
     !sessionQuery.data
   ) {
     return <div className="min-h-dvh bg-cream" />;
+  }
+
+  if (patientData.isError) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-cream">
+        <ErrorState onRetry={() => { patientData.refetch(); }} />
+      </div>
+    );
   }
 
   if (patientData.isLoading || !patientData.data) {

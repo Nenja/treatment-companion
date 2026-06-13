@@ -1,31 +1,39 @@
-BUILD: simplify-cockpit-92 — adds a "schema-contract" check to CI. No migration. No app change.
+BUILD: simplify-cockpit-93 — stability: pages no longer hang on a loading skeleton when a query
+fails. They now show a calm "Something went wrong / Try again" instead. No migration.
 
-DISCARD 21-91 (superseded). Keep this zip.
+DISCARD 21-92 (superseded). Keep this zip.
 
-⚠️ As with the last build, when you upload, INCLUDE the ".github" folder (it holds the CI config).
+⚠️ Upload must include the ".github" folder (CI). If you're on GitHub Desktop now, just drop the
+   files into your cloned folder, review the change list, Commit, Push.
 
-WHAT THIS ADDS:
-  A new automatic check that directly targets the bug that broke your pages this session — the app
-  asking the database for a column that doesn't exist (e.g. length_weeks), or one from a migration
-  you hadn't run yet (the consent columns).
+>>> CHANGED FILES IN THIS BUILD (12) — also packaged as the "...CHANGED-FILES.zip" alongside <<<
+  NEW:
+    components/feedback/ErrorState.tsx
+    app/[locale]/error.tsx
+  MODIFIED (code/i18n):
+    messages/en.json
+    messages/da.json
+    app/[locale]/clinician/patient/page.tsx
+    app/[locale]/clinician/history/page.tsx
+    app/[locale]/clinician/treatment/page.tsx
+    app/[locale]/clinician/suggestion/page.tsx
+    app/[locale]/patient-info/page.tsx
+    app/[locale]/checkin/page.tsx
+    app/[locale]/physio/progress/page.tsx
+  DOCS:
+    HANDOVER.md, BUILD.txt, TRANSFER_PROMPT.md
+  (No files were deleted or renamed.)
 
-  How it works (all inside CI, no real database involved):
-    1. The migrations check applies all the SQL to a throwaway database (as before).
-    2. It then takes a snapshot of that database's shape.
-    3. scripts/check-schema-contract.mjs reads every place the app asks the database for data
-       (.from('table').select('columns') and .rpc('function')) and confirms each table, column and
-       function actually exists in the snapshot.
-  If the app ever references something that isn't there, CI goes red and names it — before it can
-  reach a real page.
+WHAT CHANGED & WHY:
+  Several pages showed the grey loading skeleton until data arrived. But if the data request FAILED
+  (e.g. the column/migration problems we hit earlier), there was no "arrived" — so the skeleton
+  stayed forever, with no error and no way to retry. That was the real reason pages "got stuck
+  loading."
+  Now: a failed load shows a small, calm "Something went wrong — Try again" panel (with a retry
+  button) instead of an endless skeleton. Also added a safety net that catches unexpected crashes
+  inside a page and shows the same panel rather than a blank screen. Nothing changes when things load
+  normally.
 
-VERIFIED (this end): applied all migrations, snapshotted the schema (26 tables, 139 functions), ran
-  the check — 0 mismatches (your app is clean). Build 62/62; tsc clean; i18n parity 1632 keys.
-
-NOT IN THIS BUILD (on purpose): browser-clicking tests (Playwright) for the patient / clinician /
-  physiotherapist journeys. Those need a running copy of the app with a test database and test
-  logins. The right place to run them safely (not against your live site) is a STAGING environment,
-  which is the next thing to set up — so we'll build those tests together with staging, where they
-  can actually run. Login is email+password, so the journeys are straightforward to script.
-
-DO I NEED TO RUN ANY SQL?  No. This build changes only the automatic checks, not the app or database.
-DEPLOY: unzip -> GitHub (include .github!) -> Vercel. No SQL for this build.
+DO I NEED TO RUN ANY SQL?  No. App-only change.
+DEPLOY: drop files into the repo (GitHub Desktop) -> Commit -> Push. No SQL.
+VERIFIED (this end): build 62/62; tsc clean; i18n parity 1635; schema-contract passing.
