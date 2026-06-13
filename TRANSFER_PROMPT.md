@@ -72,15 +72,14 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-97` — **changed-files only, no migration, no dashboard action now**: ships the ops runbook (`OPS.md` + Sentry env/release tagging, inert until a DSN is set) and re-bundles the `lib/pwa.ts` build fix so it deploys green regardless. Backups/Sentry/CSP-enforce deferred to the first-real-patient milestone (§0 go-live checklist in OPS.md). Do NOT overwrite package.json/lock.
-- **Just shipped:** the ops runbook (cockpit-97). `OPS.md` documents monitoring, alerting, backups/restore,
-  rollback, and incidents, with a **§0 go-live checklist** (backups now explicitly deferred to the first real
-  patient — Nikolaj's decision; dev/test data until then). Code adds Sentry environment/release tagging
-  (`lib/sentry.shared.ts`), which stays dormant until a `NEXT_PUBLIC_SENTRY_DSN` is set; PII scrubbing was
-  already solid. The `lib/pwa.ts` build fix is bundled again so the deploy is green even if cockpit-96 wasn't
-  applied. NEXT (the remaining technical track): scope the **mobile App Store / Play Store** path — server-rendered
-  Next.js, so a Capacitor wrapper + genuine native pieces; treat as a planning step, not a quick build. Also flag
-  upgrading off next@15.1.9 (security advisory). Staging + E2E remain deferred; CSP still Report-Only.
+- **Latest build:** web = `simplify-cockpit-97`. **Mobile Milestone 1** also delivered: a Capacitor native shell in a new `mobile/` folder (loads the live site; verified to scaffold for Android). Build Android on Windows; iOS needs a Mac/cloud-Mac. See `mobile/README.md`.
+- **Just shipped:** Mobile Milestone 1 — the App Store / Play Store track started. A `mobile/` Capacitor
+  project (v8.4.0) wraps the live web app via `server.url`; verified `cap add android` scaffolds. `mobile/README.md`
+  is the build guide and is honest about the constraints (iOS needs a Mac or cloud-Mac CI; Apple $99/yr + Google
+  $25; Apple rule 4.2 → needs native push; health-app review). NEXT once it runs on an Android device: Milestone 2
+  = native push reminders (FCM + APNs, device-token storage in Supabase, backend send-path change) + real
+  icon/splash + store listings/submission. Web side: cockpit-97 deploy note still applies (changed-files only,
+  don't overwrite package.json/lock); upgrading off next@15.1.9 (advisory) still recommended.
 
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);

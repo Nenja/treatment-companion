@@ -1,0 +1,17 @@
+{
+  "name": "treatment-companion-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Native (Capacitor) wrapper for the Treatment Companion web app.",
+  "scripts": {
+    "sync": "cap sync",
+    "open:android": "cap open android",
+    "open:ios": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/ios": "^8.4.0"
+  }
+}
