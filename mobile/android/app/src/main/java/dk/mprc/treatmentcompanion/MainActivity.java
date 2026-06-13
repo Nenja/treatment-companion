@@ -1,4 +1,4 @@
-package dk.treatmentcompanion.app;
+package dk.mprc.treatmentcompanion;
 
 import com.getcapacitor.BridgeActivity;
 

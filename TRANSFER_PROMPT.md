@@ -72,14 +72,15 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** web = `simplify-cockpit-97`. **Mobile Milestone 1** also delivered: a Capacitor native shell in a new `mobile/` folder (loads the live site; verified to scaffold for Android). Build Android on Windows; iOS needs a Mac/cloud-Mac. See `mobile/README.md`.
-- **Just shipped:** Mobile Milestone 1 — the App Store / Play Store track started. A `mobile/` Capacitor
-  project (v8.4.0) wraps the live web app via `server.url`; verified `cap add android` scaffolds. `mobile/README.md`
-  is the build guide and is honest about the constraints (iOS needs a Mac or cloud-Mac CI; Apple $99/yr + Google
-  $25; Apple rule 4.2 → needs native push; health-app review). NEXT once it runs on an Android device: Milestone 2
-  = native push reminders (FCM + APNs, device-token storage in Supabase, backend send-path change) + real
-  icon/splash + store listings/submission. Web side: cockpit-97 deploy note still applies (changed-files only,
-  don't overwrite package.json/lock); upgrading off next@15.1.9 (advisory) still recommended.
+- **Latest build:** `simplify-cockpit-98` — mobile push **step 2** (web-app code, NO new deps, inert in browsers): `lib/nativePush.ts` + `NativePushRegistrar` register the device's FCM token via the `register_device_push_token` RPC when inside the native shell. Build 62/62. Drop changed files (no npm install); ensure migration 0102 is applied. Don't overwrite package.json/lock.
+- **Just shipped:** mobile push **step 2** (cockpit-98) — the web app now registers each phone's FCM token after
+  login, via `lib/nativePush.ts` + a `NativePushRegistrar` component. It reaches the Capacitor plugin through the
+  injected `window.Capacitor` global, so the web app needs NO Capacitor dependency and stays inert in browsers
+  (build 62/62, no package.json change). Deploys to Vercel by dropping the changed files. NEXT push steps:
+  (3) add `@capacitor/push-notifications` to `mobile/` + wire Firebase `google-services.json` (Android) — needs the
+  user's Firebase project + google-services.json (in progress); (4) extend `send-checkin-notifications` to push to
+  native tokens via FCM. iOS push needs an Apple push key + Mac (deferred). Then: app icon/splash, store submission.
+  App ID is `dk.mprc.treatmentcompanion`. Web deploy caveat still applies: changed-files only, never package.json/lock.
 
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);

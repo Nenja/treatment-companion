@@ -5,6 +5,7 @@ import { TextScaleApplier } from '@/components/feedback/TextScaleApplier';
 import { PasswordChangeGuard } from '@/components/feedback/PasswordChangeGuard';
 import { SetupGate } from '@/components/feedback/SetupGate';
 import { ThemeApplier } from '@/components/feedback/ThemeApplier';
+import { NativePushRegistrar } from '@/components/feedback/NativePushRegistrar';
 import type { ReactNode } from 'react';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
@@ -88,6 +89,7 @@ export default async function LocaleLayout({
               <AuthProvider>
                 <TextScaleApplier />
                 <ThemeApplier />
+                <NativePushRegistrar />
                 <PasswordChangeGuard />
                 <SetupGate />
                 {children}

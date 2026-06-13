@@ -1,9 +1,9 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  // ⚠️ PERMANENT once published — you CANNOT change it after the first store
-  // release. Set it to a reverse-DNS id, ideally based on a domain you control.
-  appId: 'dk.treatmentcompanion.app',
+  // Permanent once published. Reverse-DNS id for the MPRC research group's app
+  // (used identically on Google Play and the App Store).
+  appId: 'dk.mprc.treatmentcompanion',
   appName: 'Treatment Companion',
 
   // A tiny offline fallback lives in www/ (shown only while connecting / when

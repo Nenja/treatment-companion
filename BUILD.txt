@@ -1,32 +1,30 @@
-BUILD: simplify-cockpit-97 — ops runbook (Sentry tagging + OPS.md). CHANGED FILES ONLY.
-No database migration. No SQL. No dashboard action needed right now.
+BUILD: simplify-cockpit-98 — mobile push, step 2 (web-app code). No migration.
+NO new dependencies, so NO npm install needed and no build risk.
 
->>> DEPLOY: drop the changed files into your repo (GitHub Desktop), commit, push. <<<
->>> DO NOT replace package.json or package-lock.json from the zip (they are older   <<<
->>> than your repo — same reason as cockpit-96).                                     <<<
+>>> DEPLOY: drop the changed files into your WEB repo, commit, push. Vercel rebuilds. <<<
+>>> DO NOT copy in package.json / package-lock.json.                                  <<<
 
-WHAT THIS ADDS:
-  - OPS.md (new): the operations runbook — how to run the pilot. Sentry alerts, Supabase
-    backups/restore, deploy rollback, incident checklist, routine checks. It now opens with
-    a §0 GO-LIVE CHECKLIST: the things to switch on the day you start using REAL patient data
-    (Supabase Pro + backups, test restore, Sentry DSN, enforce CSP, Next.js update, compliance,
-    Danish review). Backups are explicitly marked as deferred until that day - correct for now,
-    since you're on test data.
-  - lib/sentry.shared.ts: error reports now carry an environment + release tag so you can tell
-    production errors from preview noise. This is DORMANT until you set a Sentry DSN at go-live -
-    it changes nothing today. (The patient-data scrubbing was already in place; unchanged.)
+WHAT IT DOES:
+  Adds the code that, WHEN THE APP IS RUNNING AS THE NATIVE ANDROID/iOS APP, registers
+  that phone's push token (after the user logs in) so reminders can reach it. In a normal
+  web browser it does nothing at all - so deploying it to your website is completely safe
+  and changes nothing visible today.
 
-ALSO BUNDLED FOR SAFETY:
-  - lib/pwa.ts (the cockpit-96 build fix) is included again, so this deploys to a GREEN build
-    whether or not you already applied cockpit-96. If you did, re-dropping it changes nothing.
+  It talks to the phone's push system through the bridge the native app provides at runtime,
+  which is why the website needs no extra packages (and so this can't cause the "module not
+  found" build failures we hit before).
+
+PREREQUISITE: migration 0102 should be applied in Supabase (push step 1). If it isn't yet,
+this is still harmless - the registration only runs inside the native app, which doesn't have
+the push plugin until step 3.
+
+VERIFIED (this end): build 62/62 pages; type-check clean; no package.json change.
 
 CHANGED FILES:
-  NEW:       OPS.md
-  MODIFIED:  lib/sentry.shared.ts, lib/pwa.ts, DEPLOY.md
+  NEW:       lib/nativePush.ts
+             components/feedback/NativePushRegistrar.tsx
+  MODIFIED:  app/[locale]/layout.tsx
   DOCS:      HANDOVER.md, BUILD.txt, TRANSFER_PROMPT.md
-  (No deletions or renames. No package.json/lock changes - do not copy those in.)
 
-VERIFIED (this end): build 62/62; type-check clean; no schema or text changes.
-
-NEXT: scope the mobile App Store / Play Store path (a planning step). Separately, upgrading off
-next@15.1.9 (security advisory) is recommended as its own small change.
+NEXT (steps 3 & 4): connect Firebase + the push plugin in the mobile app, then teach the
+reminder sender to push to phones. iOS push later (needs Apple key + Mac).
