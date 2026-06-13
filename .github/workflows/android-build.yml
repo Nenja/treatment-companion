@@ -1,0 +1,97 @@
+name: Android build
+
+# Builds an installable Android APK in the cloud — no Android Studio / SDK / JDK
+# needed on your machine. Trigger it manually from the Actions tab
+# ("Run workflow"), or it runs automatically whenever anything under mobile/
+# changes. The finished APK is attached to the "android-latest" Release (easy to
+# install from your phone) and is also available as a downloadable artifact.
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/android-build.yml'
+
+permissions:
+  contents: write          # lets the build attach the APK to a Release
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Java (JDK 21)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up the Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept licenses & install SDK packages
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Install JavaScript dependencies
+        working-directory: mobile
+        run: npm install
+
+      - name: Generate the Android project
+        working-directory: mobile
+        run: |
+          if [ ! -d android ]; then npx cap add android; fi
+          npx cap sync android
+
+      - name: Apply proguard-optimize fix (harmless if unused)
+        working-directory: mobile
+        run: sed -i 's/proguard-android.txt/proguard-android-optimize.txt/' android/app/build.gradle || true
+
+      - name: Add Firebase config if the secret is set (enables push)
+        working-directory: mobile
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" | base64 -d > android/app/google-services.json
+            echo "google-services.json written — push notifications enabled."
+          else
+            echo "No GOOGLE_SERVICES_JSON secret set — building WITHOUT push."
+            echo "The app still works fully; add the secret later to turn push on."
+          fi
+
+      - name: Build the debug APK
+        working-directory: mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Upload the APK as a downloadable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: treatment-companion-android-apk
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Publish the APK to a Release (easy phone download)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: Treatment Companion — Android (latest debug build)
+          body: |
+            Latest Android debug build. Open this page on your Android phone and
+            tap the .apk below to download, then tap the downloaded file to install.
+
+            If installing an update fails ("App not installed" / signature
+            mismatch), uninstall the previous version first — debug builds are not
+            signed with a stable key.
+          files: mobile/android/app/build/outputs/apk/debug/app-debug.apk
