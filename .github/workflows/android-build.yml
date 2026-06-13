@@ -46,6 +46,18 @@ jobs:
         working-directory: mobile
         run: npm install
 
+      - name: Install push plugin only if Firebase is configured
+        working-directory: mobile
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            npm install @capacitor/push-notifications@^8.1.1
+            echo "Firebase secret present — push plugin installed; push will be enabled."
+          else
+            echo "No Firebase secret — building WITHOUT the push plugin (stable app, no push prompt)."
+          fi
+
       - name: Generate the Android project
         working-directory: mobile
         run: |
