@@ -1,5 +1,7 @@
 # Deploying the prototype — step by step
 
+> For running the pilot (monitoring, alerting, backups/restore, rollback, incidents) see **`OPS.md`**.
+
 You don't need to install anything on your computer. You'll do it all in a
 web browser. Allow about 10 minutes the first time.
 

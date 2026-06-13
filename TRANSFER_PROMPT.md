@@ -72,16 +72,15 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-95` — **migration 0101 (RUN IT; deploy APP FIRST then 0101)**: brute-force throttle on `unlock_with_visit_code` (≥10 failed attempts/15min → blocked; successes never count). RPC now returns null on invalid (hook treats null as invalid); rate-limit raises a distinct message. Method-D 6/6. Upload must include `.github`.
-- **Just shipped:** brute-force throttle on the visit-code unlock (migration 0101). The unlock RPC
-  records attempts per caller and blocks after 10 failures in 15 min (successes never count). Contract
-  change: invalid/expired codes now RETURN NULL (so the failed attempt persists for counting) instead
-  of raising; the unlock hook turns null into the existing "invalid code" UX, and the rate-limit case
-  raises a distinct "wait a few minutes" message (new i18n in clinician + physio). DEPLOY ORDER for
-  this one is reversed: deploy the APP first, then run 0101. Method-D 6/6; full apply 99 clean.
-  Remaining hardening: ops (Sentry alerting + a tested backup-restore runbook), then the mobile App
-  Store/Play Store track (Capacitor wrapper — needs a decision). CSP is still Report-Only (validate
-  in-browser, then enforce). Staging + Playwright E2E remain deferred per Nikolaj.
+- **Latest build:** `simplify-cockpit-97` — **changed-files only, no migration, no dashboard action now**: ships the ops runbook (`OPS.md` + Sentry env/release tagging, inert until a DSN is set) and re-bundles the `lib/pwa.ts` build fix so it deploys green regardless. Backups/Sentry/CSP-enforce deferred to the first-real-patient milestone (§0 go-live checklist in OPS.md). Do NOT overwrite package.json/lock.
+- **Just shipped:** the ops runbook (cockpit-97). `OPS.md` documents monitoring, alerting, backups/restore,
+  rollback, and incidents, with a **§0 go-live checklist** (backups now explicitly deferred to the first real
+  patient — Nikolaj's decision; dev/test data until then). Code adds Sentry environment/release tagging
+  (`lib/sentry.shared.ts`), which stays dormant until a `NEXT_PUBLIC_SENTRY_DSN` is set; PII scrubbing was
+  already solid. The `lib/pwa.ts` build fix is bundled again so the deploy is green even if cockpit-96 wasn't
+  applied. NEXT (the remaining technical track): scope the **mobile App Store / Play Store** path — server-rendered
+  Next.js, so a Capacitor wrapper + genuine native pieces; treat as a planning step, not a quick build. Also flag
+  upgrading off next@15.1.9 (security advisory). Staging + E2E remain deferred; CSP still Report-Only.
 
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);

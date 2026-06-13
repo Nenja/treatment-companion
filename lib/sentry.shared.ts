@@ -26,6 +26,25 @@ import type { ErrorEvent } from '@sentry/nextjs';
 export const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
 /**
+ * Tag every event with the deploy environment and the release, so issues in
+ * Sentry are attributable to a specific deploy and preview-deploy noise can be
+ * filtered out of production. On Vercel the server runtime resolves these
+ * automatically; for the BROWSER bundle, set NEXT_PUBLIC_SENTRY_ENVIRONMENT
+ * (e.g. "production") — and optionally NEXT_PUBLIC_SENTRY_RELEASE — in the
+ * Vercel project env vars. If nothing resolves, Sentry simply leaves the tag
+ * empty (harmless).
+ */
+const SENTRY_ENVIRONMENT =
+  process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT ??
+  process.env.NEXT_PUBLIC_VERCEL_ENV ??
+  process.env.VERCEL_ENV;
+
+const SENTRY_RELEASE =
+  process.env.NEXT_PUBLIC_SENTRY_RELEASE ??
+  process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ??
+  process.env.VERCEL_GIT_COMMIT_SHA;
+
+/**
  * Remove anything from an outgoing event that could carry patient or
  * health data. Conservative by design — when unsure, strip it.
  */
@@ -73,6 +92,8 @@ function scrubEvent(event: ErrorEvent): ErrorEvent {
 
 export const sentryBaseOptions = {
   dsn: SENTRY_DSN,
+  environment: SENTRY_ENVIRONMENT,
+  release: SENTRY_RELEASE,
   // Error events only — no performance traces, no profiling, no replay.
   // A small pilot needs "did something break", nothing heavier, and
   // every extra data stream is more to scrub and more to justify.
