@@ -1,5 +1,7 @@
 'use client';
 
+type ConsentTone = 'on' | 'warn' | 'off';
+
 interface BackgroundCardProps {
   /** Demographics line (age / diagnosis / side / ambulation), if known. */
   summary: string | null;
@@ -8,10 +10,13 @@ interface BackgroundCardProps {
   medication?: string | null;
   devices?: string | null;
   onEditMedication?: () => void;
-  /** General research consent (migration 0098). Undefined hides the row. */
+  /** General research consent (migration 0098). Undefined hides the consent block. */
   researchConsent?: boolean;
   researchWithdrawn?: boolean;
   onToggleResearchConsent?: () => void;
+  /** Consent to use videos for educational purposes. Undefined hides its row. */
+  educationalConsent?: boolean;
+  onToggleEducationalConsent?: () => void;
   labels: {
     title: string;
     treatment: string;
@@ -25,15 +30,63 @@ interface BackgroundCardProps {
     researchWithdrawn: string;
     researchGrant: string;
     researchWithdrawAction: string;
+    educational: string;
+    educationalOn: string;
+    educationalOff: string;
+    educationalGrant: string;
+    educationalWithdrawAction: string;
   };
+}
+
+/** One consent line: label on its own row, then status pill + action button
+ *  aligned together so they never drift apart when the text wraps. */
+function ConsentRow({
+  label,
+  tone,
+  status,
+  actionLabel,
+  onAction
+}: {
+  label: string;
+  tone: ConsentTone;
+  status: string;
+  actionLabel: string;
+  onAction?: () => void;
+}) {
+  const pill =
+    tone === 'on'
+      ? 'border-sage-soft bg-sage-soft/40 text-sage-deep'
+      : tone === 'warn'
+        ? 'border-amber-soft bg-amber-soft/40 text-amber-deep'
+        : 'border-stone bg-stone-soft text-ink-soft';
+  return (
+    <div>
+      <span className="block text-[13px] text-ink-muted">{label}</span>
+      <div className="mt-1.5 flex items-center justify-between gap-2">
+        <span
+          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[12px] font-semibold ${pill}`}
+        >
+          {status}
+        </span>
+        {onAction && (
+          <button
+            type="button"
+            onClick={onAction}
+            className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-sage-deep hover:bg-stone-soft"
+          >
+            {actionLabel}
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 /**
  * Static patient background for the cockpit's context column: demographics,
- * treatment type and current medication, gathered into one card below the
- * "since last visit" panel. Consolidated here so this reference info has a
- * single home rather than being split across the page header, a floating pill
- * and the visit-card footer.
+ * treatment type, current medication, and the care-consent status (research +
+ * educational video use), gathered into one card below the "since last visit"
+ * panel.
  */
 export function BackgroundCard({
   summary,
@@ -44,6 +97,8 @@ export function BackgroundCard({
   researchConsent,
   researchWithdrawn,
   onToggleResearchConsent,
+  educationalConsent,
+  onToggleEducationalConsent,
   labels
 }: BackgroundCardProps) {
   return (
@@ -56,6 +111,8 @@ export function BackgroundCard({
           {summary}
         </p>
       )}
+
+      {/* Reference facts */}
       <div className="mt-3 flex flex-col gap-2 border-t border-stone pt-3">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
           <span className="text-ink-muted">{labels.treatment}</span>
@@ -88,38 +145,41 @@ export function BackgroundCard({
             <span className="text-ink-soft">{devices}</span>
           </div>
         )}
-        {researchConsent !== undefined && (
-          <div className="flex items-start justify-between gap-2 text-[13px]">
-            <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <span className="text-ink-muted">{labels.research}</span>
-              <span
-                className={
-                  researchConsent
-                    ? 'inline-flex items-center rounded-full border border-sage-soft bg-sage-soft/40 px-2.5 py-0.5 text-[12px] font-semibold text-sage-deep'
-                    : researchWithdrawn
-                      ? 'inline-flex items-center rounded-full border border-amber-soft bg-amber-soft/40 px-2.5 py-0.5 text-[12px] font-semibold text-amber-deep'
-                      : 'inline-flex items-center rounded-full border border-stone bg-stone-soft px-2.5 py-0.5 text-[12px] font-semibold text-ink-soft'
-                }
-              >
-                {researchConsent
-                  ? labels.researchOn
-                  : researchWithdrawn
-                    ? labels.researchWithdrawn
-                    : labels.researchOff}
-              </span>
-            </span>
-            {onToggleResearchConsent && (
-              <button
-                type="button"
-                onClick={onToggleResearchConsent}
-                className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-sage-deep hover:bg-stone-soft"
-              >
-                {researchConsent ? labels.researchWithdrawAction : labels.researchGrant}
-              </button>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* Care consents */}
+      {researchConsent !== undefined && (
+        <div className="mt-3 flex flex-col gap-3 border-t border-stone pt-3">
+          <ConsentRow
+            label={labels.research}
+            tone={researchConsent ? 'on' : researchWithdrawn ? 'warn' : 'off'}
+            status={
+              researchConsent
+                ? labels.researchOn
+                : researchWithdrawn
+                  ? labels.researchWithdrawn
+                  : labels.researchOff
+            }
+            actionLabel={
+              researchConsent ? labels.researchWithdrawAction : labels.researchGrant
+            }
+            onAction={onToggleResearchConsent}
+          />
+          {educationalConsent !== undefined && (
+            <ConsentRow
+              label={labels.educational}
+              tone={educationalConsent ? 'on' : 'off'}
+              status={educationalConsent ? labels.educationalOn : labels.educationalOff}
+              actionLabel={
+                educationalConsent
+                  ? labels.educationalWithdrawAction
+                  : labels.educationalGrant
+              }
+              onAction={onToggleEducationalConsent}
+            />
+          )}
+        </div>
+      )}
     </section>
   );
 }
