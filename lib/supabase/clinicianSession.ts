@@ -65,6 +65,10 @@ export function useUnlockWithCode() {
         p_code: code
       });
       if (error) throw error;
+      // Invalid/expired codes now return null (the RPC records the failed
+      // attempt for brute-force throttling instead of raising). Treat a null
+      // result as a bad code so the existing error UI fires.
+      if (!data) throw new Error('invalid or expired code');
       return data as string;
     },
     onSuccess: () => {

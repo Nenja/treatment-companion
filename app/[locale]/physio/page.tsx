@@ -148,6 +148,9 @@ export default function PhysioUnlockPage() {
  */
 function tFeedbackMessage(err: unknown): string {
   const msg = err instanceof Error ? err.message.toLowerCase() : '';
+  if (/too many|rate limit/.test(msg)) {
+    return 'unlockErrorRateLimited';
+  }
   if (/code|not found|invalid|expired/.test(msg)) {
     return 'unlockErrorInvalidCode';
   }

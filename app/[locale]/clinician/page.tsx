@@ -97,7 +97,9 @@ export default function ClinicianUnlockPage() {
         err instanceof Error && err.message ? err.message : t('errorInvalid');
       // The RPC raises "invalid or expired code" for bad codes — show
       // a friendly translated message rather than the raw text.
-      if (/invalid|expired|6 characters/i.test(msg)) {
+      if (/too many|rate limit/i.test(msg)) {
+        setError(t('errorRateLimited'));
+      } else if (/invalid|expired|6 characters/i.test(msg)) {
         setError(t('errorInvalid'));
       } else {
         setError(msg);

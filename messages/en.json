@@ -231,7 +231,8 @@
       "submit": "Unlock",
       "errorInvalid": "That code isn't valid. Ask the patient to generate a new one.",
       "adminLink": "Admin: create or list accounts",
-      "codeLabel": "Visit code"
+      "codeLabel": "Visit code",
+      "errorRateLimited": "Too many incorrect attempts. Please wait a few minutes and try again."
     },
     "session": {
       "endSession": "End session",
@@ -1069,7 +1070,8 @@
     "loadErrorRetry": "Try again",
     "recapHeading": "Since your last visit",
     "recapLastVisit": "Your last visit was {date}.",
-    "recapNewCheckins": "{count, plural, one {# new check-in since then} other {# new check-ins since then}}"
+    "recapNewCheckins": "{count, plural, one {# new check-in since then} other {# new check-ins since then}}",
+    "unlockErrorRateLimited": "Too many incorrect attempts. Please wait a few minutes and try again."
   },
   "profile": {
     "title": "Your profile",

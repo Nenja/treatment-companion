@@ -72,16 +72,16 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-94` — **no migration**: security headers (HSTS, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy keeping camera/mic, poweredByHeader off) + Report-Only CSP scaffold in next.config.ts + `.github/dependabot.yml`. Upload must include `.github`.
-- **Just shipped:** security hardening — enforced response headers (HSTS, X-Frame-Options DENY,
-  X-Content-Type-Options nosniff, Referrer-Policy, Permissions-Policy allowing camera/mic for the video
-  recorder + denying the rest, poweredByHeader off) and a Report-Only CSP scaffold in next.config.ts
-  (validate in-browser, then rename the header to enforce). Plus `.github/dependabot.yml` (monthly
-  grouped updates). NEXT security item: rate-limit the visit-code unlock RPC (`unlock_with_visit_code`)
-  — needs a migration + Method-D verification since it touches the critical unlock path; note prod
-  codes are already single-use + short-lived (the reusable TEST01–06 codes are demo-only), so this is
-  defence-in-depth. After security: ops (Sentry alerting, tested backup-restore runbook), then the
-  mobile App Store/Play Store track (likely Capacitor wrapping the web app — needs a decision).
+- **Latest build:** `simplify-cockpit-95` — **migration 0101 (RUN IT; deploy APP FIRST then 0101)**: brute-force throttle on `unlock_with_visit_code` (≥10 failed attempts/15min → blocked; successes never count). RPC now returns null on invalid (hook treats null as invalid); rate-limit raises a distinct message. Method-D 6/6. Upload must include `.github`.
+- **Just shipped:** brute-force throttle on the visit-code unlock (migration 0101). The unlock RPC
+  records attempts per caller and blocks after 10 failures in 15 min (successes never count). Contract
+  change: invalid/expired codes now RETURN NULL (so the failed attempt persists for counting) instead
+  of raising; the unlock hook turns null into the existing "invalid code" UX, and the rate-limit case
+  raises a distinct "wait a few minutes" message (new i18n in clinician + physio). DEPLOY ORDER for
+  this one is reversed: deploy the APP first, then run 0101. Method-D 6/6; full apply 99 clean.
+  Remaining hardening: ops (Sentry alerting + a tested backup-restore runbook), then the mobile App
+  Store/Play Store track (Capacitor wrapper — needs a decision). CSP is still Report-Only (validate
+  in-browser, then enforce). Staging + Playwright E2E remain deferred per Nikolaj.
 
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);

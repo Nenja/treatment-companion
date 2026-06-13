@@ -235,7 +235,8 @@
       "submit": "Lås op",
       "errorInvalid": "Den kode er ikke gyldig. Bed patienten generere en ny.",
       "adminLink": "Admin: opret eller vis konti",
-      "codeLabel": "Besøgskode"
+      "codeLabel": "Besøgskode",
+      "errorRateLimited": "For mange forkerte forsøg. Vent et par minutter, og prøv igen."
     },
     "session": {
       "endSession": "Afslut session",
@@ -1073,7 +1074,8 @@
     "loadErrorRetry": "Prøv igen",
     "recapHeading": "Siden dit sidste besøg",
     "recapLastVisit": "Dit sidste besøg var {date}.",
-    "recapNewCheckins": "{count, plural, one {# nyt check-in siden} other {# nye check-ins siden}}"
+    "recapNewCheckins": "{count, plural, one {# nyt check-in siden} other {# nye check-ins siden}}",
+    "unlockErrorRateLimited": "For mange forkerte forsøg. Vent et par minutter, og prøv igen."
   },
   "profile": {
     "title": "Din profil",

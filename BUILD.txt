@@ -1,44 +1,38 @@
-BUILD: simplify-cockpit-94 — security hardening: response headers + dependency scanning.
-No migration. No visible app change.
+BUILD: simplify-cockpit-95 — security: brute-force throttle on the visit-code unlock.
+INCLUDES A DATABASE MIGRATION (0101) THAT YOU MUST RUN. Read the deploy order below.
 
-DISCARD 21-93 (superseded). Keep this zip.
+DISCARD 21-94 (superseded). Keep this zip.
 
-⚠️ Upload must include the ".github" folder (it now also holds dependabot.yml). On GitHub Desktop:
-   drop the files into your clone, review, Commit, Push.
+⚠️ DEPLOY ORDER FOR THIS BUILD IS REVERSED (app first, then SQL):
+   1. Upload the app to GitHub (include .github) and let Vercel finish building.
+   2. THEN run 0101_visit_code_unlock_rate_limit.sql in the Supabase SQL editor.
+   Why: the app needs to understand the database's new response before the database starts sending
+   it. If you run the SQL first while the old app is still live, entering a WRONG code would briefly
+   bounce you back to the unlock screen with no error message (harmless, but confusing). Doing the app
+   first avoids that — the new app works correctly with both the old and new database.
 
->>> CHANGED FILES IN THIS BUILD (5) — also packaged as the "...CHANGED-FILES.zip" alongside <<<
+>>> CHANGED FILES (9) — also packaged as the "...CHANGED-FILES.zip" alongside <<<
   NEW:
-    .github/dependabot.yml
+    supabase/migrations/0101_visit_code_unlock_rate_limit.sql   (RUN THIS, after deploying the app)
   MODIFIED:
-    next.config.ts
+    lib/supabase/clinicianSession.ts
+    app/[locale]/clinician/page.tsx
+    app/[locale]/physio/page.tsx
+    messages/en.json
+    messages/da.json
   DOCS:
     HANDOVER.md, BUILD.txt, TRANSFER_PROMPT.md
   (No files were deleted or renamed.)
 
-WHAT CHANGED & WHY:
-  1) Security headers — the app now sends standard protective headers on every response
-     (HTTPS-only/HSTS, anti-clickjacking, no MIME sniffing, referrer privacy, a permissions policy
-     that keeps the camera/microphone available for video recording but blocks the rest, and it no
-     longer advertises that it's built with Next.js). These are safe and on by default.
-  2) Content-Security-Policy — included in "report-only" mode: the browser will REPORT anything
-     unexpected (visible in developer tools) but will NOT block anything yet, so it cannot break the
-     app. Your developer should click through all three roles + record a video with the browser
-     console open, confirm there are no real violations, then switch it on for real (one-line change,
-     noted in next.config.ts).
-  3) Dependabot — a small config so GitHub checks monthly for outdated/vulnerable dependencies and
-     opens a single grouped update PR. ALSO (one-time): in the repo Settings → Advanced Security,
-     turn on "Dependabot alerts" and "Dependabot security updates" so urgent security fixes are
-     flagged immediately.
+WHAT IT DOES:
+  A logged-in clinician/physiotherapist could otherwise try unlimited visit codes to guess one.
+  Now the unlock blocks a user after 10 WRONG codes within 15 minutes ("Too many incorrect attempts —
+  wait a few minutes"). Correct unlocks are never affected, so opening several patients in a row is
+  fine. (Real codes are already single-use and expire quickly; this is extra defence.)
 
-HOW TO CONFIRM IT WORKED (after deploy): open the site, F12 → Network tab → click the first
-  (document) request → Response Headers; you should see Strict-Transport-Security, X-Frame-Options,
-  etc. Or paste the URL into securityheaders.com.
+VERIFIED (this end): logic tested on a local database across 6 scenarios (valid single-use, reusable,
+  wrong code, the 10-strike block, automatic unblock after 15 min, and that successful unlocks never
+  trigger the block); the full migration set (now 99) applies cleanly from scratch; build 62/62;
+  type-check clean; English/Danish text aligned.
 
-NEXT SECURITY ITEM (separate build): rate-limit the patient "visit code" unlock so codes can't be
-  brute-forced. It touches the unlock logic (a database migration + careful testing), so it's its own
-  change. Note: real visit codes are already single-use and expire quickly — the reusable TEST01–06
-  codes are demo-only — so this is extra defence, not an open hole.
-
-DO I NEED TO RUN ANY SQL?  No. Config-only change.
-VERIFIED (this end): build 62/62; tsc clean.
-DEPLOY: drop files into the repo (GitHub Desktop) -> Commit -> Push. No SQL.
+DEPLOY: (1) app to GitHub/Vercel, (2) then run 0101 in Supabase. See the order note above.
