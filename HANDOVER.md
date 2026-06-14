@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for batch: `onboarding-copy-1` (**web only — no migration, no new deps**). Patient help/onboarding refresh: the home-screen help now covers goals, the visit code, and care-team notes; the goals page gets its own help (was borrowing the home's); and the patient wizard intro mentions goals + care-team notes. EN + Danish (first-pass). Build 62/62, tsc clean. See §7. **Next: Swedish + Norwegian Bokmål localization (full first-pass message files + routing) folded into the language picker.**_
+> _Last updated for batch: `localization-sv-nb-1` (**includes migration 0103 — run it in Supabase**). First Swedish + Norwegian Bokmål pass: both locales added to routing with a deep-merge English fallback in the message loader, and the full patient app surface (home, visit code, suggest-goal, weekly check-in) translated to sv + nb (Claude first-pass — flag for native review). Everything else (onboarding, auth, settings, consents, clinician/physio/admin console) falls back to English for now. Build re-baselined to **110/110** (four locales), tsc clean. See §7. **Next: translate the onboarding wizard (`intro`) + help, then auth/settings/consents, then the professional console.**_
 
 ---
 
@@ -849,6 +849,16 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Swedish + Norwegian Bokmål — patient app core (first localization pass)** · **Tag:** `localization-sv-nb-1` · **Includes migration `0103` (run in Supabase) — first SQL in several batches.** Build **110/110** (re-baselined from 62 — two new locales ≈ doubled the per-locale static pages), tsc clean. SV/NB are Claude's first pass — flag for native review (same convention as Danish).
+  - **Two new locales live:** `sv` (`/sv`) and `nb` (Norwegian Bokmål, `/nb`) added to `i18n/routing.ts`. English stays at `/`, Danish `/da`. `AppLocale` widens automatically; middleware picks them up.
+  - **Graceful English fallback:** `i18n/request.ts` now deep-merges each locale's messages over the English baseline, so any key a locale hasn't translated yet — or any English key added later — renders in English instead of throwing a missing-message error. This is what lets `sv.json`/`nb.json` ship partial and grow over time.
+  - **Translated this pass (≈192 keys each):** the entire **patient app surface** — home, visit code, the suggest-a-goal flow, and the weekly check-in flow — plus shared `feedback`/`safety`/`domain`/`importance`/`app`. A Swedish/Norwegian patient can do their weekly check-in and suggest goals fully in-language.
+  - **Falls back to English for now (next passes):** onboarding wizard (`intro`), per-page help (`help`), auth (`login`/`signup`/`forgotPassword`/`resetPassword`), settings (`appearance`/`notifications`/`profile`/`patientInfo`), consents, training/goalVideo, and the entire clinician/physio/admin console. Nothing breaks — it shows English until translated.
+  - **Migration `0103_allow_sv_nb_locales.sql`:** relaxes the `profile.preferred_locale` CHECK (was `('en','da')`) to allow `sv`/`nb`, so the upcoming language picker can store them. (Push-token locale checks in 0017/0102 left as-is — push text isn't localized to sv/nb yet; separate follow-up.) **Run this in the Supabase SQL editor.**
+  - **Also widened:** `preferredLocale` type in `lib/supabase/auth.tsx` to `'en'|'da'|'sv'|'nb'`.
+  - **Files:** `i18n/routing.ts`, `i18n/request.ts`, `lib/supabase/auth.tsx`, `messages/sv.json`, `messages/nb.json`, `supabase/migrations/0103_allow_sv_nb_locales.sql`. **Deploy: run 0103 in Supabase → drop files → commit & push.** Do not overwrite package.json/lock.
+  - **Build marker note:** static-page count is now **110/110** for four locales (was 62 for two). Future builds expect 110.
 
 - **Onboarding / per-page help copy refresh (patient)** · **Tag:** `onboarding-copy-1` · **Web only — no migration, no new deps.** EN + Danish (Danish is first-pass — flag for native review). Build 62/62, tsc clean.
   - **Audit finding:** the clinician & physio *patient-page* help (`clinicianPatient`/`physioPatient`) is already correctly mounted (`clinician/patient/page.tsx:834`, `physio/patient/page.tsx:373`) — not orphaned. The genuine gaps were all patient-side.

@@ -1,43 +1,55 @@
-BUILD — onboarding-copy-1
-Patient onboarding / help copy refresh (WEB ONLY)
+BUILD — localization-sv-nb-1
+Swedish + Norwegian (Bokmal): first pass — the patient app core
+INCLUDES ONE DATABASE MIGRATION (run it in Supabase)
 
 WHAT THIS IS
-Updates to the patient-facing help text and the onboarding wizard so they
-match what the app does now. English + Danish (Danish is a first pass —
-please have a native speaker review it). No migration, no new dependencies.
-Verified: build 62/62, TypeScript clean.
+The app now supports two more languages: Swedish (sv, at /sv) and
+Norwegian Bokmal (nb, at /nb), alongside English (/) and Danish (/da).
+This first pass translates the PATIENT app surface — the home screen, the
+visit-code screen, the "suggest a goal" flow, and the weekly check-in
+flow — into both languages. The Swedish and Norwegian are my first pass;
+please have native speakers review the wording (same as we did for Danish).
 
-HOW TO DEPLOY (GitHub Desktop -> Vercel)
-1. Unzip. Copy the 3 changed files into your repo (keep folder structure),
-   plus the updated HANDOVER.md / BUILD.txt / TRANSFER_PROMPT.md.
-2. GitHub Desktop: review, Commit, Push. Vercel rebuilds.
+Everything else (the onboarding tutorial, sign-in/sign-up, settings,
+consent screens, and the whole clinician/physiotherapist/admin side) is
+NOT translated yet — it automatically shows ENGLISH for now. Nothing
+breaks; untranslated text simply falls back to English. I'll translate
+those in the next passes.
 
-DO NOT: run "npm install", run any SQL, or overwrite package.json/lock.
+HOW TO DEPLOY (two steps — SQL first, then files)
+1) DATABASE (do this first):
+   - Open Supabase -> SQL editor.
+   - Paste and run the contents of:  0103_allow_sv_nb_locales.sql
+     (It lets the database accept "sv" and "nb" as a saved language.)
+2) WEB (GitHub Desktop -> Vercel):
+   - Unzip. Copy these files into your repo (keep folder structure):
+       i18n/routing.ts
+       i18n/request.ts
+       lib/supabase/auth.tsx
+       messages/sv.json
+       messages/nb.json
+       supabase/migrations/0103_allow_sv_nb_locales.sql
+     plus the updated HANDOVER.md / BUILD.txt / TRANSFER_PROMPT.md.
+   - Commit and Push. Vercel rebuilds.
 
-THE 3 CHANGED FILES
-- messages/en.json
-- messages/da.json
-- app/[locale]/goals/page.tsx
+DO NOT: run "npm install", or overwrite package.json / package-lock.json.
 
-WHAT CHANGED
-1. The "?" help on the patient HOME now describes the whole screen — the
-   weekly check-in, the "Your goals" row, "Show visit code", and notes from
-   the care team. (Before, it mentioned only check-ins.)
-2. The GOALS page now has its own "?" help (it had been showing the home
-   screen's help by mistake).
-3. The first screen of the patient SETUP WIZARD now mentions that the home
-   screen also shows their goals and any notes from the care team.
+HOW TO SEE IT
+- Visit treatment-companion.vercel.app/sv   (Swedish)
+- Visit treatment-companion.vercel.app/nb   (Norwegian Bokmal)
+  The patient home, check-in, goals, and visit code should be in the new
+  language; other screens will be in English for now.
+- There is no in-app language switch yet — that picker is a later batch.
+  For now the language follows the URL (/sv, /nb, /da, or / for English).
 
-PLEASE EYEBALL ON YOUR PHONE
-- Patient home -> "?": reads correctly, covers goals / visit code /
-  care-team notes.
-- Goals page -> "?": now describes the goals page (graphs, suggesting a
-  goal), not the home screen.
-- Replay the patient tutorial (account menu) -> first step mentions goals
-  + care-team notes.
-- Danish wording on all of the above — please review as a native speaker.
+PLEASE REVIEW (native speakers)
+- The Swedish and Norwegian wording on the patient home, the weekly
+  check-in, the goal-suggestion steps, and the visit-code screen.
+- I used "status" for the weekly "check-in" in both languages (matching
+  the Danish choice). Tell me if you'd prefer another word.
+- Norwegian is Bokmal. Say if you'd rather have Nynorsk.
 
-COMING NEXT
-Swedish + Norwegian (Bokmal) as selectable languages: full first-pass
-translation files + routing, offered in the login/profile language picker
-(Danish-style first pass, flagged for native review).
+WHAT'S NEXT
+More translation passes (onboarding, sign-in, settings, consents, then
+the clinician/physio side), each a simple drop-in of the two JSON files.
+Then an in-app language picker offering all four languages.

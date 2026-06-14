@@ -23,7 +23,7 @@ export interface AppProfile {
   id: string;
   role: 'patient' | 'clinician' | 'physiotherapist' | 'admin';
   displayName: string;
-  preferredLocale: 'en' | 'da';
+  preferredLocale: 'en' | 'da' | 'sv' | 'nb';
   email: string | null;
   /** Text-size multiplier: 1.00, 1.25, or 1.50. Applied as a CSS
    *  variable on <html> so every relative unit scales. */
