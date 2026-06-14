@@ -272,9 +272,20 @@ export default function PatientHomePage() {
             {t('goalsActiveCount', { count: data.goals.length })}
           </span>
         </span>
-        <span aria-hidden className="shrink-0 text-[20px] leading-none text-ink-soft">
-          →
-        </span>
+        <svg
+          aria-hidden
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="shrink-0 text-ink-soft"
+        >
+          <path d="M9 6l6 6-6 6" />
+        </svg>
       </button>
 
       {/* Show visit code — a utility row below the goals entry, kept
@@ -307,9 +318,20 @@ export default function PatientHomePage() {
           </svg>
           {t('showVisitCode')}
         </span>
-        <span aria-hidden className="text-[17px] text-ink-soft">
-          →
-        </span>
+        <svg
+          aria-hidden
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="shrink-0 text-ink-soft"
+        >
+          <path d="M9 6l6 6-6 6" />
+        </svg>
       </button>
 
       <CareTeamNotes />

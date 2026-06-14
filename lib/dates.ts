@@ -23,7 +23,12 @@ export function weekOfCycle(cycleStartIso: string, nowIso: string): number {
 }
 
 export function formatLongDate(iso: string, locale: string): string {
-  const d = new Date(iso + 'T00:00:00Z');
+  // Accept both date-only ('YYYY-MM-DD') and full ISO timestamps (e.g. a
+  // row's created_at). Only synthesize midnight-UTC for the date-only
+  // form; appending it to a full timestamp yields an invalid date, which
+  // would make Intl.format() throw and crash the calling component.
+  const d = new Date(iso.includes('T') ? iso : iso + 'T00:00:00Z');
+  if (Number.isNaN(d.getTime())) return '';
   return new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     month: 'long',
@@ -37,7 +42,8 @@ export function formatLongDate(iso: string, locale: string): string {
  * day-of-month does not matter for a cross-cycle view.
  */
 export function formatMonthYear(iso: string, locale: string): string {
-  const d = new Date(iso + 'T00:00:00Z');
+  const d = new Date(iso.includes('T') ? iso : iso + 'T00:00:00Z');
+  if (Number.isNaN(d.getTime())) return '';
   return new Intl.DateTimeFormat(locale, {
     month: 'short',
     year: 'numeric'

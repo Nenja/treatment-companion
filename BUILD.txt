@@ -1,30 +1,54 @@
-BUILD: simplify-cockpit-98 — mobile push, step 2 (web-app code). No migration.
-NO new dependencies, so NO npm install needed and no build risk.
+BUILD — frontpage-fixes-1
+Patient front-page fixes + an account-menu bug (WEB ONLY)
 
->>> DEPLOY: drop the changed files into your WEB repo, commit, push. Vercel rebuilds. <<<
->>> DO NOT copy in package.json / package-lock.json.                                  <<<
+WHAT THIS IS
+Six small, contained fixes to the patient front page and the account menu.
+No database migration. No new dependencies. No text/translation changes.
+Verified here: production build 62/62 pages, TypeScript clean.
 
-WHAT IT DOES:
-  Adds the code that, WHEN THE APP IS RUNNING AS THE NATIVE ANDROID/iOS APP, registers
-  that phone's push token (after the user logs in) so reminders can reach it. In a normal
-  web browser it does nothing at all - so deploying it to your website is completely safe
-  and changes nothing visible today.
+HOW TO DEPLOY (your usual GitHub Desktop -> Vercel flow)
+1. Unzip this file. It contains the 9 changed source files at their repo
+   paths, plus updated HANDOVER.md, BUILD.txt, TRANSFER_PROMPT.md.
+2. Copy the files into your local treatment-companion repo, keeping the
+   folder structure (let them overwrite the existing files).
+3. In GitHub Desktop: review, Commit, Push.
+4. Vercel auto-builds and deploys.
 
-  It talks to the phone's push system through the bridge the native app provides at runtime,
-  which is why the website needs no extra packages (and so this can't cause the "module not
-  found" build failures we hit before).
+DO NOT:
+- run "npm install"  (there are no dependency changes)
+- run any SQL in Supabase  (there is no migration)
+- overwrite package.json or package-lock.json  (your repo's are newer)
 
-PREREQUISITE: migration 0102 should be applied in Supabase (push step 1). If it isn't yet,
-this is still harmless - the registration only runs inside the native app, which doesn't have
-the push plugin until step 3.
+THE 9 CHANGED FILES
+- lib/dates.ts
+- lib/supabase/auth.tsx
+- lib/supabase/textScale.ts
+- lib/supabase/colorScheme.ts
+- lib/supabase/layoutPreference.ts
+- components/layout/AppHeader.tsx
+- app/[locale]/page.tsx
+- components/patient/CareTeamNotes.tsx
+- components/cards/CatchUpCard.tsx
 
-VERIFIED (this end): build 62/62 pages; type-check clean; no package.json change.
+WHAT CHANGED (plain language)
+1. Care-team notes no longer crash when expanded. (A date that carried a
+   timestamp was mishandled and threw the "Something went wrong" screen.)
+2. Account menu: the highlighted text-size and Day/Night option now update
+   instantly and stay correct. Before, the highlight stuck on the old choice
+   and you couldn't re-pick the previous size until clicking something else.
+3. The back arrow (top-left) is bigger and easier to tap.
+4. Tapping the logo / app name (top-left) now takes you to your home screen.
+5. The little arrows on the "Your goals" row, the "Show visit code" row, and
+   the missed-check-ins list are now bigger, cleaner chevrons.
+6. The divider between the visit-code row and the care-team notes section no
+   longer shows a doubled line with a gap.
 
-CHANGED FILES:
-  NEW:       lib/nativePush.ts
-             components/feedback/NativePushRegistrar.tsx
-  MODIFIED:  app/[locale]/layout.tsx
-  DOCS:      HANDOVER.md, BUILD.txt, TRANSFER_PROMPT.md
-
-NEXT (steps 3 & 4): connect Firebase + the push plugin in the mobile app, then teach the
-reminder sender to push to phones. iOS push later (needs Apple key + Mac).
+PLEASE EYEBALL ON YOUR PHONE (things I can't verify from here)
+- Patient home -> open the care-team notes section: it expands with no error
+  screen, and the note dates show correctly.
+- Account menu -> change text size, then close & reopen the menu: the
+  highlight matches the new size, and you can switch back to the previous
+  size directly. Same check for the Day/Night toggle.
+- The back arrow looks bigger / taps comfortably; tapping the logo goes home.
+- The goals / visit-code / missed-check-in arrows look right.
+- Between the visit-code row and care-team notes: a single clean hairline.

@@ -72,16 +72,10 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `simplify-cockpit-98` — mobile push **step 2** (web-app code, NO new deps, inert in browsers): `lib/nativePush.ts` + `NativePushRegistrar` register the device's FCM token via the `register_device_push_token` RPC when inside the native shell. Build 62/62. Drop changed files (no npm install); ensure migration 0102 is applied. Don't overwrite package.json/lock.
-- **Just shipped:** mobile push **step 2** (cockpit-98) — the web app now registers each phone's FCM token after
-  login, via `lib/nativePush.ts` + a `NativePushRegistrar` component. It reaches the Capacitor plugin through the
-  injected `window.Capacitor` global, so the web app needs NO Capacitor dependency and stays inert in browsers
-  (build 62/62, no package.json change). Deploys to Vercel by dropping the changed files. NEXT push steps:
-  (3) add `@capacitor/push-notifications` to `mobile/` + wire Firebase `google-services.json` (Android) — needs the
-  user's Firebase project + google-services.json (in progress); (4) extend `send-checkin-notifications` to push to
-  native tokens via FCM. iOS push needs an Apple push key + Mac (deferred). Then: app icon/splash, store submission.
-  App ID is `dk.mprc.treatmentcompanion`. Web deploy caveat still applies: changed-files only, never package.json/lock.
-
+- **Latest build:** `frontpage-fixes-1` — patient front-page fixes + an account-menu bug. **Web only: no migration, no new deps, no i18n change.** Six fixes (care-team-notes crash on expand, stuck text-size/day-night highlight, bigger back arrow + brand→home link, bigger card chevrons, divider gap). Build 62/62, tsc clean. Drop the 9 changed files, commit, push — no `npm install`, no SQL. Don't overwrite package.json/lock.
+- **Just shipped:** `frontpage-fixes-1` (web) — (1) `lib/dates.ts` `formatLongDate`/`formatMonthYear` now accept full ISO timestamps and never throw, fixing the care-team-notes "Something went wrong" on expand; (2) account-menu stuck highlight: new `patchProfile()` on `AuthProvider` for instant in-memory updates, `useSetTextScale` now patch+`refreshProfile` (its old `invalidateQueries(['auth'])` was a no-op against the plain-state profile), night/palette/layout setters also patch optimistically; (3) `AppHeader` — 22px SVG back arrow with a real tap target + brand wrapped in a role-aware locale-prefixed home `Link`; (4) bigger chevron SVGs on the goals/visit-code rows and `CatchUpCard`; (5) `CareTeamNotes` drops its own top rule so the visit-code hairline is the single divider. Files: `lib/dates.ts`, `lib/supabase/{auth,textScale,colorScheme,layoutPreference}`, `components/layout/AppHeader.tsx`, `app/[locale]/page.tsx`, `components/patient/CareTeamNotes.tsx`, `components/cards/CatchUpCard.tsx`.
+- **Also live (done in-session, NOT a code zip):** native Android push works end-to-end — Capacitor app built via GitHub Actions cloud build + installed on device; Firebase FCM configured; `send-checkin-notifications` extended to send native FCM (HTTP v1) and deployed via the Supabase dashboard (**Verify JWT OFF**; secrets `CRON_SECRET` + `FCM_SERVICE_ACCOUNT`); a test push (`{"testProfileId":"..."}`) lands on the phone. **Parked:** the daily cron (pg_cron + pg_net) to auto-fire the function — ready on request (needs project ref + run-time).
+- **Next batches:** (B2) language picker — EN/DA on the **login screen + profile page** (not the account menu), saved to `preferred_locale`; (B3) update onboarding material — the per-page "?" help (`PageHelpButton`) + the setup wizard (`OnboardingWizard`); copy is stale vs the current app, so it needs an audit + proposed updated copy (bilingual, Danish first-pass flagged for native review).
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.

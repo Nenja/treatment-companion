@@ -1,9 +1,12 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
 import { AccountMenu } from './AccountMenu';
 import { BrandMark } from './BrandMark';
 import { PageHelpButton } from '@/components/feedback/PageHelpButton';
+import { useAuth } from '@/lib/supabase/auth';
 
 type HeaderWidth =
   | 'narrow'
@@ -71,22 +74,59 @@ export function AppHeader({
   const nameClass =
     brandName === 'always' ? 'inline' : sparse ? 'inline' : 'hidden lg:inline';
 
+  // Tapping the brand returns to this user's home (role-aware), mirroring
+  // the account menu's destinations. Locale-prefixed for non-default langs.
+  const locale = useLocale();
+  const tApp = useTranslations('app');
+  const { profile } = useAuth();
+  const homeBase =
+    profile?.role === 'clinician'
+      ? '/clinician'
+      : profile?.role === 'physiotherapist'
+        ? '/physio'
+        : '/';
+  const homeHref =
+    locale === 'en'
+      ? homeBase
+      : `/${locale}${homeBase === '/' ? '' : homeBase}`;
+
   return (
     <header className="border-b border-stone/70 bg-cream-soft/50 backdrop-blur-sm">
       <div className={`mx-auto flex items-center gap-3 px-5 py-3 ${widthCls}`}>
-        <div className="flex shrink-0 items-center gap-2.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           {back && (
             <button
               type="button"
               onClick={back.onClick}
-              className="shrink-0 text-[14px] font-semibold text-ink-soft hover:text-ink"
+              className="-ml-1.5 flex shrink-0 items-center gap-0.5 rounded-[var(--radius-button)] px-1.5 py-1.5 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
             >
-              <span aria-hidden>←</span>
-              <span className="ml-1 hidden sm:inline">{back.label}</span>
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M15 6l-6 6 6 6" />
+              </svg>
+              <span className="hidden sm:inline">{back.label}</span>
               <span className="sr-only sm:hidden">{back.label}</span>
             </button>
           )}
-          <BrandMark showName={brandName !== 'never'} nameClassName={nameClass} />
+          <Link
+            href={homeHref}
+            aria-label={tApp('name')}
+            className="rounded-[var(--radius-button)] transition-opacity hover:opacity-70 focus:outline-none focus:ring-2 focus:ring-sage/40"
+          >
+            <BrandMark
+              showName={brandName !== 'never'}
+              nameClassName={nameClass}
+            />
+          </Link>
         </div>
 
         {/* Middle slot — always rendered so it acts as a flex spacer that

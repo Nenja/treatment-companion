@@ -28,7 +28,7 @@ import {
 /** Set the colour palette. `currentNight` is the day/night toggle's
  *  current state, needed so the optimistic apply resolves correctly. */
 export function useSetPalette() {
-  const { refreshProfile } = useAuth();
+  const { refreshProfile, patchProfile } = useAuth();
   return useMutation({
     mutationFn: async (input: {
       paletteId: PaletteId;
@@ -39,6 +39,8 @@ export function useSetPalette() {
       if (!userResp.user) throw new Error('Not signed in');
 
       applyAppearance(input.paletteId, input.currentNight);
+      // Optimistic profile update so the active palette highlights at once.
+      patchProfile({ colorScheme: input.paletteId });
 
       const { error } = await supabase
         .from('profile')
@@ -55,7 +57,7 @@ export function useSetPalette() {
 /** Set the day/night toggle. `currentPalette` is the palette id the
  *  toggle is being applied to. */
 export function useSetNightMode() {
-  const { refreshProfile } = useAuth();
+  const { refreshProfile, patchProfile } = useAuth();
   return useMutation({
     mutationFn: async (input: {
       night: boolean;
@@ -66,6 +68,11 @@ export function useSetNightMode() {
       if (!userResp.user) throw new Error('Not signed in');
 
       applyAppearance(input.currentPalette, input.night);
+      // Optimistic profile update so the day/night highlight flips at once.
+      patchProfile({
+        nightMode: input.night,
+        colorScheme: resolvePaletteId(input.currentPalette)
+      });
 
       // Persist a CONCRETE palette id alongside night_mode. ThemeApplier only
       // honours a saved night_mode once a palette has been chosen

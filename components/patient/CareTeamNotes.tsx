@@ -21,7 +21,7 @@ export function CareTeamNotes() {
   if (notes.length === 0) return null;
 
   return (
-    <section className="mt-8 border-t border-stone pt-5">
+    <section className="mt-6">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

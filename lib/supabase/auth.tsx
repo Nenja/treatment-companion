@@ -78,6 +78,13 @@ interface AuthState {
    * scale) so guards and UI see the new values without a full reload.
    */
   refreshProfile: () => Promise<void>;
+  /**
+   * Optimistically merge fields into the in-memory profile without a
+   * round-trip. Used by appearance setters (text scale, day/night,
+   * layout) so the active control highlights immediately; the eventual
+   * refreshProfile() reconciles with the persisted row.
+   */
+  patchProfile: (partial: Partial<AppProfile>) => void;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -210,6 +217,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setProfile(u ? await fetchProfile(u.id) : null);
   }, [fetchProfile]);
 
+  // Optimistic, no-round-trip merge into the in-memory profile. Lets
+  // appearance setters move the active highlight instantly while the
+  // persisted value is written; refreshProfile() reconciles after.
+  const patchProfile = useCallback((partial: Partial<AppProfile>) => {
+    setProfile((p) => (p ? { ...p, ...partial } : p));
+  }, []);
+
   const signOut = async () => {
     const supabase = createSupabaseBrowserClient();
     await supabase.auth.signOut();
@@ -219,7 +233,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   return (
     <AuthContext.Provider
-      value={{ loading, user, profile, signOut, refreshProfile }}
+      value={{ loading, user, profile, signOut, refreshProfile, patchProfile }}
     >
       {children}
     </AuthContext.Provider>
