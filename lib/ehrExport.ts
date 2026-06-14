@@ -4,21 +4,24 @@ import { formatLongDate } from './dates';
 // ---------------------------------------------------------------------------
 // EHR-paste export builder.
 //
-// Returns a plain-text block the clinician can paste into a hospital
-// notes field. Output is purely descriptive — no outcome judgments, no
-// "successful" / "failed", no recommendations. The clinician edits it
-// in a textarea before copying.
+// Returns a plain-text block the clinician pastes into a hospital notes
+// field. Two sections only — TREATMENT and GOALS & RESPONSE — because the
+// EHR already holds the patient's name, demographics, diagnosis and
+// medication; duplicating them is noise. No patient name, no verbatim
+// comments. Output stays purely descriptive (no "successful"/"failed",
+// no recommendations); the clinician edits it before copying.
+//
+// The point of the export is the part the EHR does NOT already have: what
+// was injected, and how each goal responded. NRS goals are reported as
+// baseline -> target plus the best and end-of-cycle values; GAS goals are
+// reported in words (the five attainment levels) with the achieved anchor
+// description, since a bare "+1" is meaningless to a clinician who can't
+// see how that goal's levels were defined. Wearing-off is included on both.
 //
 // LOCALISED: every label and sentence fragment comes from the `ehrExport`
-// message namespace via the `t` translator passed in by the (client) call
-// site, so the note follows the app locale rather than being English-only.
-// Dates are localised via formatLongDate(locale). The builder itself stays
-// a pure, framework-free function (testable, usable from any call site) —
-// the caller owns the translator.
-//
-// Inputs use small purpose-built shapes (defined below) rather than the
-// full entity types, so call sites pass only the fields the export
-// consumes.
+// message namespace via the `t` translator the (client) call site passes
+// in; dates via formatLongDate(locale). The builder itself is a pure,
+// framework-free function — the caller owns the translator.
 // ---------------------------------------------------------------------------
 
 /** Minimal translator shape: next-intl's `useTranslations(...)` return value
@@ -28,16 +31,11 @@ export type ExportTranslator = (
   values?: Record<string, string | number>
 ) => string;
 
-export interface ExportPatient {
-  displayName: string;
-}
-
 export interface ExportCycle {
   cycleNumber: number;
   startDate: string;
-  /** Treatment modality. Omitted / botulinum_toxin renders nothing extra,
-   *  so existing BoNT exports are unchanged; a non-default modality adds a
-   *  short label line (WP4 readiness). */
+  /** Treatment modality. Omitted / botulinum_toxin renders the "injected"
+   *  header; a non-default modality (pump, surgery) uses a neutral header. */
   modality?: TreatmentModality;
 }
 
@@ -46,8 +44,8 @@ export interface ExportInjection {
   side: InjectionSide;
   doseUnits: number;
   note?: string;
-  /** True when this injection is a face mark (located on the face map),
-   *  so the export can list it under a separate "Face injections" group. */
+  /** True when this injection is a face mark, so it lists with a "face:"
+   *  prefix rather than among the body muscles. */
   isFace?: boolean;
 }
 
@@ -61,15 +59,27 @@ export interface ExportTreatment {
   notes?: string;
 }
 
+/** The five GAS anchor descriptions for a goal (free text; any may be ''). */
+export interface ExportAnchors {
+  minus2: string;
+  minus1: string;
+  zero: string;
+  plus1: string;
+  plus2: string;
+}
+
 export interface ExportGoal {
   id: string;
   patientFacingText: string;
-  /** Goal kind + (for NRS goals) which end of the 0–10 scale is good.
-   *  Lets the summary annotate an otherwise-ambiguous raw NRS value —
-   *  e.g. on a lower-is-better goal "NRS 2/10" is a GOOD result, which
-   *  a reader scanning the note would otherwise misread. */
   kind?: 'nrs' | 'gas';
   nrsDirection?: 'higherIsBetter' | 'lowerIsBetter';
+  /** NRS goals: the agreed 0-10 start and target set when the goal was
+   *  approved. Null on older goals / GAS goals. */
+  nrsBaseline?: number | null;
+  nrsTarget?: number | null;
+  /** GAS goals: the clinician's per-level outcome descriptions, used to
+   *  quote the achieved level concretely. Null on NRS goals. */
+  anchors?: ExportAnchors | null;
 }
 
 export interface ExportCheckin {
@@ -83,7 +93,6 @@ export interface ExportCheckin {
 }
 
 interface BuildExportArgs {
-  patient: ExportPatient;
   cycle: ExportCycle;
   treatment?: ExportTreatment;
   goals: ExportGoal[];
@@ -94,7 +103,6 @@ interface BuildExportArgs {
 }
 
 export function buildEhrExport({
-  patient,
   cycle,
   treatment,
   goals,
@@ -104,65 +112,51 @@ export function buildEhrExport({
 }: BuildExportArgs): string {
   const lines: string[] = [];
 
-  // Header ----------------------------------------------------------------
-  lines.push(t('summaryTitle', { name: patient.displayName }));
-  lines.push(
-    t('cycleLine', {
-      cycle: cycle.cycleNumber,
-      date: formatLongDate(cycle.startDate, locale)
-    })
-  );
-  if (cycle.modality && cycle.modality !== 'botulinum_toxin') {
-    lines.push(
-      t('modalityLine', { modality: modalityLabel(cycle.modality, t) })
-    );
-  }
+  // Header (one line) -----------------------------------------------------
+  const modLabel = modalityLabel(cycle.modality ?? 'botulinum_toxin', t);
+  const isBont = !cycle.modality || cycle.modality === 'botulinum_toxin';
+  const headerVals = {
+    modality: modLabel,
+    cycle: cycle.cycleNumber,
+    date: formatLongDate(cycle.startDate, locale)
+  };
+  lines.push(isBont ? t('headerInjected', headerVals) : t('header', headerVals));
   lines.push('');
 
-  // Treatment session -----------------------------------------------------
+  // Treatment -------------------------------------------------------------
   if (treatment) {
-    lines.push(t('treatmentHeading'));
-    const headerParts = [
-      t('treatmentDate', { date: formatLongDate(treatment.date, locale) }),
+    const parts = [
       treatment.drugProduct,
       t('unitsTotal', { units: treatment.totalUnits })
     ];
-    if (treatment.dilution)
-      headerParts.push(t('dilution', { dilution: treatment.dilution }));
-    headerParts.push(t('guidance', { guidance: guidanceLabel(treatment.guidance, t) }));
-    lines.push(headerParts.join(' · '));
-    const standardInjections = treatment.injections.filter((i) => !i.isFace);
-    const faceInjections = treatment.injections.filter((i) => i.isFace);
-    const renderInjection = (inj: ExportInjection): string =>
-      t('injectionLine', {
-        muscle: inj.muscle,
+    if (treatment.dilution) parts.push(treatment.dilution);
+    parts.push(guidanceLabel(treatment.guidance, t));
+    lines.push(parts.join(' · '));
+
+    const renderInjection = (inj: ExportInjection, key: string): string =>
+      '  ' +
+      t(key, {
         side: sideLabel(inj.side, t),
+        muscle: inj.muscle,
         units: inj.doseUnits,
         // Note suffix is punctuation + free text, locale-neutral.
-        note: inj.note ? ` — ${inj.note}` : ''
+        note: inj.note ? ` (${inj.note})` : ''
       });
-    if (standardInjections.length > 0) {
-      lines.push(t('injectionsHeading'));
-      for (const inj of standardInjections) lines.push(renderInjection(inj));
-    }
-    if (faceInjections.length > 0) {
-      lines.push(t('faceInjectionsHeading'));
-      for (const inj of faceInjections) lines.push(renderInjection(inj));
-    }
-    if (treatment.notes) {
-      lines.push(t('notes', { notes: treatment.notes }));
-    }
-    // Reconciliation: the recorded total is printed verbatim above. If the
-    // per-injection doses don't add up to it, surface the discrepancy rather
-    // than letting an internally-inconsistent figure go silently into the
-    // record. Only when there is at least one injection to sum.
+
+    for (const inj of treatment.injections.filter((i) => !i.isFace))
+      lines.push(renderInjection(inj, 'injectionLine'));
+    for (const inj of treatment.injections.filter((i) => i.isFace))
+      lines.push(renderInjection(inj, 'faceInjectionLine'));
+
+    if (treatment.notes) lines.push(t('notes', { notes: treatment.notes }));
+
+    // Reconciliation: if the per-injection doses don't add up to the
+    // recorded total, surface it rather than letting an inconsistent figure
+    // into the record.
     if (treatment.injections.length > 0) {
       const injSum = treatment.injections.reduce((s, i) => s + i.doseUnits, 0);
-      if (injSum !== treatment.totalUnits) {
-        lines.push(
-          t('reconciliation', { sum: injSum, total: treatment.totalUnits })
-        );
-      }
+      if (injSum !== treatment.totalUnits)
+        lines.push(t('reconciliation', { sum: injSum, total: treatment.totalUnits }));
     }
     lines.push('');
   } else {
@@ -170,65 +164,42 @@ export function buildEhrExport({
     lines.push('');
   }
 
-  // Goals + reported ratings ----------------------------------------------
+  // Goals & response ------------------------------------------------------
   if (goals.length > 0) {
     lines.push(t('goalsHeading'));
     for (const goal of goals) {
       lines.push(`- ${goal.patientFacingText}`);
-      const sentence = buildGoalSentence(goal, checkins, t);
-      lines.push(`  ${sentence}`);
+      for (const ln of buildGoalLines(goal, checkins, t)) lines.push(`  ${ln}`);
     }
     lines.push('');
   }
 
-  // Patient comments (verbatim, chronological) ----------------------------
-  const comments = checkins
-    .filter((c) => c.comment?.trim())
-    .sort((a, b) => a.weekNumber - b.weekNumber);
-  if (comments.length > 0) {
-    lines.push(t('commentsHeading'));
-    for (const c of comments) {
-      lines.push(
-        t('commentLine', { week: c.weekNumber, comment: c.comment!.trim() })
-      );
-    }
-    lines.push('');
-  }
-
-  // Strip trailing blank line for clean copy.
   while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
   return lines.join('\n');
 }
 
 /**
- * Builds the one-line summary sentence for a goal across a cycle.
+ * Per-goal response lines (1–2 lines, already un-indented).
  *
- * Pattern (localised):
- *   "Peak GAS [x] / NRS [n]/10 (W[x]). GAS ≥0 from W[x], sustained [n] weeks.
- *    Wearing-off [none / possible from W[x] / clear from W[x]].
- *    End-cycle GAS [x] / NRS [n]/10 (W[x]).  [(NRS: lower is better.)]"
+ * NRS goal:
+ *   "Baseline NRS 8 → target NRS 4  (0–10, 10 = worst)"
+ *   "Best NRS 3 (wk7) · wearing off from wk10 · end of cycle NRS 5 (wk12)"
+ * GAS goal:
+ *   "Best (wk6): better than expected — \"<anchor>\""
+ *   "End of cycle (wk12): as expected · wearing off from wk10"
  *
- * Wearing-off detection (on GAS):
- *   - "possible from W[x]" if any post-peak rating drops by ≥1 from peak;
- *   - "clear from W[x]" if any post-peak rating drops by ≥2 from peak, OR
- *     returns to/below the initial GAS *and the patient rose above it first*
- *     (peak > initial) — so a stable/flat-good series isn't reported as
- *     wearing off;
- *   - "none" otherwise.
- *
- * "Sustained" counts CONSECUTIVE CALENDAR weeks at GAS ≥0 from the first
- * such week; a GAS dip <0 OR a skipped week (a gap in week numbers) ends
- * the streak.
+ * Wearing-off, peak and end are computed on the direction-normalised GAS
+ * value (higher GAS is always better), so the same logic serves both goal
+ * kinds; NRS goals additionally report their raw 0–10 best/end.
  */
-function buildGoalSentence(
+function buildGoalLines(
   goal: ExportGoal,
   checkins: ExportCheckin[],
   t: ExportTranslator
-): string {
-  const goalId = goal.id;
+): string[] {
   const reports = checkins
     .flatMap((c) => {
-      const r = c.ratings.find((rr) => rr.approvedGoalId === goalId);
+      const r = c.ratings.find((rr) => rr.approvedGoalId === goal.id);
       if (!r || typeof r.ratingValue !== 'number') return [];
       return [
         {
@@ -240,76 +211,108 @@ function buildGoalSentence(
     })
     .sort((a, b) => a.week - b.week);
 
-  if (reports.length === 0) {
-    return t('noRatings');
-  }
+  if (reports.length === 0) return [t('noRatings')];
 
   const peak = reports.reduce((m, r) => Math.max(m, r.gas), -Infinity);
   const peakReport = reports.find((r) => r.gas === peak)!;
   const initial = reports[0].gas;
+  const endReport = reports[reports.length - 1];
 
-  // GAS ≥0 onset + sustained (consecutive calendar weeks).
-  let zeroPlusClause = t('notReachedZero');
-  const firstZeroPlusIdx = reports.findIndex((r) => r.gas >= 0);
-  if (firstZeroPlusIdx !== -1) {
-    const firstWeek = reports[firstZeroPlusIdx].week;
-    let sustained = 0;
-    let prevWeek: number | null = null;
-    for (let i = firstZeroPlusIdx; i < reports.length; i++) {
-      if (reports[i].gas < 0) break;
-      if (prevWeek !== null && reports[i].week !== prevWeek + 1) break;
-      sustained++;
-      prevWeek = reports[i].week;
-    }
-    zeroPlusClause = t('reachedZero', { week: firstWeek, count: sustained });
-  }
-
-  // Wearing-off detection (post-peak weeks); the return-to-baseline clause
-  // is gated on an actual rise (peak > initial).
+  // Wearing-off (post-peak): "clear" on a ≥2 drop from peak, or a return to/
+  // below the starting level after an actual rise; otherwise "possible" on a
+  // ≥1 drop. The clause week is the first qualifying week.
   const postPeak = reports.filter((r) => r.week > peakReport.week);
-  let wearingOff = t('wearingNone');
-  const clearReport = postPeak.find(
+  const clear = postPeak.find(
     (r) => peak - r.gas >= 2 || (peak > initial && r.gas <= initial)
   );
-  if (clearReport) {
-    wearingOff = t('wearingClear', { week: clearReport.week });
-  } else {
-    const possibleReport = postPeak.find((r) => peak - r.gas >= 1);
-    if (possibleReport) {
-      wearingOff = t('wearingPossible', { week: possibleReport.week });
+  const possible = postPeak.find((r) => peak - r.gas >= 1);
+  const wearWeek = clear ? clear.week : possible ? possible.week : null;
+  const wearing =
+    wearWeek != null
+      ? t('wearingOffFrom', { week: wearWeek })
+      : t('benefitSustained');
+
+  // NRS goal: report the raw 0–10 trajectory (best by direction + end).
+  if (goal.kind === 'nrs') {
+    const nrsReports = reports.filter((r) => r.nrs != null);
+    if (nrsReports.length > 0) {
+      const lower = goal.nrsDirection === 'lowerIsBetter';
+      const best = nrsReports.reduce((m, r) =>
+        lower ? (r.nrs! < m.nrs! ? r : m) : r.nrs! > m.nrs! ? r : m
+      );
+      const end = nrsReports[nrsReports.length - 1];
+      const out: string[] = [];
+      if (goal.nrsBaseline != null && goal.nrsTarget != null) {
+        out.push(
+          t('nrsBaselineTarget', {
+            baseline: goal.nrsBaseline,
+            target: goal.nrsTarget,
+            scale: lower ? t('nrsScaleWorst') : t('nrsScaleBest')
+          })
+        );
+      }
+      out.push(
+        t('nrsBestEnd', {
+          best: best.nrs!,
+          bestWeek: best.week,
+          wearing,
+          end: end.nrs!,
+          endWeek: end.week
+        })
+      );
+      return out;
     }
+    // NRS goal with no raw values recorded — fall through to the GAS form.
   }
 
-  const endCycle = reports[reports.length - 1];
-
-  const peakStr =
-    peakReport.nrs !== null
-      ? t('peakWithNrs', {
-          gas: formatSigned(peak),
-          nrs: peakReport.nrs,
-          week: peakReport.week
-        })
-      : t('peakNoNrs', { gas: formatSigned(peak), week: peakReport.week });
-  const endStr =
-    endCycle.nrs !== null
-      ? t('endWithNrs', {
-          gas: formatSigned(endCycle.gas),
-          nrs: endCycle.nrs,
-          week: endCycle.week
-        })
-      : t('endNoNrs', { gas: formatSigned(endCycle.gas), week: endCycle.week });
-
-  // On a lower-is-better NRS goal, a low raw NRS is GOOD; the GAS values are
-  // already direction-normalised but the raw NRS is not, so annotate once.
-  const dirNote =
-    goal.kind === 'nrs' && goal.nrsDirection === 'lowerIsBetter'
-      ? ' ' + t('nrsLowerBetterNote')
-      : '';
-
-  return [peakStr, zeroPlusClause, wearingOff, endStr].join(' ') + dirNote;
+  // GAS goal (or NRS fallback): attainment levels in words + achieved anchor.
+  const anchorText = goal.anchors ? anchorFor(peak, goal.anchors) : '';
+  const anchor = anchorText ? ` — "${anchorText}"` : '';
+  return [
+    t('gasPeakLine', {
+      week: peakReport.week,
+      level: gasLevelLabel(peak, t),
+      anchor
+    }),
+    t('gasEndLine', {
+      week: endReport.week,
+      level: gasLevelLabel(endReport.gas, t),
+      wearing
+    })
+  ];
 }
 
 // --- Helpers ------------------------------------------------------------
+
+function gasLevelLabel(v: number, t: ExportTranslator): string {
+  switch (v) {
+    case 2:
+      return t('gasLevelMuchBetter');
+    case 1:
+      return t('gasLevelBetter');
+    case 0:
+      return t('gasLevelAsExpected');
+    case -1:
+      return t('gasLevelWorse');
+    default:
+      return t('gasLevelMuchWorse');
+  }
+}
+
+function anchorFor(v: number, a: ExportAnchors): string {
+  switch (v) {
+    case 2:
+      return (a.plus2 || '').trim();
+    case 1:
+      return (a.plus1 || '').trim();
+    case 0:
+      return (a.zero || '').trim();
+    case -1:
+      return (a.minus1 || '').trim();
+    default:
+      return (a.minus2 || '').trim();
+  }
+}
 
 function sideLabel(side: InjectionSide, t: ExportTranslator): string {
   switch (side) {
@@ -358,9 +361,4 @@ function modalityLabel(m: TreatmentModality, t: ExportTranslator): string {
     default:
       return String(m);
   }
-}
-
-function formatSigned(v: number): string {
-  if (v > 0) return `+${v}`;
-  return String(v);
 }

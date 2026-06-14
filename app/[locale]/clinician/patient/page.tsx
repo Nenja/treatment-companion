@@ -1708,7 +1708,6 @@ export default function ClinicianPatientPage() {
       {showExport && (
         <ExportModal
           initialText={buildEhrExport({
-            patient: { displayName: patient.displayName },
             cycle: {
               cycleNumber: cycle.cycleNumber,
               startDate: cycle.startDate,
@@ -1735,7 +1734,10 @@ export default function ClinicianPatientPage() {
               id: g.id,
               patientFacingText: g.patientFacingText,
               kind: g.kind,
-              nrsDirection: g.nrs?.direction
+              nrsDirection: g.nrs?.direction,
+              nrsBaseline: g.nrs?.baselineValue ?? null,
+              nrsTarget: g.nrs?.targetValue ?? null,
+              anchors: g.gas ?? null
             })),
             checkins: checkins.map((c) => ({
               weekNumber: c.weekNumber,

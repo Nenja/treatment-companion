@@ -72,10 +72,10 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `localization-sv-nb-12` (**CUMULATIVE zip**; includes migration 0103, safe to re-run) — **Swedish + Norwegian string translation COMPLETE: 1639/1639 each, full parity with en/da, ISSUES: 0.** Build 110/110, tsc clean. Bundle: en.json, da.json, goals/page.tsx, routing.ts, request.ts, auth.tsx, 0103 SQL, sv.json, nb.json.
-- **Just shipped:** `localization-sv-nb-12` — the final professional `intro`/`help` strings. The whole app is now sv/nb at full parity. Cumulative bundle (user can't commit yet). **All sv/nb is first-pass — needs native-speaker review.**
-- **In progress / next (localization):** the ONLY remaining work is the **four-language picker UI** (login + profile, persist preferred_locale, offer en/da/sv/nb). DB + auth types already support all four. Deferred: push-text localization (edge fn + 0017/0102 still en/da). Build is **110/110**.
-- **Also live (in-session, NOT a code zip):** native Android push end-to-end (Capacitor cloud build + FCM + extended send-checkin-notifications, Verify-JWT OFF). Parked: daily pg_cron; sv/nb push-text localization.
+- **Latest build:** `ehr-export-text-1` (**CUMULATIVE zip**; carries the sv/nb translation + language picker + migration 0103, safe to re-run) — rewrote the EHR export TEXT (`lib/ehrExport.ts`) to the portable handover format: treatment + goals only, doses as U/E, NRS baseline→target + best/end + wearing-off, GAS in words + achieved anchor. Build 110/110, tsc clean, parity holds.
+- **Just shipped:** `ehr-export-text-1` — EHR export text rewrite + the `ehrExport` strings in all 4 langs (21 keys removed, 16 added). `ExportGoal` now carries baseline/target/anchors. SV/NB phrasing first-pass — needs native review.
+- **In progress / next:** the **per-goal GAS/NRS chart PNG export** — a shared print-styled chart→PNG renderer (white bg, fixed width, one image per goal), with a button in `components/clinician/ExportModal.tsx` AND on each goal graph (`GoalProgressView`, patient page). Mirror the FaceMap export-renderer pattern. Mockups approved; text export unchanged by it. Build is **110/110**.
+- **Also live (in-session, NOT a code zip):** native Android push end-to-end (Capacitor cloud build + FCM + extended send-checkin-notifications, Verify-JWT OFF). Parked: daily pg_cron; sv/nb push-text localization; auto-applying preferred_locale on sign-in.
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.

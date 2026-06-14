@@ -1,49 +1,63 @@
-BUILD — localization-sv-nb-12   (CUMULATIVE)  ***SV + NB TRANSLATION COMPLETE***
-Swedish + Norwegian (Bokmal): pass 12 — the last professional texts.
+BUILD — ehr-export-text-1   (CUMULATIVE)
+The new EHR export text (treatment + goals, portable for any clinician).
 
 >>> THIS ZIP IS CUMULATIVE <<<
-Since you can't commit right now, this bundle carries EVERY file changed
-across the recent passes. Deploying just this one zip applies everything.
-Re-copying files you already committed does no harm.
+It carries everything still uncommitted: the Swedish + Norwegian
+translation, the language picker, AND the new EHR export text. Deploying
+just this one zip applies all of it. Re-copying files you already
+committed does no harm.
 
 INCLUDES ONE DATABASE MIGRATION
 - 0103_allow_sv_nb_locales.sql — lets the database accept "sv"/"nb".
   SAFE TO RUN AGAIN if you already ran it.
 
-THE BIG NEWS
-The WHOLE APP is now translated into Swedish and Norwegian — 1639 of
-1639 text strings each, the same coverage as Danish. That covers the
-patient app, both therapist surfaces, the full physician console,
-the admin console, the EHR export text, and every dialog and help text.
+WHAT CHANGED IN THE EHR EXPORT (text)
+The export is now a tight clinician-to-clinician handover. It drops the
+patient name and the verbatim patient comments (both already in the EHR)
+and keeps just the two things the EHR doesn't have:
 
-This pass added the last pieces: the professional "how it works"
-walkthroughs and the page-help texts for clinicians and therapists.
+1. TREATMENT — one line with product, total dose, dilution and guidance,
+   then the muscles as "R gastrocnemius — 50 U" (face marks prefixed
+   "face:"), the session note if any, and a check line if the listed
+   doses don't add up to the recorded total. Doses use the clinical
+   abbreviation (U in English, E in Danish/Swedish/Norwegian). The date
+   sits in the header now, so it isn't repeated.
+
+2. GOALS & RESPONSE —
+   - NRS goals:  Baseline NRS 8 -> target NRS 4  (0-10, 10 = worst)
+                 Best NRS 3 (wk7) - wearing off from wk10 - end NRS 5 (wk12)
+   - GAS goals:  Best (wk5): better than expected - "<the level you wrote>"
+                 End of cycle (wk12): as expected - wearing off from wk10
+   GAS results are written in plain words (much worse ... much better than
+   expected) with the actual outcome you described, so a clinician who has
+   never seen this patient understands the result without needing the
+   goal's setup. Wearing-off is included for both.
 
 IMPORTANT — NEEDS A NATIVE-SPEAKER CHECK
-All Swedish and Norwegian text is my first pass. Before you use it with
-real patients, please have a native Swedish speaker and a native
-Norwegian speaker read through it. (Clinical terms like NRS, GAS, EMG
-and units were left in their standard forms on purpose.)
+The new Danish/Swedish/Norwegian wording (and the clinical phrasing) is my
+first pass — please have it read before clinical use.
 
-WHAT IS NOT DONE YET
-- The in-app LANGUAGE PICKER is not built yet. Right now the language
-  follows the web address (/ = English, /da, /sv, /nb) and the saved
-  profile setting. Next step is a simple picker on the login screen and
-  in settings so people can choose between all four languages. The
-  database and login code already accept all four.
-- Push-notification text (the reminder messages) is still English/Danish
-  only — a separate small job for later.
+WHAT'S NOT IN THIS BUILD YET
+The picture export (a chart PNG per goal, with a button in the export
+dialog and on each goal's graph) is the next step. The text above is
+final and unaffected by that work.
 
 FILES IN THIS BUNDLE (keep folder structure)
+  lib/ehrExport.ts
+  app/[locale]/clinician/patient/page.tsx
   messages/en.json
   messages/da.json
+  messages/sv.json
+  messages/nb.json
+  components/settings/LanguageSelect.tsx
+  lib/supabase/locale.ts
+  app/[locale]/login/page.tsx
+  app/[locale]/profile/page.tsx
   app/[locale]/goals/page.tsx
   i18n/routing.ts
   i18n/request.ts
   lib/supabase/auth.tsx
   supabase/migrations/0103_allow_sv_nb_locales.sql
-  messages/sv.json
-  messages/nb.json
   + HANDOVER.md, BUILD.txt, TRANSFER_PROMPT.md
 
 HOW TO DEPLOY (when you can)
@@ -54,5 +68,5 @@ HOW TO DEPLOY (when you can)
 DO NOT: run "npm install", or overwrite package.json / package-lock.json.
 
 WHAT'S NEXT
-Build the in-app language picker (login + settings) for all four
-languages — then optionally localize the push messages.
+The per-goal chart PNG export (button in the export dialog and on each
+goal graph).
