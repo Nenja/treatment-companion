@@ -1,49 +1,46 @@
-BUILD — localization-sv-nb-12   (CUMULATIVE)  ***SV + NB TRANSLATION COMPLETE***
-Swedish + Norwegian (Bokmal): pass 12 — the last professional texts.
+BUILD — language-picker-1   (CUMULATIVE)
+The four-language picker (login + settings).
 
 >>> THIS ZIP IS CUMULATIVE <<<
-Since you can't commit right now, this bundle carries EVERY file changed
-across the recent passes. Deploying just this one zip applies everything.
-Re-copying files you already committed does no harm.
+It carries everything still uncommitted: the completed Swedish + Norwegian
+translation AND the new language picker. Deploying just this one zip
+applies all of it. Re-copying files you already committed does no harm.
 
 INCLUDES ONE DATABASE MIGRATION
 - 0103_allow_sv_nb_locales.sql — lets the database accept "sv"/"nb".
   SAFE TO RUN AGAIN if you already ran it.
 
-THE BIG NEWS
-The WHOLE APP is now translated into Swedish and Norwegian — 1639 of
-1639 text strings each, the same coverage as Danish. That covers the
-patient app, both therapist surfaces, the full physician console,
-the admin console, the EHR export text, and every dialog and help text.
+WHAT'S NEW IN THIS BUILD
+A language picker, so people can use the app in English, Danish, Swedish,
+or Norwegian:
+- On the LOGIN screen: a small EN / DA / SV / NB switch at the top. Tap
+  one and the page redraws in that language (there's no account yet at
+  that point, so it just changes the language on screen).
+- In SETTINGS (profile page), just above Appearance: four buttons —
+  English, Dansk, Svenska, Norsk. Tapping one switches the language AND
+  saves it to the account. Like the colour/appearance settings, it
+  applies straight away and is NOT tied to the Save button, so it never
+  triggers the "unsaved changes" warning.
 
-This pass added the last pieces: the professional "how it works"
-walkthroughs and the page-help texts for clinicians and therapists.
-
-IMPORTANT — NEEDS A NATIVE-SPEAKER CHECK
-All Swedish and Norwegian text is my first pass. Before you use it with
-real patients, please have a native Swedish speaker and a native
-Norwegian speaker read through it. (Clinical terms like NRS, GAS, EMG
-and units were left in their standard forms on purpose.)
-
-WHAT IS NOT DONE YET
-- The in-app LANGUAGE PICKER is not built yet. Right now the language
-  follows the web address (/ = English, /da, /sv, /nb) and the saved
-  profile setting. Next step is a simple picker on the login screen and
-  in settings so people can choose between all four languages. The
-  database and login code already accept all four.
-- Push-notification text (the reminder messages) is still English/Danish
-  only — a separate small job for later.
+One honest note: the saved language is stored, but the app doesn't yet
+auto-switch a returning user into it at sign-in (it currently follows
+whatever language the login page was in). That's a small follow-up if
+you want it — tell me and I'll add it.
 
 FILES IN THIS BUNDLE (keep folder structure)
+  components/settings/LanguageSelect.tsx        (new)
+  lib/supabase/locale.ts                        (new)
+  app/[locale]/login/page.tsx
+  app/[locale]/profile/page.tsx
   messages/en.json
   messages/da.json
+  messages/sv.json
+  messages/nb.json
   app/[locale]/goals/page.tsx
   i18n/routing.ts
   i18n/request.ts
   lib/supabase/auth.tsx
   supabase/migrations/0103_allow_sv_nb_locales.sql
-  messages/sv.json
-  messages/nb.json
   + HANDOVER.md, BUILD.txt, TRANSFER_PROMPT.md
 
 HOW TO DEPLOY (when you can)
@@ -54,5 +51,7 @@ HOW TO DEPLOY (when you can)
 DO NOT: run "npm install", or overwrite package.json / package-lock.json.
 
 WHAT'S NEXT
-Build the in-app language picker (login + settings) for all four
-languages — then optionally localize the push messages.
+The EHR export rework: the trimmed treatment + goals text we designed
+(baseline -> target for NRS goals, plain words for GAS goals, wearing-off
+included), plus a button to export each goal's response chart as a PNG
+for the record.

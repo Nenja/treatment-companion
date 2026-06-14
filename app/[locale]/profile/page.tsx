@@ -16,6 +16,7 @@ import {
 } from '@/lib/supabase/patientInfo';
 import { useToast } from '@/components/feedback/Toast';
 import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
+import { LanguageSelect } from '@/components/settings/LanguageSelect';
 import { VideoConsentSettings } from '@/components/settings/VideoConsentSettings';
 import {
   professionOptions,
@@ -426,6 +427,14 @@ export default function ProfilePage() {
             />
           </div>
         )}
+
+        {/* Language — applies live and persists itself; not under Save. */}
+        <div className="mt-10 border-t border-stone/70 pt-7">
+          <p className="eyebrow">{t('sectionLanguage')}</p>
+          <div className="mt-3">
+            <LanguageSelect variant="cards" />
+          </div>
+        </div>
 
         {/* Appearance — colour palette + night mode. Applies live and
             persists itself; not under Save. */}

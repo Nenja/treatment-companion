@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for batch: `localization-sv-nb-12` (**CUMULATIVE; includes migration 0103, safe to re-run**). **Swedish + Norwegian string translation is COMPLETE — 1639/1639 keys each, full parity with en/da, ISSUES: 0.** This pass finished the professional `intro`/`help` strings. Build 110/110, tsc clean. See §7. **Only remaining localization work: build the four-language picker UI (login + profile, persist preferred_locale). sv/nb are first-pass — flag for native-speaker review. Push-text (edge fn) still en/da.**_
+> _Last updated for batch: `language-picker-1` (**CUMULATIVE; carries the completed sv/nb translation + migration 0103, safe to re-run**). Built the four-language picker: a segmented `EN·DA·SV·NB` control on the login screen and endonym cards in profile/settings (applies live, persists `preferred_locale`). Build 110/110, tsc clean. See §7. **Next: the EHR export rework — text rewrite (treatment + goals only, baseline→target NRS, GAS in words, wearing-off) and a per-goal GAS/NRS chart PNG export button in the export dialog.**_
 
 ---
 
@@ -849,6 +849,14 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Four-language picker — login + settings (`language-picker-1`)** · **CUMULATIVE zip; carries the completed sv/nb translation + migration `0103` (safe to re-run).** Build 110/110, tsc clean.
+  - New `components/settings/LanguageSelect.tsx` with two variants: a compact `EN · DA · SV · NB` segmented control pinned at the top of the **login** screen (pre-auth — switches the URL locale only), and endonym cards (English / Dansk / Svenska / Norsk) in **profile/settings**, placed above Appearance, that switch the URL locale AND persist `preferred_locale`.
+  - New `lib/supabase/locale.ts` → `useSetPreferredLocale` (mirrors the appearance setters: optimistic `patchProfile` + `profile` self-update on `id` + `refreshProfile`). Applies live; **not** part of the save-gated profile form, so it never trips the unsaved-changes guard.
+  - Locale switch is a manual path rewrite honouring `localePrefix: 'as-needed'` (English = no prefix; others carry `/<locale>`). Language names are endonyms, so they need no translation; added one heading key `profile.sectionLanguage` in all four languages (en/da/sv/nb), parity preserved.
+  - **Files:** `components/settings/LanguageSelect.tsx` (new), `lib/supabase/locale.ts` (new), `app/[locale]/login/page.tsx`, `app/[locale]/profile/page.tsx`, `messages/{en,da,sv,nb}.json`.
+  - **Known follow-up (not built):** `preferred_locale` is persisted but not yet auto-applied on sign-in — the login redirect uses the current URL locale, so a returning user lands in whatever language the login page was in, not necessarily their saved one. Small wire-up if wanted.
+  - **Cumulative bundle** also includes (unchanged, still uncommitted): `messages/{en,da,sv,nb}.json` (full sv/nb translation), `app/[locale]/goals/page.tsx`, `i18n/routing.ts`, `i18n/request.ts`, `lib/supabase/auth.tsx`, `supabase/migrations/0103_allow_sv_nb_locales.sql`. Deploy: run 0103 (safe to re-run) → drop files → push. Do not overwrite package.json/lock.
 
 - **Swedish + Norwegian Bokmål — STRING TRANSLATION COMPLETE (localization pass 12)** · **Tag:** `localization-sv-nb-12` · **CUMULATIVE zip; includes migration `0103` (safe to re-run).** Build 110/110, tsc clean. **`missing in sv: 0`, `missing in nb: 0`, ISSUES: 0.** SV/NB first-pass — flag for native review.
   - **Translated this pass (final ~56 keys each, 1639 total — 100%):** the professional strings inside `intro` (clinician/physio welcome + how-it-works, reading the progress graph, the action row, recording-a-treatment / reporting-progress walkthroughs) and `help` (clinician & physio patient-page help, recording a treatment, reading the history, recording a goal, reviewing a suggestion).

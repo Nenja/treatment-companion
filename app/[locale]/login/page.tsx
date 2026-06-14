@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useAuth } from '@/lib/supabase/auth';
+import { LanguageSelect } from '@/components/settings/LanguageSelect';
 
 /**
  * Email + password login. On success the AuthProvider picks up the new
@@ -93,6 +94,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-dvh bg-cream">
       <main className="mx-auto max-w-[420px] px-5 py-12">
+        {/* Language — lets a user read the page in their language before
+            signing in. Pre-auth, so it only switches the URL locale. */}
+        <div className="mb-6 flex justify-end">
+          <LanguageSelect variant="segmented" />
+        </div>
         <h1 className="font-display text-[28px] leading-tight text-ink">
           {t('title')}
         </h1>
