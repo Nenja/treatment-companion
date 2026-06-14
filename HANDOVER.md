@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for batch: `frontpage-fixes-1` (**web only — no migration, no new deps, no i18n change**). Six patient-front-page fixes: care-team-notes crash on expand (`formatLongDate` now accepts full timestamps and never throws), the account-menu stuck text-size/day-night highlight (new `patchProfile` + `refreshProfile`; the dead `invalidateQueries(['auth'])` removed), a bigger SVG back arrow with a real tap target, the brand now links to a role-aware home, bigger card chevrons, and the visit-code ↔ care-team divider gap. Build 62/62, tsc clean. See §7._
+> _Last updated for batch: `onboarding-copy-1` (**web only — no migration, no new deps**). Patient help/onboarding refresh: the home-screen help now covers goals, the visit code, and care-team notes; the goals page gets its own help (was borrowing the home's); and the patient wizard intro mentions goals + care-team notes. EN + Danish (first-pass). Build 62/62, tsc clean. See §7. **Next: Swedish + Norwegian Bokmål localization (full first-pass message files + routing) folded into the language picker.**_
 
 ---
 
@@ -849,6 +849,14 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Onboarding / per-page help copy refresh (patient)** · **Tag:** `onboarding-copy-1` · **Web only — no migration, no new deps.** EN + Danish (Danish is first-pass — flag for native review). Build 62/62, tsc clean.
+  - **Audit finding:** the clinician & physio *patient-page* help (`clinicianPatient`/`physioPatient`) is already correctly mounted (`clinician/patient/page.tsx:834`, `physio/patient/page.tsx:373`) — not orphaned. The genuine gaps were all patient-side.
+  - **`help.patientHome` rewritten** to describe the whole home screen (the weekly check-in at the top, the *Your goals* row, *Show visit code*, and the care-team notes) — it previously mentioned only check-ins.
+  - **New `help.goals` (Title+Body)** for the goals page, which had been reusing the home help. `app/[locale]/goals/page.tsx` now passes `helpPageKey="goals"` (was `"patientHome"`).
+  - **`intro.patientBody`** (patient onboarding wizard, first step) now notes the home screen also shows their goals and any care-team notes.
+  - **Files (3):** `messages/en.json`, `messages/da.json`, `app/[locale]/goals/page.tsx`. Drop in, commit, push — no `npm install`, no SQL. **Do not overwrite package.json/lock.**
+  - **Deferred to the next batch:** **Swedish + Norwegian Bokmål** — add `sv` + `nb` to the i18n routing/config + middleware, widen `preferredLocale` to `'en'|'da'|'sv'|'nb'`, generate full first-pass `messages/sv.json` + `messages/nb.json` (~1640 keys each, flagged for native review), and offer all four in the upcoming login/profile language picker. **Adding 2 locales raises the static-page count above 62 — re-baseline the build marker then.**
 
 - **Patient front-page fixes + account-menu bug** · **Tag:** `frontpage-fixes-1` · **Web only — no migration, no new deps, no i18n change.** Six contained fixes; build 62/62, tsc clean.
   - **Care-team notes no longer crash on expand.** `lib/dates.ts` `formatLongDate` assumed a date-only input (`iso + 'T00:00:00Z'`), but `CareTeamNotes` passes a full `created_at` timestamp → `...ZT00:00:00Z` → invalid date → `Intl.format()` threw → the "Something went wrong" route boundary (crash only on expand, since the collapsed view never formats a date). Now accepts both forms (only synthesizes midnight-UTC when there's no `T`) and returns `''` instead of throwing on a bad value. Same guard added to `formatMonthYear`.

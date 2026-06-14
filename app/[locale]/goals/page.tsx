@@ -97,7 +97,7 @@ export default function PatientGoalsPage() {
   const weekNumber = data.currentWeek;
 
   return (
-    <AppShell helpPageKey="patientHome">
+    <AppShell helpPageKey="goals">
       <BackLink />
 
       <h1 className="font-display text-[26px] leading-tight text-ink">

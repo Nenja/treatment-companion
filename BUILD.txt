@@ -1,54 +1,43 @@
-BUILD — frontpage-fixes-1
-Patient front-page fixes + an account-menu bug (WEB ONLY)
+BUILD — onboarding-copy-1
+Patient onboarding / help copy refresh (WEB ONLY)
 
 WHAT THIS IS
-Six small, contained fixes to the patient front page and the account menu.
-No database migration. No new dependencies. No text/translation changes.
-Verified here: production build 62/62 pages, TypeScript clean.
+Updates to the patient-facing help text and the onboarding wizard so they
+match what the app does now. English + Danish (Danish is a first pass —
+please have a native speaker review it). No migration, no new dependencies.
+Verified: build 62/62, TypeScript clean.
 
-HOW TO DEPLOY (your usual GitHub Desktop -> Vercel flow)
-1. Unzip this file. It contains the 9 changed source files at their repo
-   paths, plus updated HANDOVER.md, BUILD.txt, TRANSFER_PROMPT.md.
-2. Copy the files into your local treatment-companion repo, keeping the
-   folder structure (let them overwrite the existing files).
-3. In GitHub Desktop: review, Commit, Push.
-4. Vercel auto-builds and deploys.
+HOW TO DEPLOY (GitHub Desktop -> Vercel)
+1. Unzip. Copy the 3 changed files into your repo (keep folder structure),
+   plus the updated HANDOVER.md / BUILD.txt / TRANSFER_PROMPT.md.
+2. GitHub Desktop: review, Commit, Push. Vercel rebuilds.
 
-DO NOT:
-- run "npm install"  (there are no dependency changes)
-- run any SQL in Supabase  (there is no migration)
-- overwrite package.json or package-lock.json  (your repo's are newer)
+DO NOT: run "npm install", run any SQL, or overwrite package.json/lock.
 
-THE 9 CHANGED FILES
-- lib/dates.ts
-- lib/supabase/auth.tsx
-- lib/supabase/textScale.ts
-- lib/supabase/colorScheme.ts
-- lib/supabase/layoutPreference.ts
-- components/layout/AppHeader.tsx
-- app/[locale]/page.tsx
-- components/patient/CareTeamNotes.tsx
-- components/cards/CatchUpCard.tsx
+THE 3 CHANGED FILES
+- messages/en.json
+- messages/da.json
+- app/[locale]/goals/page.tsx
 
-WHAT CHANGED (plain language)
-1. Care-team notes no longer crash when expanded. (A date that carried a
-   timestamp was mishandled and threw the "Something went wrong" screen.)
-2. Account menu: the highlighted text-size and Day/Night option now update
-   instantly and stay correct. Before, the highlight stuck on the old choice
-   and you couldn't re-pick the previous size until clicking something else.
-3. The back arrow (top-left) is bigger and easier to tap.
-4. Tapping the logo / app name (top-left) now takes you to your home screen.
-5. The little arrows on the "Your goals" row, the "Show visit code" row, and
-   the missed-check-ins list are now bigger, cleaner chevrons.
-6. The divider between the visit-code row and the care-team notes section no
-   longer shows a doubled line with a gap.
+WHAT CHANGED
+1. The "?" help on the patient HOME now describes the whole screen — the
+   weekly check-in, the "Your goals" row, "Show visit code", and notes from
+   the care team. (Before, it mentioned only check-ins.)
+2. The GOALS page now has its own "?" help (it had been showing the home
+   screen's help by mistake).
+3. The first screen of the patient SETUP WIZARD now mentions that the home
+   screen also shows their goals and any notes from the care team.
 
-PLEASE EYEBALL ON YOUR PHONE (things I can't verify from here)
-- Patient home -> open the care-team notes section: it expands with no error
-  screen, and the note dates show correctly.
-- Account menu -> change text size, then close & reopen the menu: the
-  highlight matches the new size, and you can switch back to the previous
-  size directly. Same check for the Day/Night toggle.
-- The back arrow looks bigger / taps comfortably; tapping the logo goes home.
-- The goals / visit-code / missed-check-in arrows look right.
-- Between the visit-code row and care-team notes: a single clean hairline.
+PLEASE EYEBALL ON YOUR PHONE
+- Patient home -> "?": reads correctly, covers goals / visit code /
+  care-team notes.
+- Goals page -> "?": now describes the goals page (graphs, suggesting a
+  goal), not the home screen.
+- Replay the patient tutorial (account menu) -> first step mentions goals
+  + care-team notes.
+- Danish wording on all of the above — please review as a native speaker.
+
+COMING NEXT
+Swedish + Norwegian (Bokmal) as selectable languages: full first-pass
+translation files + routing, offered in the login/profile language picker
+(Danish-style first pass, flagged for native review).
