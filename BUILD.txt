@@ -1,72 +1,101 @@
-BUILD — chart-png-1   (CUMULATIVE)
-The per-goal chart picture export (PNG) for the EHR.
+BUILD - reminder-cron-1   (CUMULATIVE)
+Auto-apply saved language on sign-in + daily reminder scheduling (pg_cron).
 
 >>> THIS ZIP IS CUMULATIVE <<<
-It carries everything still uncommitted: the Swedish + Norwegian
-translation, the language picker, the new EHR export text, AND the new
-chart-picture export. Deploying just this one zip applies all of it.
-Re-copying files you already committed does no harm.
+It carries everything still uncommitted (sv/nb translation, language picker,
+EHR export rework + chart PNG) PLUS the two new things below. Deploying this
+one zip applies all of it. Re-copying files you already committed is harmless.
 
-INCLUDES ONE DATABASE MIGRATION
-- 0103_allow_sv_nb_locales.sql — lets the database accept "sv"/"nb".
-  SAFE TO RUN AGAIN if you already ran it.
+============================================================
+PART A - WEB (goes through your normal GitHub -> Vercel flow)
+============================================================
+Auto-apply saved language on sign-in:
+- When a user signs in, the app now sends them to THEIR saved language
+  (the one stored from the settings language picker), instead of whatever
+  language the login page happened to be showing. A returning Swedish user
+  lands in Swedish, etc. Nothing to configure.
 
-WHAT'S NEW: A PICTURE OF EACH GOAL'S RESPONSE
-You can now export a goal's response chart as an image to paste into the
-record, the same idea as the face-map picture. ONE picture per goal.
+Deploy: copy the files in this zip into your repo (keep folders) ->
+GitHub Desktop -> Commit -> Push. Do NOT run npm install or overwrite
+package.json / package-lock.json.
 
-Two places to get it:
-1. ON EACH GOAL'S GRAPH — a small download icon next to the expand
-   icon at the top right of the chart. Tap it to save that goal's PNG.
-2. IN THE EXPORT DIALOG — under the text there's now a "Goal response
-   charts" list with a PNG button for every goal (active and earlier
-   ones).
+============================================================
+PART B - DATABASE + EDGE FUNCTION (Supabase dashboard / SQL editor)
+These steps are NOT part of the GitHub -> Vercel flow. I cannot do or
+test them from here - they run inside your Supabase project.
+============================================================
+Goal: make the weekly reminder actually fire on each patient's chosen day,
+automatically, every day.
 
-The image is designed for a record: white background, dark ink, a fixed
-width, with the goal text, the cycle, a legend, and a one-line summary
-baked in so it stands alone. NRS goals show the 0-10 line with the
-baseline and target marked; GAS goals show the five levels (much worse
-... much better than expected). A skipped week shows as a gap; a dotted
-line marks where the effect started wearing off.
+STEP 1 - Deploy the reminder function (if the new version isn't live yet)
+  The repo file supabase/functions/send-checkin-notifications/index.ts is the
+  weekday-aware version. In the Supabase dashboard:
+    Edge Functions -> send-checkin-notifications -> paste the file's contents
+    -> Deploy.
+  (If the function doesn't exist yet, create it with that name first.)
 
-The text export is unchanged. The picture is an extra option.
+STEP 2 - Check the function's secrets are set
+  Dashboard -> Edge Functions -> (Secrets / Settings). You should have:
+    CRON_SECRET, FCM_SERVICE_ACCOUNT, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+  (CRON_SECRET and FCM were set when push was tested on your phone.)
 
-VERIFIED, AND WHAT STILL NEEDS YOUR EYES
-I rendered both chart types here and checked them — layout, the lines,
-the markers and captions are right (two sample images are included so
-you can see them). The ONE thing I can't test from here is how the
-picture looks once your browser makes the PNG and you paste it into your
-actual EHR (the app swaps in a standard font when it makes the image, so
-spacing can differ a touch). Please paste one into a test note to confirm.
+STEP 3 - Store two Vault secrets BY HAND (real values; do NOT commit these)
+  Dashboard -> SQL editor, run once (replace the placeholders):
+
+    select vault.create_secret('PASTE-YOUR-CRON-SECRET-HERE', 'cron_secret');
+    select vault.create_secret(
+      'https://YOURPROJECTREF.supabase.co/functions/v1/send-checkin-notifications',
+      'checkin_fn_url'
+    );
+
+  (Find YOURPROJECTREF in your function URL. If a name already exists, you
+  stored it before - skip it, or update it via vault.update_secret.)
+
+STEP 4 - Run the migrations in the SQL editor
+  - 0103_allow_sv_nb_locales.sql  (only if you haven't already; safe to re-run)
+  - 0104_schedule_checkin_notifications.sql  (NEW - the daily schedule)
+  If 0104 errors on "CREATE EXTENSION", enable pg_cron and pg_net first in
+  Dashboard -> Database -> Extensions, then re-run 0104.
+
+STEP 5 - Test WITHOUT sending anything (dry run)
+  In a terminal (or any REST tool), with your real values:
+
+    curl -X POST \
+      'https://YOURPROJECTREF.supabase.co/functions/v1/send-checkin-notifications' \
+      -H 'Authorization: Bearer PASTE-YOUR-CRON-SECRET-HERE' \
+      -H 'Content-Type: application/json' \
+      -d '{"dryRun": true}'
+
+  This returns the PLAN (which patients would be notified today) and sends
+  nothing. When you're happy, the daily 07:00 UTC job (from 0104) will run it
+  for real. To send yourself one real test push:
+    -d '{"testProfileId": "<your patient profile id>"}'
+
+NOTE ON TIMING: 0104 runs daily at 07:00 UTC (~08:00-09:00 Danish time). The
+function decides each day who is due based on their chosen weekday, so daily
+is correct. Change the cron expression in 0104 if you want another time.
 
 FILES IN THIS BUNDLE (keep folder structure)
-  lib/goalChartImage.ts                         (new)
+  app/[locale]/login/page.tsx                                   (auto-apply language)
+  supabase/migrations/0104_schedule_checkin_notifications.sql   (NEW)
+  supabase/migrations/0103_allow_sv_nb_locales.sql
+  lib/goalChartImage.ts
   components/clinician/GoalProgressView.tsx
   components/clinician/ExportModal.tsx
-  app/[locale]/clinician/patient/page.tsx
   lib/ehrExport.ts
-  messages/en.json
-  messages/da.json
-  messages/sv.json
-  messages/nb.json
+  app/[locale]/clinician/patient/page.tsx
+  messages/en.json, da.json, sv.json, nb.json
   components/settings/LanguageSelect.tsx
   lib/supabase/locale.ts
-  app/[locale]/login/page.tsx
   app/[locale]/profile/page.tsx
   app/[locale]/goals/page.tsx
-  i18n/routing.ts
-  i18n/request.ts
+  i18n/routing.ts, i18n/request.ts
   lib/supabase/auth.tsx
-  supabase/migrations/0103_allow_sv_nb_locales.sql
   + HANDOVER.md, BUILD.txt, TRANSFER_PROMPT.md
 
-HOW TO DEPLOY (when you can)
-1. Supabase -> SQL editor -> run 0103_allow_sv_nb_locales.sql (safe to re-run).
-2. Copy all files above into your repo, keeping folders.
-3. GitHub Desktop -> Commit -> Push. Vercel rebuilds.
-
-DO NOT: run "npm install", or overwrite package.json / package-lock.json.
-
-WHAT'S NEXT (open items, your call)
-- Native-speaker review of the Danish/Swedish/Norwegian export + chart wording.
-- Optional: auto-switch a returning user into their saved language at sign-in.
+STILL WAITING ON YOU (so I can build them)
+  - Adjustment-request status loop: confirm the states (proposal: Open ->
+    Addressed / Dismissed, set by the clinician; decide if the therapist sees
+    the outcome). Then I write the migration + wire the buttons.
+  - REDCap: send me your REDCap data dictionary (the instrument/field CSV or
+    XML export). Without it I can't map fields or reshape the export.

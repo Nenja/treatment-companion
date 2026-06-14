@@ -72,10 +72,10 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `chart-png-1` (**CUMULATIVE zip**; carries the sv/nb translation + language picker + EHR text rewrite + migration 0103, safe to re-run) — per-goal GAS/NRS chart PNG export (shared print-styled renderer; button on each goal graph + a section in the export dialog). Build 110/110, tsc clean, parity holds; both chart types rendered + eyeballed in-sandbox.
-- **Just shipped:** `chart-png-1` — `lib/goalChartImage.ts` (new) + `onExportChart` on GoalProgressView + `goalCharts` on ExportModal + `makeChartDownloader` wiring in the patient page + 11 i18n keys × 4 langs. Completes the EHR-export rework (text + picture).
-- **In progress / next:** nothing pending on the EHR export. Open follow-ups: native-speaker review of the new sv/nb/da export + chart phrasing; auto-applying preferred_locale on sign-in; sv/nb push-text. **QA the chart PNG in the real EHR** (browser-canvas raster, font substitutes — confirm it pastes/renders).
-- **Also live (in-session, NOT a code zip):** native Android push end-to-end (Capacitor cloud build + FCM + extended send-checkin-notifications, Verify-JWT OFF). Parked: daily pg_cron.
+- **Latest build:** `reminder-cron-1` (**CUMULATIVE zip**; carries the sv/nb translation + picker + EHR rework + 0103). Adds: auto-apply saved language on sign-in (login redirect) + NEW migration `0104` scheduling the reminder Edge Function daily via pg_cron (Vault secrets, idempotent). Build 110/110, tsc clean.
+- **Just shipped:** `reminder-cron-1` — (1) login redirect uses `profile.preferredLocale`; (2) `0104` pg_cron + pg_net daily trigger for `send-checkin-notifications`. **Manual Supabase steps required (BUILD.txt): deploy the function, set the 2 Vault secrets, run 0104, dry-run test.** Not verifiable from here.
+- **In progress / next (gated on you):** adjustment-request status loop — awaiting the state model (proposed: Open -> Addressed / Dismissed, clinician-set; therapist sees the resolution?). REDCap — awaiting the actual REDCap data dictionary + coding decisions before I can map/reshape the export.
+- **Also live (in-session):** native Android push end-to-end (FCM, Verify-JWT OFF). The daily scheduler is now `0104` (once deployed). Parked: sv/nb push-text; iOS push.
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.

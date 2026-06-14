@@ -31,19 +31,24 @@ export default function LoginPage() {
   useEffect(() => {
     if (loading) return;
     if (user && profile) {
+      // Apply the user's saved interface language on sign-in: route to
+      // their preferred locale's path rather than whatever language the
+      // login page happened to be in. Falls back to the current locale
+      // when no preference is stored. (The pre-auth links below keep using
+      // the current-locale `prefix`.)
+      const loc = profile.preferredLocale ?? locale;
+      const pfx = loc === 'en' ? '' : `/${loc}`;
       // An account still on its temporary password goes straight to
       // set-password — not to its role home.
       if (profile.mustChangePassword) {
-        router.replace(`${prefix}/reset-password`);
+        router.replace(`${pfx}/reset-password`);
         return;
       }
       let target = '/';
       if (profile.role === 'clinician') target = '/clinician';
       else if (profile.role === 'physiotherapist') target = '/physio';
       router.replace(
-        locale === 'en'
-          ? target
-          : `/${locale}${target === '/' ? '' : target}`
+        loc === 'en' ? target : `/${loc}${target === '/' ? '' : target}`
       );
     }
   }, [loading, user, profile, router, locale, prefix]);
