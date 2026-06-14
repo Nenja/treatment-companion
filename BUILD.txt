@@ -1,50 +1,50 @@
-BUILD — ehr-export-text-1   (CUMULATIVE)
-The new EHR export text (treatment + goals, portable for any clinician).
+BUILD — chart-png-1   (CUMULATIVE)
+The per-goal chart picture export (PNG) for the EHR.
 
 >>> THIS ZIP IS CUMULATIVE <<<
 It carries everything still uncommitted: the Swedish + Norwegian
-translation, the language picker, AND the new EHR export text. Deploying
-just this one zip applies all of it. Re-copying files you already
-committed does no harm.
+translation, the language picker, the new EHR export text, AND the new
+chart-picture export. Deploying just this one zip applies all of it.
+Re-copying files you already committed does no harm.
 
 INCLUDES ONE DATABASE MIGRATION
 - 0103_allow_sv_nb_locales.sql — lets the database accept "sv"/"nb".
   SAFE TO RUN AGAIN if you already ran it.
 
-WHAT CHANGED IN THE EHR EXPORT (text)
-The export is now a tight clinician-to-clinician handover. It drops the
-patient name and the verbatim patient comments (both already in the EHR)
-and keeps just the two things the EHR doesn't have:
+WHAT'S NEW: A PICTURE OF EACH GOAL'S RESPONSE
+You can now export a goal's response chart as an image to paste into the
+record, the same idea as the face-map picture. ONE picture per goal.
 
-1. TREATMENT — one line with product, total dose, dilution and guidance,
-   then the muscles as "R gastrocnemius — 50 U" (face marks prefixed
-   "face:"), the session note if any, and a check line if the listed
-   doses don't add up to the recorded total. Doses use the clinical
-   abbreviation (U in English, E in Danish/Swedish/Norwegian). The date
-   sits in the header now, so it isn't repeated.
+Two places to get it:
+1. ON EACH GOAL'S GRAPH — a small download icon next to the expand
+   icon at the top right of the chart. Tap it to save that goal's PNG.
+2. IN THE EXPORT DIALOG — under the text there's now a "Goal response
+   charts" list with a PNG button for every goal (active and earlier
+   ones).
 
-2. GOALS & RESPONSE —
-   - NRS goals:  Baseline NRS 8 -> target NRS 4  (0-10, 10 = worst)
-                 Best NRS 3 (wk7) - wearing off from wk10 - end NRS 5 (wk12)
-   - GAS goals:  Best (wk5): better than expected - "<the level you wrote>"
-                 End of cycle (wk12): as expected - wearing off from wk10
-   GAS results are written in plain words (much worse ... much better than
-   expected) with the actual outcome you described, so a clinician who has
-   never seen this patient understands the result without needing the
-   goal's setup. Wearing-off is included for both.
+The image is designed for a record: white background, dark ink, a fixed
+width, with the goal text, the cycle, a legend, and a one-line summary
+baked in so it stands alone. NRS goals show the 0-10 line with the
+baseline and target marked; GAS goals show the five levels (much worse
+... much better than expected). A skipped week shows as a gap; a dotted
+line marks where the effect started wearing off.
 
-IMPORTANT — NEEDS A NATIVE-SPEAKER CHECK
-The new Danish/Swedish/Norwegian wording (and the clinical phrasing) is my
-first pass — please have it read before clinical use.
+The text export is unchanged. The picture is an extra option.
 
-WHAT'S NOT IN THIS BUILD YET
-The picture export (a chart PNG per goal, with a button in the export
-dialog and on each goal's graph) is the next step. The text above is
-final and unaffected by that work.
+VERIFIED, AND WHAT STILL NEEDS YOUR EYES
+I rendered both chart types here and checked them — layout, the lines,
+the markers and captions are right (two sample images are included so
+you can see them). The ONE thing I can't test from here is how the
+picture looks once your browser makes the PNG and you paste it into your
+actual EHR (the app swaps in a standard font when it makes the image, so
+spacing can differ a touch). Please paste one into a test note to confirm.
 
 FILES IN THIS BUNDLE (keep folder structure)
-  lib/ehrExport.ts
+  lib/goalChartImage.ts                         (new)
+  components/clinician/GoalProgressView.tsx
+  components/clinician/ExportModal.tsx
   app/[locale]/clinician/patient/page.tsx
+  lib/ehrExport.ts
   messages/en.json
   messages/da.json
   messages/sv.json
@@ -67,6 +67,6 @@ HOW TO DEPLOY (when you can)
 
 DO NOT: run "npm install", or overwrite package.json / package-lock.json.
 
-WHAT'S NEXT
-The per-goal chart PNG export (button in the export dialog and on each
-goal graph).
+WHAT'S NEXT (open items, your call)
+- Native-speaker review of the Danish/Swedish/Norwegian export + chart wording.
+- Optional: auto-switch a returning user into their saved language at sign-in.

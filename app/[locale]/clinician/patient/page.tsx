@@ -73,6 +73,7 @@ import { useWideLayout } from '@/lib/useWideLayout';
 import { useNavStyle } from '@/lib/useNavStyle';
 import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { buildEhrExport, type ExportTranslator } from '@/lib/ehrExport';
+import { downloadGoalChartPng } from '@/lib/goalChartImage';
 import { useToast } from '@/components/feedback/Toast';
 
 export default function ClinicianPatientPage() {
@@ -367,6 +368,42 @@ export default function ClinicianPatientPage() {
   // check-in (they share the active cycle), so their ratings load identically.
   const bontGoals = activeGoals.filter((g) => g.therapy !== 'itb');
   const itbGoals = activeGoals.filter((g) => g.therapy === 'itb');
+
+  // One PNG-chart downloader per goal, shared by the per-goal graph button
+  // and the export dialog. The renderer is print-styled (white background)
+  // so the image reads correctly pasted into a record.
+  const makeChartDownloader =
+    (g: {
+      id: string;
+      patientFacingText: string;
+      kind?: 'nrs' | 'gas';
+      nrs?: {
+        direction?: 'higherIsBetter' | 'lowerIsBetter';
+        baselineValue?: number | null;
+        targetValue?: number | null;
+      } | null;
+    }) =>
+    () =>
+      downloadGoalChartPng({
+        goalText: g.patientFacingText,
+        kind: g.kind,
+        nrsDirection: g.nrs?.direction,
+        nrsBaseline: g.nrs?.baselineValue ?? null,
+        nrsTarget: g.nrs?.targetValue ?? null,
+        points: checkins.flatMap((c) => {
+          const r = c.ratings.find((rr) => rr.approvedGoalId === g.id);
+          return r
+            ? [{ week: c.weekNumber, gas: r.ratingValue, nrs: r.nrsValue }]
+            : [];
+        }),
+        header: {
+          modality: cycle.modality,
+          cycleNumber: cycle.cycleNumber,
+          startDate: cycle.startDate
+        },
+        t: tExport as unknown as ExportTranslator,
+        locale
+      });
   const scoreQueueItems: ScoreQueueItem[] = [];
   for (const c of checkins) {
     for (const r of c.ratings) {
@@ -1495,6 +1532,7 @@ export default function ClinicianPatientPage() {
                     nrsBaseline={g.nrs?.baselineValue ?? null}
                     nrsTarget={g.nrs?.targetValue ?? null}
                     clinicPoints={clinicPointsByGoal.get(g.id) ?? []}
+                    onExportChart={makeChartDownloader(g)}
                     headerBadge={
                       g.videoEnabled ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-ink-soft">
@@ -1751,6 +1789,11 @@ export default function ClinicianPatientPage() {
             locale,
             t: tExport as unknown as ExportTranslator
           })}
+          goalCharts={[...activeGoals, ...archivedGoals].map((g) => ({
+            id: g.id,
+            goalText: g.patientFacingText,
+            onDownload: makeChartDownloader(g)
+          }))}
           onClose={() => setShowExport(false)}
         />
       )}

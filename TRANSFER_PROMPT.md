@@ -72,10 +72,10 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `ehr-export-text-1` (**CUMULATIVE zip**; carries the sv/nb translation + language picker + migration 0103, safe to re-run) — rewrote the EHR export TEXT (`lib/ehrExport.ts`) to the portable handover format: treatment + goals only, doses as U/E, NRS baseline→target + best/end + wearing-off, GAS in words + achieved anchor. Build 110/110, tsc clean, parity holds.
-- **Just shipped:** `ehr-export-text-1` — EHR export text rewrite + the `ehrExport` strings in all 4 langs (21 keys removed, 16 added). `ExportGoal` now carries baseline/target/anchors. SV/NB phrasing first-pass — needs native review.
-- **In progress / next:** the **per-goal GAS/NRS chart PNG export** — a shared print-styled chart→PNG renderer (white bg, fixed width, one image per goal), with a button in `components/clinician/ExportModal.tsx` AND on each goal graph (`GoalProgressView`, patient page). Mirror the FaceMap export-renderer pattern. Mockups approved; text export unchanged by it. Build is **110/110**.
-- **Also live (in-session, NOT a code zip):** native Android push end-to-end (Capacitor cloud build + FCM + extended send-checkin-notifications, Verify-JWT OFF). Parked: daily pg_cron; sv/nb push-text localization; auto-applying preferred_locale on sign-in.
+- **Latest build:** `chart-png-1` (**CUMULATIVE zip**; carries the sv/nb translation + language picker + EHR text rewrite + migration 0103, safe to re-run) — per-goal GAS/NRS chart PNG export (shared print-styled renderer; button on each goal graph + a section in the export dialog). Build 110/110, tsc clean, parity holds; both chart types rendered + eyeballed in-sandbox.
+- **Just shipped:** `chart-png-1` — `lib/goalChartImage.ts` (new) + `onExportChart` on GoalProgressView + `goalCharts` on ExportModal + `makeChartDownloader` wiring in the patient page + 11 i18n keys × 4 langs. Completes the EHR-export rework (text + picture).
+- **In progress / next:** nothing pending on the EHR export. Open follow-ups: native-speaker review of the new sv/nb/da export + chart phrasing; auto-applying preferred_locale on sign-in; sv/nb push-text. **QA the chart PNG in the real EHR** (browser-canvas raster, font substitutes — confirm it pastes/renders).
+- **Also live (in-session, NOT a code zip):** native Android push end-to-end (Capacitor cloud build + FCM + extended send-checkin-notifications, Verify-JWT OFF). Parked: daily pg_cron.
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.

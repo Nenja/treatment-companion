@@ -684,7 +684,8 @@
       "intro": "Edit if needed, then copy. Nothing here is sent anywhere — copy it into your EHR yourself.",
       "copied": "Copied to clipboard",
       "close": "Close",
-      "copy": "Copy"
+      "copy": "Copy",
+      "chartsHeading": "Goal response charts"
     },
     "goalHandoff": {
       "heading": "Goal-specific notes for the therapist",
@@ -1284,7 +1285,8 @@
     "runningTotalLabel": "Running total",
     "adjustTotal": "Adjust total",
     "muscleSumLabel": "Muscle sum:",
-    "useTheSum": "use the sum"
+    "useTheSum": "use the sum",
+    "saveChart": "Save chart"
   },
   "goalVideo": {
     "introTitle": "Record a short video (optional)",
@@ -1706,7 +1708,16 @@
     "gasLevelWorse": "worse than expected",
     "gasLevelMuchWorse": "much worse than expected",
     "wearingOffFrom": "wearing off from wk{week}",
-    "benefitSustained": "benefit sustained"
+    "benefitSustained": "benefit sustained",
+    "chartWeek": "week",
+    "chartBaseline": "baseline",
+    "chartTarget": "target",
+    "chartGasScale": "0 = expected outcome",
+    "chartGasMuchBetter": "much better",
+    "chartGasBetter": "better",
+    "chartGasExpected": "as expected",
+    "chartGasWorse": "worse",
+    "chartGasMuchWorse": "much worse"
   },
   "lastTreatment": {
     "title": "Last treatment",

@@ -38,6 +38,10 @@ interface GoalProgressViewProps {
    *  the page opens the same chart larger in a modal. Omitted inside
    *  the modal itself (no nested expand). */
   onExpand?: () => void;
+  /** When provided, a small "save chart" button renders by the header that
+   *  triggers a PNG export of this goal's chart (the parent owns the data
+   *  and the renderer). */
+  onExportChart?: () => void;
   /** NRS goals only: which way is clinically better. When set, the chart
    *  tints the "good" half sage and shows a "↑/↓ better" cue on the
    *  y-axis, so a downward (improving) line on a lower-is-better goal
@@ -102,6 +106,7 @@ export function GoalProgressView({
   ratings,
   physioRatings = [],
   onExpand,
+  onExportChart,
   nrsDirection,
   nrsBaseline,
   nrsTarget,
@@ -307,32 +312,62 @@ export function GoalProgressView({
           </p>
           {headerBadge ? <div className="mt-1.5">{headerBadge}</div> : null}
         </div>
-        {onExpand && (
-          <button
-            type="button"
-            onClick={onExpand}
-            aria-label={t('enlargeChart')}
-            title={t('enlargeChart')}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink"
-          >
-            {/* expand / fullscreen-corners glyph */}
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="M15 3h6v6" />
-              <path d="M9 21H3v-6" />
-              <path d="M21 3l-7 7" />
-              <path d="M3 21l7-7" />
-            </svg>
-          </button>
+        {(onExportChart || onExpand) && (
+          <div className="flex shrink-0 items-center gap-1">
+            {onExportChart && (
+              <button
+                type="button"
+                onClick={onExportChart}
+                aria-label={t('saveChart')}
+                title={t('saveChart')}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink"
+              >
+                {/* download glyph */}
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M12 3v12" />
+                  <path d="M7 10l5 5 5-5" />
+                  <path d="M5 21h14" />
+                </svg>
+              </button>
+            )}
+            {onExpand && (
+              <button
+                type="button"
+                onClick={onExpand}
+                aria-label={t('enlargeChart')}
+                title={t('enlargeChart')}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink"
+              >
+                {/* expand / fullscreen-corners glyph */}
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M15 3h6v6" />
+                  <path d="M9 21H3v-6" />
+                  <path d="M21 3l-7 7" />
+                  <path d="M3 21l7-7" />
+                </svg>
+              </button>
+            )}
+          </div>
         )}
       </div>
 

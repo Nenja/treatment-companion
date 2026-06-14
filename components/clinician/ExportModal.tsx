@@ -7,6 +7,9 @@ import { useModalA11y } from '@/lib/useModalA11y';
 
 interface ExportModalProps {
   initialText: string;
+  /** Optional per-goal chart downloads, shown as a "Goal response charts"
+   *  section with a PNG button each. The parent owns the renderer. */
+  goalCharts?: { id: string; goalText: string; onDownload: () => void | Promise<void> }[];
   onClose: () => void;
 }
 
@@ -16,7 +19,7 @@ interface ExportModalProps {
  * before copying — useful when their EHR has different conventions for
  * date formats, muscle names, abbreviations, etc.
  */
-export function ExportModal({ initialText, onClose }: ExportModalProps) {
+export function ExportModal({ initialText, goalCharts, onClose }: ExportModalProps) {
   const tA11y = useTranslations('a11y');
   const t = useTranslations('clinician.export');
   const [text, setText] = useState(initialText);
@@ -84,6 +87,44 @@ export function ExportModal({ initialText, onClose }: ExportModalProps) {
             className="block w-full flex-1 rounded-[var(--radius-button)] border border-stone bg-cream-soft p-3 font-mono text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
             spellCheck={false}
           />
+          {goalCharts && goalCharts.length > 0 && (
+            <div className="rounded-[var(--radius-button)] border border-stone bg-cream-soft/60 p-3">
+              <p className="eyebrow">{t('chartsHeading')}</p>
+              <ul className="mt-2 flex flex-col gap-1.5">
+                {goalCharts.map((g) => (
+                  <li key={g.id} className="flex items-center justify-between gap-3">
+                    <span className="min-w-0 flex-1 truncate text-[14px] text-ink">
+                      {g.goalText}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void g.onDownload();
+                      }}
+                      className="flex h-9 shrink-0 items-center gap-1.5 rounded-[var(--radius-button)] border border-stone bg-cream px-3 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
+                    >
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <path d="M12 3v12" />
+                        <path d="M7 10l5 5 5-5" />
+                        <path d="M5 21h14" />
+                      </svg>
+                      PNG
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="flex items-center justify-between gap-3">
             <span
               className={`text-[14px] font-semibold ${copied ? 'text-sage-deep' : 'text-transparent'}`}

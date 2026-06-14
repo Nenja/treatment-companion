@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for batch: `ehr-export-text-1` (**CUMULATIVE; carries the sv/nb translation + the language picker + migration 0103, safe to re-run**). Rewrote the EHR export TEXT to the portable format: treatment + goals only (no name, no comments), doses as U/E, NRS goals as baseline→target + best/end + wearing-off with scale direction, GAS goals in WORDS + the achieved anchor quote. Build 110/110, tsc clean, parity holds. See §7. **Next: the per-goal GAS/NRS chart PNG export — a shared print-styled chart→PNG renderer with a button in the export dialog AND on each goal graph.**_
+> _Last updated for batch: `chart-png-1` (**CUMULATIVE; carries the sv/nb translation + language picker + EHR text rewrite + migration 0103, safe to re-run**). Added the per-goal GAS/NRS chart PNG export: a shared print-styled chart→PNG renderer with a download button on each goal graph AND a ‘Goal response charts’ section in the export dialog. Build 110/110, tsc clean, parity holds; both chart types rendered + eyeballed in-sandbox. See §7. **This completes the EHR-export rework (text + picture).**_
 
 ---
 
@@ -849,6 +849,15 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **EHR export — per-goal chart PNG (`chart-png-1`)** · **CUMULATIVE zip; carries the sv/nb translation + language picker + EHR text rewrite + migration `0103` (safe to re-run).** Build 110/110, tsc clean, en/da/sv/nb parity holds. Completes the EHR-export rework.
+  - **New `lib/goalChartImage.ts`** — a framework-free `downloadGoalChartPng(input)` that builds a self-contained chart SVG (goal text + cycle header + chart + one-line response caption) and rasterises it to PNG via a 2× canvas, mirroring FaceMap's export technique. **Print-styled on purpose:** white background, dark ink, plain sans font, fixed 680px width — so it reads correctly pasted into a (usually white) record regardless of the app's theme. NRS goals plot the 0–10 line with baseline/target dashed reference lines; GAS goals plot the five attainment bands with a faint ≥-expected tint. A skipped week shows as a line gap; a dotted vertical marks wearing-off. Peak/wearing/best/end are recomputed on the direction-normalised GAS value, matching the text export.
+  - **One image per goal**, surfaced in two places, both calling one shared renderer the patient page owns (`makeChartDownloader(g)`):
+    - **On each goal graph** — `GoalProgressView` gained an optional `onExportChart?: () => void`; when set, a small download button renders beside the expand control. Wired on the active BoNT goal graphs (site A).
+    - **In the export dialog** — `ExportModal` gained an optional `goalCharts?: {id, goalText, onDownload}[]`; it renders a ‘Goal response charts’ section with a PNG button per goal, covering **every** goal (active + archived, BoNT + ITB).
+  - **i18n:** added 9 chart labels to `ehrExport` (chartWeek, chartBaseline, chartTarget, chartGasScale, chartGas{MuchBetter,Better,Expected,Worse,MuchWorse}), `clinician.export.chartsHeading`, and `treatment.saveChart` — all four languages, parity preserved. Chart captions/subtitles reuse the existing export strings, so they read identically to the pasted text.
+  - **Verification:** beyond build + tsc, both chart types were rendered to PNG in-sandbox (via a faithful port + cairosvg) and visually checked — layout, gaps, markers, captions all correct. **Remaining QA (cannot be done here):** confirm the in-app browser-canvas PNG pastes and renders correctly in your actual EHR; the app substitutes a sans font during rasterisation, so spacing may differ slightly from the samples.
+  - **Files:** `lib/goalChartImage.ts` (new), `components/clinician/GoalProgressView.tsx`, `components/clinician/ExportModal.tsx`, `app/[locale]/clinician/patient/page.tsx`, `messages/{en,da,sv,nb}.json`. Cumulative bundle also carries the EHR text rewrite (`lib/ehrExport.ts`), the language picker, i18n infra, and `0103`. Deploy: run 0103 (safe to re-run) → drop files → push. Do not overwrite package.json/lock.
 
 - **EHR export — text rewrite to a portable format (`ehr-export-text-1`)** · **CUMULATIVE zip; carries the sv/nb translation + language picker + migration `0103` (safe to re-run).** Build 110/110, tsc clean, en/da/sv/nb parity holds. SV/NB phrasing is first-pass — flag for native review.
   - **Rewrote `lib/ehrExport.ts`** to the agreed clinician-to-clinician handover shape. Drops the patient name header AND the verbatim patient-comments block (both already live in the EHR). Two sections only:

@@ -688,7 +688,8 @@
       "intro": "Rediger om nødvendigt, og kopiér derefter. Intet sendes nogen steder — du kopierer det selv ind i journalen.",
       "copied": "Kopieret til udklipsholder",
       "close": "Luk",
-      "copy": "Kopiér"
+      "copy": "Kopiér",
+      "chartsHeading": "Responsdiagrammer for mål"
     },
     "goalHandoff": {
       "heading": "Målspecifikke noter til terapeuten",
@@ -1288,7 +1289,8 @@
     "runningTotalLabel": "Løbende total",
     "adjustTotal": "Justér total",
     "muscleSumLabel": "Muskelsum:",
-    "useTheSum": "brug summen"
+    "useTheSum": "brug summen",
+    "saveChart": "Gem diagram"
   },
   "goalVideo": {
     "introTitle": "Optag en kort video (valgfrit)",
@@ -1710,7 +1712,16 @@
     "gasLevelWorse": "dårligere end forventet",
     "gasLevelMuchWorse": "meget dårligere end forventet",
     "wearingOffFrom": "aftagende effekt fra uge {week}",
-    "benefitSustained": "effekt opretholdt"
+    "benefitSustained": "effekt opretholdt",
+    "chartWeek": "uge",
+    "chartBaseline": "udgangspunkt",
+    "chartTarget": "mål",
+    "chartGasScale": "0 = forventet udfald",
+    "chartGasMuchBetter": "meget bedre",
+    "chartGasBetter": "bedre",
+    "chartGasExpected": "som forventet",
+    "chartGasWorse": "dårligere",
+    "chartGasMuchWorse": "meget dårligere"
   },
   "lastTreatment": {
     "title": "Seneste behandling",
