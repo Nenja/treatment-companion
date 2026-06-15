@@ -1,41 +1,61 @@
-BUILD - component-tests-1   (CUMULATIVE)
-Adds the component-test layer to the harness and a first component test for the
-patient's 0-10 rating control. 41 tests now pass (was 35).
+BUILD - suggestion-approve-redesign-1   (CUMULATIVE)
+Redesigned the clinician approve-suggestion page: five actions -> two
+(Approve as a goal / Set aside), and Approve gained a "new goal vs add to an
+existing goal" toggle. Carries ONE new migration (0107).
 
->>> CUMULATIVE — one drop-in deploys everything. <<<
+>>> CUMULATIVE — one drop-in deploys everything in this batch. <<<
 
 WHAT'S NEW THIS BATCH
-  tests/GoalRatingPicker.test.tsx   (+6 tests, runs in jsdom)
-  vitest.config.ts                  (React plugin + .tsx test discovery)
-  package.json / package-lock.json  (test-tooling devDeps; see note below)
+  supabase/migrations/0107_combine_suggestion_into_goal.sql   (NEW migration)
+  lib/supabase/clinicianPatient.ts        (+ useCombineSuggestionIntoGoal hook)
+  app/[locale]/clinician/suggestion/page.tsx   (the redesign)
+  messages/en.json, da.json, sv.json, nb.json  (+8 keys; sv/nb first-pass)
 
-WHAT THE COMPONENT TESTS CHECK (GoalRatingPicker = the 0-10 tap scale)
-  - renders 11 buttons (0-10) as one radio group
-  - tapping a number calls onChange once with that number
-  - exactly one button shows as selected for the current value
-  - the "tap a number" hint shows only until a value is picked
-  - the Best/Worst end labels follow the goal's direction (higher-is-better
-    puts Best at 10; lower-is-better flips it)
+WHAT CHANGED, IN PLAIN TERMS
+  - The review screen now shows TWO buttons instead of five:
+      * "Approve as a goal"  (primary)
+      * "Set aside"          (secondary)
+    There is no "discuss at next visit" button: a suggestion you don't act on
+    stays pending and comes back at the next visit on its own.
+  - "Approve as a goal" opens the form with a choice at the top:
+      * "As a new goal"            -> the usual NRS/GAS setup (unchanged)
+      * "Add to an existing goal"  -> pick one of the patient's current goals;
+                                      it just RECORDS that this suggestion was
+                                      folded into that goal. No new goal is
+                                      created and the goal you pick is NOT
+                                      changed.
 
-DEPENDENCY NOTES (please read)
-  - DEV-ONLY tooling added: @testing-library/react, @testing-library/dom,
-    @testing-library/jest-dom, jsdom, @vitejs/plugin-react. None ships to
-    production; the Vercel build is unaffected (verified: build still 110/110).
-  - @types/node bumped 22.10.0 -> 22.19.21. Vitest 4 pulls in vite 8, which
-    needs @types/node >= 22.12. Bumping keeps the lockfile clean for npm ci.
-  - EASIEST: take the included package.json + package-lock.json as-is. Hand-
-    diffing the new devDeps + the bump + ~800 lock lines is error-prone.
-  - The `npm audit` warnings are all in the dev-tooling tree, not in anything
-    that runs in production.
+DEPLOY — IN ORDER
+  1. Supabase SQL editor: run the standalone file
+         supabase/migrations/0107_combine_suggestion_into_goal.sql
+     (Adds the combined_into_goal_id column + the combine RPC. Safe and
+      idempotent — re-running it is harmless.)
+  2. GitHub Desktop: drop the files from this zip into your repo, keeping the
+     same paths. DO NOT overwrite root package.json / package-lock.json
+     (this batch does not touch them).
+  3. Commit + push. Vercel auto-builds.
 
-CARRIED (cumulative, unchanged): the sv/nb reminder localization + crash fix,
-the rest of the Vitest harness (now 41 tests), the chart consolidation, and the
-guarded migration 0104.
+VERIFICATION DONE FOR YOU (sandbox)
+  - Production build: 110/110 pages, exit 0.
+  - TypeScript: clean (tsc --noEmit, 0 errors).
+  - Unit/component tests: 41/41 pass.
+  - i18n parity: 1663 keys, en/da aligned (sv/nb same key set).
+  - Migration 0107 on a throwaway Postgres 16:
+      * focused harness: column added; happy path sets status + target goal +
+        audit row; all four guards fire (cross-patient goal, unknown goal,
+        no active session, not a clinician); idempotent re-apply.
+      * full chain replay 0001 -> 0107: 0 failures; RPC + column present.
 
-VERIFIED: build 110/110, tsc clean, i18n parity OK, 41/41 unit tests pass.
+WHAT I CANNOT VERIFY (please click through once after deploy)
+  - The rendered screens in Firefox (the toggle, the goal picker, the two
+    buttons) — I can't see real UI.
+  - Live RLS/session behaviour: that the goal picker only lists THIS patient's
+    active goals under a real clinician session, and that folding in works
+    end-to-end against the real database.
+  - sv/nb wording quality (first pass — flag for a native speaker).
 
-STILL TO RUN IN SUPABASE (unchanged): 0103, 0104 (re-run; guarded), 0105, 0106.
-EDGE FUNCTION (unchanged): re-deploy send-checkin-notifications in Supabase.
-
-DEPLOY: copy files into the repo (keep folders) -> Commit -> Push.
-Do NOT run npm install yourself.
+NEXT IN THIS THREAD
+  The Consent consolidation: relabel the patient-level "Video" action to
+  "Consent", make the Consent panel the single home for clinical / educational
+  / research consent, and remove those consent rows from the Background card.
+  No migration. Design already approved.

@@ -15,6 +15,7 @@ import {
 import {
   useApproveSuggestion,
   useApproveSuggestionGas,
+  useCombineSuggestionIntoGoal,
   useSetSuggestionStatus
 } from '@/lib/supabase/clinicianPatient';
 import { formatLongDate } from '@/lib/dates';
@@ -59,6 +60,7 @@ function Inner() {
   const approve = useApproveSuggestion();
   const approveGas = useApproveSuggestionGas();
   const setStatus = useSetSuggestionStatus();
+  const combineMutation = useCombineSuggestionIntoGoal();
   const toast = useToast();
   const tFeedback = useTranslations('feedback');
 
@@ -109,6 +111,25 @@ function Inner() {
     }
   });
 
+  // Active goals offered when folding a suggestion into an existing goal.
+  // RLS-readable here because the page holds a clinician session for this
+  // patient. We only need id + the patient-facing label.
+  const activeGoalsQuery = useQuery({
+    queryKey: ['suggestionCombineGoals', suggestionQuery.data?.patient_id ?? ''],
+    enabled: !!sessionQuery.data && !!suggestionQuery.data?.patient_id,
+    queryFn: async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase
+        .from('approved_goal')
+        .select('id, patient_facing_text')
+        .eq('patient_id', suggestionQuery.data!.patient_id as string)
+        .eq('status', 'active')
+        .order('approved_at', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as { id: string; patient_facing_text: string }[];
+    }
+  });
+
   // Approval form state
   const [showApproveForm, setShowApproveForm] = useState(false);
   const [patientText, setPatientText] = useState('');
@@ -123,6 +144,9 @@ function Inner() {
   const [anchorZero, setAnchorZero] = useState('');
   const [anchorPlus1, setAnchorPlus1] = useState('');
   const [anchorPlus2, setAnchorPlus2] = useState('');
+  // 'new' = author a brand-new goal; 'combine' = fold into an existing goal.
+  const [approveMode, setApproveMode] = useState<'new' | 'combine'>('new');
+  const [combineTargetId, setCombineTargetId] = useState<string | null>(null);
 
   if (
     authLoading ||
@@ -209,14 +233,16 @@ function Inner() {
     }
   };
 
-  const onDefer = () => doSetStatus('discussAtNextVisit');
-  const onCombine = () => doSetStatus('combinedWithAnother');
-  const onNotSuitable = () => doSetStatus('notSuitableThisCycle');
+  const onSetAside = () => doSetStatus('notSuitableThisCycle');
 
-  const startApprove = (prefilled: boolean) => {
-    if (prefilled) setPatientText(suggestion.patient_wording as string);
+  const startApprove = () => {
+    setPatientText(suggestion.patient_wording as string);
+    setApproveMode('new');
+    setCombineTargetId(null);
     setShowApproveForm(true);
   };
+
+  const activeGoals = activeGoalsQuery.data ?? [];
 
   const anchorsValid = Boolean(
     anchorMinus2.trim() &&
@@ -243,7 +269,35 @@ function Inner() {
       !approveGas.isPending
   );
 
+  const canSubmit =
+    approveMode === 'combine'
+      ? Boolean(combineTargetId) && !combineMutation.isPending
+      : canSubmitApprove;
+
   const submitApprove = async () => {
+    if (approveMode === 'combine') {
+      if (!combineTargetId || combineMutation.isPending) return;
+      try {
+        await combineMutation.mutateAsync({
+          suggestionId: suggestion.id,
+          goalId: combineTargetId
+        });
+        touchSession.mutate();
+        toast.success(tApprove('combinedToast'));
+        back();
+      } catch (err) {
+        const key = classifyError(err);
+        toast.error(tFeedback(key));
+        if (key === 'errorClinicianUnlockExpired') {
+          setTimeout(() => {
+            router.push(
+              locale === 'en' ? '/clinician' : `/${locale}/clinician`
+            );
+          }, 1500);
+        }
+      }
+      return;
+    }
     if (!canSubmitApprove || approve.isPending || approveGas.isPending) return;
     try {
       if (goalKind === 'nrs') {
@@ -334,17 +388,10 @@ function Inner() {
               {t('actionsTitle')}
             </h2>
             <div className="mt-4 space-y-2">
-              <ActionButton primary onClick={() => startApprove(true)}>
+              <ActionButton primary onClick={startApprove}>
                 {t('approve')}
               </ActionButton>
-              <ActionButton onClick={() => startApprove(false)}>
-                {t('editAndApprove')}
-              </ActionButton>
-              <ActionButton onClick={onDefer}>{t('discuss')}</ActionButton>
-              <ActionButton onClick={onCombine}>{t('combine')}</ActionButton>
-              <ActionButton onClick={onNotSuitable}>
-                {t('notSuitable')}
-              </ActionButton>
+              <ActionButton onClick={onSetAside}>{t('setAside')}</ActionButton>
             </div>
           </section>
         ) : (
@@ -352,9 +399,37 @@ function Inner() {
             <h2 className="font-display text-[20px] leading-tight text-ink">
               {tApprove('title')}
             </h2>
-            <p className="mt-2 rounded-[var(--radius-button)] border border-stone bg-cream-soft p-3 text-[14px] leading-relaxed text-ink-soft">
-              {tApprove('headerNote')}
-            </p>
+
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setApproveMode('new')}
+                className={`flex-1 rounded-[var(--radius-button)] border px-3 py-2.5 text-[14px] font-semibold ${
+                  approveMode === 'new'
+                    ? 'border-sage bg-sage-soft text-sage-deep'
+                    : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
+                }`}
+              >
+                {tApprove('modeNew')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setApproveMode('combine')}
+                className={`flex-1 rounded-[var(--radius-button)] border px-3 py-2.5 text-[14px] font-semibold ${
+                  approveMode === 'combine'
+                    ? 'border-sage bg-sage-soft text-sage-deep'
+                    : 'border-stone bg-cream-soft text-ink-soft hover:bg-stone-soft'
+                }`}
+              >
+                {tApprove('modeCombine')}
+              </button>
+            </div>
+
+            {approveMode === 'new' ? (
+              <>
+                <p className="mt-6 rounded-[var(--radius-button)] border border-stone bg-cream-soft p-3 text-[14px] leading-relaxed text-ink-soft">
+                  {tApprove('headerNote')}
+                </p>
 
             <Field
               label={tApprove('patientTextLabel')}
@@ -512,6 +587,38 @@ function Inner() {
                 </ul>
               </div>
             )}
+              </>
+            ) : (
+              <>
+                <p className="mt-6 rounded-[var(--radius-button)] border border-stone bg-cream-soft p-3 text-[14px] leading-relaxed text-ink-soft">
+                  {tApprove('combineIntro')}
+                </p>
+                {activeGoals.length === 0 ? (
+                  <p className="mt-6 text-[14px] text-ink-soft">
+                    {tApprove('combineNoGoals')}
+                  </p>
+                ) : (
+                  <Field label={tApprove('combineChooseLabel')}>
+                    <div className="mt-2 space-y-2">
+                      {activeGoals.map((g) => (
+                        <button
+                          key={g.id}
+                          type="button"
+                          onClick={() => setCombineTargetId(g.id)}
+                          className={`block w-full rounded-[var(--radius-button)] border px-4 py-3 text-left text-[15px] leading-snug ${
+                            combineTargetId === g.id
+                              ? 'border-sage bg-sage-soft text-sage-deep'
+                              : 'border-stone bg-cream-soft text-ink hover:bg-stone-soft'
+                          }`}
+                        >
+                          {g.patient_facing_text}
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+                )}
+              </>
+            )}
             <div className="mt-8 flex gap-3">
               <button
                 type="button"
@@ -523,12 +630,16 @@ function Inner() {
               <button
                 type="button"
                 onClick={submitApprove}
-                disabled={!canSubmitApprove}
+                disabled={!canSubmit}
                 className="flex h-12 flex-1 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-soft"
               >
-                {approve.isPending || approveGas.isPending
+                {approve.isPending ||
+                approveGas.isPending ||
+                combineMutation.isPending
                   ? '…'
-                  : tApprove('submit')}
+                  : approveMode === 'combine'
+                    ? tApprove('combineSubmit')
+                    : tApprove('submit')}
               </button>
             </div>
           </section>

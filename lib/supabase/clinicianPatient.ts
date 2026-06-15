@@ -1245,6 +1245,31 @@ export function useSetSuggestionStatus() {
 }
 
 /**
+ * Fold a suggestion into an EXISTING approved goal during review. Records
+ * the fold-in only (status 'combinedWithAnother' + which goal); it does not
+ * create a new goal or alter the target goal. See migration 0107.
+ */
+export function useCombineSuggestionIntoGoal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      suggestionId: string;
+      goalId: string;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('combine_suggestion_into_goal', {
+        p_suggestion_id: input.suggestionId,
+        p_goal_id: input.goalId
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
+/**
  * A face mark is a located muscle injection (Option A): muscle + side +
  * dose, plus a normalised position (0..1) on the base face image, and an
  * optional note. Stored in the same muscle_injection table as standard

@@ -472,12 +472,13 @@
       "contextLabel": "Kontekst pasienten la til",
       "submittedLabel": "Sendt inn",
       "actionsTitle": "Hva vil du gjøre?",
-      "approve": "Godkjenn",
+      "approve": "Godkjenn som mål",
       "editAndApprove": "Rediger og godkjenn",
       "discuss": "Diskuter ved neste besøk",
       "combine": "Kombiner med et annet mål",
       "notSuitable": "Ikke aktuelt denne perioden",
-      "back": "Tilbake"
+      "back": "Tilbake",
+      "setAside": "Legg til side"
     },
     "approve": {
       "title": "Godkjenn mål",
@@ -514,7 +515,14 @@
       "needGoalText": "Hva pasienten ser",
       "needSmart": "SMART-versjonen",
       "needNrsQuestion": "Det ukentlige NRS-spørsmålet",
-      "needAnchors": "Alle fem ankerbeskrivelser"
+      "needAnchors": "Alle fem ankerbeskrivelser",
+      "modeNew": "Som et nytt mål",
+      "modeCombine": "Legg til i et eksisterende mål",
+      "combineIntro": "Legg dette forslaget inn under et av pasientens nåværende mål. Det registrerer at du har tatt stilling til det – det opprettes ikke et nytt mål, og målet du velger endres ikke.",
+      "combineChooseLabel": "Hvilket mål hører dette til?",
+      "combineNoGoals": "Denne pasienten har ingen aktive mål å legge dette inn under ennå.",
+      "combineSubmit": "Legg inn",
+      "combinedToast": "Lagt inn under målet."
     },
     "faceMap": {
       "marksLabel": "Markeringer:",

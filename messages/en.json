@@ -472,12 +472,13 @@
       "contextLabel": "Context the patient added",
       "submittedLabel": "Submitted",
       "actionsTitle": "What would you like to do?",
-      "approve": "Approve",
+      "approve": "Approve as a goal",
       "editAndApprove": "Edit and approve",
       "discuss": "Discuss at next visit",
       "combine": "Combine with another goal",
       "notSuitable": "Not suitable this cycle",
-      "back": "Back"
+      "back": "Back",
+      "setAside": "Set aside"
     },
     "approve": {
       "title": "Approve goal",
@@ -514,7 +515,14 @@
       "needGoalText": "What the patient will see",
       "needSmart": "The SMART version",
       "needNrsQuestion": "The weekly NRS question",
-      "needAnchors": "All five anchor descriptions"
+      "needAnchors": "All five anchor descriptions",
+      "modeNew": "As a new goal",
+      "modeCombine": "Add to an existing goal",
+      "combineIntro": "Fold this suggestion into one of the patient's current goals. This records that you've addressed it — it doesn't create a new goal or change the goal you pick.",
+      "combineChooseLabel": "Which goal does this belong to?",
+      "combineNoGoals": "This patient has no active goals to fold this into yet.",
+      "combineSubmit": "Fold in",
+      "combinedToast": "Folded into the goal."
     },
     "faceMap": {
       "marksLabel": "Marks:",

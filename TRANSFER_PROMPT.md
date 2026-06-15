@@ -72,8 +72,9 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `redcap-export-1` (**CUMULATIVE zip**) — pseudonymised REDCap CSV export. NEW migration `0106` (study_code pseudonym + clinician-gated `export_research_dataset()` RPC), client CSV builder (`lib/redcapExport.ts`), Download button on the clinician observations page. Verified on throwaway Postgres; build 110/110, tsc clean.
-- **Just shipped:** `redcap-export-1`. Run `0106` (and `0105` if not done). The export Download button is on the clinician Observations page; it produces a REDCap import CSV for all research-consented patients.
+- **Latest build:** `suggestion-approve-redesign-1` (**CUMULATIVE zip**) — the clinician approve-suggestion page redesigned to two actions (**Approve as a goal** / **Set aside**), with Approve offering **new goal** vs **add to an existing goal** (records a fold-in only). NEW migration `0107` (`combined_into_goal_id` column + clinician-gated `combine_suggestion_into_goal` RPC). Verified on throwaway Postgres (focused harness + full 0001→0107 CI replay, 0 failures); build 110/110, tsc clean, 41/41 tests, parity 1663 keys.
+- **Just shipped:** `suggestion-approve-redesign-1`. **Run `0107`** in the Supabase SQL editor (idempotent). Earlier migrations still pending if not yet run: `0103`–`0106`. The Edge Function `send-checkin-notifications` still needs (re)deploy in Supabase (sv/nb reminder copy + `--no-verify-jwt`).
+- **Roadmap done since redcap-export-1:** test harness (Vitest + jsdom component tests, 41 tests, in CI); real privacy-notice + DPIA drafts (`docs/`); native-push go-live runbook (`mobile/PUSH_GOLIVE.md` — code was already complete); sv/nb reminder localization (+ a latent push crash fixed).
 - **Two QA flags:** `record_id` = approach A (app-assigned `TC-NNNN`); DPO to bless or swap. The CSV MUST be test-imported into a real REDCap project (cannot verify live import from here).
 - **Also live (in-session):** the finalised REDCap data dictionary (86 fields) in `redcap/`; native Android push (FCM); daily scheduler `0104` once deployed.
 
@@ -87,12 +88,15 @@ not skip the work. Reusable audit/review prompts are welcome.
   honoured.
 
 **What's likely next**
-- **#4 muscle→function** (parked) — clinician-verifiable draft in `docs/`;
-  needs Nikolaj's markup + the structured-catalogue decision.
-- **Per-goal handoff note** (optional) — the note is per-cycle today; a true
-  per-goal note needs a migration. Only if Nikolaj wants it.
-- **Then:** adjustment-request status loop (migration); REDCap dictionary
-  reconciliation + EHR-content reshaping (decisions for the study team/DPO).
+- **Consent consolidation** (design approved, no migration) — relabel the
+  patient-level "Video" action to "Consent"; make the Consent panel
+  (`ClinicianVideoModal`) the single home for clinical / educational / research
+  consent, and remove those consent rows from `BackgroundCard`.
+- **Then — last roadmap item:** Playwright E2E smoke (login → check-in). Will
+  be a scaffold + run instructions; not provable-green from the sandbox.
+- **Parked:** #4 muscle→function (needs Nikolaj's markup + the catalogue
+  decision); per-goal handoff note (per-cycle today; would need a migration);
+  cross-version goal chart.
 
 **Your first reply:** confirm you've read `HANDOVER.md`, state the current build
 + migration in a line or two, and either wait for my “go” or ask the one thing
