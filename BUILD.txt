@@ -1,67 +1,43 @@
-BUILD - e2e-smoke-1   (CUMULATIVE)
-Added a Playwright end-to-end smoke (login + weekly check-in) as a dev-facing
-scaffold. No app behaviour changes in this batch.
-
->>> CUMULATIVE — this one drop-in also carries the two previous batches
->>> (consent-consolidation-1 and suggestion-approve-redesign-1) and the
->>> migration 0107. Dropping this zip deploys everything from this session. <<<
+BUILD - checkin-e2e-fix-1
+Fixes the Playwright check-in smoke test, and carries the signed-out→/login
+guard from the previous batch so one drop deploys both.
 
 WHAT'S IN THIS DROP
-  This batch (E2E scaffold — does NOT affect the running app):
-    playwright.config.ts
-    e2e/smoke.spec.ts
-    e2e/README.md
-    e2e/.gitignore
-    .github/workflows/e2e.yml          (MANUAL trigger only — never gates pushes)
-    tsconfig.json                      (only adds "e2e" to exclude)
-  Carried from consent-consolidation-1:
-    components/clinician/ClinicianVideoModal.tsx   (now the Consent panel)
-    components/clinician/BackgroundCard.tsx        (consent rows removed)
-    components/clinician/PatientActionRow.tsx      (Video icon -> shield-check)
-  Carried from suggestion-approve-redesign-1:
-    supabase/migrations/0107_combine_suggestion_into_goal.sql   (MIGRATION)
-    lib/supabase/clinicianPatient.ts               (combine hook)
-    app/[locale]/clinician/suggestion/page.tsx     (Approve / Set aside)
-  Touched by both feature batches:
-    app/[locale]/clinician/patient/page.tsx
-    messages/en|da|sv|nb.json
+  e2e/smoke.spec.ts        (check-in test fixed + made re-runnable; test 2 also
+                            asserts the signed-out redirect to /login)
+  lib/supabase/auth.tsx    (global signed-out -> /login guard; if you already
+                            pushed auth-redirect-guard-1 this is identical)
+  playwright.config.ts     (hardened config; unchanged if you already have it)
 
-DEPLOY — IN ORDER (same as before; nothing new to run for the E2E part)
-  1. Supabase SQL editor: run (if not already done from a prior drop)
-         supabase/migrations/0107_combine_suggestion_into_goal.sql   (idempotent)
-  2. GitHub Desktop: drop all files from this zip into the repo, same paths.
-     DO NOT overwrite root package.json / package-lock.json (untouched here).
-  3. Commit + push. Vercel auto-builds. The e2e/ files and the manual workflow
-     have no effect on the build or the running app.
+WHAT WAS WRONG WITH THE CHECK-IN TEST
+  It timed out clicking a disabled "Continue". That was the TEST's fault, not
+  the app's: the loop looked for the rating buttons before the page had finished
+  loading, so it skipped picking a rating, then waited forever on a Continue
+  button that can't turn on until a rating is chosen. The app is fine.
 
-USING THE E2E SMOKE (optional, for you or the incoming developer)
-  One-time:
-     npm install -D @playwright/test
-     npx playwright install chromium
-  Run locally (starts the dev server for you; needs .env.local):
-     npx playwright test
-  Or against the live site:
-     E2E_BASE_URL=https://treatment-companion.vercel.app \
-     E2E_PATIENT_EMAIL=test1@example.com E2E_PATIENT_PASSWORD=... \
-     npx playwright test
-  Full details + preconditions: e2e/README.md
+WHAT THE TEST DOES NOW
+  - Waits for the check-in screen to actually render before doing anything.
+  - On each step, picks a rating and CONFIRMS it registered before moving on.
+  - Only clicks Continue once it's actually enabled.
+  - If the patient has no check-in due (e.g. a previous run already completed
+    it — finishing a check-in uses up that week's prompt), the test SKIPS with
+    a clear note instead of failing, so you can re-run the suite freely.
+
+DEPLOY
+  1. GitHub Desktop: drop these files into the repo (same paths) -> commit -> push.
+     DO NOT overwrite root package.json / package-lock.json (untouched).
+     No migration in this batch.
+  2. If lib/supabase/auth.tsx is new to your repo, wait for Vercel to rebuild
+     (it's app code). If you already pushed it, no rebuild needed for the test.
+  3. Re-run the E2E smoke (Actions -> E2E smoke -> Run workflow).
+
+EXPECTED RESULT
+  - With a pending check-in for the test patient (test1@example.com): 4 passed.
+  - If that prompt was already consumed by an earlier run: 3 passed, 1 skipped
+    ("No pending check-in to complete ..."). Seed a fresh week to get 4 again.
 
 VERIFICATION DONE FOR YOU (sandbox)
-  - App build: 110/110 pages, exit 0.  TypeScript: clean.  Tests: 41/41.
-  - i18n parity: 1668 keys, en/da aligned.
-  - The e2e spec + config TYPE-CHECK clean against @playwright/test.
-  - (Migration 0107 was verified on a throwaway Postgres earlier: focused
-     harness + all four guards + full 0001->0107 chain, 0 failures.)
-
-HONEST LIMITS
-  - I could NOT run the browser tests here (no browser, no live app). The two
-    signed-out tests are robust; the two signed-in tests are env-gated (they
-    SKIP without credentials) and may need a small selector tweak on the first
-    real run — that first green run is the real acceptance. See e2e/README.md.
-  - As always: I can't see rendered screens, real device behaviour, or live
-    RLS/auth. sv/nb strings (from the carried batches) are first-pass.
-
-ROADMAP
-  This was the last item on your audit list. All five are now delivered:
-  test harness, privacy/DPIA drafts, native-push runbook, sv/nb reminder
-  localization, and this E2E smoke.
+  - e2e/smoke.spec.ts type-checks against @playwright/test.
+  - App (from the carried auth.tsx): build 110/110, TypeScript clean, 41/41 tests.
+  - I CANNOT run a real browser here, so the live pass/skip is confirmed by your
+    workflow run.

@@ -10,7 +10,8 @@ import {
   type ReactNode
 } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { createSupabaseBrowserClient } from './browser';
 import { useToast } from '@/components/feedback/Toast';
 
@@ -89,6 +90,26 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+// Routes a signed-OUT visitor is allowed to see. Everything else sends them
+// to /login once auth has resolved. Matched against the locale-stripped path.
+const PUBLIC_PREFIXES = [
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/reset-password',
+  '/privacy'
+];
+
+// Strip a leading non-default locale segment ('/da', '/sv', '/nb') so route
+// matching is locale-agnostic. The default locale (en) is unprefixed.
+function localeStrippedPath(pathname: string): string {
+  const seg = pathname.split('/')[1];
+  if (seg === 'da' || seg === 'sv' || seg === 'nb') {
+    return pathname.slice(seg.length + 1) || '/';
+  }
+  return pathname;
+}
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -105,6 +126,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
   const toast = useToast();
   const tFeedback = useTranslations('feedback');
+  const pathname = usePathname();
+  const locale = useLocale();
   // Track previous user so we can tell "logged out by user" (initial
   // mount) apart from "session expired mid-use" (was logged in, now
   // not). Only the latter deserves the expiry toast.
@@ -207,6 +230,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
       sub.subscription.unsubscribe();
     };
   }, [fetchProfile, toast, tFeedback]);
+
+  // Global signed-out guard. Once auth has resolved, a visitor with no
+  // session on any protected route is sent to /login — from ANY page,
+  // however they arrived (cold load, session expiry, or sign-out). This is
+  // the single source of truth for "no session → login", so individual
+  // pages don't each have to get it right.
+  //
+  // A HARD navigation is used deliberately: soft router redirects have proven
+  // unreliable from some pages (the check-in wizard swallowed them), and this
+  // guard must never be the thing that gets swallowed.
+  useEffect(() => {
+    if (loading || user) return;
+    const bare = localeStrippedPath(pathname);
+    const isPublic = PUBLIC_PREFIXES.some(
+      (p) => bare === p || bare.startsWith(p + '/')
+    );
+    if (isPublic) return;
+    const loginPath = locale === 'en' ? '/login' : `/${locale}/login`;
+    if (typeof window !== 'undefined') {
+      window.location.replace(loginPath);
+    }
+  }, [loading, user, pathname, locale]);
 
   // Re-read the current user's profile on demand. Used after own-row
   // mutations so guards/UI see new values without a page reload.
