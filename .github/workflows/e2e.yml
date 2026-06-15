@@ -1,0 +1,47 @@
+name: E2E smoke (manual)
+
+# Manual only — this never runs on push/PR, so a browser-level flake can never
+# red-gate normal commits. Run it from the Actions tab when you want it.
+#
+# Requires repo settings first:
+#   Variables (Settings → Secrets and variables → Actions → Variables):
+#     E2E_BASE_URL            e.g. https://treatment-companion.vercel.app
+#   Secrets:
+#     E2E_PATIENT_EMAIL       e.g. test1@example.com
+#     E2E_PATIENT_PASSWORD    the password set for that test account
+#
+# It points at a DEPLOYED url, so no app server or Supabase keys are needed
+# in CI. Promote to a schedule or post-deploy trigger once it's proven stable.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install app deps
+        run: npm ci
+      - name: Install Playwright + Chromium
+        run: |
+          npm install -D @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Run smoke against the deployed URL
+        env:
+          E2E_BASE_URL: ${{ vars.E2E_BASE_URL }}
+          E2E_PATIENT_EMAIL: ${{ secrets.E2E_PATIENT_EMAIL }}
+          E2E_PATIENT_PASSWORD: ${{ secrets.E2E_PATIENT_PASSWORD }}
+        run: npx playwright test
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/.artifacts/playwright-report
+          retention-days: 7
