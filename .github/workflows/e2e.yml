@@ -1,25 +1,57 @@
-name: E2E smoke (manual)
+name: E2E smoke
 
-# Manual only — this never runs on push/PR, so a browser-level flake can never
-# red-gate normal commits. Run it from the Actions tab when you want it.
+# Browser smoke against the DEPLOYED app. Three triggers:
+#   • workflow_dispatch — run on demand from the Actions tab
+#   • schedule          — daily synthetic-monitoring run; catches prod outages
+#                         or login breakage even when nothing was deployed
+#   • deployment_status — runs automatically after a SUCCESSFUL PRODUCTION
+#                         Vercel deploy; catches regressions a deploy introduces
 #
-# Requires repo settings first:
-#   Variables (Settings → Secrets and variables → Actions → Variables):
-#     E2E_BASE_URL            e.g. https://treatment-companion.vercel.app
-#   Secrets:
-#     E2E_PATIENT_EMAIL       e.g. test1@example.com
-#     E2E_PATIENT_PASSWORD    the password set for that test account
+# Deliberately NOT on push / pull_request: a browser-level flake must never
+# red-gate a normal commit. The CI workflow's verify job (typecheck/test/build)
+# is the push/PR gate; THIS is post-deploy + scheduled monitoring only.
 #
-# It points at a DEPLOYED url, so no app server or Supabase keys are needed
-# in CI. Promote to a schedule or post-deploy trigger once it's proven stable.
+# Schedule + deployment_status only take effect once this file is on the
+# DEFAULT branch (main).
+#
+# Requires (Settings -> Secrets and variables -> Actions):
+#   Variables:  E2E_BASE_URL          e.g. https://treatment-companion.vercel.app
+#   Secrets:    E2E_PATIENT_EMAIL     a DEDICATED TEST patient (never a real one)
+#               E2E_PATIENT_PASSWORD  that test account's already-set password
+# Without E2E_BASE_URL the run fails fast; without the creds the two patient
+# tests self-skip and only the login-page / redirect checks run.
+#
+# DATA NOTE: the patient flow completes a weekly check-in as the test account,
+# so each scheduled / post-deploy run consumes that test patient's weekly
+# prompt. The check-in test self-skips once the prompt is used, so repeated
+# runs are safe — but use a dedicated e2e test patient, not one you demo with.
 
 on:
   workflow_dispatch:
+  schedule:
+    # Daily at 06:00 UTC (07:00/08:00 Europe/Copenhagen). Cron is always UTC.
+    # Edit this line to change frequency (e.g. '0 6 * * 1' = Mondays only).
+    - cron: '0 6 * * *'
+  deployment_status:
+
+# Run one smoke at a time; let a running one finish rather than cancelling it
+# mid-check-in. A newer queued run replaces an older queued one.
+concurrency:
+  group: e2e-smoke
+  cancel-in-progress: false
 
 jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # For deployment_status events, only proceed on a SUCCESSFUL PRODUCTION
+    # deploy. Vercel labels production deployments "Production"; if yours is
+    # named differently, adjust the environment check below. Manual and
+    # scheduled runs are unaffected by this condition.
+    if: >-
+      github.event_name != 'deployment_status' ||
+      (github.event.deployment_status.state == 'success' &&
+       github.event.deployment_status.environment == 'Production')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

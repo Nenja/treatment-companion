@@ -1,74 +1,42 @@
-BUILD - secdef-harden-1   (SECURITY DEFINER hardening — migration 0108)
-        *** CUMULATIVE: also carries the un-committed next16-upgrade-1 ***
+BUILD - e2e-autorun-1   (E2E smoke now runs automatically)
 
-This one drop contains TWO independent pieces of work. They don't depend on each
-other - you can do them in either order.
+WHAT CHANGED
+  One file: .github/workflows/e2e.yml
+  It was manual-only (workflow_dispatch). Now it ALSO runs:
+    - daily on a schedule (06:00 UTC) - synthetic monitoring; catches prod or
+      login breakage even when you haven't deployed anything
+    - after a successful PRODUCTION Vercel deploy (deployment_status) - catches
+      regressions a deploy introduces
+  It is STILL not run on push/PR on purpose: a browser flake must never block a
+  normal commit. Your CI "verify" job (typecheck/i18n/test/build) stays the
+  push gate. A concurrency group stops overlapping runs.
 
-================================================================================
-PIECE 1 - Run the database migration 0108 (Supabase SQL editor)
-================================================================================
-WHAT IT DOES (no behaviour change for legitimate users):
-  A. Pins search_path = public on the 17 SECURITY DEFINER functions that still
-     had a mutable search_path (the other 66 already had it). Closes the
-     "Function Search Path Mutable" class of issue.
-  B. Locks down the 10 dev-seed functions. They were callable by anyone
-     (anon/authenticated) with NO auth check, and dev_reseed_all() is
-     DESTRUCTIVE (it deletes + re-seeds a patient's data). 0108 revokes their
-     EXECUTE from anon/authenticated/PUBLIC and grants only service_role. Your
-     /api/dev/scenario route calls them via the service-role client, so it keeps
-     working; you can also still run them from the SQL editor.
+  No app code, schema, or dependency change. Nothing else in this drop.
 
-HOW:
-  - Open the Supabase SQL editor and run the standalone file included beside the
-    zip: 0108_harden_secdef_functions.sql
-    (identical to supabase/migrations/0108_harden_secdef_functions.sql).
-  - It's safe to run before OR after the Next 16 deploy below.
+DEPLOY
+  1. GitHub Desktop: copy .github/workflows/e2e.yml into the repo (overwrite),
+     commit, push - to your DEFAULT branch (main). The schedule and the
+     post-deploy trigger only take effect from the default branch.
+  2. Confirm these are set under Settings -> Secrets and variables -> Actions:
+       Variables:  E2E_BASE_URL          e.g. https://treatment-companion.vercel.app
+       Secrets:    E2E_PATIENT_EMAIL     a DEDICATED test patient
+                   E2E_PATIENT_PASSWORD  that account's password
+     (Same ones the manual workflow already needed.)
+  3. Optional: trigger it once from the Actions tab ("E2E smoke" -> Run workflow)
+     to confirm it's green before relying on the automatic runs.
 
-ALREADY VERIFIED (throwaway Postgres 16, full migration replay + catalog checks):
-  - 0 functions left with a mutable search_path; all 17 still execute cleanly.
-  - dev functions: anon/authenticated EXECUTE = false, service_role = true.
-  - a normal RPC's grants (submit_weekly_checkin_v4, set_own_sex, ...) unchanged.
-  - from-scratch CI replay INCLUDING 0108 applies cleanly (CI stays green).
+NOTES
+  - DATA: each automatic run completes a weekly check-in as the test patient.
+    The check-in test self-skips once that week's prompt is used, so repeats are
+    safe - but use a test account you don't also demo with.
+  - If your Vercel labels production deployments with something other than
+    "Production", edit the environment check in the job's `if:` line.
+  - Adjust frequency by editing the cron line (e.g. '0 6 * * 1' = Mondays only).
 
-NOT done on purpose - FORCE ROW LEVEL SECURITY:
-  Forcing RLS would break your write path: 16 of your policies are TO
-  authenticated only, and the SECURITY DEFINER functions run as postgres, which
-  would then have no matching policy -> silent deny. It's also not verifiable in
-  the test harness. Full reasoning + a safe staged-rollout recipe are in
-  docs/audits/security-definer-audit-2026-06.md (section F3).
-
-Two follow-ups are written up in that audit (F2: tighten the broad
-EXECUTE-to-PUBLIC grants; F3: staged FORCE RLS). Both need their own tested pass.
-
-================================================================================
-PIECE 2 - Deploy Next.js 16 (the still-uncommitted upgrade, carried here)
-================================================================================
-  Files: package.json, package-lock.json, proxy.ts
-
-  1. Confirm Vercel's Node is 20+ (Next 16 minimum; Vercel's default is fine).
-  2. GitHub Desktop: overwrite package.json + package-lock.json, add proxy.ts,
-     and DELETE middleware.ts (a zip can't remove files; Next 16 errors if both
-     middleware.ts and proxy.ts exist). Commit -> push -> Vercel rebuilds
-     (Turbopack).
-
-  LOCKFILE / CI NOTE (fixes the "npm ci ... Missing @swc/helpers@0.5.23" error):
-  next-intl is pinned to 4.4.0 (not 4.13.0). 4.5+ pulls native deps (@swc/core,
-  @parcel/watcher) for an SWC message-extractor this app does not use, and those
-  make package-lock.json non-portable - regenerating it on Windows/another npm
-  drops an optional-peer entry, which is what broke `npm ci` in CI. 4.4.0 has no
-  native deps, so the lock is portable. IMPORTANT: drop package.json AND
-  package-lock.json from this zip together, and do NOT run `npm install` locally
-  to regenerate the lock. Verified here: a real `npm ci` installs cleanly.
-
-  Verified in sandbox: tsc clean, Turbopack build 109/109, parity 1668, 41/41
-  tests, e2e spec type-clean, the 2 HIGH npm-audit advisories resolved.
-
-  After it deploys (runtime can't be verified from here - this was a
-  three-major-version jump):
-   1. Re-run the E2E smoke (Actions -> E2E smoke): login + signed-out redirect +
-      sign-in + a full check-in, on 16. Green = critical paths survived.
-   2. Click through all four locales (/, /da, /sv, /nb) + switch language.
-   3. Log in, navigate, refresh -> confirm you stay logged in; logout -> /login.
-   4. Confirm a push notification still registers.
-
-  Fallback if anything's off: Next 15.5.18 (same security fix, no other changes).
+STILL PENDING FROM EARLIER (independent of this; not re-shipped here)
+  These are unrelated to the E2E change - listed so nothing falls through:
+  - next16-upgrade-1: if not already done, add proxy.ts and DELETE middleware.ts
+    (the Next 16 dependency files are already committed - CI is green).
+  - secdef-harden-1: run 0108_harden_secdef_functions.sql in the Supabase SQL
+    editor if you haven't yet.
+  Both files live in the treatment-companion-secdef-harden-1 zip.
