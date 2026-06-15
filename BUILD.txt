@@ -1,71 +1,23 @@
-BUILD - redcap-export-1   (CUMULATIVE)
-Pseudonymised REDCap CSV export (the research data download) +
-everything from the adjustment loop and earlier still-uncommitted work.
+BUILD - physio-progress-retire-1   (CUMULATIVE)
+Tiny tidy on top of redcap-export-1: the orphaned /physio/progress route is
+now a redirect. Everything else in this zip is unchanged from redcap-export-1.
 
->>> THIS ZIP IS CUMULATIVE <<<
-It carries everything still uncommitted (adjustment loop 0105, sv/nb
-translation, language picker, EHR export rework + chart PNG, auto-apply
-language, pg_cron 0104) PLUS the REDCap export below. One drop-in deploys it
-all.
+>>> CUMULATIVE — supersedes redcap-export-1 <<<
+One drop-in deploys it all. If you already deployed redcap-export-1, the only
+new file here is app/[locale]/physio/progress/page.tsx.
 
-NEW DATABASE MIGRATION
-- 0106_research_export.sql  -> run it in the Supabase SQL editor.
-  Also run, if you haven't yet: 0105 (adjustment loop), 0103, 0104.
-  0106 was verified on a throwaway Postgres: study codes get assigned, only
-  research-consented (non-purged) patients are exported, all instruments come
-  through with correct goal numbering, non-clinicians are blocked, and
-  re-running it is safe.
+WHAT CHANGED
+- /physio/progress no longer renders its own progress form (that form has
+  lived inline on /physio/patient since cockpit-65). The route is now a
+  locale-preserving redirect to /physio/patient, so any old bookmark/link
+  still lands on the live cockpit. /physio/patient handles auth + session.
+  Build 110/110, tsc clean.
 
-WHAT THE EXPORT DOES (web, normal GitHub -> Vercel)
-On the clinician "Observations" page there is now a "Research data export"
-section with a "Download REDCap CSV" button. It downloads one CSV containing
-every research-consented patient's data across all their cycles - demographics,
-treatment cycles, injections, goals, weekly check-ins, goal ratings,
-physiotherapist assessments/ratings, and ITB - already coded to match your
-REDCap data dictionary. Import it in REDCap with the Data Import Tool.
-
-Each patient appears only under a study code (TC-0001, TC-0002, ...), never a
-name. The clinic holds the code<->patient mapping.
-
-TWO THINGS TO DECIDE / CHECK (important)
-1. record_id pseudonym is "approach A": the app assigns TC-0001, TC-0002...
-   Your DPO should approve this or replace it with a study-team-assigned list.
-   (The study_code column is harmless if you don't use it.)
-2. TEST-IMPORT the CSV into a real REDCap project first. The codings and the
-   repeating-instrument setup match the dictionary, but live REDCap import
-   cannot be verified from here. Withdrawn-but-not-purged patients are still
-   included - that's a study decision (see REDCAP_RECONCILIATION.md).
-
-FILES IN THIS BUNDLE (keep folder structure)
-  supabase/migrations/0106_research_export.sql            (NEW - run it)
-  supabase/migrations/0105_adjustment_request_status.sql  (run it)
-  supabase/migrations/0104_schedule_checkin_notifications.sql
-  supabase/migrations/0103_allow_sv_nb_locales.sql
-  lib/redcapExport.ts                                     (NEW)
-  app/[locale]/clinician/observations/page.tsx
-  lib/supabase/physioAssessment.ts
-  lib/supabase/clinicianPatient.ts
-  app/[locale]/clinician/patient/page.tsx
-  components/clinician/TherapistInputPanel.tsx
-  messages/en.json, da.json, sv.json, nb.json
-  app/[locale]/login/page.tsx
-  lib/goalChartImage.ts
-  components/clinician/GoalProgressView.tsx
-  components/clinician/ExportModal.tsx
-  lib/ehrExport.ts
-  components/settings/LanguageSelect.tsx
-  lib/supabase/locale.ts
-  app/[locale]/profile/page.tsx
-  app/[locale]/goals/page.tsx
-  i18n/routing.ts, i18n/request.ts, lib/supabase/auth.tsx
-  redcap/treatment_companion_datadictionary.csv           (the import target)
-  redcap/REDCAP_RECONCILIATION.md
-  + HANDOVER.md, BUILD.txt, TRANSFER_PROMPT.md
+STILL TO RUN IN SUPABASE (unchanged from redcap-export-1)
+- Migrations 0103, 0104, 0105, 0106 (run any not yet applied).
+- See redcap-export-1 / reminder-cron notes for the edge-function deploy +
+  Vault secrets if reminders aren't live yet.
 
 DEPLOY
-1. Supabase SQL editor -> run 0106 (and 0105/0103/0104 if not done).
-2. Copy files into the repo (keep folders) -> Commit -> Push (Vercel builds).
-   The redcap/ files are repo-only; import the dictionary CSV into REDCap
-   separately (Designer -> Data Dictionary -> Upload), then use the export
-   button to produce data CSVs for the Data Import Tool.
-DO NOT run npm install or overwrite package.json / package-lock.json.
+  Copy files into the repo (keep folders) -> Commit -> Push (Vercel builds).
+  Do NOT run npm install or overwrite package.json / package-lock.json.

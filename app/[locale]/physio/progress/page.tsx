@@ -1,160 +1,23 @@
 'use client';
-import { ErrorState } from '@/components/feedback/ErrorState';
 
 import { useEffect } from 'react';
-import { AppHeader } from '@/components/layout/AppHeader';
+import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
-import { useAuth } from '@/lib/supabase/auth';
-import { useCurrentClinicianSession } from '@/lib/supabase/clinicianSession';
-import { usePhysioPatientData } from '@/lib/supabase/physioPatient';
-import { PhysioProgressForm } from '@/components/physio/PhysioProgressForm';
-import { EndSessionButton } from '@/components/clinician/EndSessionButton';
-import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
-import {
-  SkeletonBlock,
-  SkeletonParagraph,
-  SkeletonScreen
-} from '@/components/feedback/Skeleton';
 
 /**
- * Dedicated page for the therapist's primary action: reporting
- * progress against the patient's goals. Mirrors the clinician's
- * /clinician/treatment page in pattern — the routine primary task
- * gets its own page rather than living as an inline panel, so the
- * therapist's attention narrows to one task and the form has room
- * to breathe.
- *
- * Save → navigates back to /physio/patient. Cancel/Back also returns
- * there. No state is lost on the patient page because that page
- * re-fetches on mount.
+ * Retired route. Progress reporting now lives inline on /physio/patient as
+ * the unified per-goal cards (cockpit-65), so this dedicated page is no
+ * longer linked anywhere. We keep the path only to forward stale
+ * bookmarks/links to the cockpit; /physio/patient itself handles auth,
+ * session, and locale gating.
  */
-export default function PhysioProgressPage() {
+export default function PhysioProgressRedirect() {
   const router = useRouter();
   const locale = useLocale();
-  const t = useTranslations('physio');
-  const tA11y = useTranslations('a11y');
-
-  const { user, profile, loading: authLoading } = useAuth();
-  const sessionQuery = useCurrentClinicianSession(
-    profile?.id ?? null,
-    profile?.role
-  );
-  const patientData = usePhysioPatientData(
-    profile?.id ?? null,
-    profile?.role
-  );
-
-  // Auth + role gating: therapist only.
   useEffect(() => {
-    if (authLoading) return;
-    if (!user || !profile) {
-      router.replace(locale === 'en' ? '/login' : `/${locale}/login`);
-      return;
-    }
-    if (profile.role !== 'physiotherapist') {
-      router.replace(locale === 'en' ? '/' : `/${locale}`);
-    }
-  }, [authLoading, user, profile, router, locale]);
-
-  // No session → unlock screen.
-  useEffect(() => {
-    if (sessionQuery.status === 'success' && !sessionQuery.data) {
-      if (isSessionEndingDeliberately()) return;
-      router.replace(locale === 'en' ? '/physio' : `/${locale}/physio`);
-    }
-  }, [sessionQuery.status, sessionQuery.data, router, locale]);
-
-  const back = () =>
-    router.push(
+    router.replace(
       locale === 'en' ? '/physio/patient' : `/${locale}/physio/patient`
     );
-
-  if (sessionQuery.isError || patientData.isError) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-cream">
-        <ErrorState onRetry={() => { sessionQuery.refetch(); patientData.refetch(); }} />
-      </div>
-    );
-  }
-
-  if (
-    authLoading ||
-    !profile ||
-    profile.role !== 'physiotherapist' ||
-    sessionQuery.isLoading ||
-    !sessionQuery.data ||
-    patientData.isLoading ||
-    !patientData.data
-  ) {
-    return (
-      <div className="min-h-dvh bg-cream">
-        <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
-          <SkeletonScreen label={tA11y('loading')}>
-            <SkeletonBlock width="w-1/3" height="h-5" />
-            <SkeletonBlock width="w-2/3" height="h-7" className="mt-3" />
-            <div className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
-              <SkeletonParagraph lines={4} />
-            </div>
-          </SkeletonScreen>
-        </main>
-      </div>
-    );
-  }
-
-  const { patient, goals, cycle } = patientData.data;
-
-  // Post-injection week, computed the same way as on the patient
-  // page. Used in the cycleLabel translation.
-  const weekNumber = cycle
-    ? Math.max(
-        1,
-        Math.floor(
-          (Date.now() - new Date(cycle.startDate).getTime()) /
-            (24 * 60 * 60 * 1000) /
-            7
-        ) + 1
-      )
-    : 1;
-
-  return (
-    <div className="min-h-dvh bg-cream">
-      <AppHeader
-        width="narrow"
-        back={{ label: t('back'), onClick: back }}
-        actions={<EndSessionButton role="physiotherapist" />}
-        helpPageKey="physioProgress"
-      />
-
-      <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
-        <div className="eyebrow">{t('reportProgress')}</div>
-        <h1 className="mt-0.5 font-display text-[24px] leading-tight text-ink">
-          {patient.displayName}
-        </h1>
-        {cycle && (
-          <p className="mt-1 text-[14px] text-ink-soft">
-            {t('cycleLabel', {
-              week: weekNumber
-            })}
-          </p>
-        )}
-
-        {/* The form handles its own header, fields, recent
-            assessments list, and submission. We pass `onSaved` so the
-            page navigates back after a successful submission, instead
-            of leaving the therapist on a freshly-reset form. */}
-        {goals.length === 0 ? (
-          <p className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4 text-[14px] text-ink-muted">
-            {t('noGoalsToReport')}
-          </p>
-        ) : (
-          <PhysioProgressForm
-            patientId={patient.id}
-            goals={goals}
-            onSaved={back}
-          />
-        )}
-      </main>
-    </div>
-  );
+  }, [router, locale]);
+  return <div className="min-h-dvh bg-cream" />;
 }
