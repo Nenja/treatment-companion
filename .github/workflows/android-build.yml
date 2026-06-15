@@ -95,7 +95,7 @@ jobs:
           if-no-files-found: error
 
       - name: Publish the APK to a Release (easy phone download)
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: android-latest
           name: Treatment Companion — Android (latest debug build)
