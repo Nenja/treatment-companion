@@ -1,37 +1,41 @@
-BUILD - sv-nb-reminders-1   (CUMULATIVE)
-Swedish + Norwegian for the check-in reminder push, plus a crash-safety fix in
-the same code. Carries everything still uncommitted.
+BUILD - component-tests-1   (CUMULATIVE)
+Adds the component-test layer to the harness and a first component test for the
+patient's 0-10 rating control. 41 tests now pass (was 35).
 
 >>> CUMULATIVE — one drop-in deploys everything. <<<
 
-WHAT'S NEW THIS BATCH (one file)
-  supabase/functions/send-checkin-notifications/index.ts
-    - Added sv + nb text for BOTH notifications (the "due now" one and the late
-      reminder). First pass — please have a native speaker check the wording.
-    - Fixed a latent crash: the code picked the message text by the subscriber's
-      language with NO fallback, so a Swedish/Norwegian patient (those languages
-      were added recently) would have caused that send to error. It now falls
-      back to English for any unexpected language.
+WHAT'S NEW THIS BATCH
+  tests/GoalRatingPicker.test.tsx   (+6 tests, runs in jsdom)
+  vitest.config.ts                  (React plugin + .tsx test discovery)
+  package.json / package-lock.json  (test-tooling devDeps; see note below)
 
->> IMPORTANT — THIS FILE IS NOT DEPLOYED BY GITHUB / VERCEL. <<
-   The reminder sender is an Edge Function you deploy SEPARATELY in Supabase.
-   For the new text to take effect, re-deploy `send-checkin-notifications`
-   (Supabase dashboard -> Edge Functions, or the CLI). Keeping it in the repo
-   keeps one source of truth, but the deploy step is manual.
+WHAT THE COMPONENT TESTS CHECK (GoalRatingPicker = the 0-10 tap scale)
+  - renders 11 buttons (0-10) as one radio group
+  - tapping a number calls onChange once with that number
+  - exactly one button shows as selected for the current value
+  - the "tap a number" hint shows only until a value is picked
+  - the Best/Worst end labels follow the goal's direction (higher-is-better
+    puts Best at 10; lower-is-better flips it)
 
-SWEDISH / NORWEGIAN TEXT ADDED (for your reviewer)
-  Initial  sv: "Veckovis status" / "Hur har veckan gått? Tryck för att skatta dina mål."
-           nb: "Ukentlig status" / "Hvordan har uken gått? Trykk for å vurdere målene dine."
-  Reminder sv: "Påminnelse" / "Du har en status som väntar. Det tar ungefär två minuter."
-           nb: "Påminnelse" / "Du har en status som venter. Det tar omtrent to minutter."
+DEPENDENCY NOTES (please read)
+  - DEV-ONLY tooling added: @testing-library/react, @testing-library/dom,
+    @testing-library/jest-dom, jsdom, @vitejs/plugin-react. None ships to
+    production; the Vercel build is unaffected (verified: build still 110/110).
+  - @types/node bumped 22.10.0 -> 22.19.21. Vitest 4 pulls in vite 8, which
+    needs @types/node >= 22.12. Bumping keeps the lockfile clean for npm ci.
+  - EASIEST: take the included package.json + package-lock.json as-is. Hand-
+    diffing the new devDeps + the bump + ~800 lock lines is error-prone.
+  - The `npm audit` warnings are all in the dev-tooling tree, not in anything
+    that runs in production.
 
-CARRIED (cumulative, unchanged): the full Vitest harness (now 35 tests), the
-chart consolidation, and the guarded migration 0104.
+CARRIED (cumulative, unchanged): the sv/nb reminder localization + crash fix,
+the rest of the Vitest harness (now 41 tests), the chart consolidation, and the
+guarded migration 0104.
 
-VERIFIED: app type-check clean, i18n parity OK, 35/35 unit tests pass. The edge
-function is Deno (not in the app's type-checker), so its changed text + fallback
-logic were type-checked in isolation instead.
+VERIFIED: build 110/110, tsc clean, i18n parity OK, 41/41 unit tests pass.
 
 STILL TO RUN IN SUPABASE (unchanged): 0103, 0104 (re-run; guarded), 0105, 0106.
+EDGE FUNCTION (unchanged): re-deploy send-checkin-notifications in Supabase.
 
-DEPLOY: web files -> Commit -> Push (Vercel).  Edge function -> re-deploy in Supabase.
+DEPLOY: copy files into the repo (keep folders) -> Commit -> Push.
+Do NOT run npm install yourself.
