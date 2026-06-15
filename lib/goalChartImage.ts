@@ -32,6 +32,13 @@ export interface GoalChartInput {
   nrsBaseline?: number | null;
   nrsTarget?: number | null;
   points: GoalChartPoint[];
+  /** Physiotherapist + clinic-video comparison series, plotted on the same
+   *  axis as the patient (drawn dimmer). Optional — omit for patient-only. */
+  physioPoints?: GoalChartPoint[];
+  clinicPoints?: GoalChartPoint[];
+  /** Pre-translated legend labels. The PNG translator is scoped to
+   *  ehrExport, which doesn't carry these, so the caller passes them in. */
+  legend?: { patient: string; physio: string; clinic: string };
   header: { modality?: TreatmentModality; cycleNumber: number; startDate: string };
   /** Translator scoped to the `ehrExport` namespace. */
   t: ExportTranslator;
@@ -40,7 +47,7 @@ export interface GoalChartInput {
 
 // --- Geometry (logical px; rasterised at 2× for crispness) -----------------
 const W = 680;
-const H = 350;
+const H = 372;
 const PLOT_R = 656;
 const PLOT_TOP = 96;
 const PLOT_BOTTOM = 264;
@@ -315,6 +322,73 @@ function buildSvg(input: GoalChartInput): string {
   flush();
   for (const p of series)
     push(`<circle cx="${xFor(p.week).toFixed(1)}" cy="${yForVal(p.v).toFixed(1)}" r="3" fill="${C.sageDeep}"/>`);
+
+  // --- Comparison series: physiotherapist + clinic video ------------------
+  // Same axis as the patient (NRS goals plot .nrs, GAS goals plot .gas),
+  // drawn dimmer so the patient's own line stays primary.
+  const axisVal = (p: GoalChartPoint): number | null => (isNrs ? p.nrs : p.gas);
+  const toSeries = (pts: GoalChartPoint[] | undefined) =>
+    (pts ?? [])
+      .map((p) => ({ week: p.week, v: axisVal(p) }))
+      .filter((p): p is { week: number; v: number } => typeof p.v === 'number')
+      .sort((a, b) => a.week - b.week);
+  const physioSeries = toSeries(input.physioPoints);
+  const clinicSeries = toSeries(input.clinicPoints);
+  const drawSeries = (
+    pts: { week: number; v: number }[],
+    color: string,
+    marker: 'diamond' | 'square',
+    dash: string
+  ) => {
+    let s2: string[] = [];
+    let prev: number | null = null;
+    const flush2 = () => {
+      if (s2.length >= 2)
+        push(
+          `<polyline points="${s2.join(' ')}" fill="none" stroke="${color}" stroke-width="1.5" stroke-dasharray="${dash}"/>`
+        );
+      s2 = [];
+    };
+    for (const p of pts) {
+      if (prev !== null && p.week !== prev + 1) flush2();
+      s2.push(`${xFor(p.week).toFixed(1)},${yForVal(p.v).toFixed(1)}`);
+      prev = p.week;
+    }
+    flush2();
+    for (const p of pts) {
+      const cx = xFor(p.week);
+      const cy = yForVal(p.v);
+      if (marker === 'square')
+        push(`<rect x="${(cx - 3).toFixed(1)}" y="${(cy - 3).toFixed(1)}" width="6" height="6" fill="${color}"/>`);
+      else
+        push(
+          `<path d="M${cx.toFixed(1)} ${(cy - 4).toFixed(1)} L${(cx + 4).toFixed(1)} ${cy.toFixed(1)} L${cx.toFixed(1)} ${(cy + 4).toFixed(1)} L${(cx - 4).toFixed(1)} ${cy.toFixed(1)} Z" fill="${color}"/>`
+        );
+    }
+  };
+  drawSeries(physioSeries, C.amber, 'diamond', '3 2.5');
+  drawSeries(clinicSeries, C.muted, 'square', '1 3');
+
+  // --- Legend (only the series that actually have data) -------------------
+  if (input.legend) {
+    const L = input.legend;
+    const legendItems: { label: string; color: string; dash: string }[] = [
+      { label: L.patient, color: C.sageDeep, dash: '' }
+    ];
+    if (physioSeries.length > 0)
+      legendItems.push({ label: L.physio, color: C.amber, dash: '3 2.5' });
+    if (clinicSeries.length > 0)
+      legendItems.push({ label: L.clinic, color: C.muted, dash: '1 3' });
+    legendItems.forEach((it, i) => {
+      const lx = 24 + i * 205;
+      push(
+        `<line x1="${lx}" y1="356" x2="${lx + 20}" y2="356" stroke="${it.color}" stroke-width="2"` +
+          (it.dash ? ` stroke-dasharray="${it.dash}"` : '') +
+          `/>`
+      );
+      text.push({ x: lx + 26, y: 360, s: it.label, size: 11, fill: C.soft });
+    });
+  }
 
   // --- X-axis week labels ------------------------------------------------
   const labelEvery = weeks.length > 12 ? 2 : 1;

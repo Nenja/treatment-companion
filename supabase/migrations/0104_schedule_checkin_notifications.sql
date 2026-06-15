@@ -16,38 +16,55 @@
 --                       Authorization: Bearer <cron_secret>)
 --     checkin_fn_url -> https://<project-ref>.supabase.co/functions/v1/send-checkin-notifications
 --
--- Requires the pg_cron and pg_net extensions. If the CREATE EXTENSION lines
--- error under your role, enable them first in
--- Dashboard -> Database -> Extensions, then re-run this file.
+-- PORTABILITY / CI: pg_cron and pg_net only exist on servers that ship them
+-- (Supabase does; a vanilla Postgres / the CI image does not). This migration
+-- GUARDS on extension availability, so it applies cleanly everywhere: on a
+-- server without pg_cron it simply no-ops with a NOTICE and creates no job.
+-- In production, run it where the extensions are available (enable them first
+-- in Dashboard -> Database -> Extensions if needed) and it creates the job.
 --
 -- IDEMPOTENT: re-running drops and recreates the single named job.
 -- ---------------------------------------------------------------------------
 
-create extension if not exists pg_cron;
-create extension if not exists pg_net;
-
--- Drop any previous copy of this job so the migration is safe to re-run.
+-- 1) Install the extensions only if this server actually provides them.
 do $$
 begin
-  if exists (select 1 from cron.job where jobname = 'send-checkin-notifications-daily') then
-    perform cron.unschedule('send-checkin-notifications-daily');
+  if exists (select 1 from pg_available_extensions where name = 'pg_cron') then
+    create extension if not exists pg_cron;
+  end if;
+  if exists (select 1 from pg_available_extensions where name = 'pg_net') then
+    create extension if not exists pg_net;
   end if;
 end $$;
 
--- 07:00 UTC daily (~08:00-09:00 Danish local, depending on DST). Adjust the
--- cron expression if you want a different time, but keep it DAILY so every
--- patient's chosen weekday is honoured by the function's own logic.
-select cron.schedule(
-  'send-checkin-notifications-daily',
-  '0 7 * * *',
-  $job$
-  select net.http_post(
-    url := (select decrypted_secret from vault.decrypted_secrets where name = 'checkin_fn_url'),
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret')
-    ),
-    body := '{}'::jsonb
-  );
-  $job$
-);
+-- 2) Schedule the daily job only if pg_cron is actually installed now.
+--    07:00 UTC daily (~08:00-09:00 Danish local, depending on DST). Keep it
+--    DAILY so every patient's chosen weekday is honoured by the function's
+--    own logic. On a server without pg_cron this branch is skipped (NOTICE).
+do $$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    if exists (select 1 from cron.job where jobname = 'send-checkin-notifications-daily') then
+      perform cron.unschedule('send-checkin-notifications-daily');
+    end if;
+
+    perform cron.schedule(
+      'send-checkin-notifications-daily',
+      '0 7 * * *',
+      $job$
+      select net.http_post(
+        url := (select decrypted_secret from vault.decrypted_secrets where name = 'checkin_fn_url'),
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret')
+        ),
+        body := '{}'::jsonb
+      );
+      $job$
+    );
+
+    raise notice 'pg_cron: scheduled daily send-checkin-notifications (07:00 UTC).';
+  else
+    raise notice 'pg_cron not available on this server; skipping reminder schedule. Enable pg_cron + pg_net in production and re-run this migration.';
+  end if;
+end $$;

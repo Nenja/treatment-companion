@@ -1,23 +1,35 @@
-BUILD - physio-progress-retire-1   (CUMULATIVE)
-Tiny tidy on top of redcap-export-1: the orphaned /physio/progress route is
-now a redirect. Everything else in this zip is unchanged from redcap-export-1.
+BUILD - consolidate-charts-1   (CUMULATIVE)
+Two things: the goal-chart consolidation you asked for, and a fix for the CI
+migration failure. Carries everything still uncommitted.
 
->>> CUMULATIVE — supersedes redcap-export-1 <<<
-One drop-in deploys it all. If you already deployed redcap-export-1, the only
-new file here is app/[locale]/physio/progress/page.tsx.
+>>> CUMULATIVE — one drop-in deploys it all. <<<
 
-WHAT CHANGED
-- /physio/progress no longer renders its own progress form (that form has
-  lived inline on /physio/patient since cockpit-65). The route is now a
-  locale-preserving redirect to /physio/patient, so any old bookmark/link
-  still lands on the live cockpit. /physio/patient handles auth + session.
-  Build 110/110, tsc clean.
+1) ONE CHART PER GOAL (web; normal GitHub -> Vercel)
+   The duplicate per-goal chart is gone. The clinic video is now a single
+   line inside each goal's own trend, on that goal's own scale:
+     - NRS goal -> the clinic's 0-10 read sits beside the patient's 0-10.
+     - GAS goal -> the clinic's GAS level sits beside the patient's GAS.
+   The separate "Clinic video assessment" chart was removed. The PNG export
+   follows automatically (it already used the same clinic data).
 
-STILL TO RUN IN SUPABASE (unchanged from redcap-export-1)
-- Migrations 0103, 0104, 0105, 0106 (run any not yet applied).
-- See redcap-export-1 / reminder-cron notes for the edge-function deploy +
-  Vault secrets if reminders aren't live yet.
+2) CI MIGRATION FIX  (this is what your CI error was)
+   Migration 0104 created pg_cron unconditionally; the CI runs a vanilla
+   Postgres with no pg_cron, so it errored and stopped the whole run. 0104
+   now checks whether pg_cron/pg_net exist first: it schedules the reminder
+   job where they do (Supabase) and quietly skips (with a NOTICE) where they
+   don't (CI / plain Postgres). Verified: the full chain 0001-0106 now
+   applies cleanly on a throwaway Postgres 16.
 
-DEPLOY
-  Copy files into the repo (keep folders) -> Commit -> Push (Vercel builds).
-  Do NOT run npm install or overwrite package.json / package-lock.json.
+   >> RE-RUN 0104 in the Supabase SQL editor (standalone file included). It's
+      idempotent and WILL still create the cron job on Supabase. Make sure
+      pg_cron + pg_net are enabled there (Dashboard -> Database -> Extensions).
+
+FILES CHANGED THIS BATCH
+  app/[locale]/clinician/patient/page.tsx                 (consolidate charts)
+  supabase/migrations/0104_schedule_checkin_notifications.sql  (guarded)
+(plus the cumulative carry: chart-fixes-1, redcap-export-1, retired progress route)
+
+STILL TO RUN IN SUPABASE: 0103, 0104 (re-run), 0105, 0106.
+
+DEPLOY: copy files into the repo (keep folders) -> Commit -> Push.
+Do NOT run npm install or overwrite package.json / package-lock.json.

@@ -92,6 +92,7 @@ export default function ClinicianPatientPage() {
   const tImportance = useTranslations('importance');
   const tTraining = useTranslations('training');
   const tModality = useTranslations('treatment.modality');
+  const tTreatment = useTranslations('treatment');
   const tVideoProtocol = useTranslations('clinician.videoProtocol');
   const tVideoQueue = useTranslations('clinician.videoQueue');
 
@@ -398,6 +399,21 @@ export default function ClinicianPatientPage() {
             ? [{ week: c.weekNumber, gas: r.ratingValue, nrs: r.nrsValue }]
             : [];
         }),
+        physioPoints: (physioRatingsByGoal.get(g.id) ?? []).map((p) => ({
+          week: p.weekNumber,
+          gas: p.value,
+          nrs: p.nrs
+        })),
+        clinicPoints: (clinicPointsByGoal.get(g.id) ?? []).map((p) => ({
+          week: p.weekNumber,
+          gas: p.value,
+          nrs: p.nrs
+        })),
+        legend: {
+          patient: tTreatment('chartLegendPatient'),
+          physio: tTreatment('chartLegendPhysio'),
+          clinic: tTreatment('clinicVideoLine')
+        },
         header: {
           modality: cycle.modality,
           cycleNumber: cycle.cycleNumber,
@@ -508,56 +524,38 @@ export default function ClinicianPatientPage() {
     ratingsByGoal.set(goal.id, perWeek);
   }
 
-  // Build per-goal CLINIC VIDEO series — the clinic's GAS-level score of each
-  // standardized clip (0072). This is the authoritative, one-rater outcome,
-  // always on the GAS scale, so it's drawn as its own GAS chart beneath the
-  // patient's. Unusable / unscored weeks are omitted (a gap), not zeroed.
-  const clinicVideoByGoal = new Map<
-    string,
-    {
-      weekNumber: number;
-      value: -2 | -1 | 0 | 1 | 2 | null;
-      nrs: number | null;
-      reported: boolean;
-    }[]
-  >();
-  for (const goal of activeGoals) {
-    const perWeek = checkins
-      .flatMap((c) => {
-        const r = c.ratings.find((x) => x.approvedGoalId === goal.id);
-        if (!r || r.clinicVideoRating == null) return [];
-        return [
-          {
-            weekNumber: c.weekNumber,
-            value: r.clinicVideoRating as -2 | -1 | 0 | 1 | 2,
-            nrs: null,
-            reported: true
-          }
-        ];
-      })
-      .sort((a, b) => a.weekNumber - b.weekNumber);
-    clinicVideoByGoal.set(goal.id, perWeek);
-  }
-
-  // Clinic's 0–10 video score per NRS goal, overlaid on that goal's own NRS
-  // trend so the clinician read sits beside the patient's self-report on the
-  // same axis. (GAS goals keep the separate clinic trend chart below.)
+  // Clinic video score per goal, overlaid on that goal's own trend so the
+  // clinic's read sits beside the patient's self-report on the SAME axis,
+  // matched to the goal's scale: NRS goals use the clinic's 0–10 read
+  // (clinic_video_nrs); GAS goals use the clinic's GAS level
+  // (clinic_video_rating). One chart per goal — no separate clinic chart.
+  // Unusable / unscored weeks are omitted (a gap), not zeroed.
   const clinicPointsByGoal = new Map<
     string,
     { weekNumber: number; nrs: number | null; value: -2 | -1 | 0 | 1 | 2 | null }[]
   >();
   for (const goal of activeGoals) {
-    if (goal.kind !== 'nrs') {
-      clinicPointsByGoal.set(goal.id, []);
-      continue;
-    }
+    const isGas = goal.kind !== 'nrs';
     const pts = checkins
-      .flatMap((c) => {
+      .flatMap<{
+        weekNumber: number;
+        nrs: number | null;
+        value: -2 | -1 | 0 | 1 | 2 | null;
+      }>((c) => {
         const r = c.ratings.find((x) => x.approvedGoalId === goal.id);
-        if (!r || r.clinicVideoNrs == null) return [];
-        return [
-          { weekNumber: c.weekNumber, nrs: r.clinicVideoNrs, value: null }
-        ];
+        if (!r) return [];
+        if (isGas) {
+          if (r.clinicVideoRating == null) return [];
+          return [
+            {
+              weekNumber: c.weekNumber,
+              nrs: null,
+              value: r.clinicVideoRating as -2 | -1 | 0 | 1 | 2
+            }
+          ];
+        }
+        if (r.clinicVideoNrs == null) return [];
+        return [{ weekNumber: c.weekNumber, nrs: r.clinicVideoNrs, value: null }];
       })
       .sort((a, b) => a.weekNumber - b.weekNumber);
     clinicPointsByGoal.set(goal.id, pts);
@@ -1599,24 +1597,6 @@ export default function ClinicianPatientPage() {
                     <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep">
                       {t('physioWorkingOnTag')}
                     </p>
-                  )}
-                  {(clinicVideoByGoal.get(g.id) ?? []).length > 0 && (
-                    <div className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3">
-                      <p className="text-[12px] font-semibold text-ink-soft">
-                        {t('clinicSeriesHeading')}
-                      </p>
-                      <p className="mt-0.5 text-[11px] leading-relaxed text-ink-muted">
-                        {t('clinicSeriesHint')}
-                      </p>
-                      <div className="mt-2">
-                        <GoalProgressView
-                          goalText={g.patientFacingText}
-                          kind="gas"
-                          currentWeek={weekNumber}
-                          ratings={clinicVideoByGoal.get(g.id) ?? []}
-                        />
-                      </div>
-                    </div>
                   )}
                   {/* Retire action — retires a goal (achieved /
                       partial / no longer suitable). History is kept;

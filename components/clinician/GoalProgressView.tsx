@@ -780,8 +780,8 @@ export function GoalProgressView({
             y1={s.y1}
             x2={s.x2}
             y2={s.y2}
-            stroke="var(--color-ink)"
-            strokeWidth={1.5}
+            stroke="var(--color-ink-muted)"
+            strokeWidth={1.25}
             strokeDasharray="1 3"
             strokeLinecap="round"
           />
@@ -798,7 +798,7 @@ export function GoalProgressView({
               y={cy - 3.5}
               width={7}
               height={7}
-              fill="var(--color-ink)"
+              fill="var(--color-ink-muted)"
               stroke="var(--color-cream-soft)"
               strokeWidth={1.25}
             />
@@ -834,7 +834,7 @@ export function GoalProgressView({
               <span
                 aria-hidden
                 className="inline-block h-2.5 w-2.5"
-                style={{ background: 'var(--color-ink)' }}
+                style={{ background: 'var(--color-ink-muted)' }}
               />
               {t('clinicVideoLine')}
             </span>
