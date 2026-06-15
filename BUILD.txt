@@ -1,31 +1,58 @@
-BUILD - checkin-e2e-fix-2  (test-only)
-Follow-up that fixes the LAST remaining check-in test failure. The
-signed-out->/login app guard is already live, so this drop is just the test.
+BUILD - next16-upgrade-1   (framework upgrade: Next.js 15.1.9 -> 16.2.7)
+
+WHY
+  Your pinned Next.js 15.1.9 was missing several patched security fixes,
+  including a critical (CVSS 10.0) remote-code-execution issue. This upgrade
+  closes them. Going to 16 (rather than the minimal 15.5.18 patch) keeps you
+  current. The two HIGH-severity advisories are now resolved.
 
 WHAT'S IN THIS DROP
-  e2e/smoke.spec.ts   (check-in walk reworked to handle the submit step)
+  package.json          next 16.2.7, next-intl 4.13.0, @sentry/nextjs 10.58.0
+  package-lock.json     regenerated to match (Vercel installs from this)
+  proxy.ts              NEW - this is your old middleware.ts, renamed for Next 16
 
-WHAT WAS WRONG THIS TIME
-  After the previous fix, the rating registered fine — but the test then failed
-  with "button not found". On the last step, clicking "Send my check-in" submits
-  and the screen switches to the "Thank you" page, so the button disappears. The
-  loop took one more lap and tried to use that now-gone button.
-
-WHAT THE TEST DOES NOW
-  Every step's button says "Continue" except the final one, which says "Send my
-  check-in". The test uses that to know when it's on the last step: it submits
-  there and STOPS, then waits for the "Thank you" screen. No more extra lap.
+*** ONE MANUAL STEP THE ZIP CANNOT DO FOR YOU ***
+  DELETE  middleware.ts  from the repo.
+  Next 16 renamed the "middleware" file to "proxy". I've added proxy.ts (same
+  logic, function renamed). If you leave BOTH middleware.ts and proxy.ts in the
+  repo, Next 16 errors. So: add proxy.ts, then DELETE middleware.ts.
+  (In GitHub Desktop: delete the file in your local folder, and the commit will
+  record the deletion.)
 
 DEPLOY
-  1. GitHub Desktop: drop e2e/smoke.spec.ts into the repo (same path) -> commit -> push.
-     No app files, no migration, no Vercel rebuild needed for this change.
-  2. Re-run the E2E smoke (Actions -> E2E smoke -> Run workflow).
+  1. Make sure Vercel's Node version is 20 or higher (Next 16 requires it).
+     Vercel's default is already 20+, so this is almost certainly fine; just
+     confirm under Project Settings -> if you've pinned an older Node, raise it.
+  2. GitHub Desktop:
+       - copy package.json + package-lock.json into the repo (overwrite)
+       - add proxy.ts
+       - DELETE middleware.ts
+       - commit -> push
+  3. Vercel rebuilds (now with Turbopack, Next 16's default builder).
 
-EXPECTED RESULT
-  - With a pending check-in for test1@example.com: 4 passed.
-  - If that prompt was already used up by an earlier run: 3 passed, 1 skipped
-    ("No pending check-in to complete ..."). Seed a fresh week to get 4 again.
+VERIFICATION DONE FOR YOU (sandbox)
+  - TypeScript: clean.
+  - Production build (Turbopack): success, 109/109 pages, no warnings.
+  - i18n parity: 1668 keys aligned. Unit tests: 41/41. E2E spec: type-clean.
+  - npm audit: the 2 HIGH advisories are gone (6 left: low/moderate only).
 
-NOTE
-  I can't run a real browser here; the live result comes from your workflow run.
-  The spec type-checks against @playwright/test.
+WHAT I CANNOT VERIFY - PLEASE CHECK AFTER DEPLOY (this was a 3-major-version jump)
+  1. Re-run the E2E smoke (Actions -> E2E smoke). It logs in, checks the
+     signed-out redirect, signs in, and completes a check-in - against the live
+     Next 16 build. Green = the critical paths survived the upgrade.
+  2. Click through ALL FOUR languages: /, /da, /sv, /nb. Switch language in the
+     app. Confirm pages load and translations appear. (next-intl went to v4 and
+     the middleware->proxy rename both touch language routing - this is the main
+     thing to eyeball, and the E2E only covers English.)
+  3. Log in, move between pages, refresh. Confirm you stay logged in (proxy.ts
+     handles the session refresh) and that logging out still lands on /login.
+  4. Confirm a push notification still registers on your phone.
+
+  If anything is off, the zero-risk fallback is Next 15.5.18 (same security fix,
+  no other changes) - tell me and I'll prepare it.
+
+NOTES
+  - Two leftover low/moderate audit items (@supabase/auth-js, postcss) are
+    separate dependency-currency follow-ups, not blockers.
+  - Your CI (ci.yml) keeps working: it type-checks, runs tests, and builds on
+    Next 16 the same way, and replays migrations unchanged.

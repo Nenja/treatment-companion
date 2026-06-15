@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for batch: `checkin-e2e-fix-2`. Follow-up to the check-in smoke fix: it had cleared the load race but then failed with `toBeEnabled … element(s) not found` — after clicking "Send my check-in" the wizard is replaced by the thanks screen, so the button vanishes, and the loop did one more pass and tripped on it. The walk now drives off the button text (every step says "Continue" except the last, which says "Send my check-in"), submits on the final step and BREAKS, then waits for the thanks heading. Test-only; no app/schema change (the `auth-redirect-guard-1` guard is already deployed). e2e spec type-checks; app build 110/110, tsc clean, 41/41 tests still hold. Re-run the smoke — expect **4 passed**, or **3 passed + 1 skipped** if test1's prompt was already consumed. See §7._
+> _Last updated for batch: `next16-upgrade-1`. **Framework upgrade Next.js 15.1.9 → 16.2.7** (closes known unpatched CVEs incl. a CVSS-10 RCE). Forced coupled bumps: **next-intl 3.26.5 → 4.13.0** and **@sentry/nextjs 8.42.0 → 10.58.0**. Code change was minimal — the app was already async-API-ready (`params: Promise` + `await`, `await cookies()`), `NextIntlClientProvider` already mounted, `getRequestConfig` already returns `locale`, and no next-intl navigation APIs are used. Only real edit: **`middleware.ts` → `proxy.ts`** (Next 16 rename; function renamed to `proxy`, logic identical) — **you must DELETE `middleware.ts` from the repo** (a zip can't remove files). Build runs on **Turbopack** (16's default), **109/109**, tsc clean, parity 1668, 41/41 tests, e2e spec type-clean; the two high-severity audit advisories are resolved (6 left: low/moderate, in `@supabase/auth-js` + `postcss` — follow-ups). **Cannot verify runtime from here** — after deploy, re-run the E2E smoke (it exercises login/redirect/sign-in/check-in on 16) AND click through all four locales + session persistence. Ship `package.json` + `package-lock.json` + `proxy.ts`, delete `middleware.ts`. See §7._
 
 ---
 
@@ -92,10 +92,11 @@ blocks that host, so a real build **fails** unless you stub them first.
    the brand now lives in each page header via `AppHeader` / `BrandMark` (§5.3).
    layout.tsx still contains only the two font calls to stub + `{children}`.
 4. `rm -rf .next && NEXT_TELEMETRY_DISABLED=1 npx next build`
-5. **Success = exit 0 and "✓ Generating static pages (60/60)".** (Historical:
-   55 before the dev tools; +2 for `/dev/scenarios`; the no-auth `/demo` removal
-   in `batch-a` dropped 60→58; the goal-versioning routes brought it back to
-   **60**. No new route since.) The only
+5. **Success = exit 0 and "✓ Generating static pages (N/N)"** with both numbers
+   equal. The absolute N tracks route count × locales × the framework's own
+   counting, so don't hardcode it — it is **109** on Next 16.2.7 (was **110** on
+   Next 15 once the four en/da/sv/nb locales landed; **60** back in the
+   two-locale era). The only
    expected warning is a Sentry/OpenTelemetry "critical dependency" message
    (unrelated, ignore).
 6. **Restore** `app/[locale]/layout.tsx` from `/tmp/layout.tsx.orig`, then verify:
@@ -849,6 +850,15 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **Framework upgrade — Next.js 16 (`next16-upgrade-1`).** Build (Turbopack) 109/109, tsc clean, parity 1668, 41/41 tests, e2e spec type-clean. No schema change.
+  - **Why:** Next.js 15.1.9 was missing multiple patched security advisories — a CVSS-10 RCE in the React Server Components protocol (CVE-2025-66478, Dec 2025), the Dec-2025 RSC fixes, and the May-2026 coordinated batch (DoS / middleware-proxy bypass / SSRF / cache-poisoning / XSS). The middleware-bypass class was already largely defanged by our RLS-at-the-DB model, but the RCE is framework-level. (Per the assessment, 15.5.18 was the minimal patch; we chose 16.2.7 to be current since the developer isn't imminent.)
+  - **What changed:** `next 15.1.9 → 16.2.7`, `next-intl 3.26.5 → 4.13.0` (v4 first supports Next 16 at 4.4.0), `@sentry/nextjs 8.42.0 → 10.58.0` (8→10; required for the Next-16 peer). `react`/`react-dom` stay at 19.0.1 (satisfies Next 16's `^19`). The RSC patch ships bundled with Next 16.
+  - **Migration surface was tiny** because the app was already forward-compatible: the only server component reading `params` (`app/[locale]/layout.tsx`) already used `params: Promise<…>` + `await params`; `lib/supabase/server.ts` already `await cookies()`; `NextIntlClientProvider` already mounted in the locale layout; `getRequestConfig` already returns `locale`; and we use **no** next-intl navigation APIs (the v4 pitfall that breaks others doesn't apply). All searchParams access is via the `useSearchParams()` hook (stays synchronous).
+  - **Only real code edit:** `middleware.ts` → **`proxy.ts`** (Next 16 renamed the convention; the exported function is now `proxy`, the `config` matcher is unchanged, and the Supabase session-refresh + next-intl composition is byte-identical). **ACTION: delete `middleware.ts` from the repo** — the delivery zip adds `proxy.ts` but can't remove the old file; having both is an error in Next 16.
+  - **Audit:** the two **high**-severity advisories are gone; `npm audit` now shows 6 (2 low, 4 moderate) in `@supabase/auth-js` (bump `@supabase/ssr`/`supabase-js` later) and `postcss` (dev-tooling). Tracked as dependency-currency follow-ups, not blockers.
+  - **Build note:** runs on **Turbopack** (16's default — no custom webpack config to migrate); the static-pages marker is now **109/109** (was 110 on 15). Font-stub workflow unchanged.
+  - **Files:** `package.json`, `package-lock.json`, `proxy.ts` (NEW). Delete `middleware.ts`. **Deploy:** ensure Vercel's Node is 20+ (Next 16 minimum; Vercel default is fine), drop the files, delete `middleware.ts`, push → Vercel rebuilds with Turbopack. **CANNOT verify runtime here** — after deploy: (1) re-run the E2E smoke (login/redirect/sign-in/check-in on 16); (2) click through **all four locales** (`/`, `/da`, `/sv`, `/nb`) — next-intl v4 + the proxy rename both touch locale negotiation; (3) confirm **login + session persistence** across navigation/refresh (the proxy does the session-cookie refresh); (4) confirm push still registers.
 
 - **E2E check-in test — submit-transition fix (`checkin-e2e-fix-2`).** Follow-up to `checkin-e2e-fix-1`; test-only, no app/schema change. The previous version cleared the load race but then failed with `expect(...).toBeEnabled() … element(s) not found`: after clicking "Send my check-in" on the final step the wizard is replaced by the thanks screen, so the primary button vanishes — and the loop did one more pass (the submit was still pending when the top-of-loop thanks check ran, so it didn't break) and tripped on the gone button.
   - **Fix:** the walk now drives off the button text — every step shows "Continue" except the last, which shows "Send my check-in" — so it submits on the final step and BREAKS immediately, then waits for the thanks heading. (Confirmed via `isCheckinComplete` in `lib/checkinDraft.ts`: Send enables once every active goal is rated; the comment step is optional.)
@@ -2655,6 +2665,19 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 8. Pending / next slices
+
+**★ HIGH PRIORITY (Nikolaj flagged, 2026-06) — make the E2E smoke run automatically.**
+Today `.github/workflows/e2e.yml` is manual (`workflow_dispatch`) only, so a broken
+login or check-in is only caught when someone remembers to click "Run workflow".
+Promote it to run on its own: add a `schedule:` (cron) trigger and/or a post-deploy
+hook, keep it pointed at production via `E2E_BASE_URL` + the patient secrets, and
+keep it OFF the push/PR path so it never blocks a deploy. A natural first task for
+the incoming developer. Note the check-in test consumes that week's prompt on
+success, so either seed a fresh prompt per scheduled run or lean on its graceful
+SKIP and treat the login / signed-out-redirect / sign-in checks as the always-on
+signal. (Full suite passes today: login renders · signed-out → /login · patient
+sign-in · complete a weekly check-in.)
+
 
 ### Simplification backlog (the 11-item declutter list — track here)
 Status as of `simplify-cockpit-1`. "We expanded too much" — this list drives the
