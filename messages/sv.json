@@ -751,6 +751,14 @@
       "refilm": "Filma baslinje igen",
       "filmGatedHint": "Lägg till samtycke till klinisk användning ovan för att kunna filma.",
       "later": "Gör detta senare"
+    },
+    "researchExport": {
+      "heading": "Export av forskningsdata",
+      "intro": "Ladda ner data för alla patienter med forskningssamtycke som en REDCap-import-CSV. Varje patient identifieras endast med en studiekod (inget namn). Importera den i ditt REDCap-projekt med Data Import Tool.",
+      "button": "Ladda ner REDCap-CSV",
+      "working": "Förbereder…",
+      "result": "Exporterade {patients} patienter ({rows} rader). Kontrollera dina nedladdningar.",
+      "error": "Exporten misslyckades — försök igen."
     }
   },
   "intro": {

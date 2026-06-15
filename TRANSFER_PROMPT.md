@@ -72,10 +72,10 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `adjustment-loop-1` (**CUMULATIVE zip**) — therapist adjustment-request status loop, option A (clinician-side only). NEW migration `0105` (status + clinician-only resolve RPC), verified on throwaway Postgres. Add/Dismiss on both clinician surfaces. Build 110/110, tsc clean.
-- **Just shipped:** `adjustment-loop-1` + (separate files) the finalised REDCap data dictionary (86 fields) + reconciliation report. Run `0105`. The dictionary CSV imports into REDCap directly.
-- **In progress / next (gated on you):** the **pseudonymised CSV export** that populates the REDCap dictionary — blocked on the `record_id`/study-pseudonym decision (no such field in the app): (A) app-generated stable study code [recommended], (B) salted hash of patient id, (C) per-export sequential. Pick one and I build it.
-- **Also live (in-session):** native Android push (FCM); daily scheduler now `0104` once deployed. Parked: sv/nb push-text; iOS push.
+- **Latest build:** `redcap-export-1` (**CUMULATIVE zip**) — pseudonymised REDCap CSV export. NEW migration `0106` (study_code pseudonym + clinician-gated `export_research_dataset()` RPC), client CSV builder (`lib/redcapExport.ts`), Download button on the clinician observations page. Verified on throwaway Postgres; build 110/110, tsc clean.
+- **Just shipped:** `redcap-export-1`. Run `0106` (and `0105` if not done). The export Download button is on the clinician Observations page; it produces a REDCap import CSV for all research-consented patients.
+- **Two QA flags:** `record_id` = approach A (app-assigned `TC-NNNN`); DPO to bless or swap. The CSV MUST be test-imported into a real REDCap project (cannot verify live import from here).
+- **Also live (in-session):** the finalised REDCap data dictionary (86 fields) in `redcap/`; native Android push (FCM); daily scheduler `0104` once deployed.
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.

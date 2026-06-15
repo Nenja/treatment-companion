@@ -751,6 +751,14 @@
       "refilm": "Re-film baseline",
       "filmGatedHint": "Add consent for clinical use above to enable filming.",
       "later": "Do this later"
+    },
+    "researchExport": {
+      "heading": "Research data export",
+      "intro": "Download every research-consented patient's data as a REDCap import CSV. Each patient is identified only by a study code (no name). Import it in your REDCap project using the Data Import Tool.",
+      "button": "Download REDCap CSV",
+      "working": "Preparing…",
+      "result": "Exported {patients} patients ({rows} rows). Check your downloads.",
+      "error": "Export failed — please try again."
     }
   },
   "intro": {

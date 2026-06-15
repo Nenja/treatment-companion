@@ -1,43 +1,48 @@
-BUILD - adjustment-loop-1   (CUMULATIVE)
-Therapist adjustment-request status loop (clinician-side) + the finalised
-REDCap data dictionary.
+BUILD - redcap-export-1   (CUMULATIVE)
+Pseudonymised REDCap CSV export (the research data download) +
+everything from the adjustment loop and earlier still-uncommitted work.
 
 >>> THIS ZIP IS CUMULATIVE <<<
-Carries everything still uncommitted (sv/nb translation, language picker,
-EHR export rework + chart PNG, auto-apply language, pg_cron 0104) PLUS the
-adjustment loop below.
+It carries everything still uncommitted (adjustment loop 0105, sv/nb
+translation, language picker, EHR export rework + chart PNG, auto-apply
+language, pg_cron 0104) PLUS the REDCap export below. One drop-in deploys it
+all.
 
-INCLUDES ONE NEW DATABASE MIGRATION
-- 0105_adjustment_request_status.sql  -> run it in the Supabase SQL editor.
-  (Also still pending if you haven't run them: 0103, 0104 — see their notes.)
-  0105 was verified on a throwaway Postgres: it applies cleanly, the resolve
-  function blocks the wrong role / bad status / unauthorised access, and
+NEW DATABASE MIGRATION
+- 0106_research_export.sql  -> run it in the Supabase SQL editor.
+  Also run, if you haven't yet: 0105 (adjustment loop), 0103, 0104.
+  0106 was verified on a throwaway Postgres: study codes get assigned, only
+  research-consented (non-purged) patients are exported, all instruments come
+  through with correct goal numbering, non-clinicians are blocked, and
   re-running it is safe.
 
-WHAT THE ADJUSTMENT LOOP DOES (web, normal GitHub -> Vercel)
-A physiotherapist can flag a goal as "needs adjustment." Until now you saw
-that flag but couldn't close it, so it lingered. Now each adjustment request
-shows two buttons - "Mark addressed" and "Dismiss" - in both places you see
-them (the patient cockpit and the treatment-page therapist panel). Tapping
-either resolves it and it drops off your open list.
+WHAT THE EXPORT DOES (web, normal GitHub -> Vercel)
+On the clinician "Observations" page there is now a "Research data export"
+section with a "Download REDCap CSV" button. It downloads one CSV containing
+every research-consented patient's data across all their cycles - demographics,
+treatment cycles, injections, goals, weekly check-ins, goal ratings,
+physiotherapist assessments/ratings, and ITB - already coded to match your
+REDCap data dictionary. Import it in REDCap with the Data Import Tool.
 
-This is OPTION A you chose: clinician-side only. The therapist is NOT shown
-the outcome (no new clinic->therapist channel); the status, time and who
-resolved it are stored only for audit.
+Each patient appears only under a study code (TC-0001, TC-0002, ...), never a
+name. The clinic holds the code<->patient mapping.
 
-THE REDCAP DICTIONARY (separate files - NOT part of the web app)
-- treatment_companion_datadictionary.csv  -> import in REDCap:
-    Designer -> Data Dictionary -> Upload.
-  It's the repo's dictionary, validated against the app. Only 3 changes were
-  needed: sex split to 4 codes (to match the app), and two added fields
-  (affected_side, ambulation). 17 free-text fields got a PII-review tag.
-- REDCAP_RECONCILIATION.md  -> what matched, what changed, and the decisions
-  for you / the DPO (PII Identifier flags, dates, sex categories).
+TWO THINGS TO DECIDE / CHECK (important)
+1. record_id pseudonym is "approach A": the app assigns TC-0001, TC-0002...
+   Your DPO should approve this or replace it with a study-team-assigned list.
+   (The study_code column is harmless if you don't use it.)
+2. TEST-IMPORT the CSV into a real REDCap project first. The codings and the
+   repeating-instrument setup match the dictionary, but live REDCap import
+   cannot be verified from here. Withdrawn-but-not-purged patients are still
+   included - that's a study decision (see REDCAP_RECONCILIATION.md).
 
 FILES IN THIS BUNDLE (keep folder structure)
-  supabase/migrations/0105_adjustment_request_status.sql   (NEW - run it)
+  supabase/migrations/0106_research_export.sql            (NEW - run it)
+  supabase/migrations/0105_adjustment_request_status.sql  (run it)
   supabase/migrations/0104_schedule_checkin_notifications.sql
   supabase/migrations/0103_allow_sv_nb_locales.sql
+  lib/redcapExport.ts                                     (NEW)
+  app/[locale]/clinician/observations/page.tsx
   lib/supabase/physioAssessment.ts
   lib/supabase/clinicianPatient.ts
   app/[locale]/clinician/patient/page.tsx
@@ -53,17 +58,14 @@ FILES IN THIS BUNDLE (keep folder structure)
   app/[locale]/profile/page.tsx
   app/[locale]/goals/page.tsx
   i18n/routing.ts, i18n/request.ts, lib/supabase/auth.tsx
-  redcap/treatment_companion_datadictionary.csv   (finalised)
-  redcap/REDCAP_RECONCILIATION.md                 (new)
+  redcap/treatment_companion_datadictionary.csv           (the import target)
+  redcap/REDCAP_RECONCILIATION.md
   + HANDOVER.md, BUILD.txt, TRANSFER_PROMPT.md
 
 DEPLOY
-1. Supabase SQL editor -> run 0105 (and 0103/0104 if not done).
+1. Supabase SQL editor -> run 0106 (and 0105/0103/0104 if not done).
 2. Copy files into the repo (keep folders) -> Commit -> Push (Vercel builds).
-   The redcap/ files are repo-only; import the CSV into REDCap separately.
+   The redcap/ files are repo-only; import the dictionary CSV into REDCap
+   separately (Designer -> Data Dictionary -> Upload), then use the export
+   button to produce data CSVs for the Data Import Tool.
 DO NOT run npm install or overwrite package.json / package-lock.json.
-
-WHAT'S NEXT
-The pseudonymised CSV export that populates the REDCap dictionary. One
-decision first: where does record_id (the study pseudonym) come from? See
-the chat - pick A/B/C and I'll build it.
