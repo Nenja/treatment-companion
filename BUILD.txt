@@ -1,35 +1,40 @@
-BUILD - consolidate-charts-1   (CUMULATIVE)
-Two things: the goal-chart consolidation you asked for, and a fix for the CI
-migration failure. Carries everything still uncommitted.
+BUILD - test-harness-2   (CUMULATIVE)
+The test harness was already in place (Vitest, 23 tests, wired into CI). This
+batch EXTENDS it with tests for the EHR-export text builder — the text you paste
+into the medical record. 35 tests now pass.
 
->>> CUMULATIVE — one drop-in deploys it all. <<<
+>>> CUMULATIVE — one drop-in deploys everything. <<<
 
-1) ONE CHART PER GOAL (web; normal GitHub -> Vercel)
-   The duplicate per-goal chart is gone. The clinic video is now a single
-   line inside each goal's own trend, on that goal's own scale:
-     - NRS goal -> the clinic's 0-10 read sits beside the patient's 0-10.
-     - GAS goal -> the clinic's GAS level sits beside the patient's GAS.
-   The separate "Clinic video assessment" chart was removed. The PNG export
-   follows automatically (it already used the same clinic data).
+WHAT'S NEW THIS BATCH
+  tests/ehrExport.test.ts   (+12 tests for buildEhrExport)
+That is the only new file vs the consolidate-charts-1 bundle. If you've already
+deployed test-harness-1 + consolidate-charts-1, you can drop just this one file.
 
-2) CI MIGRATION FIX  (this is what your CI error was)
-   Migration 0104 created pg_cron unconditionally; the CI runs a vanilla
-   Postgres with no pg_cron, so it errored and stopped the whole run. 0104
-   now checks whether pg_cron/pg_net exist first: it schedules the reminder
-   job where they do (Supabase) and quietly skips (with a NOTICE) where they
-   don't (CI / plain Postgres). Verified: the full chain 0001-0106 now
-   applies cleanly on a throwaway Postgres 16.
+WHAT THE NEW TESTS CHECK (buildEhrExport)
+  - the header switches between the "injected" and neutral wording by modality
+  - treatment summary line (product · total units · dilution · guidance)
+  - the dose RECONCILIATION line appears only when per-injection doses don't add
+    up to the recorded total
+  - body-muscle injections list before face marks
+  - goal lines: GAS peak/end levels + achieved anchor + wearing-off week; NRS
+    goals (lower-is-better picks the lowest score as "best") with the
+    baseline/target line; sustained benefit vs wearing-off; the no-ratings line
 
-   >> RE-RUN 0104 in the Supabase SQL editor (standalone file included). It's
-      idempotent and WILL still create the cron job on Supabase. Make sure
-      pg_cron + pg_net are enabled there (Dashboard -> Database -> Extensions).
+CARRIED (cumulative, unchanged from before)
+  - the full Vitest harness: vitest.config.ts, tests/*.test.ts (5),
+    package.json, package-lock.json, .github/workflows/ci.yml
+  - chart consolidation: app/[locale]/clinician/patient/page.tsx
+  - guarded migration 0104
 
-FILES CHANGED THIS BATCH
-  app/[locale]/clinician/patient/page.tsx                 (consolidate charts)
-  supabase/migrations/0104_schedule_checkin_notifications.sql  (guarded)
-(plus the cumulative carry: chart-fixes-1, redcap-export-1, retired progress route)
+RUNS IN CI: every push/PR runs `npm run test` in the verify job — so the suite
+runs for you even though you can't run it locally.
 
-STILL TO RUN IN SUPABASE: 0103, 0104 (re-run), 0105, 0106.
+PACKAGE.JSON / LOCK: included again (same as test-harness-1). The only delta is
+the vitest devDependency + the test scripts; runtime `dependencies` are
+untouched, so the Vercel build is unaffected. If your committed package.json has
+drifted, apply just that diff instead of overwriting.
+
+STILL TO RUN IN SUPABASE (unchanged): 0103, 0104 (re-run; guarded), 0105, 0106.
 
 DEPLOY: copy files into the repo (keep folders) -> Commit -> Push.
-Do NOT run npm install or overwrite package.json / package-lock.json.
+Do NOT run npm install yourself.

@@ -119,7 +119,7 @@ interface TextLine {
 }
 
 /** Build the complete chart SVG markup for one goal. */
-function buildSvg(input: GoalChartInput): string {
+export function buildSvg(input: GoalChartInput): string {
   const { t, locale } = input;
   const isBont = !input.header.modality || input.header.modality === 'botulinum_toxin';
   const isNrs = input.kind === 'nrs';

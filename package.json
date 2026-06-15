@@ -8,7 +8,9 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "check:i18n": "node scripts/check-i18n-parity.mjs",
-    "verify": "npm run typecheck && npm run check:i18n && npm run build"
+    "verify": "npm run typecheck && npm run check:i18n && npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@sentry/nextjs": "8.42.0",
@@ -26,6 +28,7 @@
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
     "tailwindcss": "4.3.0",
-    "typescript": "5.7.2"
+    "typescript": "5.7.2",
+    "vitest": "^4.1.8"
   }
 }

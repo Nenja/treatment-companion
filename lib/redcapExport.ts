@@ -97,7 +97,7 @@ const COLUMNS: string[] = [
 type Row = Record<string, string>;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-function patientRows(p: any): Row[] {
+export function patientRows(p: any): Row[] {
   const rid = String(p.record_id ?? '');
   const rows: Row[] = [];
   const base = (instrument: string, instance: number | ''): Row => ({
@@ -194,9 +194,9 @@ function patientRows(p: any): Row[] {
   return rows;
 }
 
-const esc = (v: string): string => (/[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+export const esc = (v: string): string => (/[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 
-function toCsv(rows: Row[]): string {
+export function toCsv(rows: Row[]): string {
   const lines = [COLUMNS.join(',')];
   for (const r of rows) lines.push(COLUMNS.map((c) => esc(r[c] ?? '')).join(','));
   return lines.join('\r\n');

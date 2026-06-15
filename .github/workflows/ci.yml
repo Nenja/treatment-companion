@@ -33,6 +33,9 @@ jobs:
       - name: i18n parity (en / da)
         run: node scripts/check-i18n-parity.mjs
 
+      - name: Unit tests
+        run: npm run test
+
       - name: Production build
         run: npm run build
         env:
