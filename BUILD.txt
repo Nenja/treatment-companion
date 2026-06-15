@@ -1,42 +1,62 @@
-BUILD - e2e-autorun-1   (E2E smoke now runs automatically)
+BUILD - deps-secfix-1   (next-intl security patch + Dependabot)
 
-WHAT CHANGED
-  One file: .github/workflows/e2e.yml
-  It was manual-only (workflow_dispatch). Now it ALSO runs:
-    - daily on a schedule (06:00 UTC) - synthetic monitoring; catches prod or
-      login breakage even when you haven't deployed anything
-    - after a successful PRODUCTION Vercel deploy (deployment_status) - catches
-      regressions a deploy introduces
-  It is STILL not run on push/PR on purpose: a browser flake must never block a
-  normal commit. Your CI "verify" job (typecheck/i18n/test/build) stays the
-  push gate. A concurrency group stops overlapping runs.
+WHY (the important part)
+  The version of next-intl you just deployed (4.4.0) has a known moderate
+  security advisory - GHSA-8f24-v5vv-gm5j, an OPEN REDIRECT in next-intl's
+  middleware (a crafted URL can bounce a user to an arbitrary external site;
+  the classic use is phishing / stealing a login). It's fixed in 4.9.1+.
 
-  No app code, schema, or dependency change. Nothing else in this drop.
+  I had pinned 4.4.0 to avoid the native @swc/core dependency that made the
+  lockfile fragile - but that version carries this CVE, so that was the wrong
+  trade for a clinical app. This drop moves next-intl to the patched 4.13.0.
+  @swc/core comes back, BUT: the lockfile was regenerated cleanly and I ran a
+  real `npm ci` against it on the exact npm versions your CI uses (Node 20:
+  10.2.4 and 10.8.2) - both pass. The earlier CI failure was a stale lockfile,
+  not 4.13.0 itself. So a clean, correctly-committed lock is fine.
 
-DEPLOY
-  1. GitHub Desktop: copy .github/workflows/e2e.yml into the repo (overwrite),
-     commit, push - to your DEFAULT branch (main). The schedule and the
-     post-deploy trigger only take effect from the default branch.
-  2. Confirm these are set under Settings -> Secrets and variables -> Actions:
-       Variables:  E2E_BASE_URL          e.g. https://treatment-companion.vercel.app
-       Secrets:    E2E_PATIENT_EMAIL     a DEDICATED test patient
-                   E2E_PATIENT_PASSWORD  that account's password
-     (Same ones the manual workflow already needed.)
-  3. Optional: trigger it once from the Actions tab ("E2E smoke" -> Run workflow)
-     to confirm it's green before relying on the automatic runs.
+  Not urgent given you're pre-launch (no domain, no real patients yet), but
+  it's a known CVE and worth closing now.
 
-NOTES
-  - DATA: each automatic run completes a weekly check-in as the test patient.
-    The check-in test self-skips once that week's prompt is used, so repeats are
-    safe - but use a test account you don't also demo with.
-  - If your Vercel labels production deployments with something other than
-    "Production", edit the environment check in the job's `if:` line.
-  - Adjust frequency by editing the cron line (e.g. '0 6 * * 1' = Mondays only).
+WHAT'S IN THIS DROP
+  package.json            next-intl 4.13.0 (was 4.4.0)
+  package-lock.json       regenerated to match, npm ci verified
+  .github/dependabot.yml  NEW - automated dependency-update PRs
 
-STILL PENDING FROM EARLIER (independent of this; not re-shipped here)
-  These are unrelated to the E2E change - listed so nothing falls through:
-  - next16-upgrade-1: if not already done, add proxy.ts and DELETE middleware.ts
-    (the Next 16 dependency files are already committed - CI is green).
-  - secdef-harden-1: run 0108_harden_secdef_functions.sql in the Supabase SQL
-    editor if you haven't yet.
-  Both files live in the treatment-companion-secdef-harden-1 zip.
+DEPLOY (the lockfile lesson applies again)
+  1. GitHub Desktop: copy package.json AND package-lock.json TOGETHER
+     (overwrite both), and add .github/dependabot.yml. Commit all three in one
+     commit, push to main.
+     -> Confirm package.json shows "next-intl": "4.13.0", and that BOTH
+        package.json and package-lock.json appear as changed in the commit.
+  2. One-time, in GitHub repo Settings -> Code security:
+       - turn on "Dependabot alerts"
+       - turn on "Dependabot security updates"
+     (These two toggles are what make Dependabot open security-fix PRs. The
+     dependabot.yml file only handles the scheduled version-update PRs.)
+
+WHAT DEPENDABOT DOES FOR YOU NOW
+  - Opens weekly PRs to keep npm packages and GitHub Actions current (minor +
+    patch grouped into one PR; majors separate).
+  - With security updates on, opens fix PRs for advisories automatically -
+    including the remaining @supabase/auth-js item (it'll bump
+    @supabase/supabase-js).
+  - EVERY Dependabot PR updates package.json AND package-lock.json together,
+    and your CI checks it. So when a PR is green, it's safe to merge from the
+    Pull requests tab. This is also why the lockfile mismatch can't happen
+    through Dependabot.
+
+VERIFIED IN SANDBOX
+  - Production build (Turbopack): 109/109, no warnings.
+  - tsc clean; i18n parity 1668; unit tests 41/41.
+  - npm ci passes on Node-20 npm 10.2.4 and 10.8.2.
+
+REMAINING AUDIT ITEMS (not blockers)
+  - @supabase/auth-js (moderate): fixed by bumping @supabase/supabase-js. Left
+    to Dependabot + CI rather than a blind hand-bump of your data layer.
+  - postcss (moderate): transitive under next; clears when next ships a newer
+    postcss. Not directly fixable.
+
+STILL PENDING FROM EARLIER (unrelated; not re-shipped here)
+  - next16-upgrade-1: add proxy.ts + DELETE middleware.ts, if not done.
+  - secdef-harden-1: run 0108_harden_secdef_functions.sql in the SQL editor.
+  - e2e-autorun-1: the e2e.yml change (auto-running E2E), if not yet committed.

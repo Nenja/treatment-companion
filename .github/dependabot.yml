@@ -1,22 +1,42 @@
-# Dependabot — keeps dependencies and CI actions current and surfaces known
-# vulnerabilities. Updates arrive as occasional grouped pull requests (monthly,
-# bundled into one PR) to keep the noise low for a solo maintainer.
+# Dependabot keeps dependencies current and opens security-fix PRs.
 #
-# Security fixes: also turn on "Dependabot alerts" and "Dependabot security
-# updates" in the repo Settings → Advanced Security (one-time toggle). Those
-# raise urgent fixes outside this monthly schedule.
+# IMPORTANT — also flip two toggles once (Settings -> Code security):
+#   • Dependabot alerts            (detects vulnerable deps)
+#   • Dependabot security updates  (auto-opens PRs to fix them)
+# This file only configures the SCHEDULED version-update PRs below.
+#
+# Every PR Dependabot opens updates package.json AND package-lock.json together
+# (so it can't create the lockfile mismatch we hit), and your CI (verify +
+# migrations, which run on pull_request) checks each one — so a PR that goes
+# green is safe to merge. Review/merge from the Pull requests tab.
 version: 2
 updates:
+  # Application dependencies (root package.json)
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
     groups:
-      dependencies:
-        patterns:
-          - "*"
+      # Bundle low-risk minor + patch bumps into ONE PR to cut noise.
+      # Major bumps still arrive as separate PRs to review individually.
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions versions (actions/checkout, setup-node, upload-artifact, ...)
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(ci)"
