@@ -3,31 +3,87 @@
 import { useTranslations } from 'next-intl';
 import { useModalA11y } from '@/lib/useModalA11y';
 
+type ConsentTone = 'on' | 'warn' | 'off';
+
+/** One consent line: label on its own row, then a status pill + action button
+ *  aligned together so they never drift apart when the text wraps. */
+function ConsentRow({
+  label,
+  tone,
+  status,
+  actionLabel,
+  onAction
+}: {
+  label: string;
+  tone: ConsentTone;
+  status: string;
+  actionLabel: string;
+  onAction: () => void;
+}) {
+  const pill =
+    tone === 'on'
+      ? 'border-sage-soft bg-sage-soft/40 text-sage-deep'
+      : tone === 'warn'
+        ? 'border-amber-soft bg-amber-soft/40 text-amber-deep'
+        : 'border-stone bg-stone-soft text-ink-soft';
+  return (
+    <div>
+      <span className="block text-[13px] text-ink-muted">{label}</span>
+      <div className="mt-1.5 flex items-center justify-between gap-2">
+        <span
+          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[12px] font-semibold ${pill}`}
+        >
+          {status}
+        </span>
+        <button
+          type="button"
+          onClick={onAction}
+          className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-sage-deep hover:bg-stone-soft"
+        >
+          {actionLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /**
- * Per-patient video panel, opened from the cockpit toolbar (alongside
- * Training / History / Export). Holds the patient-level video governance that
- * used to clutter the Background card: the two consent checkmarks (recording
- * for clinical use / research) and an entry point to the archived-videos view.
+ * The patient-level **Consent** panel, opened from the cockpit toolbar
+ * (labelled "Consent"). It is the single home for all three consent
+ * dimensions — recording for clinical use, educational use of video, and
+ * research participation — each shown as a status pill + grant/withdraw
+ * action. It also holds the entry point to the archived-videos view.
  *
- * Per-goal video (protocol + that goal's baseline) lives elsewhere — on each
- * goal card's own "Video" button — because it is goal-scoped, not patient-
- * scoped. This panel is deliberately the home for the patient-wide pieces.
+ * (The component keeps the name ClinicianVideoModal for import stability.
+ * The consent rows that used to sit on the Background card now live only
+ * here.) Per-goal video — protocol + that goal's baseline — stays on each
+ * goal card's own "Video" button, because it is goal-scoped, not patient-
+ * scoped.
  */
 export function ClinicianVideoModal({
   consentClinical,
   consentEducational,
   onSetConsent,
+  consentResearch,
+  researchWithdrawn,
+  onToggleResearch,
   onOpenArchive,
   onClose
 }: {
   consentClinical: boolean;
   consentEducational: boolean;
-  onSetConsent: (clinical: boolean, research: boolean) => void;
+  onSetConsent: (clinical: boolean, educational: boolean) => void;
+  consentResearch: boolean;
+  researchWithdrawn: boolean;
+  onToggleResearch: () => void;
   onOpenArchive: () => void;
   onClose: () => void;
 }) {
   const t = useTranslations('clinician.videoPanel');
   const tPatient = useTranslations('clinician.patient');
+  const tCC = useTranslations('clinicalConsent');
+  const tEC = useTranslations('educationalConsent');
+  const tRC = useTranslations('researchConsent');
   const tA11y = useTranslations('a11y');
   const containerRef = useModalA11y(onClose);
 
@@ -73,33 +129,37 @@ export function ClinicianVideoModal({
             {t('intro')}
           </p>
 
-          {/* Consent — moved here from the Background card. */}
-          <div className="mt-4 flex flex-col gap-2 rounded-[var(--radius-card)] border border-stone bg-cream p-3">
-            <span className="text-[12px] font-semibold text-ink-soft">
-              {tPatient('videoConsentTitle')}
-            </span>
-            <label className="flex items-start gap-2 text-[13px] text-ink-soft">
-              <input
-                type="checkbox"
-                checked={consentClinical}
-                onChange={(e) =>
-                  onSetConsent(e.target.checked, consentEducational)
-                }
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
-              />
-              <span>{tPatient('videoConsentClinical')}</span>
-            </label>
-            <label className="flex items-start gap-2 text-[13px] text-ink-soft">
-              <input
-                type="checkbox"
-                checked={consentEducational}
-                onChange={(e) =>
-                  onSetConsent(consentClinical, e.target.checked)
-                }
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
-              />
-              <span>{tPatient('videoConsentEducational')}</span>
-            </label>
+          {/* All three consent dimensions live here — the single source. */}
+          <div className="mt-4 flex flex-col gap-3 rounded-[var(--radius-card)] border border-stone bg-cream p-3">
+            <ConsentRow
+              label={tCC('heading')}
+              tone={consentClinical ? 'on' : 'off'}
+              status={consentClinical ? tCC('statusOn') : tCC('statusOff')}
+              actionLabel={consentClinical ? tCC('withdraw') : tCC('grant')}
+              onAction={() => onSetConsent(!consentClinical, consentEducational)}
+            />
+            <ConsentRow
+              label={tEC('heading')}
+              tone={consentEducational ? 'on' : 'off'}
+              status={consentEducational ? tEC('statusOn') : tEC('statusOff')}
+              actionLabel={consentEducational ? tEC('withdraw') : tEC('grant')}
+              onAction={() => onSetConsent(consentClinical, !consentEducational)}
+            />
+            <ConsentRow
+              label={tRC('heading')}
+              tone={
+                consentResearch ? 'on' : researchWithdrawn ? 'warn' : 'off'
+              }
+              status={
+                consentResearch
+                  ? tRC('statusConsented')
+                  : researchWithdrawn
+                    ? tRC('statusWithdrawn')
+                    : tRC('statusNone')
+              }
+              actionLabel={consentResearch ? tRC('withdraw') : tRC('grant')}
+              onAction={onToggleResearch}
+            />
             <p className="text-[12px] leading-relaxed text-ink-muted">
               {t('consentHint')}
             </p>

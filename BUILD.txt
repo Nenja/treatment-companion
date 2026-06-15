@@ -1,61 +1,56 @@
-BUILD - suggestion-approve-redesign-1   (CUMULATIVE)
-Redesigned the clinician approve-suggestion page: five actions -> two
-(Approve as a goal / Set aside), and Approve gained a "new goal vs add to an
-existing goal" toggle. Carries ONE new migration (0107).
+BUILD - consent-consolidation-1   (CUMULATIVE)
+Consent now lives in ONE place. The toolbar's "Video" action is renamed
+"Consent"; the panel holds clinical / educational / research consent; the
+consent rows are removed from the Background card.
 
->>> CUMULATIVE — one drop-in deploys everything in this batch. <<<
+>>> CUMULATIVE — this one drop-in also carries the previous batch
+>>> (suggestion-approve-redesign-1) and its migration 0107. <<<
 
-WHAT'S NEW THIS BATCH
-  supabase/migrations/0107_combine_suggestion_into_goal.sql   (NEW migration)
-  lib/supabase/clinicianPatient.ts        (+ useCombineSuggestionIntoGoal hook)
-  app/[locale]/clinician/suggestion/page.tsx   (the redesign)
-  messages/en.json, da.json, sv.json, nb.json  (+8 keys; sv/nb first-pass)
+WHAT'S IN THIS DROP
+  This batch (consent):
+    components/clinician/ClinicianVideoModal.tsx   (now the Consent panel)
+    components/clinician/BackgroundCard.tsx        (consent rows removed)
+    components/clinician/PatientActionRow.tsx      (Video icon -> shield-check)
+    app/[locale]/clinician/patient/page.tsx        (wiring + relabel)
+    messages/en|da|sv|nb.json                      (+clinicalConsent; relabels)
+  Carried from suggestion-approve-redesign-1:
+    supabase/migrations/0107_combine_suggestion_into_goal.sql   (MIGRATION)
+    lib/supabase/clinicianPatient.ts               (combine hook)
+    app/[locale]/clinician/suggestion/page.tsx     (Approve / Set aside redesign)
 
 WHAT CHANGED, IN PLAIN TERMS
-  - The review screen now shows TWO buttons instead of five:
-      * "Approve as a goal"  (primary)
-      * "Set aside"          (secondary)
-    There is no "discuss at next visit" button: a suggestion you don't act on
-    stays pending and comes back at the next visit on its own.
-  - "Approve as a goal" opens the form with a choice at the top:
-      * "As a new goal"            -> the usual NRS/GAS setup (unchanged)
-      * "Add to an existing goal"  -> pick one of the patient's current goals;
-                                      it just RECORDS that this suggestion was
-                                      folded into that goal. No new goal is
-                                      created and the goal you pick is NOT
-                                      changed.
+  - The "Video" button in the patient toolbar is now "Consent" (shield icon).
+  - Opening it shows three consent toggles, each with a status pill:
+      * Recording for clinical use
+      * Educational use of video
+      * Research participation  (keeps the withdraw-confirmation)
+  - The Background card no longer shows any consent — it's only demographics,
+    treatment, medication, and devices now. Consent lives ONLY in the panel.
+  - (Per-goal video recording is unchanged; it still reads the same consent.)
 
 DEPLOY — IN ORDER
-  1. Supabase SQL editor: run the standalone file
+  1. Supabase SQL editor: run (if you haven't already, from the last drop)
          supabase/migrations/0107_combine_suggestion_into_goal.sql
-     (Adds the combined_into_goal_id column + the combine RPC. Safe and
-      idempotent — re-running it is harmless.)
-  2. GitHub Desktop: drop the files from this zip into your repo, keeping the
-     same paths. DO NOT overwrite root package.json / package-lock.json
-     (this batch does not touch them).
+     (Idempotent — safe to run again. This is the only migration in the drop.)
+  2. GitHub Desktop: drop all files from this zip into the repo, same paths.
+     DO NOT overwrite root package.json / package-lock.json (untouched here).
   3. Commit + push. Vercel auto-builds.
 
 VERIFICATION DONE FOR YOU (sandbox)
   - Production build: 110/110 pages, exit 0.
-  - TypeScript: clean (tsc --noEmit, 0 errors).
+  - TypeScript: clean (0 errors).
   - Unit/component tests: 41/41 pass.
-  - i18n parity: 1663 keys, en/da aligned (sv/nb same key set).
-  - Migration 0107 on a throwaway Postgres 16:
-      * focused harness: column added; happy path sets status + target goal +
-        audit row; all four guards fire (cross-patient goal, unknown goal,
-        no active session, not a clinician); idempotent re-apply.
-      * full chain replay 0001 -> 0107: 0 failures; RPC + column present.
+  - i18n parity: 1668 keys, en/da aligned (sv/nb same key set).
+  - (Migration 0107 was verified on a throwaway Postgres in the last batch:
+     focused harness + all four guards + full 0001->0107 chain, 0 failures.)
 
 WHAT I CANNOT VERIFY (please click through once after deploy)
-  - The rendered screens in Firefox (the toggle, the goal picker, the two
-    buttons) — I can't see real UI.
-  - Live RLS/session behaviour: that the goal picker only lists THIS patient's
-    active goals under a real clinician session, and that folding in works
-    end-to-end against the real database.
+  - The rendered Consent panel in Firefox (three pill+toggle rows, the new
+    icon, the relabeled toolbar button).
+  - Live toggling against the real database (clinical/educational via one
+    mutation; research via its own, including the withdraw confirmation).
   - sv/nb wording quality (first pass — flag for a native speaker).
 
 NEXT IN THIS THREAD
-  The Consent consolidation: relabel the patient-level "Video" action to
-  "Consent", make the Consent panel the single home for clinical / educational
-  / research consent, and remove those consent rows from the Background card.
-  No migration. Design already approved.
+  Playwright E2E smoke (login -> check-in) — the last roadmap item. It will be
+  a scaffold + run instructions; it cannot be proven green from the sandbox.

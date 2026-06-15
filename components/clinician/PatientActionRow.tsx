@@ -93,11 +93,11 @@ function iconFor(id: PatientActionId) {
         </svg>
       );
     case 'video':
-      // video camera
+      // shield with a check — this entry point is now "Consent"
       return (
         <svg {...common}>
-          <rect x="2" y="6" width="14" height="12" rx="2" />
-          <path d="M16 10l6-3v10l-6-3z" />
+          <path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
+          <path d="M9 12l2 2 4-4" />
         </svg>
       );
   }

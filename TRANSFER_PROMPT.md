@@ -72,9 +72,9 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `suggestion-approve-redesign-1` (**CUMULATIVE zip**) — the clinician approve-suggestion page redesigned to two actions (**Approve as a goal** / **Set aside**), with Approve offering **new goal** vs **add to an existing goal** (records a fold-in only). NEW migration `0107` (`combined_into_goal_id` column + clinician-gated `combine_suggestion_into_goal` RPC). Verified on throwaway Postgres (focused harness + full 0001→0107 CI replay, 0 failures); build 110/110, tsc clean, 41/41 tests, parity 1663 keys.
-- **Just shipped:** `suggestion-approve-redesign-1`. **Run `0107`** in the Supabase SQL editor (idempotent). Earlier migrations still pending if not yet run: `0103`–`0106`. The Edge Function `send-checkin-notifications` still needs (re)deploy in Supabase (sv/nb reminder copy + `--no-verify-jwt`).
-- **Roadmap done since redcap-export-1:** test harness (Vitest + jsdom component tests, 41 tests, in CI); real privacy-notice + DPIA drafts (`docs/`); native-push go-live runbook (`mobile/PUSH_GOLIVE.md` — code was already complete); sv/nb reminder localization (+ a latent push crash fixed).
+- **Latest build:** `consent-consolidation-1` (**CUMULATIVE zip** — also carries `suggestion-approve-redesign-1` + its migration `0107`). Patient consent now has a single home: the toolbar's "Video" action is renamed **Consent** (shield-check icon), the panel shows all three dimensions (clinical recording / educational use / research participation) as pill + grant/withdraw, and the research + educational rows were removed from the Background card. No new migration of its own. Build 110/110, tsc clean, 41/41 tests, parity 1668 keys.
+- **Just shipped:** `consent-consolidation-1` (carries the suggestion redesign too). **Run `0107`** in the Supabase SQL editor (idempotent) if not already done from the prior drop. Earlier migrations still pending if not yet run: `0103`–`0106`. The Edge Function `send-checkin-notifications` still needs (re)deploy in Supabase (sv/nb reminder copy + `--no-verify-jwt`).
+- **Roadmap done recently:** test harness (Vitest + jsdom, 41 tests, in CI); real privacy-notice + DPIA drafts (`docs/`); native-push go-live runbook (`mobile/PUSH_GOLIVE.md`); sv/nb reminder localization; the approve-suggestion redesign (`0107`); and this consent consolidation. **Only the E2E smoke remains on the audit list.**
 - **Two QA flags:** `record_id` = approach A (app-assigned `TC-NNNN`); DPO to bless or swap. The CSV MUST be test-imported into a real REDCap project (cannot verify live import from here).
 - **Also live (in-session):** the finalised REDCap data dictionary (86 fields) in `redcap/`; native Android push (FCM); daily scheduler `0104` once deployed.
 
@@ -88,12 +88,10 @@ not skip the work. Reusable audit/review prompts are welcome.
   honoured.
 
 **What's likely next**
-- **Consent consolidation** (design approved, no migration) — relabel the
-  patient-level "Video" action to "Consent"; make the Consent panel
-  (`ClinicianVideoModal`) the single home for clinical / educational / research
-  consent, and remove those consent rows from `BackgroundCard`.
-- **Then — last roadmap item:** Playwright E2E smoke (login → check-in). Will
-  be a scaffold + run instructions; not provable-green from the sandbox.
+- **Playwright E2E smoke** (login → check-in) — the last item on the audit
+  list. Will be a scaffold + run instructions; it cannot be proven green from
+  the sandbox (no browser), so expect it delivered as runnable files, not a
+  green check.
 - **Parked:** #4 muscle→function (needs Nikolaj's markup + the catalogue
   decision); per-goal handoff note (per-cycle today; would need a migration);
   cross-version goal chart.

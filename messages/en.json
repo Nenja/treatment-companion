@@ -447,8 +447,8 @@
       "videoConsentTitle": "Video consent",
       "videoConsentClinical": "Consent to record & store videos",
       "archivedVideosButton": "Archived videos",
-      "actionVideo": "Video",
-      "actionShortVideo": "Video",
+      "actionVideo": "Consent",
+      "actionShortVideo": "Consent",
       "physioPanelTitle": "Therapist input",
       "physioVisits": "{count} therapist visits this cycle",
       "physioNoVisits": "No therapist visits recorded yet this cycle.",
@@ -744,8 +744,8 @@
       "openArchive": "Archived videos"
     },
     "videoPanel": {
-      "title": "Video",
-      "intro": "Patient-level video settings. Recording protocols and baseline videos for individual goals live on each goal's Video button.",
+      "title": "Consent",
+      "intro": "Consent on file for this patient — recording for clinical use, educational use, and research participation. Per-goal recording protocols and baseline videos live on each goal's Video button.",
       "consentHint": "Consent must be on file before a baseline or check-in video can be recorded."
     },
     "videoGuide": {
@@ -1825,5 +1825,12 @@
     "title": "Something went wrong",
     "body": "We couldn't load this. Please try again — if it keeps happening, contact your clinic.",
     "retry": "Try again"
+  },
+  "clinicalConsent": {
+    "heading": "Recording for clinical use",
+    "statusOn": "Consented to recording",
+    "statusOff": "No recording consent",
+    "grant": "Record consent for clinical use",
+    "withdraw": "Withdraw"
   }
 }

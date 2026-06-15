@@ -122,7 +122,6 @@ export default function ClinicianPatientPage() {
   const setVideoConsent = useSetPatientVideoConsent();
   const setResearchConsent = useSetPatientResearchConsent();
   const tRC = useTranslations('researchConsent');
-  const tEC = useTranslations('educationalConsent');
   const reactivateGoal = useReactivateGoal();
   const toast = useToast();
   const resolveAdjustment = useResolveAdjustmentRequest();
@@ -1334,46 +1333,13 @@ export default function ClinicianPatientPage() {
               null
             }
             onEditMedication={() => setOpenPanel('medication')}
-            researchConsent={patient.researchConsent}
-            researchWithdrawn={
-              !patient.researchConsent && !!patient.researchConsentWithdrawnAt
-            }
-            onToggleResearchConsent={() => {
-              const next = !patient.researchConsent;
-              if (!next && !window.confirm(tRC('withdrawConfirm'))) return;
-              touch();
-              void setResearchConsent.mutateAsync({
-                patientId: patient.id,
-                consent: next
-              });
-            }}
-            educationalConsent={patient.videoConsentEducational}
-            onToggleEducationalConsent={() => {
-              touch();
-              void setVideoConsent.mutateAsync({
-                patientId: patient.id,
-                clinical: patient.videoConsentClinical,
-                educational: !patient.videoConsentEducational
-              });
-            }}
             labels={{
               title: t('backgroundTitle'),
               treatment: t('backgroundTreatment'),
               medication: t('banner.medication'),
               devices: t('banner.devices'),
               edit: t('medEdit'),
-              medicationNone: t('medNotRecordedYet'),
-              research: tRC('heading'),
-              researchOn: tRC('statusConsented'),
-              researchOff: tRC('statusNone'),
-              researchWithdrawn: tRC('statusWithdrawn'),
-              researchGrant: tRC('grant'),
-              researchWithdrawAction: tRC('withdraw'),
-              educational: tEC('heading'),
-              educationalOn: tEC('statusOn'),
-              educationalOff: tEC('statusOff'),
-              educationalGrant: tEC('grant'),
-              educationalWithdrawAction: tEC('withdraw')
+              medicationNone: t('medNotRecordedYet')
             }}
           />
         </div>
@@ -2016,6 +1982,19 @@ export default function ClinicianPatientPage() {
               patientId: patient.id,
               clinical,
               educational
+            });
+          }}
+          consentResearch={!!patient.researchConsent}
+          researchWithdrawn={
+            !patient.researchConsent && !!patient.researchConsentWithdrawnAt
+          }
+          onToggleResearch={() => {
+            const next = !patient.researchConsent;
+            if (!next && !window.confirm(tRC('withdrawConfirm'))) return;
+            touch();
+            void setResearchConsent.mutateAsync({
+              patientId: patient.id,
+              consent: next
             });
           }}
           onOpenArchive={() => {

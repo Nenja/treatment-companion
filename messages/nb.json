@@ -447,8 +447,8 @@
       "videoConsentTitle": "Videosamtykke",
       "videoConsentClinical": "Samtykke til å ta opp og lagre videoer",
       "archivedVideosButton": "Arkiverte videoer",
-      "actionVideo": "Video",
-      "actionShortVideo": "Video",
+      "actionVideo": "Samtykke",
+      "actionShortVideo": "Samtykke",
       "physioPanelTitle": "Terapeutinnspill",
       "physioVisits": "{count} terapibesøk denne perioden",
       "physioNoVisits": "Ingen terapibesøk registrert ennå denne perioden.",
@@ -744,8 +744,8 @@
       "openArchive": "Arkiverte videoer"
     },
     "videoPanel": {
-      "title": "Video",
-      "intro": "Videoinnstillinger på pasientnivå. Opptaksprotokoller og baseline-videoer for enkelte mål finnes på hvert måls Video-knapp.",
+      "title": "Samtykke",
+      "intro": "Samtykke registrert for denne pasienten — opptak til klinisk bruk, undervisningsbruk og forskningsdeltakelse. Opptaksprotokoller og baseline-videoer for enkelte mål finnes på hvert måls Video-knapp.",
       "consentHint": "Samtykke må være registrert før en baseline- eller statusvideo kan tas opp."
     },
     "videoGuide": {
@@ -1825,5 +1825,12 @@
     "title": "Noe gikk galt",
     "body": "Vi kunne ikke laste dette. Prøv igjen — hvis det fortsetter, kontakt klinikken din.",
     "retry": "Prøv igjen"
+  },
+  "clinicalConsent": {
+    "heading": "Opptak til klinisk bruk",
+    "statusOn": "Har samtykket til opptak",
+    "statusOff": "Ingen samtykke til opptak",
+    "grant": "Registrer samtykke til opptak",
+    "withdraw": "Trekk tilbake"
   }
 }
