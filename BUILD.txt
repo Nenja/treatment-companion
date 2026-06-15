@@ -1,43 +1,31 @@
-BUILD - checkin-e2e-fix-1
-Fixes the Playwright check-in smoke test, and carries the signed-out→/login
-guard from the previous batch so one drop deploys both.
+BUILD - checkin-e2e-fix-2  (test-only)
+Follow-up that fixes the LAST remaining check-in test failure. The
+signed-out->/login app guard is already live, so this drop is just the test.
 
 WHAT'S IN THIS DROP
-  e2e/smoke.spec.ts        (check-in test fixed + made re-runnable; test 2 also
-                            asserts the signed-out redirect to /login)
-  lib/supabase/auth.tsx    (global signed-out -> /login guard; if you already
-                            pushed auth-redirect-guard-1 this is identical)
-  playwright.config.ts     (hardened config; unchanged if you already have it)
+  e2e/smoke.spec.ts   (check-in walk reworked to handle the submit step)
 
-WHAT WAS WRONG WITH THE CHECK-IN TEST
-  It timed out clicking a disabled "Continue". That was the TEST's fault, not
-  the app's: the loop looked for the rating buttons before the page had finished
-  loading, so it skipped picking a rating, then waited forever on a Continue
-  button that can't turn on until a rating is chosen. The app is fine.
+WHAT WAS WRONG THIS TIME
+  After the previous fix, the rating registered fine — but the test then failed
+  with "button not found". On the last step, clicking "Send my check-in" submits
+  and the screen switches to the "Thank you" page, so the button disappears. The
+  loop took one more lap and tried to use that now-gone button.
 
 WHAT THE TEST DOES NOW
-  - Waits for the check-in screen to actually render before doing anything.
-  - On each step, picks a rating and CONFIRMS it registered before moving on.
-  - Only clicks Continue once it's actually enabled.
-  - If the patient has no check-in due (e.g. a previous run already completed
-    it — finishing a check-in uses up that week's prompt), the test SKIPS with
-    a clear note instead of failing, so you can re-run the suite freely.
+  Every step's button says "Continue" except the final one, which says "Send my
+  check-in". The test uses that to know when it's on the last step: it submits
+  there and STOPS, then waits for the "Thank you" screen. No more extra lap.
 
 DEPLOY
-  1. GitHub Desktop: drop these files into the repo (same paths) -> commit -> push.
-     DO NOT overwrite root package.json / package-lock.json (untouched).
-     No migration in this batch.
-  2. If lib/supabase/auth.tsx is new to your repo, wait for Vercel to rebuild
-     (it's app code). If you already pushed it, no rebuild needed for the test.
-  3. Re-run the E2E smoke (Actions -> E2E smoke -> Run workflow).
+  1. GitHub Desktop: drop e2e/smoke.spec.ts into the repo (same path) -> commit -> push.
+     No app files, no migration, no Vercel rebuild needed for this change.
+  2. Re-run the E2E smoke (Actions -> E2E smoke -> Run workflow).
 
 EXPECTED RESULT
-  - With a pending check-in for the test patient (test1@example.com): 4 passed.
-  - If that prompt was already consumed by an earlier run: 3 passed, 1 skipped
+  - With a pending check-in for test1@example.com: 4 passed.
+  - If that prompt was already used up by an earlier run: 3 passed, 1 skipped
     ("No pending check-in to complete ..."). Seed a fresh week to get 4 again.
 
-VERIFICATION DONE FOR YOU (sandbox)
-  - e2e/smoke.spec.ts type-checks against @playwright/test.
-  - App (from the carried auth.tsx): build 110/110, TypeScript clean, 41/41 tests.
-  - I CANNOT run a real browser here, so the live pass/skip is confirmed by your
-    workflow run.
+NOTE
+  I can't run a real browser here; the live result comes from your workflow run.
+  The spec type-checks against @playwright/test.

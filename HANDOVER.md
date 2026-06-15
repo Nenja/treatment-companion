@@ -13,7 +13,7 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for batch: `checkin-e2e-fix-1`. Fixed the Playwright check-in smoke test (it timed out on a disabled "Continue" — a TEST race, not an app bug: the loop checked the rating picker before the page finished loading, skipped the rating, then waited forever on a Continue that can't enable without one). The test now waits past the loading skeleton, confirms each rating registered (`aria-checked`) before advancing, and SKIPS (not fails) when there's no pending prompt so it stays re-runnable. **This zip also carries the still-unpushed `auth-redirect-guard-1` app fix** (`lib/supabase/auth.tsx` global signed-out→/login guard) so one drop deploys both. No schema change. App build 110/110, tsc clean, 41/41 tests; e2e spec type-checks. Push, let Vercel rebuild (auth.tsx is app code), then re-run the E2E — expect all 4 green when test1 has a pending check-in (or 3 green + check-in SKIPPED if its prompt was already consumed). See §7._
+> _Last updated for batch: `checkin-e2e-fix-2`. Follow-up to the check-in smoke fix: it had cleared the load race but then failed with `toBeEnabled … element(s) not found` — after clicking "Send my check-in" the wizard is replaced by the thanks screen, so the button vanishes, and the loop did one more pass and tripped on it. The walk now drives off the button text (every step says "Continue" except the last, which says "Send my check-in"), submits on the final step and BREAKS, then waits for the thanks heading. Test-only; no app/schema change (the `auth-redirect-guard-1` guard is already deployed). e2e spec type-checks; app build 110/110, tsc clean, 41/41 tests still hold. Re-run the smoke — expect **4 passed**, or **3 passed + 1 skipped** if test1's prompt was already consumed. See §7._
 
 ---
 
@@ -849,6 +849,10 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **E2E check-in test — submit-transition fix (`checkin-e2e-fix-2`).** Follow-up to `checkin-e2e-fix-1`; test-only, no app/schema change. The previous version cleared the load race but then failed with `expect(...).toBeEnabled() … element(s) not found`: after clicking "Send my check-in" on the final step the wizard is replaced by the thanks screen, so the primary button vanishes — and the loop did one more pass (the submit was still pending when the top-of-loop thanks check ran, so it didn't break) and tripped on the gone button.
+  - **Fix:** the walk now drives off the button text — every step shows "Continue" except the last, which shows "Send my check-in" — so it submits on the final step and BREAKS immediately, then waits for the thanks heading. (Confirmed via `isCheckinComplete` in `lib/checkinDraft.ts`: Send enables once every active goal is rated; the comment step is optional.)
+  - **File:** `e2e/smoke.spec.ts` only. Re-run the smoke — expect **4 passed**, or **3 passed + 1 skipped** if test1's check-in was already consumed by an earlier run.
 
 - **E2E check-in test fix (`checkin-e2e-fix-1`).** No app/schema change in this step — only the Playwright spec. (This zip ALSO carries the `auth-redirect-guard-1` app fix in `lib/supabase/auth.tsx`, in case it wasn't pushed yet — see the entry below.)
   - **Bug:** the `patient › can complete a weekly check-in` smoke timed out (60s) on the first "Continue" click — the button stayed `disabled`. Root cause was a race in the TEST, not the app: the loop checked the rating radiogroup's visibility on its first pass while the page was still behind its loading skeleton (no controls yet), so it SKIPPED setting a rating, then committed to clicking a Continue that can never enable without one — blocking the entire 60s on that single call, so the 12-iteration retry never got a second pass.

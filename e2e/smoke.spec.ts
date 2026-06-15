@@ -67,9 +67,9 @@ test.describe('patient', () => {
     await page.goto('/checkin');
 
     const thanks = page.getByRole('heading', { name: 'Thank you' });
-    const advance = page
-      .getByRole('button', { name: 'Continue' })
-      .or(page.getByRole('button', { name: 'Send my check-in' }));
+    const continueBtn = page.getByRole('button', { name: 'Continue' });
+    const sendBtn = page.getByRole('button', { name: 'Send my check-in' });
+    const advance = continueBtn.or(sendBtn);
 
     // Wait for the wizard to render. If it never does — no pending prompt, so
     // the app navigates home — SKIP rather than fail: that's an environment
@@ -88,12 +88,16 @@ test.describe('patient', () => {
     );
 
     // Walk the wizard. Each goal step shows a 0–10 (NRS) or 5-level (GAS)
-    // rating radiogroup; the training and comment steps do not.
-    for (let i = 0; i < 12; i++) {
+    // rating radiogroup; the training and comment steps do not. The final
+    // step's button reads "Send my check-in" (every other step says
+    // "Continue"), so we use that to know when to submit and STOP: clicking
+    // Send replaces the wizard with the thanks screen, so looping again would
+    // hit a vanished button (that was the earlier "element not found" error).
+    for (let i = 0; i < 14; i++) {
       if (await thanks.isVisible().catch(() => false)) break;
 
       // If this step has a rating picker, choose a positive-but-not-extreme
-      // value and CONFIRM it registered — the step keeps Continue disabled
+      // value and CONFIRM it registered — the step keeps its button disabled
       // until a rating is recorded, so asserting aria-checked both forces the
       // click to land and gives a precise failure if it doesn't.
       const group = page.getByRole('radiogroup').first();
@@ -110,11 +114,17 @@ test.describe('patient', () => {
         await expect(choice).toHaveAttribute('aria-checked', 'true');
       }
 
-      // Step satisfied → the primary button must be enabled. Wait, then click.
-      await expect(advance.first()).toBeEnabled({ timeout: 15_000 });
-      await advance.first().click();
+      // Final step → submit and stop. Every other step → go to the next.
+      if (await sendBtn.isVisible().catch(() => false)) {
+        await expect(sendBtn).toBeEnabled({ timeout: 15_000 });
+        await sendBtn.click();
+        break;
+      }
+      await expect(continueBtn).toBeEnabled({ timeout: 15_000 });
+      await continueBtn.click();
     }
 
-    await expect(thanks).toBeVisible({ timeout: 15_000 });
+    // Submitting lands on the thanks screen.
+    await expect(thanks).toBeVisible({ timeout: 20_000 });
   });
 });
