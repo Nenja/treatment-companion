@@ -2,9 +2,9 @@
  * Next.js instrumentation hook. Runs once when the server process
  * starts; here it loads the right Sentry config for the runtime.
  *
- * The client config (sentry.client.config.ts) is loaded automatically
- * by @sentry/nextjs in the browser — only server and edge need wiring
- * up here.
+ * The browser is initialised separately in instrumentation-client.ts
+ * (Next.js loads that file natively, no withSentryConfig needed) — only
+ * the server and edge runtimes are wired up here.
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {

@@ -1,62 +1,52 @@
-BUILD - deps-secfix-1   (next-intl security patch + Dependabot)
+BUILD - sentry-enable-1   (turn Sentry on)
 
-WHY (the important part)
-  The version of next-intl you just deployed (4.4.0) has a known moderate
-  security advisory - GHSA-8f24-v5vv-gm5j, an OPEN REDIRECT in next-intl's
-  middleware (a crafted URL can bounce a user to an arbitrary external site;
-  the classic use is phishing / stealing a login). It's fixed in 4.9.1+.
+WHAT THIS IS
+  Switches on error monitoring. Sentry does NOT need a custom domain - it works
+  fine on your .vercel.app URL. The app was already wired for Sentry, but one
+  piece was inert: browser-side error capture. This drop fixes that and gives
+  you a step-by-step runbook for the dashboard parts (which are yours to do).
 
-  I had pinned 4.4.0 to avoid the native @swc/core dependency that made the
-  lockfile fragile - but that version carries this CVE, so that was the wrong
-  trade for a clinical app. This drop moves next-intl to the patched 4.13.0.
-  @swc/core comes back, BUT: the lockfile was regenerated cleanly and I ran a
-  real `npm ci` against it on the exact npm versions your CI uses (Node 20:
-  10.2.4 and 10.8.2) - both pass. The earlier CI failure was a stale lockfile,
-  not 4.13.0 itself. So a clean, correctly-committed lock is fine.
+THE ONE CODE CHANGE (a file rename)
+  Old: sentry.client.config.ts  ->  New: instrumentation-client.ts
+  Why: without the Sentry build plugin (withSentryConfig, which we deliberately
+  don't use), nothing loaded sentry.client.config.ts, so browser errors were
+  never captured. Next.js loads instrumentation-client.ts natively, so renaming
+  fixes it with no build changes. Server + edge were already fine.
 
-  Not urgent given you're pre-launch (no domain, no real patients yet), but
-  it's a known CVE and worth closing now.
+FILES IN THIS DROP
+  instrumentation-client.ts   NEW - browser Sentry init (was sentry.client.config.ts)
+  instrumentation.ts          comment update only
+  docs/SENTRY_SETUP.md        NEW - the dashboard runbook (read this next)
 
-WHAT'S IN THIS DROP
-  package.json            next-intl 4.13.0 (was 4.4.0)
-  package-lock.json       regenerated to match, npm ci verified
-  .github/dependabot.yml  NEW - automated dependency-update PRs
+DEPLOY
+  1. GitHub Desktop: add instrumentation-client.ts and instrumentation.ts, and
+     **DELETE sentry.client.config.ts** (a zip can't delete it for you). Commit,
+     push to main.
+       -> Confirm sentry.client.config.ts is gone and instrumentation-client.ts
+          is present in the repo.
+  2. Then follow docs/SENTRY_SETUP.md to:
+       - create an EU-region Sentry project (DSN ends ingest.de.sentry.io)
+       - set NEXT_PUBLIC_SENTRY_DSN (required) and
+         NEXT_PUBLIC_SENTRY_ENVIRONMENT=production (recommended) in Vercel
+       - redeploy, confirm, and set the three alert rules
+     Until a DSN is set, Sentry stays a safe no-op and captures nothing.
 
-DEPLOY (the lockfile lesson applies again)
-  1. GitHub Desktop: copy package.json AND package-lock.json TOGETHER
-     (overwrite both), and add .github/dependabot.yml. Commit all three in one
-     commit, push to main.
-     -> Confirm package.json shows "next-intl": "4.13.0", and that BOTH
-        package.json and package-lock.json appear as changed in the commit.
-  2. One-time, in GitHub repo Settings -> Code security:
-       - turn on "Dependabot alerts"
-       - turn on "Dependabot security updates"
-     (These two toggles are what make Dependabot open security-fix PRs. The
-     dependabot.yml file only handles the scheduled version-update PRs.)
-
-WHAT DEPENDABOT DOES FOR YOU NOW
-  - Opens weekly PRs to keep npm packages and GitHub Actions current (minor +
-    patch grouped into one PR; majors separate).
-  - With security updates on, opens fix PRs for advisories automatically -
-    including the remaining @supabase/auth-js item (it'll bump
-    @supabase/supabase-js).
-  - EVERY Dependabot PR updates package.json AND package-lock.json together,
-    and your CI checks it. So when a PR is green, it's safe to merge from the
-    Pull requests tab. This is also why the lockfile mismatch can't happen
-    through Dependabot.
+PRIVACY (already enforced, clinical-grade)
+  sendDefaultPii:false; a beforeSend scrubber strips request bodies, cookies,
+  headers, query strings, user ids, and breadcrumb URLs; no tracing/replay.
+  ONE caveat (in the runbook): the scrubber can't clean PII written into an
+  exception message itself - keep patient data out of throw/Error strings.
 
 VERIFIED IN SANDBOX
-  - Production build (Turbopack): 109/109, no warnings.
-  - tsc clean; i18n parity 1668; unit tests 41/41.
-  - npm ci passes on Node-20 npm 10.2.4 and 10.8.2.
-
-REMAINING AUDIT ITEMS (not blockers)
-  - @supabase/auth-js (moderate): fixed by bumping @supabase/supabase-js. Left
-    to Dependabot + CI rather than a blind hand-bump of your data layer.
-  - postcss (moderate): transitive under next; clears when next ships a newer
-    postcss. Not directly fixable.
+  - tsc clean.
+  - Production build (Turbopack): 109/109, Next picks up instrumentation-client.ts,
+    no errors or warnings.
+  (Runtime capture can't be exercised here without a DSN - confirm post-deploy
+  with the deliberate test error described in the runbook.)
 
 STILL PENDING FROM EARLIER (unrelated; not re-shipped here)
-  - next16-upgrade-1: add proxy.ts + DELETE middleware.ts, if not done.
+  - deps-secfix-1: drop package.json + package-lock.json TOGETHER + dependabot.yml;
+    enable Dependabot alerts + security updates toggles.
   - secdef-harden-1: run 0108_harden_secdef_functions.sql in the SQL editor.
-  - e2e-autorun-1: the e2e.yml change (auto-running E2E), if not yet committed.
+  - next16-upgrade-1: add proxy.ts + DELETE middleware.ts, if not done.
+  - e2e-autorun-1: commit the e2e.yml change, if not done.
