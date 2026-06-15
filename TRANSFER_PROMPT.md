@@ -72,9 +72,9 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `consent-consolidation-1` (**CUMULATIVE zip** — also carries `suggestion-approve-redesign-1` + its migration `0107`). Patient consent now has a single home: the toolbar's "Video" action is renamed **Consent** (shield-check icon), the panel shows all three dimensions (clinical recording / educational use / research participation) as pill + grant/withdraw, and the research + educational rows were removed from the Background card. No new migration of its own. Build 110/110, tsc clean, 41/41 tests, parity 1668 keys.
-- **Just shipped:** `consent-consolidation-1` (carries the suggestion redesign too). **Run `0107`** in the Supabase SQL editor (idempotent) if not already done from the prior drop. Earlier migrations still pending if not yet run: `0103`–`0106`. The Edge Function `send-checkin-notifications` still needs (re)deploy in Supabase (sv/nb reminder copy + `--no-verify-jwt`).
-- **Roadmap done recently:** test harness (Vitest + jsdom, 41 tests, in CI); real privacy-notice + DPIA drafts (`docs/`); native-push go-live runbook (`mobile/PUSH_GOLIVE.md`); sv/nb reminder localization; the approve-suggestion redesign (`0107`); and this consent consolidation. **Only the E2E smoke remains on the audit list.**
+- **Latest build:** `e2e-smoke-1` (**CUMULATIVE zip** — also carries `consent-consolidation-1`, `suggestion-approve-redesign-1`, and migration `0107`). Added a Playwright **E2E smoke** scaffold (login + a patient completing a weekly check-in): `playwright.config.ts`, `e2e/smoke.spec.ts`, `e2e/README.md`, and a manual-only `e2e.yml` workflow; `e2e` is excluded from the app tsconfig. No app-code or schema change of its own. Build 110/110, tsc clean, 41/41 tests, parity 1668 keys.
+- **Just shipped:** `e2e-smoke-1` (carries the two feature batches + `0107`). **Run `0107`** in the Supabase SQL editor (idempotent) if not already done. Earlier migrations still pending if not yet run: `0103`–`0106`. The Edge Function `send-checkin-notifications` still needs (re)deploy in Supabase (sv/nb reminder copy + `--no-verify-jwt`). The E2E scaffold needs a one-time `npm i -D @playwright/test && npx playwright install chromium` (see `e2e/README.md`); it's deliberately not in package.json.
+- **Audit roadmap COMPLETE.** All five items delivered: test harness (Vitest + jsdom, 41 tests, in CI); real privacy-notice + DPIA drafts (`docs/`); native-push go-live runbook (`mobile/PUSH_GOLIVE.md`); sv/nb reminder localization; and the E2E smoke. (Also this session: the approve-suggestion redesign + `0107`, and the consent consolidation.)
 - **Two QA flags:** `record_id` = approach A (app-assigned `TC-NNNN`); DPO to bless or swap. The CSV MUST be test-imported into a real REDCap project (cannot verify live import from here).
 - **Also live (in-session):** the finalised REDCap data dictionary (86 fields) in `redcap/`; native Android push (FCM); daily scheduler `0104` once deployed.
 
@@ -88,13 +88,18 @@ not skip the work. Reusable audit/review prompts are welcome.
   honoured.
 
 **What's likely next**
-- **Playwright E2E smoke** (login → check-in) — the last item on the audit
-  list. Will be a scaffold + run instructions; it cannot be proven green from
-  the sandbox (no browser), so expect it delivered as runnable files, not a
-  green check.
-- **Parked:** #4 muscle→function (needs Nikolaj's markup + the catalogue
-  decision); per-goal handoff note (per-cycle today; would need a migration);
-  cross-version goal chart.
+- **Audit list is done** — so next is Nikolaj's call. Likely candidates:
+- **Deferred ops** (from `OPS.md`): Supabase Pro + automated backups + a
+  test-restore; Sentry alert rules; CSP enforcement (currently report-only);
+  a staging environment; promoting the E2E smoke to run on a schedule/deploy
+  once it's proven stable.
+- **Follow-through on this session's work:** click-test the redesigned
+  approve-suggestion page and the Consent panel; get the DPO/legal review of
+  the privacy notice + DPIA and a qualified translator for the sv/nb/da
+  privacy text; finish native-push go-live (`mobile/PUSH_GOLIVE.md`).
+- **Parked features:** #4 muscle→function (needs Nikolaj's markup + the
+  catalogue decision); per-goal handoff note (per-cycle today; needs a
+  migration); cross-version goal chart.
 
 **Your first reply:** confirm you've read `HANDOVER.md`, state the current build
 + migration in a line or two, and either wait for my “go” or ask the one thing

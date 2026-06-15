@@ -1,56 +1,67 @@
-BUILD - consent-consolidation-1   (CUMULATIVE)
-Consent now lives in ONE place. The toolbar's "Video" action is renamed
-"Consent"; the panel holds clinical / educational / research consent; the
-consent rows are removed from the Background card.
+BUILD - e2e-smoke-1   (CUMULATIVE)
+Added a Playwright end-to-end smoke (login + weekly check-in) as a dev-facing
+scaffold. No app behaviour changes in this batch.
 
->>> CUMULATIVE — this one drop-in also carries the previous batch
->>> (suggestion-approve-redesign-1) and its migration 0107. <<<
+>>> CUMULATIVE — this one drop-in also carries the two previous batches
+>>> (consent-consolidation-1 and suggestion-approve-redesign-1) and the
+>>> migration 0107. Dropping this zip deploys everything from this session. <<<
 
 WHAT'S IN THIS DROP
-  This batch (consent):
+  This batch (E2E scaffold — does NOT affect the running app):
+    playwright.config.ts
+    e2e/smoke.spec.ts
+    e2e/README.md
+    e2e/.gitignore
+    .github/workflows/e2e.yml          (MANUAL trigger only — never gates pushes)
+    tsconfig.json                      (only adds "e2e" to exclude)
+  Carried from consent-consolidation-1:
     components/clinician/ClinicianVideoModal.tsx   (now the Consent panel)
     components/clinician/BackgroundCard.tsx        (consent rows removed)
     components/clinician/PatientActionRow.tsx      (Video icon -> shield-check)
-    app/[locale]/clinician/patient/page.tsx        (wiring + relabel)
-    messages/en|da|sv|nb.json                      (+clinicalConsent; relabels)
   Carried from suggestion-approve-redesign-1:
     supabase/migrations/0107_combine_suggestion_into_goal.sql   (MIGRATION)
     lib/supabase/clinicianPatient.ts               (combine hook)
-    app/[locale]/clinician/suggestion/page.tsx     (Approve / Set aside redesign)
+    app/[locale]/clinician/suggestion/page.tsx     (Approve / Set aside)
+  Touched by both feature batches:
+    app/[locale]/clinician/patient/page.tsx
+    messages/en|da|sv|nb.json
 
-WHAT CHANGED, IN PLAIN TERMS
-  - The "Video" button in the patient toolbar is now "Consent" (shield icon).
-  - Opening it shows three consent toggles, each with a status pill:
-      * Recording for clinical use
-      * Educational use of video
-      * Research participation  (keeps the withdraw-confirmation)
-  - The Background card no longer shows any consent — it's only demographics,
-    treatment, medication, and devices now. Consent lives ONLY in the panel.
-  - (Per-goal video recording is unchanged; it still reads the same consent.)
-
-DEPLOY — IN ORDER
-  1. Supabase SQL editor: run (if you haven't already, from the last drop)
-         supabase/migrations/0107_combine_suggestion_into_goal.sql
-     (Idempotent — safe to run again. This is the only migration in the drop.)
+DEPLOY — IN ORDER (same as before; nothing new to run for the E2E part)
+  1. Supabase SQL editor: run (if not already done from a prior drop)
+         supabase/migrations/0107_combine_suggestion_into_goal.sql   (idempotent)
   2. GitHub Desktop: drop all files from this zip into the repo, same paths.
      DO NOT overwrite root package.json / package-lock.json (untouched here).
-  3. Commit + push. Vercel auto-builds.
+  3. Commit + push. Vercel auto-builds. The e2e/ files and the manual workflow
+     have no effect on the build or the running app.
+
+USING THE E2E SMOKE (optional, for you or the incoming developer)
+  One-time:
+     npm install -D @playwright/test
+     npx playwright install chromium
+  Run locally (starts the dev server for you; needs .env.local):
+     npx playwright test
+  Or against the live site:
+     E2E_BASE_URL=https://treatment-companion.vercel.app \
+     E2E_PATIENT_EMAIL=test1@example.com E2E_PATIENT_PASSWORD=... \
+     npx playwright test
+  Full details + preconditions: e2e/README.md
 
 VERIFICATION DONE FOR YOU (sandbox)
-  - Production build: 110/110 pages, exit 0.
-  - TypeScript: clean (0 errors).
-  - Unit/component tests: 41/41 pass.
-  - i18n parity: 1668 keys, en/da aligned (sv/nb same key set).
-  - (Migration 0107 was verified on a throwaway Postgres in the last batch:
-     focused harness + all four guards + full 0001->0107 chain, 0 failures.)
+  - App build: 110/110 pages, exit 0.  TypeScript: clean.  Tests: 41/41.
+  - i18n parity: 1668 keys, en/da aligned.
+  - The e2e spec + config TYPE-CHECK clean against @playwright/test.
+  - (Migration 0107 was verified on a throwaway Postgres earlier: focused
+     harness + all four guards + full 0001->0107 chain, 0 failures.)
 
-WHAT I CANNOT VERIFY (please click through once after deploy)
-  - The rendered Consent panel in Firefox (three pill+toggle rows, the new
-    icon, the relabeled toolbar button).
-  - Live toggling against the real database (clinical/educational via one
-    mutation; research via its own, including the withdraw confirmation).
-  - sv/nb wording quality (first pass — flag for a native speaker).
+HONEST LIMITS
+  - I could NOT run the browser tests here (no browser, no live app). The two
+    signed-out tests are robust; the two signed-in tests are env-gated (they
+    SKIP without credentials) and may need a small selector tweak on the first
+    real run — that first green run is the real acceptance. See e2e/README.md.
+  - As always: I can't see rendered screens, real device behaviour, or live
+    RLS/auth. sv/nb strings (from the carried batches) are first-pass.
 
-NEXT IN THIS THREAD
-  Playwright E2E smoke (login -> check-in) — the last roadmap item. It will be
-  a scaffold + run instructions; it cannot be proven green from the sandbox.
+ROADMAP
+  This was the last item on your audit list. All five are now delivered:
+  test harness, privacy/DPIA drafts, native-push runbook, sv/nb reminder
+  localization, and this E2E smoke.

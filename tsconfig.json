@@ -18,5 +18,5 @@
     "paths": { "@/*": ["./*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "supabase/functions", "mobile"]
+  "exclude": ["node_modules", "supabase/functions", "mobile", "e2e", "playwright.config.ts"]
 }
