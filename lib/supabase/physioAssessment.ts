@@ -58,17 +58,46 @@ export function useSubmitPhysioAssessment() {
   });
 }
 
+/**
+ * Resolves a therapist adjustment request (clinician-only): marks the
+ * physio_goal_rating's adjustment as 'addressed' or 'dismissed' via the
+ * resolve_adjustment_request RPC, then refetches so it drops off the
+ * clinician's open list. Option (A): the therapist is not shown the outcome.
+ */
+export function useResolveAdjustmentRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      ratingId: string;
+      status: 'addressed' | 'dismissed';
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('resolve_adjustment_request', {
+        p_rating_id: input.ratingId,
+        p_status: input.status
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['physioAssessments'] });
+      qc.invalidateQueries({ queryKey: ['clinicianPatient'] });
+    }
+  });
+}
+
 export interface PhysioAssessmentSummary {
   id: string;
   assessmentDate: string;
   note: string | null;
   ratings: {
+    id: string;
     approvedGoalId: string;
     nrsValue: number | null;
     gasValue: number | null;
     workingOn: boolean;
     needsAdjustment: boolean;
     adjustmentNote: string | null;
+    adjustmentStatus: 'open' | 'addressed' | 'dismissed';
   }[];
 }
 
@@ -90,7 +119,7 @@ export function usePhysioAssessments(
       const { data, error } = await supabase
         .from('physio_assessment')
         .select(
-          'id, assessment_date, note, ratings:physio_goal_rating ( approved_goal_id, nrs_value, gas_value, working_on, needs_adjustment, adjustment_note )'
+          'id, assessment_date, note, ratings:physio_goal_rating ( id, approved_goal_id, nrs_value, gas_value, working_on, needs_adjustment, adjustment_note, adjustment_status )'
         )
         .eq('patient_id', patientId!)
         .order('assessment_date', { ascending: false });
@@ -100,19 +129,26 @@ export function usePhysioAssessments(
         assessmentDate: a.assessment_date as string,
         note: (a.note as string | null) ?? null,
         ratings: ((a.ratings as Array<{
+          id: string;
           approved_goal_id: string;
           nrs_value: number | null;
           gas_value: number | null;
           working_on: boolean | null;
           needs_adjustment: boolean | null;
           adjustment_note: string | null;
+          adjustment_status: string | null;
         }> | null) ?? []).map((r) => ({
+          id: r.id,
           approvedGoalId: r.approved_goal_id,
           nrsValue: r.nrs_value,
           gasValue: r.gas_value,
           workingOn: !!r.working_on,
           needsAdjustment: !!r.needs_adjustment,
-          adjustmentNote: r.adjustment_note ?? null
+          adjustmentNote: r.adjustment_note ?? null,
+          adjustmentStatus: (r.adjustment_status ?? 'open') as
+            | 'open'
+            | 'addressed'
+            | 'dismissed'
         }))
       }));
     }

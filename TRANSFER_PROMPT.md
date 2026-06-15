@@ -72,10 +72,10 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `reminder-cron-1` (**CUMULATIVE zip**; carries the sv/nb translation + picker + EHR rework + 0103). Adds: auto-apply saved language on sign-in (login redirect) + NEW migration `0104` scheduling the reminder Edge Function daily via pg_cron (Vault secrets, idempotent). Build 110/110, tsc clean.
-- **Just shipped:** `reminder-cron-1` — (1) login redirect uses `profile.preferredLocale`; (2) `0104` pg_cron + pg_net daily trigger for `send-checkin-notifications`. **Manual Supabase steps required (BUILD.txt): deploy the function, set the 2 Vault secrets, run 0104, dry-run test.** Not verifiable from here.
-- **In progress / next (gated on you):** adjustment-request status loop — awaiting the state model (proposed: Open -> Addressed / Dismissed, clinician-set; therapist sees the resolution?). REDCap — awaiting the actual REDCap data dictionary + coding decisions before I can map/reshape the export.
-- **Also live (in-session):** native Android push end-to-end (FCM, Verify-JWT OFF). The daily scheduler is now `0104` (once deployed). Parked: sv/nb push-text; iOS push.
+- **Latest build:** `adjustment-loop-1` (**CUMULATIVE zip**) — therapist adjustment-request status loop, option A (clinician-side only). NEW migration `0105` (status + clinician-only resolve RPC), verified on throwaway Postgres. Add/Dismiss on both clinician surfaces. Build 110/110, tsc clean.
+- **Just shipped:** `adjustment-loop-1` + (separate files) the finalised REDCap data dictionary (86 fields) + reconciliation report. Run `0105`. The dictionary CSV imports into REDCap directly.
+- **In progress / next (gated on you):** the **pseudonymised CSV export** that populates the REDCap dictionary — blocked on the `record_id`/study-pseudonym decision (no such field in the app): (A) app-generated stable study code [recommended], (B) salted hash of patient id, (C) per-export sequential. Pick one and I build it.
+- **Also live (in-session):** native Android push (FCM); daily scheduler now `0104` once deployed. Parked: sv/nb push-text; iOS push.
 
 - **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
   audit remediation; EHR localisation; cockpit simplification batches 1–11.

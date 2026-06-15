@@ -116,12 +116,14 @@ export interface ClinicianPhysioAssessment {
   assessmentDate: string;
   note: string | null;
   ratings: {
+    id: string;
     approvedGoalId: string;
     nrsValue: number | null;
     gasValue: number | null;
     workingOn: boolean;
     needsAdjustment: boolean;
     adjustmentNote: string | null;
+    adjustmentStatus: 'open' | 'addressed' | 'dismissed';
   }[];
 }
 
@@ -324,7 +326,7 @@ export function useClinicianPatientData(
           supabase
             .from('physio_assessment')
             .select(
-              'id, assessment_date, note, ratings:physio_goal_rating (approved_goal_id, nrs_value, gas_value, working_on, needs_adjustment, adjustment_note)'
+              'id, assessment_date, note, ratings:physio_goal_rating (id, approved_goal_id, nrs_value, gas_value, working_on, needs_adjustment, adjustment_note, adjustment_status)'
             )
             .eq('treatment_cycle_id', cycle.id)
             .order('assessment_date', { ascending: true }),
@@ -512,19 +514,26 @@ export function useClinicianPatientData(
         assessmentDate: a.assessment_date as string,
         note: (a.note as string | null) ?? null,
         ratings: ((a.ratings as Array<{
+          id: string;
           approved_goal_id: string;
           nrs_value: number | null;
           gas_value: number | null;
           working_on: boolean | null;
           needs_adjustment: boolean | null;
           adjustment_note: string | null;
+          adjustment_status: string | null;
         }> | null) ?? []).map((r) => ({
+          id: r.id,
           approvedGoalId: r.approved_goal_id,
           nrsValue: r.nrs_value,
           gasValue: r.gas_value,
           workingOn: !!r.working_on,
           needsAdjustment: !!r.needs_adjustment,
-          adjustmentNote: r.adjustment_note ?? null
+          adjustmentNote: r.adjustment_note ?? null,
+          adjustmentStatus: (r.adjustment_status ?? 'open') as
+            | 'open'
+            | 'addressed'
+            | 'dismissed'
         }))
       }));
 

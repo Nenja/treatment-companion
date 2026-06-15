@@ -75,6 +75,7 @@ import { PageHelpButton } from '@/components/feedback/PageHelpButton';
 import { buildEhrExport, type ExportTranslator } from '@/lib/ehrExport';
 import { downloadGoalChartPng } from '@/lib/goalChartImage';
 import { useToast } from '@/components/feedback/Toast';
+import { useResolveAdjustmentRequest } from '@/lib/supabase/physioAssessment';
 
 export default function ClinicianPatientPage() {
   const router = useRouter();
@@ -123,6 +124,7 @@ export default function ClinicianPatientPage() {
   const tEC = useTranslations('educationalConsent');
   const reactivateGoal = useReactivateGoal();
   const toast = useToast();
+  const resolveAdjustment = useResolveAdjustmentRequest();
   const setPhysioGoalStatus = useSetPhysioGoalSuggestionStatus();
   const setPhysioMuscleStatus = useSetPhysioMuscleSuggestionStatus();
   const wide = useWideLayout();
@@ -653,8 +655,9 @@ export default function ClinicianPatientPage() {
   const adjustmentRequests = physioAssessments
     .flatMap((a) =>
       a.ratings
-        .filter((r) => r.needsAdjustment)
+        .filter((r) => r.needsAdjustment && r.adjustmentStatus === 'open')
         .map((r) => ({
+          ratingId: r.id,
           goalId: r.approvedGoalId,
           note: r.adjustmentNote,
           date: a.assessmentDate
@@ -1201,6 +1204,40 @@ export default function ClinicianPatientPage() {
                             {r.note}
                           </p>
                         )}
+                        <div className="mt-2 flex gap-2">
+                          <button
+                            type="button"
+                            disabled={resolveAdjustment.isPending}
+                            onClick={() =>
+                              resolveAdjustment.mutate(
+                                { ratingId: r.ratingId, status: 'addressed' },
+                                {
+                                  onError: () =>
+                                    toast.error(t('physioAdjustmentError'))
+                                }
+                              )
+                            }
+                            className="rounded-[var(--radius-button)] border border-sage bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep hover:bg-sage/20 disabled:opacity-50"
+                          >
+                            {t('physioAdjustmentAddress')}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={resolveAdjustment.isPending}
+                            onClick={() =>
+                              resolveAdjustment.mutate(
+                                { ratingId: r.ratingId, status: 'dismissed' },
+                                {
+                                  onError: () =>
+                                    toast.error(t('physioAdjustmentError'))
+                                }
+                              )
+                            }
+                            className="rounded-[var(--radius-button)] border border-stone bg-cream px-2.5 py-1 text-[12px] font-semibold text-ink-soft hover:bg-stone-soft disabled:opacity-50"
+                          >
+                            {t('physioAdjustmentDismiss')}
+                          </button>
+                        </div>
                       </li>
                     );
                   })}
