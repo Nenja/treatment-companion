@@ -1,58 +1,74 @@
-BUILD - next16-upgrade-1   (framework upgrade: Next.js 15.1.9 -> 16.2.7)
+BUILD - secdef-harden-1   (SECURITY DEFINER hardening — migration 0108)
+        *** CUMULATIVE: also carries the un-committed next16-upgrade-1 ***
 
-WHY
-  Your pinned Next.js 15.1.9 was missing several patched security fixes,
-  including a critical (CVSS 10.0) remote-code-execution issue. This upgrade
-  closes them. Going to 16 (rather than the minimal 15.5.18 patch) keeps you
-  current. The two HIGH-severity advisories are now resolved.
+This one drop contains TWO independent pieces of work. They don't depend on each
+other - you can do them in either order.
 
-WHAT'S IN THIS DROP
-  package.json          next 16.2.7, next-intl 4.13.0, @sentry/nextjs 10.58.0
-  package-lock.json     regenerated to match (Vercel installs from this)
-  proxy.ts              NEW - this is your old middleware.ts, renamed for Next 16
+================================================================================
+PIECE 1 - Run the database migration 0108 (Supabase SQL editor)
+================================================================================
+WHAT IT DOES (no behaviour change for legitimate users):
+  A. Pins search_path = public on the 17 SECURITY DEFINER functions that still
+     had a mutable search_path (the other 66 already had it). Closes the
+     "Function Search Path Mutable" class of issue.
+  B. Locks down the 10 dev-seed functions. They were callable by anyone
+     (anon/authenticated) with NO auth check, and dev_reseed_all() is
+     DESTRUCTIVE (it deletes + re-seeds a patient's data). 0108 revokes their
+     EXECUTE from anon/authenticated/PUBLIC and grants only service_role. Your
+     /api/dev/scenario route calls them via the service-role client, so it keeps
+     working; you can also still run them from the SQL editor.
 
-*** ONE MANUAL STEP THE ZIP CANNOT DO FOR YOU ***
-  DELETE  middleware.ts  from the repo.
-  Next 16 renamed the "middleware" file to "proxy". I've added proxy.ts (same
-  logic, function renamed). If you leave BOTH middleware.ts and proxy.ts in the
-  repo, Next 16 errors. So: add proxy.ts, then DELETE middleware.ts.
-  (In GitHub Desktop: delete the file in your local folder, and the commit will
-  record the deletion.)
+HOW:
+  - Open the Supabase SQL editor and run the standalone file included beside the
+    zip: 0108_harden_secdef_functions.sql
+    (identical to supabase/migrations/0108_harden_secdef_functions.sql).
+  - It's safe to run before OR after the Next 16 deploy below.
 
-DEPLOY
-  1. Make sure Vercel's Node version is 20 or higher (Next 16 requires it).
-     Vercel's default is already 20+, so this is almost certainly fine; just
-     confirm under Project Settings -> if you've pinned an older Node, raise it.
-  2. GitHub Desktop:
-       - copy package.json + package-lock.json into the repo (overwrite)
-       - add proxy.ts
-       - DELETE middleware.ts
-       - commit -> push
-  3. Vercel rebuilds (now with Turbopack, Next 16's default builder).
+ALREADY VERIFIED (throwaway Postgres 16, full migration replay + catalog checks):
+  - 0 functions left with a mutable search_path; all 17 still execute cleanly.
+  - dev functions: anon/authenticated EXECUTE = false, service_role = true.
+  - a normal RPC's grants (submit_weekly_checkin_v4, set_own_sex, ...) unchanged.
+  - from-scratch CI replay INCLUDING 0108 applies cleanly (CI stays green).
 
-VERIFICATION DONE FOR YOU (sandbox)
-  - TypeScript: clean.
-  - Production build (Turbopack): success, 109/109 pages, no warnings.
-  - i18n parity: 1668 keys aligned. Unit tests: 41/41. E2E spec: type-clean.
-  - npm audit: the 2 HIGH advisories are gone (6 left: low/moderate only).
+NOT done on purpose - FORCE ROW LEVEL SECURITY:
+  Forcing RLS would break your write path: 16 of your policies are TO
+  authenticated only, and the SECURITY DEFINER functions run as postgres, which
+  would then have no matching policy -> silent deny. It's also not verifiable in
+  the test harness. Full reasoning + a safe staged-rollout recipe are in
+  docs/audits/security-definer-audit-2026-06.md (section F3).
 
-WHAT I CANNOT VERIFY - PLEASE CHECK AFTER DEPLOY (this was a 3-major-version jump)
-  1. Re-run the E2E smoke (Actions -> E2E smoke). It logs in, checks the
-     signed-out redirect, signs in, and completes a check-in - against the live
-     Next 16 build. Green = the critical paths survived the upgrade.
-  2. Click through ALL FOUR languages: /, /da, /sv, /nb. Switch language in the
-     app. Confirm pages load and translations appear. (next-intl went to v4 and
-     the middleware->proxy rename both touch language routing - this is the main
-     thing to eyeball, and the E2E only covers English.)
-  3. Log in, move between pages, refresh. Confirm you stay logged in (proxy.ts
-     handles the session refresh) and that logging out still lands on /login.
-  4. Confirm a push notification still registers on your phone.
+Two follow-ups are written up in that audit (F2: tighten the broad
+EXECUTE-to-PUBLIC grants; F3: staged FORCE RLS). Both need their own tested pass.
 
-  If anything is off, the zero-risk fallback is Next 15.5.18 (same security fix,
-  no other changes) - tell me and I'll prepare it.
+================================================================================
+PIECE 2 - Deploy Next.js 16 (the still-uncommitted upgrade, carried here)
+================================================================================
+  Files: package.json, package-lock.json, proxy.ts
 
-NOTES
-  - Two leftover low/moderate audit items (@supabase/auth-js, postcss) are
-    separate dependency-currency follow-ups, not blockers.
-  - Your CI (ci.yml) keeps working: it type-checks, runs tests, and builds on
-    Next 16 the same way, and replays migrations unchanged.
+  1. Confirm Vercel's Node is 20+ (Next 16 minimum; Vercel's default is fine).
+  2. GitHub Desktop: overwrite package.json + package-lock.json, add proxy.ts,
+     and DELETE middleware.ts (a zip can't remove files; Next 16 errors if both
+     middleware.ts and proxy.ts exist). Commit -> push -> Vercel rebuilds
+     (Turbopack).
+
+  LOCKFILE / CI NOTE (fixes the "npm ci ... Missing @swc/helpers@0.5.23" error):
+  next-intl is pinned to 4.4.0 (not 4.13.0). 4.5+ pulls native deps (@swc/core,
+  @parcel/watcher) for an SWC message-extractor this app does not use, and those
+  make package-lock.json non-portable - regenerating it on Windows/another npm
+  drops an optional-peer entry, which is what broke `npm ci` in CI. 4.4.0 has no
+  native deps, so the lock is portable. IMPORTANT: drop package.json AND
+  package-lock.json from this zip together, and do NOT run `npm install` locally
+  to regenerate the lock. Verified here: a real `npm ci` installs cleanly.
+
+  Verified in sandbox: tsc clean, Turbopack build 109/109, parity 1668, 41/41
+  tests, e2e spec type-clean, the 2 HIGH npm-audit advisories resolved.
+
+  After it deploys (runtime can't be verified from here - this was a
+  three-major-version jump):
+   1. Re-run the E2E smoke (Actions -> E2E smoke): login + signed-out redirect +
+      sign-in + a full check-in, on 16. Green = critical paths survived.
+   2. Click through all four locales (/, /da, /sv, /nb) + switch language.
+   3. Log in, navigate, refresh -> confirm you stay logged in; logout -> /login.
+   4. Confirm a push notification still registers.
+
+  Fallback if anything's off: Next 15.5.18 (same security fix, no other changes).
