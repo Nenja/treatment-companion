@@ -1,40 +1,37 @@
-BUILD - test-harness-2   (CUMULATIVE)
-The test harness was already in place (Vitest, 23 tests, wired into CI). This
-batch EXTENDS it with tests for the EHR-export text builder — the text you paste
-into the medical record. 35 tests now pass.
+BUILD - sv-nb-reminders-1   (CUMULATIVE)
+Swedish + Norwegian for the check-in reminder push, plus a crash-safety fix in
+the same code. Carries everything still uncommitted.
 
 >>> CUMULATIVE — one drop-in deploys everything. <<<
 
-WHAT'S NEW THIS BATCH
-  tests/ehrExport.test.ts   (+12 tests for buildEhrExport)
-That is the only new file vs the consolidate-charts-1 bundle. If you've already
-deployed test-harness-1 + consolidate-charts-1, you can drop just this one file.
+WHAT'S NEW THIS BATCH (one file)
+  supabase/functions/send-checkin-notifications/index.ts
+    - Added sv + nb text for BOTH notifications (the "due now" one and the late
+      reminder). First pass — please have a native speaker check the wording.
+    - Fixed a latent crash: the code picked the message text by the subscriber's
+      language with NO fallback, so a Swedish/Norwegian patient (those languages
+      were added recently) would have caused that send to error. It now falls
+      back to English for any unexpected language.
 
-WHAT THE NEW TESTS CHECK (buildEhrExport)
-  - the header switches between the "injected" and neutral wording by modality
-  - treatment summary line (product · total units · dilution · guidance)
-  - the dose RECONCILIATION line appears only when per-injection doses don't add
-    up to the recorded total
-  - body-muscle injections list before face marks
-  - goal lines: GAS peak/end levels + achieved anchor + wearing-off week; NRS
-    goals (lower-is-better picks the lowest score as "best") with the
-    baseline/target line; sustained benefit vs wearing-off; the no-ratings line
+>> IMPORTANT — THIS FILE IS NOT DEPLOYED BY GITHUB / VERCEL. <<
+   The reminder sender is an Edge Function you deploy SEPARATELY in Supabase.
+   For the new text to take effect, re-deploy `send-checkin-notifications`
+   (Supabase dashboard -> Edge Functions, or the CLI). Keeping it in the repo
+   keeps one source of truth, but the deploy step is manual.
 
-CARRIED (cumulative, unchanged from before)
-  - the full Vitest harness: vitest.config.ts, tests/*.test.ts (5),
-    package.json, package-lock.json, .github/workflows/ci.yml
-  - chart consolidation: app/[locale]/clinician/patient/page.tsx
-  - guarded migration 0104
+SWEDISH / NORWEGIAN TEXT ADDED (for your reviewer)
+  Initial  sv: "Veckovis status" / "Hur har veckan gått? Tryck för att skatta dina mål."
+           nb: "Ukentlig status" / "Hvordan har uken gått? Trykk for å vurdere målene dine."
+  Reminder sv: "Påminnelse" / "Du har en status som väntar. Det tar ungefär två minuter."
+           nb: "Påminnelse" / "Du har en status som venter. Det tar omtrent to minutter."
 
-RUNS IN CI: every push/PR runs `npm run test` in the verify job — so the suite
-runs for you even though you can't run it locally.
+CARRIED (cumulative, unchanged): the full Vitest harness (now 35 tests), the
+chart consolidation, and the guarded migration 0104.
 
-PACKAGE.JSON / LOCK: included again (same as test-harness-1). The only delta is
-the vitest devDependency + the test scripts; runtime `dependencies` are
-untouched, so the Vercel build is unaffected. If your committed package.json has
-drifted, apply just that diff instead of overwriting.
+VERIFIED: app type-check clean, i18n parity OK, 35/35 unit tests pass. The edge
+function is Deno (not in the app's type-checker), so its changed text + fallback
+logic were type-checked in isolation instead.
 
 STILL TO RUN IN SUPABASE (unchanged): 0103, 0104 (re-run; guarded), 0105, 0106.
 
-DEPLOY: copy files into the repo (keep folders) -> Commit -> Push.
-Do NOT run npm install yourself.
+DEPLOY: web files -> Commit -> Push (Vercel).  Edge function -> re-deploy in Supabase.
