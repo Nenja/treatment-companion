@@ -1,51 +1,31 @@
-BUILD - hooks-refactor-1   (fix the treatment-page rules-of-hooks violation)
+BUILD - docs-care-team-notes-decision-1   (record a resolved decision; docs only)
 
 WHAT THIS IS
-  Cumulative repo snapshot, on top of eslint-ci-1. App-code fix to ONE file
-  plus removing the now-unneeded ESLint override. NO new migration, nothing to
-  run. Migrations still 0001-0110.
+  Cumulative repo snapshot on top of hooks-refactor-1. DOCS ONLY — no app,
+  migration, test, or config change. Nothing to run, nothing to QA.
+  Migrations still 0001-0110.
 
 WHAT CHANGED
-  app/[locale]/clinician/treatment/page.tsx - split into two components:
-    - TreatmentRecordInner (thin shell): data fetching + the auth/role/no-
-      session redirect effects + the loading/error guards. Renders the child
-      only once data has loaded.
-    - TreatmentRecordLoaded({ data, session, onSessionRefetch }): holds ALL the
-      loaded-data hooks (form state, hydrate effect, the two previously-
-      offending effects, derived values, handlers, the JSX).
-    Because the child mounts only after the guards pass, every hook now runs
-    unconditionally in a constant order. This removes the latent React
-    "rendered more hooks than during the previous render" crash that the two
-    useEffects-after-an-early-return caused.
+  Records Nikolaj's decision (2026-06-16) on the care-team-notes finding from
+  rls-denial-tests-1: patient-readable IS intended — these notes
+  (treatment_handoff, goal_handoff_note, therapist_note) are the patient's own
+  care record, and the patient may read the ones about themselves (never
+  another patient's). Author-private notes are explicitly NOT wanted.
 
-    Behaviour preserved: the hooks moved wholesale (same order; they still run
-    only when data is loaded, exactly as before). Props are typed from the
-    hooks' own return types (NonNullable<ReturnType<...>['data']>), so nothing
-    is loosened.
+  This was already TRUE in the product (migration 0096 + the authoring UI hints
+  "the patient can read it too" + the patient-facing "Notes from your care
+  team" surface). Only the handoff docs were stale, still carrying the old
+  "never patient-visible" framing and a "decision pending" flag. Updated:
+    - HANDOVER.md: header blockquote, the principles line (~line 65), the §5.13
+      correction, and the §7 finding — all now say "resolved / intended", and
+      note no app change is needed.
+    - TRANSFER_PROMPT.md: the "decision pending" line is now "resolved".
 
-  eslint.config.mjs: removed the scoped warning override for this file.
-    react-hooks/rules-of-hooks is now a hard ERROR everywhere, including here.
+  No code path, RLS policy, or UI string changed — the implementation already
+  matched the decision.
 
-VERIFIED HERE
-  - tsc --noEmit clean (no dropped bindings; props typed correctly).
-  - eslint .: 0 errors, and ZERO rules-of-hooks occurrences (violation gone),
-    with the rule now a hard error globally. ~77 warnings remain (the 2 hooks
-    warnings are gone).
-  - Font-stub production build compiled successfully; the /clinician/treatment
-    route builds for all locales. layout.tsx restored byte-for-byte
-    (SHA d6901997...), zero BUILD-STUB remnants.
-
-PLEASE QA (the one thing I can't run - a rendered screen)
-  Open the clinician treatment-recording screen for a patient and confirm it
-  still behaves, since the relocated effects/hydrate drive these:
-    - Recording a NEW cycle (?newCycle=1) and EDITING the current treatment.
-    - Save works; values persist.
-    - "Copy from previous" prefills.
-    - The left-rail section nav highlights as you scroll.
-    - Total units auto-fills from the per-muscle sum, and the manual override
-      still sticks.
-  Functionally it should be identical to before; this only restructures where
-  the hooks live.
+VERIFIED
+  Docs only; tsc/lint/build unaffected from hooks-refactor-1.
 
 MIGRATIONS
   Nothing new. If 0110_studies.sql is not yet applied, run it (copy in

@@ -17,7 +17,7 @@
 >
 > _**Update 2026-06-15 (later) — `studies-and-fixes-1`:** new migration **`0110_studies.sql`** (study + study_membership, admin-gated RPCs, study_overview) adds an admin "Studies / Study patients" view — group consented patients into studies and pick them out by REDCap record_id; membership is orthogonal to consent and does **not** change the consent-gated export. Plus five patient-surface fixes (profile language now persists + Back is locale-aware; login honours browser language via next-intl `localeDetection`; DOB picker no longer squished; account-menu navigation works from the check-in wizard). Migrations now **0001–0110** — run `0110`. Build 0110 Method-D verified (15 cases), font-stub build clean, tsc clean, i18n parity (en/da/sv/nb). See §7._
 >
-> _**Update 2026-06-15 (later still) — `rls-denial-tests-1`:** a runtime RLS-denial test suite now runs in CI (real policies, impersonatable `auth.uid()`): cross-patient isolation, clinician-session gating incl. the 1-hour staleness cutoff, anonymous denial, the 0096 care-team-note boundary, and admin-only `study` tables — each with a positive control, negative-control validated. **No app/migration change** (test infra + CI only). It surfaced a documentation/spec divergence: care-team notes (handoff + therapist notes) are **patient-readable for the patient's own rows** since migration `0096` (GDPR right-of-access), which contradicts the "never patient-visible" line in §5.13 / TRANSFER_PROMPT — §5.13 corrected; a decision for Nikolaj on whether that's intended. See §5.14 + §7._
+> _**Update 2026-06-15 (later still) — `rls-denial-tests-1`:** a runtime RLS-denial test suite now runs in CI (real policies, impersonatable `auth.uid()`): cross-patient isolation, clinician-session gating incl. the 1-hour staleness cutoff, anonymous denial, the 0096 care-team-note boundary, and admin-only `study` tables — each with a positive control, negative-control validated. **No app/migration change** (test infra + CI only). It surfaced a documentation/spec divergence: care-team notes (handoff + therapist notes) are **patient-readable for the patient's own rows** since migration `0096` (GDPR right-of-access), which contradicts the "never patient-visible" line in §5.13 / TRANSFER_PROMPT — §5.13 corrected; **resolved 2026-06-16 — patient-readable IS intended (the patient's own data); the authoring + patient-facing UI already reflect it, so no app change, only the docs were stale.** See §5.14 + §7._
 >
 > _**Update 2026-06-15 (later still ×2) — `staging-ci-gate-1`:** deploy-on-green workflow (`.github/workflows/deploy.yml`, **inert** until Vercel secrets are set) that ships production only after CI passes — a real gate even with direct-to-main commits — plus `docs/STAGING-AND-CI-GATE.md` for activating it and standing up a staging Supabase + Vercel Preview env. Docs + one inert workflow only; **no app/migration change**, nothing to run. Nikolaj's actions are dashboard-side (disable Vercel auto-deploy, add 3 secrets, create staging project). See §7._
 >
@@ -61,8 +61,10 @@ dystonia), but the model is being generalised toward other modalities
   goal **suggestion → clinician-approval → shared-goal** flow. There is **no**
   clinic→patient messaging / feedback channel, and that is intentional; don't
   build one. The **one** sanctioned downward channel is the physician→therapist
-  handoff note (`physician-therapist-note`, §5.13) — inter-professional
-  hand-off, never patient-visible — not a clinic→patient channel.
+  handoff note (`physician-therapist-note`, §5.13) — an inter-professional
+  hand-off (not a clinic→patient *messaging* channel), though the patient **can
+  read** these care-team notes about themselves (their own care record; see
+  §5.13/§5.14, migration 0096).
 - **Caregivers use the patient's own device/login.** The per-check-in
   *self / caregiver* submission label records who entered it. There are **no
   separate caregiver accounts** — proxy access is out of scope.
@@ -731,9 +733,10 @@ no feedback on a physician action, and no since-last-session delta.
   readable for the patient's OWN rows** (never another patient's; clinician
   access unchanged). The phrasing below ("never patient-visible", "no patient
   SELECT policy at all") describes the *original* 0088/0095 design and is
-  **superseded by 0096** — caught by the RLS-denial tests (§5.14). If notes
-  were ever intended to be author-private from the patient, that is now a
-  product decision to revisit, not the current behaviour.
+  **superseded by 0096** — caught by the RLS-denial tests (§5.14).
+  **Confirmed intended 2026-06-16:** patient-readable is the wanted behaviour
+  (the patient's own care record); author-private notes are explicitly NOT
+  wanted. The authoring UI already tells note authors the patient can read it.
 - **(Original 0088/0095 design, for context — superseded by 0096:)**
   Never patient-visible was enforced by the data model, not just the UI.
   The patient already has row-level read on `treatment_session` (treated-muscles
@@ -932,7 +935,7 @@ new-goal + approve calibration forms; current).
 ## 7-prev-1. `rls-denial-tests-1` — runtime RLS-denial suite + a finding
 
 - **`rls-denial-tests-1`.** Test infrastructure + CI only; **no app or migration change**. Adds `supabase/ci/rls-test-setup.sql` + `supabase/ci/rls-tests.sql`, a local runner `supabase/ci/run-rls-tests.sh`, and a step in CI's `migrations` job (full detail §5.14). The suite applies the real bootstrap + every migration, makes `auth.uid()` impersonatable, and asserts denial under the **real** policies: cross-patient isolation, clinician-session gating incl. the 1-hour staleness cutoff, anonymous denial, the 0096 care-team-note boundary, and admin-only `study` tables — each with a positive control. **Negative control verified** (a `using(true)` patient policy makes it fail; removing it passes). Verified locally on a throwaway PG16: all assertions pass; the prior `studies-and-fixes-1` build/tsc are unchanged (no app code touched) and tsc re-confirmed clean.
-  - **★ Finding the suite surfaced — care-team notes are patient-readable.** The docs said the physician→therapist handoff note and therapist notes are **never patient-visible** (HANDOVER §5.13, TRANSFER_PROMPT "the only sanctioned downward channel… never patient-visible"). That was true at 0088/0095 but **migration `0096_patient_care_team_notes` deliberately added a patient self-read** on `treatment_handoff`, `goal_handoff_note`, and `therapist_note` (`patient_id = current_patient_id()`), on a GDPR right-of-access rationale. So a patient **can** read the notes about their own care (never another patient's — that isolation is intact and tested). This is not a code bug — 0096 is intentional and documents itself — but it **contradicts the stated invariant** and has clinical-privacy weight: a clinician or physiotherapist writing one of these notes should know the patient can read it. §5.13 is corrected. **Decision for Nikolaj:** confirm patient-readable is intended, or treat author-private notes as a product change to make.
+  - **★ Finding the suite surfaced — care-team notes are patient-readable.** The docs said the physician→therapist handoff note and therapist notes are **never patient-visible** (HANDOVER §5.13, TRANSFER_PROMPT "the only sanctioned downward channel… never patient-visible"). That was true at 0088/0095 but **migration `0096_patient_care_team_notes` deliberately added a patient self-read** on `treatment_handoff`, `goal_handoff_note`, and `therapist_note` (`patient_id = current_patient_id()`), on a GDPR right-of-access rationale. So a patient **can** read the notes about their own care (never another patient's — that isolation is intact and tested). This is not a code bug — 0096 is intentional and documents itself — but it **contradicts the stated invariant** and has clinical-privacy weight: a clinician or physiotherapist writing one of these notes should know the patient can read it. §5.13 is corrected. **Resolved 2026-06-16 — Nikolaj confirmed patient-readable IS intended** (it is the patient's own care record; their data). The note-authoring screens already tell the author "the patient can read it too" (the handoff hint, the per-goal hint, and the therapist-note helper), and the patient-facing UI surfaces the notes ("Notes from your care team"), so the product is internally consistent — **no app change needed**; only the handoff docs were stale, now fixed.
 
 ---
 
