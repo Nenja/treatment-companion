@@ -1,58 +1,39 @@
-BUILD - redcap-automation-1   (server-side REDCap sync: both triggers)
+BUILD - retire-dev-scenarios-1   (remove the dev scenario launcher)
 
 WHAT THIS IS
-  Cumulative snapshot on top of redcap-pii-decision-1. Adds the REDCap sync
-  automation (both triggers). New code + UI + i18n + one config file. No DB
-  migration. Migrations still 0001-0110.
+  Cumulative snapshot on top of redcap-automation-1. Removes the dev scenario
+  launcher. No DB migration. Migrations still 0001-0110.
 
-WHAT'S NEW
-  - lib/redcap/buildRows.ts  - pure row/CSV builder, extracted from
-    lib/redcapExport.ts (byte-identical mapping logic) so client AND server can
-    share it. redcapExport.ts now imports + re-exports from it (the test, which
-    imports esc/toCsv/patientRows, is unaffected).
-  - lib/redcap/importToRedcap.ts - server-only REDCap API client; chunks rows
-    (2000/chunk) and POSTs content=record/csv/flat, overwriteBehavior=normal.
-  - lib/redcap/runSync.ts - runRedcapSync(): service client -> 0106 RPC ->
-    flatten -> import -> summary. Shared by both triggers.
-  - app/api/admin/redcap-sync/route.ts - TRIGGER 1 (admin button). POST,
-    signed-in-admin gated (profile.is_admin), writes an admin audit event.
-  - app/api/cron/redcap-sync/route.ts - TRIGGER 2 (schedule). GET, CRON_SECRET
-    gated (Vercel Cron sends it as Bearer auth).
-  - vercel.json - cron "0 3 * * 1" (weekly Mon 03:00 UTC) -> the cron route.
-  - app/[locale]/clinician/observations/page.tsx - "Sync to REDCap now" button
-    + result/error, next to the existing "Download REDCap CSV".
-  - messages/{en,da,sv,nb}.json - 5 new keys under clinician.researchExport
-    (syncIntro/syncButton/syncWorking/syncResult/syncError). da/sv/nb are
-    first-pass, flagged for native review.
-  - redcap/AUTOMATION.md - architecture, env vars, limits, DPO gate.
-  - docs/ROADMAP.md - REDCap sync marked BUILT.
+WHY
+  The dev scenario launcher signed the user out (supabase.auth.signOut()) and
+  then tried to sign back in via a magic-link token; on an environment without
+  the expected demo accounts it failed AFTER signing out, leaving you on the
+  login screen ("bounces to login even when logged in"). It had no real use, so
+  it's retired.
 
-YOU MUST SET (Vercel env vars, server-only, NO NEXT_PUBLIC_; Production):
-  REDCAP_API_URL    your instance API endpoint, e.g. https://redcap.x/api/
-  REDCAP_API_TOKEN  the project API token (a credential - never in code/zip)
-  CRON_SECRET       any long random string (gates the scheduled route)
-  Until these are set, both routes return 400 "REDCap not configured" - harmless.
+REMOVED
+  - app/[locale]/dev/scenarios/page.tsx
+  - app/api/dev/scenario/route.ts
+  - lib/dev/scenarios.ts
+  (empty dev/ dirs cleaned up.)
 
-SHAPE
-  Full snapshot, chunked, idempotent. Incremental sync deferred. Cron runs on
-  the production deployment only; weekly is fine on any plan (more-frequent-than
-  -daily needs Pro). maxDuration=60 (Hobby caps lower; fine at current scale).
+NOT removed
+  - dev_reseed_all() and the dev seed SQL functions (migrations already applied;
+    still callable from the SQL editor if wanted).
 
-*** DPO/DPIA GATE ***
-  Do NOT run against real patient data until the DPO/regulatory sign-off.
-  Automated transfer to REDCap is a processing activity for the DPIA. Test
-  against staging / fake data freely.
+KNOCK-ON
+  - ENABLE_DEV_TOOLS / NEXT_PUBLIC_ENABLE_DEV_TOOLS are now unused in code —
+    safe to delete from Vercel (Preview + anywhere else).
+  - e2e/clinician.spec.ts Tier-2 fixme scaffolds referenced /api/dev/scenario;
+    annotated in-file that the mechanism is retired and they need re-grounding
+    (seed via SQL + a reusable visit code). They are test.fixme (not running),
+    so CI is unaffected.
 
 VERIFIED
-  tsc --noEmit clean; eslint 0 errors (79-warning baseline unchanged);
-  check:i18n OK (1713 keys, en/da aligned); tests/redcapExport.test.ts 12/12;
-  font-stub production build compiled (both new routes registered:
-  /api/admin/redcap-sync, /api/cron/redcap-sync); layout.tsx SHA restored
-  (d6901997...), 0 BUILD-STUB remnants.
-
-CANNOT VERIFY HERE (QA items)
-  The live REDCap API call (no instance/token in sandbox) and the rendered
-  button - exercise these on staging after setting the env vars.
+  tsc --noEmit clean (after clearing the stale .next type cache that briefly
+  referenced the deleted routes); eslint 0 errors; check:i18n OK (1713 keys —
+  the dev page used hardcoded strings, no i18n keys removed); font-stub build
+  compiled with the dev routes gone; layout.tsx SHA restored (d6901997...).
 
 MIGRATIONS
   Nothing new.

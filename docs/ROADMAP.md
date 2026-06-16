@@ -50,6 +50,13 @@ Each item notes **who** owns it — _you_ (dashboard / clinical / decision), _de
   study tables).
 - ✅ **Care-team-notes decision recorded** — patient-readable is intended (the
   patient's own care record); product was already consistent, docs corrected.
+- ✅ **Dev scenario launcher retired (2026-06-16)** — `/dev/scenarios` page,
+  `/api/dev/scenario` route, and `lib/dev/scenarios.ts` removed (it signed the
+  user out then failed to sign back in — pure friction, no real use). The
+  `ENABLE_DEV_TOOLS` / `NEXT_PUBLIC_ENABLE_DEV_TOOLS` env vars are now unused and
+  can be deleted from Vercel. The `dev_reseed_all()` SQL function is untouched.
+  Open: the Tier-2 E2E scaffolds referenced this mechanism and need re-grounding
+  (seed via SQL + a reusable visit code) — noted in `e2e/clinician.spec.ts`.
 
 ---
 
