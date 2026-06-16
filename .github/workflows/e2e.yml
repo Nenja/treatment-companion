@@ -69,6 +69,12 @@ jobs:
           E2E_BASE_URL: ${{ vars.E2E_BASE_URL }}
           E2E_PATIENT_EMAIL: ${{ secrets.E2E_PATIENT_EMAIL }}
           E2E_PATIENT_PASSWORD: ${{ secrets.E2E_PATIENT_PASSWORD }}
+          # Optional: the clinician sign-in / redirect tests run when these are
+          # set (read-only against prod — safe). The Tier-2 write-journeys stay
+          # test.fixme and never run here; run those against staging with the
+          # dev API. See e2e/README.md.
+          E2E_CLINICIAN_EMAIL: ${{ secrets.E2E_CLINICIAN_EMAIL }}
+          E2E_CLINICIAN_PASSWORD: ${{ secrets.E2E_CLINICIAN_PASSWORD }}
         run: npx playwright test
       - name: Upload Playwright report
         if: ${{ !cancelled() }}

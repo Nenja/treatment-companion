@@ -99,3 +99,35 @@ options for goals, and the buttons named **Continue** / **Send my check-in** /
 the **Thank you** heading for the wizard. If the UI text changes, update the
 names in `smoke.spec.ts`. Run `npx playwright test --ui` (or open the trace in
 the HTML report) to see exactly where it stopped.
+
+## Clinician tests (`clinician.spec.ts`)
+
+Extends the smoke to the clinician paths. Two tiers:
+
+**Tier 1 — runnable now (read-only).** Signed-out redirects on `/clinician`
+and `/visit-code`, and a clinician sign-in. Add credentials for a **dedicated
+test clinician** and they run; without them they self-skip.
+
+| Variable | Needed for |
+|---|---|
+| `E2E_CLINICIAN_EMAIL` / `E2E_CLINICIAN_PASSWORD` | the clinician sign-in test |
+
+These are safe against production (no data is mutated). The e2e workflow passes
+them through if you set the matching repo **secrets**.
+
+**Tier 2 — write journeys (`test.fixme`, run against STAGING only).** "Clinician
+approves a pending suggestion" and "therapist note round-trip" mutate data and
+go through the visit-code unlock, so they must run against a **staging** target
+with disposable data and the dev scenario API enabled — never production. They
+are left as `test.fixme` (reported as "to implement", never false greens)
+because they were authored without a live run. To bring them up:
+
+1. Target staging (`E2E_BASE_URL=https://<staging-preview>.vercel.app`; see
+   `docs/STAGING-AND-CI-GATE.md`).
+2. Set `E2E_DEV_API=1`, plus `E2E_CLINICIAN_EMAIL/_PASSWORD` and
+   `E2E_PHYSIO_EMAIL/_PASSWORD` for staging accounts.
+3. The tests use the app's own dev scenario API
+   (`POST /api/dev/scenario { scenarioId, reseed:true }` → `{ visitCode }`)
+   with the real scenarios `clinician-suggestions` and `physio-suggestions`.
+4. Convert each `test.fixme` → `test` and ground the in-cockpit selectors with
+   `npx playwright test --ui` against staging. (Do this with the developer.)
