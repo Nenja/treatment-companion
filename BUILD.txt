@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 BUILD - e2e-trigger-fix-1   (fix E2E skipping under deploy-on-green; CI config only)
 
 WHAT THIS IS
@@ -37,6 +38,47 @@ VERIFIED
   YAML parses; triggers = [workflow_dispatch, schedule, workflow_run];
   workflow_run targets "Deploy (production, on green CI)"; no active
   deployment_status trigger remains. Docs/app/tsc/lint/build otherwise unchanged.
+=======
+BUILD - deploy-archive-upload-1   (fix Vercel free-tier upload limit; CI config only)
+
+WHAT THIS IS
+  Cumulative repo snapshot on top of deploy-trigger-scope-1. ONE CI-config
+  change in .github/workflows/deploy.yml. No app/migration/test change.
+  Migrations still 0001-0110.
+
+THE PROBLEM (from a real Deploy Action log)
+  The Deploy job built fine (Next 16.2.7, 113 pages, .vercel/output in 36s) but
+  the final upload failed:
+    DeploymentError: Too many requests - try again in 24 hours
+    (more than 5000, code: "api-upload-free")
+  This is Vercel's FREE-TIER limit of 5000 FILE uploads per 24h via CLI/API. A
+  prebuilt Next build is hundreds of files per deploy, so today's testing +
+  staging churn + merges crossed it. NOT a config bug — a quota. Production was
+  unaffected (the previous successful deploy, PR #14, stayed live); only the new
+  deploy's upload was refused.
+
+THE FIX (deploy.yml)
+  Added `--archive=tgz` to `vercel deploy --prebuilt --prod`. This uploads a
+  SINGLE archive file instead of hundreds of individual files (Vercel's own
+  recommended fix for CI prebuilt deploys), so each deploy counts as ~1 upload
+  against the 5000/day cap. Effectively removes the limit as a concern on free.
+
+RECOVERY / WHAT TO DO
+  - The limit is a rolling ~24h window; it clears on its own. No action needed to
+    recover — the site runs on the last good production deploy meanwhile.
+  - Upload this zip to `main`. Once the window clears, the next Deploy will use
+    --archive and upload as one file. (If you merge before the window clears, the
+    Deploy Action will still be rate-limited for the remainder of the window;
+    just re-run that Deploy job from the Actions tab after it resets.)
+
+PLAN NOTE
+  For real-patient production you'll likely move to Vercel Pro anyway (alongside
+  Supabase Pro); Pro raises these limits. The archive fix means that's not urgent
+  — free tier is workable for now. (Logged in docs/ROADMAP.md context.)
+
+VERIFIED
+  deploy.yml YAML parses; deploy step now includes --archive=tgz. tsc unaffected.
+>>>>>>> Stashed changes
 
 MIGRATIONS
   Nothing new.

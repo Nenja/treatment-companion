@@ -21,6 +21,12 @@ on:
   workflow_run:
     workflows: ["CI"]
     types: [completed]
+    # Only fire for CI runs on `main`. Without this, every Dependabot / PR-branch
+    # CI run also triggers this workflow (it then skips via the in-job guard, but
+    # it still appears as a gray "skipped" row AND starts with prod secrets in
+    # scope). Filtering at the trigger means it never starts for non-main runs.
+    # The in-job `head_branch == 'main'` guard below stays as belt-and-suspenders.
+    branches: [main]
 
 permissions:
   contents: read
@@ -68,4 +74,9 @@ jobs:
           set -euo pipefail
           npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
           npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
-          npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+          # --archive=tgz uploads ONE archive instead of hundreds of individual
+          # files. Vercel's free tier caps CLI/API uploads at 5000 FILES per 24h
+          # (error code "api-upload-free"); a prebuilt Next build is hundreds of
+          # files, so a handful of deploys/day would otherwise exhaust it. With
+          # the archive, each deploy counts as ~1 upload.
+          npx --yes vercel@latest deploy --prebuilt --prod --archive=tgz --token="$VERCEL_TOKEN"
