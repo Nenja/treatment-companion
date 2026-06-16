@@ -1,9 +1,10 @@
 # REDCap data dictionary — reconciliation against the app
 
-**File:** `treatment_companion_datadictionary.csv` (86 fields, 12 instruments)
+**File:** `treatment_companion_datadictionary.csv` (80 fields, 12 instruments)
 Built from the repo's 84-field dictionary, validated field-by-field against the
 app's actual enums and data model. Import-legal (variable names, first field
-`record_id`, choice format all checked).
+`record_id`, choice format all checked). _Was 86 fields; 6 free-text notes
+fields were dropped on 2026-06-16 — see the resolved PII decision below._
 
 ## What was validated — and matches the app exactly
 Every coded field's choices/order were checked against the app's enum
@@ -34,15 +35,32 @@ definitions and line up:
    *(Both additions are clearly flagged in their Field Note; drop them if they're
    out of study scope.)*
 
-Also: a short **REVIEW (PII)** tag was added to the 17 free-text (`notes`)
-fields, so whoever imports/reviews in REDCap sees the flag per field.
+The earlier per-field **REVIEW (PII)** tags have been actioned: the 6 dropped
+fields are gone and the 11 kept fields now carry `Identifier? = y` (their stale
+REVIEW tags were cleared).
+
+## PII in free text — RESOLVED 2026-06-16 (Nikolaj)
+The 17 free-text fields were split into three groups and handled as follows.
+
+**Dropped entirely (6)** — removed from both the dictionary and the app export,
+so REDCap never receives them. Lowest analytic value, highest incidental-PII
+risk (narrative notes):
+`tx_notes`, `ci_comment`, `pa_note`, `pgr_adjustment_note`, `itb_note`, `idc_note`.
+
+**Kept and flagged REDCap `Identifier? = y` (11)** — retained for analysis but
+excluded from REDCap's de-identified exports:
+- Goal-attainment content (kept because GAS scores can be a central outcome —
+  the anchors are what make a GAS value interpretable/auditable):
+  `goal_patient_text`, `goal_smart_text`,
+  `goal_anchor_m2`, `goal_anchor_m1`, `goal_anchor_0`, `goal_anchor_p1`, `goal_anchor_p2`.
+- Clinical detail / safety (potential confounder + safety signal):
+  `diagnosis_detail`, `med_current`, `med_previous`, `ci_side_effect_other`.
+
+The export (`lib/redcapExport.ts`) no longer emits the 6 dropped fields; the 11
+kept fields are still emitted (the Identifier flag affects exports OUT of REDCap,
+not the import in). DPO still owns the remaining quasi-identifier decision below.
 
 ## Open decisions for the study team / DPO (not mine to make)
-- **PII in free text.** 17 free-text fields (notes, comments, anchors, SMART
-  text, medication, diagnosis detail) can carry incidental identifiers. The
-  app export is pseudonymised, but you must decide per field whether to set
-  REDCap's **Identifier?** flag (excludes them from de-identified exports) or
-  to drop them from the export entirely. None are flagged Identifier yet.
 - **Dates as quasi-identifiers.** `enrol_date`, cycle/injection/visit dates and
   `birth_year` are quasi-identifiers. Decide whether de-identified exports need
   date-shifting or coarsening. `record_id` is pseudonymous (not the app patient

@@ -110,6 +110,14 @@ Each item notes **who** owns it — _you_ (dashboard / clinical / decision), _de
 
 ## P2 — product threads (sequence by value; no patient-safety gate)
 
+- **REDCap sync — BUILT (2026-06-16).** Both triggers live: an admin "Sync to
+  REDCap now" button (Observations page) + a weekly cron (`vercel.json`). Full
+  snapshot, chunked, idempotent. Needs env vars `REDCAP_API_URL`,
+  `REDCAP_API_TOKEN`, `CRON_SECRET` set in Vercel, and must not run against real
+  patient data until the DPO/DPIA sign-off. Details: `redcap/AUTOMATION.md`.
+  Open: confirm the REDCap project is built from the dictionary + a manual
+  import round-trips; incremental sync deferred.
+
 - **Therapist surface Slice 2+** — cockpit consuming `therapist_note`, per-goal
   cards, the engagement layer.
 - **Face module production integration** — prototype + schema decisions done;

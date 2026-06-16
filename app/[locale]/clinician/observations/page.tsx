@@ -5,7 +5,7 @@ import { AppHeader } from '@/components/layout/AppHeader';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
-import { useExportRedcapDataset } from '@/lib/redcapExport';
+import { useExportRedcapDataset, useSyncRedcapDataset } from '@/lib/redcapExport';
 import { useCurrentClinicianSession } from '@/lib/supabase/clinicianSession';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
@@ -58,6 +58,7 @@ export default function ClinicianObservationsPage() {
   const recent = usePatientObservations(patientId);
   const importObs = useImportObservations();
   const exportRedcap = useExportRedcapDataset();
+  const syncRedcap = useSyncRedcapDataset();
 
   const fileRef = useRef<HTMLInputElement>(null);
   const [csvText, setCsvText] = useState('');
@@ -403,6 +404,31 @@ export default function ClinicianObservationsPage() {
             className={`mt-4 ${btnPrimary}`}
           >
             {exportRedcap.isPending ? tExport('working') : tExport('button')}
+          </button>
+
+          <p className="mt-6 text-[14px] leading-relaxed text-ink-soft">
+            {tExport('syncIntro')}
+          </p>
+          {syncRedcap.data && (
+            <div className="mt-3 rounded-[var(--radius-button)] border border-sage bg-sage-soft px-4 py-3 text-[14px] text-sage-deep">
+              {tExport('syncResult', {
+                patients: syncRedcap.data.patients,
+                rows: syncRedcap.data.rows
+              })}
+            </div>
+          )}
+          {syncRedcap.isError && (
+            <div className="mt-3 rounded-[var(--radius-button)] border border-amber-deep bg-amber-soft px-4 py-3 text-[14px] text-amber-deep">
+              {tExport('syncError', { message: (syncRedcap.error as Error).message })}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => syncRedcap.mutate()}
+            disabled={syncRedcap.isPending}
+            className={`mt-4 ${btnPrimary}`}
+          >
+            {syncRedcap.isPending ? tExport('syncWorking') : tExport('syncButton')}
           </button>
         </section>
       </main>

@@ -766,7 +766,12 @@
       "button": "Ladda ner REDCap-CSV",
       "working": "Förbereder…",
       "result": "Exporterade {patients} patienter ({rows} rader). Kontrollera dina nedladdningar.",
-      "error": "Exporten misslyckades — försök igen."
+      "error": "Exporten misslyckades — försök igen.",
+      "syncIntro": "Eller skicka datasetet direkt till REDCap via API:et (endast admin). Kräver att REDCap är konfigurerat.",
+      "syncButton": "Synka till REDCap nu",
+      "syncWorking": "Synkar…",
+      "syncResult": "Synkade {rows} rader för {patients} patienter till REDCap.",
+      "syncError": "Synkning misslyckades — {message}"
     }
   },
   "intro": {

@@ -766,7 +766,12 @@
       "button": "Download REDCap CSV",
       "working": "Preparing…",
       "result": "Exported {patients} patients ({rows} rows). Check your downloads.",
-      "error": "Export failed — please try again."
+      "error": "Export failed — please try again.",
+      "syncIntro": "Or push the dataset straight to REDCap via the API (admin only). Requires REDCap to be configured.",
+      "syncButton": "Sync to REDCap now",
+      "syncWorking": "Syncing…",
+      "syncResult": "Synced {rows} rows for {patients} patients to REDCap.",
+      "syncError": "Sync failed — {message}"
     }
   },
   "intro": {

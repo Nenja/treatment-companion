@@ -770,7 +770,12 @@
       "button": "Hent REDCap-CSV",
       "working": "Forbereder…",
       "result": "Eksporterede {patients} patienter ({rows} rækker). Se dine downloads.",
-      "error": "Eksport mislykkedes — prøv igen."
+      "error": "Eksport mislykkedes — prøv igen.",
+      "syncIntro": "Eller send datasættet direkte til REDCap via API'et (kun admin). Kræver at REDCap er konfigureret.",
+      "syncButton": "Synkronisér til REDCap nu",
+      "syncWorking": "Synkroniserer…",
+      "syncResult": "Synkroniserede {rows} rækker for {patients} patienter til REDCap.",
+      "syncError": "Synkronisering mislykkedes — {message}"
     }
   },
   "intro": {
