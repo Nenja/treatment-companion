@@ -1,35 +1,40 @@
-BUILD - docs-care-team-notes-decision-1   (record a resolved decision; docs only)
+BUILD - csp-enforce-1   (enforce Content-Security-Policy; config only)
 
 WHAT THIS IS
-  Cumulative repo snapshot on top of hooks-refactor-1. DOCS ONLY — no app,
-  migration, test, or config change. Nothing to run, nothing to QA.
-  Migrations still 0001-0110.
+  Cumulative repo snapshot on top of e2e-trigger-fix-1. ONE config change in
+  next.config.ts — no app, migration, or test change. Migrations still 0001-0110.
 
-WHAT CHANGED
-  Records Nikolaj's decision (2026-06-16) on the care-team-notes finding from
-  rls-denial-tests-1: patient-readable IS intended — these notes
-  (treatment_handoff, goal_handoff_note, therapist_note) are the patient's own
-  care record, and the patient may read the ones about themselves (never
-  another patient's). Author-private notes are explicitly NOT wanted.
+WHAT CHANGED (next.config.ts)
+  The CSP header is now ENFORCED: the header key was renamed from
+  `Content-Security-Policy-Report-Only` to `Content-Security-Policy`. The policy
+  string itself is UNCHANGED — it already covered Supabase (REST + wss), Sentry
+  ingest, self-hosted fonts, data/blob/https images, blob media + Supabase
+  Storage, blob workers, and set frame-ancestors 'none' / object-src 'none' /
+  base-uri 'self' / form-action 'self'. It retains 'unsafe-inline' (+ 'unsafe-eval'
+  for scripts) because Next.js injects inline hydration code — so enforcing does
+  NOT break framework code; it only activates the source allow-list and the
+  clickjacking/object/base lockdowns. Doc comments updated to past tense.
 
-  This was already TRUE in the product (migration 0096 + the authoring UI hints
-  "the patient can read it too" + the patient-facing "Notes from your care
-  team" surface). Only the handoff docs were stale, still carrying the old
-  "never patient-visible" framing and a "decision pending" flag. Updated:
-    - HANDOVER.md: header blockquote, the principles line (~line 65), the §5.13
-      correction, and the §7 finding — all now say "resolved / intended", and
-      note no app change is needed.
-    - TRANSFER_PROMPT.md: the "decision pending" line is now "resolved".
+  Not done (deliberate, P1 follow-up): the nonce-based policy that would let us
+  drop 'unsafe-inline'. That's a larger, test-heavy change for the developer.
 
-  No code path, RLS policy, or UI string changed — the implementation already
-  matched the decision.
+HOW TO VALIDATE (staging first — this is what staging is for)
+  1. Upload to the `staging` branch -> open the Preview URL.
+  2. With browser devtools open (Console), click through the main flows:
+     patient (login, home, a check-in), clinician (unlock a patient, open the
+     treatment screen, save), physiotherapist (rate a goal, add a note).
+  3. Watch for red "Content-Security-Policy" / "Refused to..." console errors and
+     for any broken styling, missing images, failed Supabase/Sentry calls.
+  4. If clean, upload to `main` -> enforced in production.
+  If something IS blocked, note the blocked URL/directive and send it to me;
+  widening one directive is a one-line change. To revert entirely, re-upload the
+  previous zip (e2e-trigger-fix-1).
 
-VERIFIED
-  Docs only; tsc/lint/build unaffected from hooks-refactor-1.
+VERIFIED HERE
+  Exactly one CSP header key, now enforcing; remaining "Report-Only" strings are
+  comments only; next.config.ts braces balanced. Full build is confirmed by the
+  staging deploy (sandbox has no node_modules to run it here) — the change is a
+  string-literal rename in an existing header array, so build risk is nil.
 
 MIGRATIONS
-  Nothing new. If 0110_studies.sql is not yet applied, run it (copy in
-  outputs). Otherwise no SQL to run.
-
-NOTE ON THIS ZIP
-  Full repo minus node_modules, .next, build artifacts, and .git.
+  Nothing new.

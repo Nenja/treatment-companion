@@ -2804,7 +2804,7 @@ new-goal + approve calibration forms; current).
 
 ## 8. Pending / next slices
 
-**Roadmap & current status - see `docs/ASSESSMENT-2026-06-15.md`** (supersedes `ASSESSMENT-2026-06.md`).
+**Roadmap & current status — see `docs/ROADMAP.md`** (the **living** forward plan; tracks done-vs-open, who owns each item, and the standing rules). It grew out of `docs/ASSESSMENT-2026-06-15.md` (the dated snapshot, which supersedes `ASSESSMENT-2026-06.md`); when the two disagree, `ROADMAP.md` is newer.
 Headline: framework-RCE risk closed (Next 16.2.7), SECURITY DEFINER surface audited + hardened, Sentry
 live, E2E auto-runs, Dependabot in - and as of 2026-06-15 all of this is **applied live**. What still
 gates real patients is **not code**: (1) regulatory + DPO sign-off (external), (2) backups + a tested

@@ -4,14 +4,21 @@ name: E2E smoke
 #   • workflow_dispatch — run on demand from the Actions tab
 #   • schedule          — daily synthetic-monitoring run; catches prod outages
 #                         or login breakage even when nothing was deployed
-#   • deployment_status — runs automatically after a SUCCESSFUL PRODUCTION
-#                         Vercel deploy; catches regressions a deploy introduces
+#   • workflow_run      — runs automatically after the "Deploy (production, on
+#                         green CI)" workflow succeeds; catches regressions a
+#                         deploy introduces.
+#
+# (Was deployment_status until 2026-06-16. That broke under deploy-on-green:
+#  the Ignored Build Step now CANCELS Vercel's own production build, so Vercel
+#  no longer emits a "success/Production" deploy event — the old trigger's
+#  condition was never met and the whole job skipped. Production now deploys
+#  via the Deploy workflow, so we key off that instead.)
 #
 # Deliberately NOT on push / pull_request: a browser-level flake must never
 # red-gate a normal commit. The CI workflow's verify job (typecheck/test/build)
 # is the push/PR gate; THIS is post-deploy + scheduled monitoring only.
 #
-# Schedule + deployment_status only take effect once this file is on the
+# Schedule + workflow_run only take effect once this file is on the
 # DEFAULT branch (main).
 #
 # Requires (Settings -> Secrets and variables -> Actions):
@@ -32,7 +39,9 @@ on:
     # Daily at 06:00 UTC (07:00/08:00 Europe/Copenhagen). Cron is always UTC.
     # Edit this line to change frequency (e.g. '0 6 * * 1' = Mondays only).
     - cron: '0 6 * * *'
-  deployment_status:
+  workflow_run:
+    workflows: ["Deploy (production, on green CI)"]
+    types: [completed]
 
 # Run one smoke at a time; let a running one finish rather than cancelling it
 # mid-check-in. A newer queued run replaces an older queued one.
@@ -44,14 +53,12 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # For deployment_status events, only proceed on a SUCCESSFUL PRODUCTION
-    # deploy. Vercel labels production deployments "Production"; if yours is
-    # named differently, adjust the environment check below. Manual and
-    # scheduled runs are unaffected by this condition.
+    # For workflow_run events, only proceed when the Deploy workflow actually
+    # succeeded (i.e. a real production deploy completed). Manual and scheduled
+    # runs are unaffected by this condition.
     if: >-
-      github.event_name != 'deployment_status' ||
-      (github.event.deployment_status.state == 'success' &&
-       github.event.deployment_status.environment == 'Production')
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

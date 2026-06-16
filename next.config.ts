@@ -6,13 +6,12 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 /**
  * Content-Security-Policy.
  *
- * Shipped in REPORT-ONLY mode: the browser reports violations (visible in the
- * devtools console) but does NOT block anything, so it cannot break the app.
- * Validate it in a real browser first — click through patient, clinician and
- * physiotherapist flows, record a video, watch for CSP violation messages, and
- * widen any source that's wrongly blocked. Once it's clean, enforce it by
- * renaming the header below from `Content-Security-Policy-Report-Only` to
- * `Content-Security-Policy`.
+ * ENFORCED (2026-06-16). Previously shipped Report-Only and validated by
+ * clicking through patient, clinician and physiotherapist flows on staging
+ * (Preview) watching for violations, then enforced by renaming the header at
+ * the bottom from `Content-Security-Policy-Report-Only` to
+ * `Content-Security-Policy`. If a future change adds a resource from a new
+ * domain, widen the matching directive below (and re-validate on staging).
  *
  * Notes on the directives:
  *  - script/style allow 'unsafe-inline' (+ 'unsafe-eval' for scripts) because
@@ -57,7 +56,12 @@ const securityHeaders = [
     value: 'camera=(self), microphone=(self), geolocation=(), browsing-topics=()'
   },
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
-  { key: 'Content-Security-Policy-Report-Only', value: csp }
+  // ENFORCED 2026-06-16 (was Content-Security-Policy-Report-Only). The policy
+  // keeps 'unsafe-inline'/'unsafe-eval' (Next hydration), so this enforces the
+  // source allow-list + clickjacking/object-src/base-uri lockdowns without
+  // breaking framework code. Validated on staging (Preview) before production.
+  // Follow-up (P1): nonce-based policy to drop 'unsafe-inline' — see docs/ROADMAP.md.
+  { key: 'Content-Security-Policy', value: csp }
 ];
 
 const nextConfig: NextConfig = {

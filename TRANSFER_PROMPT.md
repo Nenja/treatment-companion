@@ -86,7 +86,7 @@ not skip the work. Reusable audit/review prompts are welcome.
 
 **What's likely next** *(from `docs/ASSESSMENT-2026-06-15.md`)*
 - **P0 - before any real patient:** **backups + a tested restore** (the one ops item left); then the external gates - regulatory + DPO sign-off (MDR determination + DPIA / privacy notice / sub-processor DPAs, qualified external advice) and native-Danish review of the clinical strings.
-- **P1 - hardening:** enforce CSP (currently Report-Only; then nonce-based); gate Vercel on CI (protected branch) + a staging environment; expand tests (component + more E2E + a few RLS-denial tests); add an ESLint config wired into CI + PR review once the developer is on; bring remaining dependencies current behind Dependabot/CI.
+- **P1 - hardening:** the **living plan is `docs/ROADMAP.md`** (done-vs-open + owners). Shipped this session: deploy-on-green + a **staging** environment, **ESLint** in CI, the hooks-crash fix, RLS-denial tests. Still open: enforce CSP (Report-Only → nonce-based); branch protection + PRs once the developer is on; expand tests (component + Tier-2 E2E against staging); WCAG 2.2 AA + real-device pass; type-aware ESLint; 2FA/biometric (specced); keep dependencies current via Dependabot.
 - **P2 - product threads (no patient-safety gate):** therapist surface Slice 2+ (cockpit consuming `therapist_note`, per-goal cards); face module production integration; EHR-text reshape; REDCap dictionary reconciliation; per-goal handoff note; persistent/recurring therapist access; cross-version goal chart.
 
 **Your first reply:** confirm you've read `HANDOVER.md`, state the current build
