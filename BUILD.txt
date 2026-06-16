@@ -1,45 +1,40 @@
-BUILD - e2e-trigger-fix-1   (fix E2E skipping under deploy-on-green; CI config only)
+BUILD - csp-enforce-1   (enforce Content-Security-Policy; config only)
 
 WHAT THIS IS
-  Cumulative repo snapshot on top of roadmap-doc-1. CI WORKFLOW change only —
-  no app, migration, or test-code change. Migrations still 0001-0110.
+  Cumulative repo snapshot on top of e2e-trigger-fix-1. ONE config change in
+  next.config.ts — no app, migration, or test change. Migrations still 0001-0110.
 
-THE PROBLEM
-  After deploy-on-green was activated, the E2E smoke job started skipping
-  entirely. Cause: e2e.yml's post-deploy trigger was `deployment_status`, gated
-  on state=='success' && environment=='Production'. Deploy-on-green's Ignored
-  Build Step now CANCELS Vercel's own production build (production deploys via
-  the Deploy workflow instead), so Vercel no longer emits a success/Production
-  deploy event — the guard was never satisfied and the whole job skipped.
-  (Scheduled daily + manual runs were unaffected.)
+WHAT CHANGED (next.config.ts)
+  The CSP header is now ENFORCED: the header key was renamed from
+  `Content-Security-Policy-Report-Only` to `Content-Security-Policy`. The policy
+  string itself is UNCHANGED — it already covered Supabase (REST + wss), Sentry
+  ingest, self-hosted fonts, data/blob/https images, blob media + Supabase
+  Storage, blob workers, and set frame-ancestors 'none' / object-src 'none' /
+  base-uri 'self' / form-action 'self'. It retains 'unsafe-inline' (+ 'unsafe-eval'
+  for scripts) because Next.js injects inline hydration code — so enforcing does
+  NOT break framework code; it only activates the source allow-list and the
+  clickjacking/object/base lockdowns. Doc comments updated to past tense.
 
-THE FIX (.github/workflows/e2e.yml)
-  - Trigger: replaced `deployment_status` with
-      workflow_run:
-        workflows: ["Deploy (production, on green CI)"]
-        types: [completed]
-  - Guard: now `github.event_name != 'workflow_run' ||
-            github.event.workflow_run.conclusion == 'success'`
-    so E2E runs after the Deploy workflow actually succeeds. workflow_dispatch
-    and schedule still bypass the guard (always run).
-  - Comments updated to explain the change.
+  Not done (deliberate, P1 follow-up): the nonce-based policy that would let us
+  drop 'unsafe-inline'. That's a larger, test-heavy change for the developer.
 
-BEHAVIOUR NOW
-  - Push to main -> CI -> (green) Deploy -> (success) E2E smoke runs against the
-    deployed URL. CI fails or non-main branch -> Deploy skips -> E2E does not run.
-  - While Deploy is still inert (Vercel secrets not yet set) the Deploy workflow
-    succeeds doing nothing, so E2E will run as a prod monitoring pass after each
-    green CI on main — harmless (the patient check-in test self-skips once that
-    test account's weekly prompt is consumed).
-  - Daily scheduled run + manual "Run workflow" unchanged.
+HOW TO VALIDATE (staging first — this is what staging is for)
+  1. Upload to the `staging` branch -> open the Preview URL.
+  2. With browser devtools open (Console), click through the main flows:
+     patient (login, home, a check-in), clinician (unlock a patient, open the
+     treatment screen, save), physiotherapist (rate a goal, add a note).
+  3. Watch for red "Content-Security-Policy" / "Refused to..." console errors and
+     for any broken styling, missing images, failed Supabase/Sentry calls.
+  4. If clean, upload to `main` -> enforced in production.
+  If something IS blocked, note the blocked URL/directive and send it to me;
+  widening one directive is a one-line change. To revert entirely, re-upload the
+  previous zip (e2e-trigger-fix-1).
 
-VERIFIED
-  YAML parses; triggers = [workflow_dispatch, schedule, workflow_run];
-  workflow_run targets "Deploy (production, on green CI)"; no active
-  deployment_status trigger remains. Docs/app/tsc/lint/build otherwise unchanged.
+VERIFIED HERE
+  Exactly one CSP header key, now enforcing; remaining "Report-Only" strings are
+  comments only; next.config.ts braces balanced. Full build is confirmed by the
+  staging deploy (sandbox has no node_modules to run it here) — the change is a
+  string-literal rename in an existing header array, so build risk is nil.
 
 MIGRATIONS
   Nothing new.
-
-ALSO IN THIS ZIP
-  docs/ROADMAP.md gains a one-line note recording this follow-up fix.
