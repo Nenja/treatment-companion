@@ -27,11 +27,11 @@ weekly check-ins; the app produces descriptive summaries, EHR text and
 pseudonymised CSV exports. It deliberately **does not diagnose, dose, recommend
 or predict**. Direction of information is primarily **upward** (patient/therapist
 → clinic); the only sanctioned downward channel is the physician→therapist
-handoff note (inter-professional, never patient-visible). Don't build a
+handoff note (inter-professional). Don't build a
 clinic→patient messaging channel.
 
 **My setup (this shapes how you deliver).**
-- Stack: Next.js 15.1.9 / React 19 / TypeScript / Tailwind v4 / Supabase.
+- Stack: Next.js 16.2.7 / next-intl 4.13.0 / React 19 / TypeScript / Tailwind v4 / Supabase (Postgres 16).
 - Live: `https://treatment-companion.vercel.app` · GitHub:
   `github.com/Nenja/treatment-companion`.
 - I'm on **Windows + Firefox** and **cannot run code locally.** I deploy by
@@ -72,34 +72,18 @@ not skip the work. Reusable audit/review prompts are welcome.
 ---
 
 **Where we are** *(update each delivery)*
-- **Latest build:** `sentry-enable-1` — **turned Sentry on** (no domain needed). Only code change: renamed `sentry.client.config.ts` → **`instrumentation-client.ts`** (Next.js loads it natively; the old file wasn't loaded without `withSentryConfig`, so browser errors were uncaptured). Server/edge already fine via `instrumentation.ts`; `app/global-error.tsx` already reports. Privacy unchanged (DSN=`NEXT_PUBLIC_SENTRY_DSN`, `sendDefaultPii:false`, `beforeSend` scrub, traces 0; CSP allows EU ingest). tsc clean, build 109/109. Runbook **`docs/SENTRY_SETUP.md`** (EU project, Vercel env vars, alert rules, DPIA, source-maps as later upgrade). **Deploy: add `instrumentation-client.ts`, DELETE `sentry.client.config.ts`, then do the dashboard steps.** _Independent earlier still-pending: drop deps-secfix `package.json`+`package-lock.json` together + `dependabot.yml` (+ enable Dependabot toggles), run `0108` in SQL editor, next16 proxy/middleware swap, commit `e2e.yml`._ Prior: deps-secfix-1 (next-intl 4.13.0 security + Dependabot), e2e-autorun-1, secdef-harden-1, next16-upgrade-1.
-- **Just shipped:** `e2e-smoke-1` (carries the two feature batches + `0107`). **Run `0107`** in the Supabase SQL editor (idempotent) if not already done. Earlier migrations still pending if not yet run: `0103`–`0106`. The Edge Function `send-checkin-notifications` still needs (re)deploy in Supabase (sv/nb reminder copy + `--no-verify-jwt`). The E2E scaffold needs a one-time `npm i -D @playwright/test && npx playwright install chromium` (see `e2e/README.md`); it's deliberately not in package.json.
-- **Audit roadmap COMPLETE.** All five items delivered: test harness (Vitest + jsdom, 41 tests, in CI); real privacy-notice + DPIA drafts (`docs/`); native-push go-live runbook (`mobile/PUSH_GOLIVE.md`); sv/nb reminder localization; and the E2E smoke. (Also this session: the approve-suggestion redesign + `0107`, and the consent consolidation.)
-- **Two QA flags:** `record_id` = approach A (app-assigned `TC-NNNN`); DPO to bless or swap. The CSV MUST be test-imported into a real REDCap project (cannot verify live import from here).
-- **Also live (in-session):** the finalised REDCap data dictionary (86 fields) in `redcap/`; native Android push (FCM); daily scheduler `0104` once deployed.
+- **Stack is current.** Next.js **16.2.7**, next-intl **4.13.0**, React 19, Supabase (Postgres 16). Migrations **0001-0110**. Current assessment: **`docs/ASSESSMENT-2026-06-15.md`** (read it for the roadmap; supersedes `ASSESSMENT-2026-06.md`).
+- **Latest delivery - `studies-and-fixes-1` (in the repo; RUN `0110`):** migration `0110_studies.sql` (study + study_membership + admin-gated RPCs, study membership orthogonal to consent - export unchanged) with an admin Studies / Study-patients view; plus four patient-surface fixes - profile language now persists + locale-aware Back, login honours browser language (`localeDetection: true`), DOB picker un-squished, account-menu nav works from the check-in wizard. 0110 Method-D verified (15 cases); font-stub build + tsc clean; i18n parity en/da/sv/nb. Detail in `HANDOVER.md` §7. **Apply: run `0110` in the Supabase SQL editor; deploy the zip to Vercel. QA list in `BUILD.txt`.** Biometric/2FA specced + deferred.
+- **Then `rls-denial-tests-1` (in the repo; NO SQL to run):** a runtime RLS-denial suite now runs in CI (real policies, impersonatable `auth.uid()`) - cross-patient isolation, clinician-session gating incl. the 1-hour staleness cutoff, anonymous denial, the 0096 care-team-note boundary, admin-only `study` tables; positive + negative controls. Test infra + CI only, no app/migration change. **It surfaced a spec divergence: care-team notes (handoff + therapist notes) are patient-readable for the patient's OWN rows since migration `0096` (GDPR right-of-access)** - contradicts the "never patient-visible" line that used to be here and in §5.13 (now corrected). **Decision pending for Nikolaj:** confirm patient-readable is intended, or make author-private notes a product change. Detail in `HANDOVER.md` §5.14 + §7.
+- **This session's deliveries - in the repo AND now applied live (2026-06-15):** next16-upgrade-1 (Next 16.2.7, closes the CVSS-10 RCE); secdef-harden-1 (`0108`: `search_path` pinned on every SECURITY DEFINER fn, dev-seed fns locked to `service_role`); e2e-autorun-1 (Playwright smoke runs daily + after each prod deploy + manual); deps-secfix-1 (next-intl -> 4.13.0 security fix + Dependabot); sentry-enable-1 (error monitoring live; browser init = `instrumentation-client.ts`); audit-followups-1 (`0109`: revokes `anon` EXECUTE except the 6 RLS-helper fns; FORCE RLS reviewed and deliberately NOT enabled). Full detail in `HANDOVER.md` §7.
+- **Applied live by Nikolaj:** `0108` + `0109` run in Supabase; Sentry DSN set in Vercel; deps committed + Dependabot toggles on; the renamed-away `middleware.ts` / `sentry.client.config.ts` deleted. (Worth a one-time eyeball if not done: load logged-out + run a visit-code/clinician-session flow to confirm `0109` raises no `permission denied for function`.)
+- **THE ONE REMAINING ITEM IN NIKOLAJ'S CONTROL: backups.** Confirm Supabase Pro + PITR is on and **test one restore** (procedure in `OPS.md`). Highest data-loss risk; not yet done.
+- **Process note (important):** trust the repo/filesystem over any carried-over summary. In a prior session a stale summary mislabelled finished work as still-pending; the files are the source of truth.
 
-- **Epics complete:** goal-versioning; therapist-signals; handoff note (0088);
-  audit remediation; EHR localisation; cockpit simplification batches 1–11.
-  The original 11-item simplification list is complete (bar #4, parked).
-
-- **Outstanding deploy (not in the zip->Vercel flow):** the rewritten
-  `send-checkin-notifications` Edge Function (cockpit-57) still needs deploying via
-  the Supabase Dashboard. Until then the reminder *day* is stored/shown but not yet
-  honoured.
-
-**What's likely next**
-- **Audit list is done** — so next is Nikolaj's call. Likely candidates:
-- **Deferred ops** (from `OPS.md`): Supabase Pro + automated backups + a
-  test-restore; Sentry alert rules; CSP enforcement (currently report-only);
-  a staging environment; promoting the E2E smoke to run on a schedule/deploy
-  once it's proven stable.
-- **Follow-through on this session's work:** click-test the redesigned
-  approve-suggestion page and the Consent panel; get the DPO/legal review of
-  the privacy notice + DPIA and a qualified translator for the sv/nb/da
-  privacy text; finish native-push go-live (`mobile/PUSH_GOLIVE.md`).
-- **Parked features:** #4 muscle→function (needs Nikolaj's markup + the
-  catalogue decision); per-goal handoff note (per-cycle today; needs a
-  migration); cross-version goal chart.
+**What's likely next** *(from `docs/ASSESSMENT-2026-06-15.md`)*
+- **P0 - before any real patient:** **backups + a tested restore** (the one ops item left); then the external gates - regulatory + DPO sign-off (MDR determination + DPIA / privacy notice / sub-processor DPAs, qualified external advice) and native-Danish review of the clinical strings.
+- **P1 - hardening:** enforce CSP (currently Report-Only; then nonce-based); gate Vercel on CI (protected branch) + a staging environment; expand tests (component + more E2E + a few RLS-denial tests); add an ESLint config wired into CI + PR review once the developer is on; bring remaining dependencies current behind Dependabot/CI.
+- **P2 - product threads (no patient-safety gate):** therapist surface Slice 2+ (cockpit consuming `therapist_note`, per-goal cards); face module production integration; EHR-text reshape; REDCap dictionary reconciliation; per-goal handoff note; persistent/recurring therapist access; cross-version goal chart.
 
 **Your first reply:** confirm you've read `HANDOVER.md`, state the current build
 + migration in a line or two, and either wait for my “go” or ask the one thing

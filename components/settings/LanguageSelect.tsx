@@ -34,7 +34,7 @@ const LANGS: { code: AppLocale; short: string; name: string }[] = [
  * `localePrefix: 'as-needed'` scheme: English has no prefix, the others
  * carry `/<locale>`. Strips the current prefix, then adds the target's.
  */
-function switchLocalePath(
+export function switchLocalePath(
   pathname: string,
   current: string,
   target: string
@@ -70,9 +70,18 @@ function GlobeIcon({ className }: { className?: string }) {
 }
 
 export function LanguageSelect({
-  variant
+  variant,
+  onChoose
 }: {
   variant: 'segmented' | 'cards';
+  /**
+   * When provided (cards variant), the host page owns persisting the
+   * choice and navigating — used by the profile page so it can (a) await
+   * the write before the locale reload so it can't be lost to the page
+   * unload, and (b) guard unsaved form edits first. When omitted, the
+   * control persists + switches the URL itself (legacy/segmented path).
+   */
+  onChoose?: (target: AppLocale) => void;
 }) {
   const locale = useLocale();
   const router = useRouter();
@@ -82,6 +91,10 @@ export function LanguageSelect({
 
   const choose = (target: AppLocale) => {
     if (target === locale) return;
+    if (onChoose) {
+      onChoose(target);
+      return;
+    }
     // On the settings cards (signed in), remember the choice for next time.
     if (variant === 'cards' && user) {
       setPreferredLocale.mutate(target);

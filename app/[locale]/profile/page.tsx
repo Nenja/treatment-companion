@@ -16,7 +16,8 @@ import {
 } from '@/lib/supabase/patientInfo';
 import { useToast } from '@/components/feedback/Toast';
 import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
-import { LanguageSelect } from '@/components/settings/LanguageSelect';
+import { LanguageSelect, switchLocalePath } from '@/components/settings/LanguageSelect';
+import { useSetPreferredLocale, type AppLocale } from '@/lib/supabase/locale';
 import { VideoConsentSettings } from '@/components/settings/VideoConsentSettings';
 import {
   professionOptions,
@@ -44,6 +45,7 @@ export default function ProfilePage() {
   const t = useTranslations('profile');
   const { user, profile, loading } = useAuth();
   const updateProfile = useUpdateOwnProfile();
+  const setPreferredLocale = useSetPreferredLocale();
   const toast = useToast();
 
   const isPatient = profile?.role === 'patient';
@@ -180,6 +182,39 @@ export default function ProfilePage() {
     else nav();
   };
 
+  // Locale-aware home for this role, in the CURRENT locale (so after a
+  // language switch Back returns to the correctly-localed home rather than
+  // the English `/` the old router.back() landed on).
+  const roleHome =
+    profile.role === 'clinician'
+      ? '/clinician'
+      : profile.role === 'physiotherapist'
+        ? '/physio'
+        : '/';
+  const homeHref =
+    locale === 'en'
+      ? roleHome
+      : `/${locale}${roleHome === '/' ? '' : roleHome}`;
+
+  // Language: persist the choice (awaited, so the write can't be lost to
+  // the page unload) and THEN reload into the new locale. Routed through
+  // attemptLeave so unsaved form edits are confirmed first.
+  const chooseLanguage = (target: AppLocale) => {
+    const go = async () => {
+      try {
+        await setPreferredLocale.mutateAsync(target);
+      } catch {
+        // Persisting is best-effort; still switch the visible language.
+      }
+      window.location.assign(
+        switchLocalePath(window.location.pathname, locale, target)
+      );
+    };
+    attemptLeave(() => {
+      void go();
+    });
+  };
+
   const onSave = async () => {
     if (!dirty || saving) return;
     if (!nameValid) {
@@ -226,7 +261,7 @@ export default function ProfilePage() {
         <div className="mx-auto flex max-w-[480px] items-center px-5 py-4">
           <button
             type="button"
-            onClick={() => attemptLeave(() => router.back())}
+            onClick={() => attemptLeave(() => router.push(homeHref))}
             className="text-[14px] font-semibold text-ink-soft hover:text-ink"
           >
             {t('back')}
@@ -432,7 +467,7 @@ export default function ProfilePage() {
         <div className="mt-10 border-t border-stone/70 pt-7">
           <p className="eyebrow">{t('sectionLanguage')}</p>
           <div className="mt-3">
-            <LanguageSelect variant="cards" />
+            <LanguageSelect variant="cards" onChoose={chooseLanguage} />
           </div>
         </div>
 

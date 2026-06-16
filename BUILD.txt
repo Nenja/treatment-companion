@@ -1,52 +1,74 @@
-BUILD - sentry-enable-1   (turn Sentry on)
+BUILD - rls-denial-tests-1   (runtime RLS-denial test suite + a finding)
 
 WHAT THIS IS
-  Switches on error monitoring. Sentry does NOT need a custom domain - it works
-  fine on your .vercel.app URL. The app was already wired for Sentry, but one
-  piece was inert: browser-side error capture. This drop fixes that and gives
-  you a step-by-step runbook for the dashboard parts (which are yours to do).
+  Cumulative repo snapshot. Test infrastructure + CI only on top of
+  studies-and-fixes-1. NO app code change and NO new migration this increment.
+  Stack unchanged: Next.js 16.2.7 / next-intl 4.13.0 / React 19 / Supabase
+  (Postgres 16). Migrations still 0001-0110.
 
-THE ONE CODE CHANGE (a file rename)
-  Old: sentry.client.config.ts  ->  New: instrumentation-client.ts
-  Why: without the Sentry build plugin (withSentryConfig, which we deliberately
-  don't use), nothing loaded sentry.client.config.ts, so browser errors were
-  never captured. Next.js loads instrumentation-client.ts natively, so renaming
-  fixes it with no build changes. Server + edge were already fine.
+  (This zip still CARRIES studies-and-fixes-1, which needs migration 0110 run
+  if you have not already - see "MIGRATIONS" below.)
 
-FILES IN THIS DROP
-  instrumentation-client.ts   NEW - browser Sentry init (was sentry.client.config.ts)
-  instrumentation.ts          comment update only
-  docs/SENTRY_SETUP.md        NEW - the dashboard runbook (read this next)
+WHAT CHANGED THIS INCREMENT
+  Runtime RLS-denial test suite (highest-value check for real patient data)
+    - supabase/ci/rls-test-setup.sql - turns the throwaway CI Postgres (real
+      bootstrap + all migrations) into one where RLS can be exercised:
+      auth.uid() reads a per-connection GUC (test.uid) so any user can be
+      impersonated; authenticated/anon get Supabase-like table grants so a
+      denial is RLS and not a missing GRANT; an _assert() raises on a failed
+      expectation; deterministic fixtures (2 patients, a clinician with an
+      active session for A only, an admin, therapist notes, a study).
+    - supabase/ci/rls-tests.sql - the assertions. Each impersonates a user via
+      SET ROLE + set_config('test.uid',...) so the REAL policies decide
+      visibility. Coverage:
+        T1 patient A sees only their own patient row
+        T2 patient A cannot read patient B's profile
+        T3 patient reads only their OWN care-team notes, never another's
+        T4 clinician WITH an active session sees A, never B (+ notes)
+        T5 a STALE session (>1h idle) grants no access
+        T6 anonymous (no JWT) sees nothing
+        T7 study/study_membership are admin-only (+ admin positive control)
+      Every denial is paired with a positive control so a "deny everything"
+      bug cannot pass silently.
+    - supabase/ci/run-rls-tests.sh - run the suite against a local Postgres.
+    - .github/workflows/ci.yml - new "RLS-denial tests" step in the migrations
+      job (after the schema snapshot). Fails the build on any RLS regression.
+
+  Verified here:
+    - All assertions pass on a throwaway PG16 (real bootstrap + all migrations).
+    - NEGATIVE CONTROL: injecting a `using(true)` patient SELECT policy makes
+      T1 fail loudly; removing it returns to green - so the suite is not
+      vacuously passing.
+    - tsc --noEmit clean (no app code changed; prior studies-and-fixes-1 build
+      remains valid).
+
+>>> FINDING - PLEASE DECIDE: care-team notes are PATIENT-READABLE <<<
+  The docs (HANDOVER 5.13, TRANSFER_PROMPT) say the physician->therapist
+  handoff note and therapist notes are "never patient-visible". That was true
+  at migrations 0088/0095, but migration 0096_patient_care_team_notes
+  DELIBERATELY added a patient self-read on treatment_handoff,
+  goal_handoff_note, and therapist_note (patient_id = current_patient_id()),
+  citing the patient's GDPR right of access. So a patient CAN read the notes
+  about their own care (never another patient's - that isolation is intact and
+  tested). Not a code bug - 0096 is intentional and self-documenting - but it
+  contradicts the stated invariant and has clinical-privacy weight (anyone
+  writing such a note should know the patient can read it). HANDOVER 5.13 is
+  corrected. DECISION: confirm patient-readable is intended, OR treat
+  author-private care-team notes as a product change to make.
+
+MIGRATIONS
+  Nothing new this increment. If studies-and-fixes-1 (0110_studies.sql) has
+  not been applied yet, run it in the Supabase SQL editor (standalone copy in
+  outputs). Otherwise no SQL to run.
 
 DEPLOY
-  1. GitHub Desktop: add instrumentation-client.ts and instrumentation.ts, and
-     **DELETE sentry.client.config.ts** (a zip can't delete it for you). Commit,
-     push to main.
-       -> Confirm sentry.client.config.ts is gone and instrumentation-client.ts
-          is present in the repo.
-  2. Then follow docs/SENTRY_SETUP.md to:
-       - create an EU-region Sentry project (DSN ends ingest.de.sentry.io)
-       - set NEXT_PUBLIC_SENTRY_DSN (required) and
-         NEXT_PUBLIC_SENTRY_ENVIRONMENT=production (recommended) in Vercel
-       - redeploy, confirm, and set the three alert rules
-     Until a DSN is set, Sentry stays a safe no-op and captures nothing.
+  Upload the zip to GitHub -> Vercel auto-builds. CI will now also run the
+  RLS-denial tests on every push/PR.
 
-PRIVACY (already enforced, clinical-grade)
-  sendDefaultPii:false; a beforeSend scrubber strips request bodies, cookies,
-  headers, query strings, user ids, and breadcrumb URLs; no tracing/replay.
-  ONE caveat (in the runbook): the scrubber can't clean PII written into an
-  exception message itself - keep patient data out of throw/Error strings.
+PLEASE QA / NOTE (cannot verify here)
+  - The finding decision above (patient-readable care-team notes).
+  - CI will run the new step automatically on the next push; confirm it goes
+    green in GitHub Actions.
 
-VERIFIED IN SANDBOX
-  - tsc clean.
-  - Production build (Turbopack): 109/109, Next picks up instrumentation-client.ts,
-    no errors or warnings.
-  (Runtime capture can't be exercised here without a DSN - confirm post-deploy
-  with the deliberate test error described in the runbook.)
-
-STILL PENDING FROM EARLIER (unrelated; not re-shipped here)
-  - deps-secfix-1: drop package.json + package-lock.json TOGETHER + dependabot.yml;
-    enable Dependabot alerts + security updates toggles.
-  - secdef-harden-1: run 0108_harden_secdef_functions.sql in the SQL editor.
-  - next16-upgrade-1: add proxy.ts + DELETE middleware.ts, if not done.
-  - e2e-autorun-1: commit the e2e.yml change, if not done.
+NOTE ON THIS ZIP
+  Full repo minus node_modules, .next, build artifacts, and .git.

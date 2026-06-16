@@ -16,10 +16,17 @@ import {
   useActiveAccess,
   useResearchPurgeQueue,
   useConfirmResearchPurge,
+  useStudyOverview,
+  useCreateStudy,
+  useUpdateStudy,
+  useAddPatientToStudy,
+  useRemovePatientFromStudy,
   generateTempPassword,
   type AdminAccount,
   type ActiveAccessSession,
-  type ResearchPurgeEntry
+  type ResearchPurgeEntry,
+  type StudySummary,
+  type StudyPatientRow
 } from '@/lib/supabase/admin';
 import { useToast } from '@/components/feedback/Toast';
 import { SkeletonBlock } from '@/components/feedback/Skeleton';
@@ -125,6 +132,8 @@ export default function AdminPage() {
         <AccessSection enabled={!!profile && profile.isAdmin} />
 
         <ResearchPurgeSection enabled={!!profile && profile.isAdmin} />
+
+        <StudiesSection enabled={!!profile && profile.isAdmin} />
       </main>
     </div>
   );
@@ -1095,5 +1104,430 @@ function ResearchPurgeSection({ enabled }: { enabled: boolean }) {
         </ul>
       )}
     </section>
+  );
+}
+
+/**
+ * Studies + study-patient list (migration 0110). Two parts:
+ *   1. A studies manager — create a study, rename / activate / deactivate.
+ *   2. A filterable list of consented-or-enrolled patients, each showing
+ *      their REDCap record_id (study_code), consent status, cycle count,
+ *      and which studies they belong to, with add/remove controls.
+ *
+ * Study membership is orthogonal to research consent and does NOT change
+ * the consent-gated REDCap export — it is purely an admin grouping to pick
+ * out which consented patients are in which study. Patients only appear
+ * here once they are research-consented or already enrolled; a non-consented
+ * patient shows a blank record_id and is flagged accordingly.
+ */
+type StudyFilter =
+  | { kind: 'allMembers' }
+  | { kind: 'study'; studyId: string }
+  | { kind: 'consentedNoStudy' }
+  | { kind: 'withdrawn' };
+
+function StudiesSection({ enabled }: { enabled: boolean }) {
+  const tAdmin = useTranslations('admin');
+  const toast = useToast();
+  const overview = useStudyOverview(enabled);
+  const addToStudy = useAddPatientToStudy();
+  const removeFromStudy = useRemovePatientFromStudy();
+
+  const [filter, setFilter] = useState<StudyFilter>({ kind: 'allMembers' });
+
+  const studies = overview.data?.studies ?? [];
+  const patients = overview.data?.patients ?? [];
+  const studyById = useMemo(() => {
+    const m = new Map<string, StudySummary>();
+    for (const s of studies) m.set(s.id, s);
+    return m;
+  }, [studies]);
+
+  const filtered = useMemo(() => {
+    return patients.filter((p) => {
+      switch (filter.kind) {
+        case 'allMembers':
+          return p.studyIds.length > 0;
+        case 'study':
+          return p.studyIds.includes(filter.studyId);
+        case 'consentedNoStudy':
+          return p.researchConsent && p.studyIds.length === 0 && !p.purgedAt;
+        case 'withdrawn':
+          return p.studyIds.length > 0 && !!p.withdrawnAt && !p.purgedAt;
+      }
+    });
+  }, [patients, filter]);
+
+  const onAdd = async (patientId: string, studyId: string) => {
+    if (!studyId) return;
+    try {
+      await addToStudy.mutateAsync({ studyId, patientId });
+      toast.success(tAdmin('studyMemberAdded'));
+    } catch (err) {
+      toast.error((err as Error).message ?? tAdmin('studyActionError'));
+    }
+  };
+  const onRemove = async (patientId: string, studyId: string) => {
+    try {
+      await removeFromStudy.mutateAsync({ studyId, patientId });
+      toast.success(tAdmin('studyMemberRemoved'));
+    } catch (err) {
+      toast.error((err as Error).message ?? tAdmin('studyActionError'));
+    }
+  };
+
+  const filterValue =
+    filter.kind === 'study' ? `study:${filter.studyId}` : filter.kind;
+  const onFilterChange = (v: string) => {
+    if (v.startsWith('study:')) setFilter({ kind: 'study', studyId: v.slice(6) });
+    else if (v === 'consentedNoStudy') setFilter({ kind: 'consentedNoStudy' });
+    else if (v === 'withdrawn') setFilter({ kind: 'withdrawn' });
+    else setFilter({ kind: 'allMembers' });
+  };
+
+  return (
+    <section className="mt-10">
+      <h2 className="font-display text-[18px] text-ink">{tAdmin('studiesTitle')}</h2>
+      <p className="mt-1 text-[13px] text-ink-soft">{tAdmin('studiesHelper')}</p>
+
+      <CreateStudyForm />
+
+      {/* Studies manager */}
+      {overview.isLoading && (
+        <div className="mt-3 space-y-2">
+          {[0, 1].map((i) => (
+            <SkeletonBlock key={i} width="w-full" height="h-12" shape="rounded-[var(--radius-card)]" />
+          ))}
+        </div>
+      )}
+      {overview.isError && (
+        <p className="mt-3 text-[14px] text-amber-deep">
+          {(overview.error as Error).message}
+        </p>
+      )}
+      {overview.data && studies.length === 0 && (
+        <p className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft px-4 py-3 text-[14px] text-ink-muted">
+          {tAdmin('studyListEmpty')}
+        </p>
+      )}
+      {studies.length > 0 && (
+        <ul className="mt-3 divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
+          {studies.map((s) => (
+            <StudyRow key={s.id} study={s} />
+          ))}
+        </ul>
+      )}
+
+      {/* Study patients */}
+      {studies.length > 0 && (
+        <div className="mt-7">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="font-display text-[16px] text-ink">
+              {tAdmin('studyPatientsTitle')}
+            </h3>
+            <select
+              aria-label={tAdmin('studyFilterLabel')}
+              value={filterValue}
+              onChange={(e) => onFilterChange(e.target.value)}
+              className="rounded-[var(--radius-button)] border border-stone bg-cream px-2 py-1.5 text-[13px] text-ink focus:border-sage focus:outline-none"
+            >
+              <option value="allMembers">{tAdmin('studyFilterAllMembers')}</option>
+              <option value="consentedNoStudy">{tAdmin('studyFilterConsentedNoStudy')}</option>
+              <option value="withdrawn">{tAdmin('studyFilterWithdrawn')}</option>
+              {studies.map((s) => (
+                <option key={s.id} value={`study:${s.id}`}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {filtered.length === 0 ? (
+            <p className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft px-4 py-3 text-[14px] text-ink-muted">
+              {tAdmin('studyPatientsEmpty')}
+            </p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {filtered.map((p) => (
+                <StudyPatientCard
+                  key={p.patientId}
+                  patient={p}
+                  studies={studies}
+                  studyById={studyById}
+                  onAdd={onAdd}
+                  onRemove={onRemove}
+                  busy={addToStudy.isPending || removeFromStudy.isPending}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CreateStudyForm() {
+  const tAdmin = useTranslations('admin');
+  const toast = useToast();
+  const create = useCreateStudy();
+  const [key, setKey] = useState('');
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+
+  const onCreate = async () => {
+    if (!key.trim() || !name.trim()) {
+      toast.error(tAdmin('studyKeyNameRequired'));
+      return;
+    }
+    try {
+      await create.mutateAsync({
+        key: key.trim(),
+        name: name.trim(),
+        description: description.trim() || null
+      });
+      setKey('');
+      setName('');
+      setDescription('');
+      toast.success(tAdmin('studyCreated'));
+    } catch (err) {
+      toast.error((err as Error).message ?? tAdmin('studyCreateError'));
+    }
+  };
+
+  const inputClass =
+    'mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none';
+
+  return (
+    <div className="mt-4 rounded-[var(--radius-card)] border border-stone bg-cream-soft px-4 py-4">
+      <p className="text-[14px] font-semibold text-ink">{tAdmin('studyCreateTitle')}</p>
+      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-[12px] text-ink-soft">{tAdmin('studyKeyLabel')}</span>
+          <input
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            placeholder={tAdmin('studyKeyPlaceholder')}
+            className={inputClass}
+          />
+        </label>
+        <label className="block">
+          <span className="text-[12px] text-ink-soft">{tAdmin('studyNameLabel')}</span>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={tAdmin('studyNamePlaceholder')}
+            className={inputClass}
+          />
+        </label>
+      </div>
+      <label className="mt-2 block">
+        <span className="text-[12px] text-ink-soft">{tAdmin('studyDescLabel')}</span>
+        <input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder={tAdmin('studyDescPlaceholder')}
+          className={inputClass}
+        />
+      </label>
+      <button
+        type="button"
+        disabled={create.isPending}
+        onClick={() => void onCreate()}
+        className="mt-3 rounded-[var(--radius-button)] bg-sage-deep px-4 py-2 text-[13px] font-semibold text-on-accent hover:bg-sage-deep/90 disabled:opacity-60"
+      >
+        {tAdmin('studyCreateAction')}
+      </button>
+    </div>
+  );
+}
+
+function StudyRow({ study }: { study: StudySummary }) {
+  const tAdmin = useTranslations('admin');
+  const toast = useToast();
+  const update = useUpdateStudy();
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(study.name);
+
+  const onRename = async () => {
+    if (!name.trim()) return;
+    try {
+      await update.mutateAsync({ studyId: study.id, name: name.trim() });
+      setEditing(false);
+      toast.success(tAdmin('studyUpdated'));
+    } catch (err) {
+      toast.error((err as Error).message ?? tAdmin('studyUpdateError'));
+    }
+  };
+  const onToggleActive = async () => {
+    try {
+      await update.mutateAsync({ studyId: study.id, active: !study.active });
+      toast.success(tAdmin('studyUpdated'));
+    } catch (err) {
+      toast.error((err as Error).message ?? tAdmin('studyUpdateError'));
+    }
+  };
+
+  return (
+    <li className="px-4 py-3">
+      {editing ? (
+        <div className="flex items-center gap-2">
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[14px] text-ink focus:border-sage focus:outline-none"
+          />
+          <button
+            type="button"
+            disabled={update.isPending}
+            onClick={() => void onRename()}
+            className="shrink-0 rounded-[var(--radius-button)] bg-sage-deep px-3 py-1.5 text-[13px] font-semibold text-on-accent disabled:opacity-60"
+          >
+            {tAdmin('studyRenameSave')}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setName(study.name);
+              setEditing(false);
+            }}
+            className="shrink-0 text-[13px] font-medium text-ink-soft hover:text-ink"
+          >
+            {tAdmin('studyRenameCancel')}
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between gap-3">
+          <span className="min-w-0">
+            <span className="flex items-center gap-2">
+              <span className="truncate text-[14px] font-semibold text-ink">
+                {study.name}
+              </span>
+              {!study.active && (
+                <span className="shrink-0 rounded-full bg-stone-soft px-2 py-0.5 text-[11px] font-medium text-ink-muted">
+                  {tAdmin('studyInactive')}
+                </span>
+              )}
+            </span>
+            <span className="mt-0.5 block text-[12px] text-ink-muted">
+              {study.key} · {tAdmin('studyMembers', { count: study.memberCount })}
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="text-[13px] font-medium text-ink-soft hover:text-ink"
+            >
+              {tAdmin('studyRename')}
+            </button>
+            <button
+              type="button"
+              disabled={update.isPending}
+              onClick={() => void onToggleActive()}
+              className="text-[13px] font-medium text-sage-deep hover:underline disabled:opacity-60"
+            >
+              {study.active ? tAdmin('studyDeactivate') : tAdmin('studyActivate')}
+            </button>
+          </span>
+        </div>
+      )}
+    </li>
+  );
+}
+
+function StudyPatientCard({
+  patient,
+  studies,
+  studyById,
+  onAdd,
+  onRemove,
+  busy
+}: {
+  patient: StudyPatientRow;
+  studies: StudySummary[];
+  studyById: Map<string, StudySummary>;
+  onAdd: (patientId: string, studyId: string) => void;
+  onRemove: (patientId: string, studyId: string) => void;
+  busy: boolean;
+}) {
+  const tAdmin = useTranslations('admin');
+  const notIn = studies.filter((s) => !patient.studyIds.includes(s.id));
+
+  const status = patient.purgedAt
+    ? null
+    : patient.withdrawnAt
+      ? { label: tAdmin('studyStatusWithdrawn'), cls: 'bg-amber-soft/40 text-amber-deep' }
+      : patient.researchConsent
+        ? { label: tAdmin('studyStatusConsented'), cls: 'bg-sage-soft text-sage-deep' }
+        : { label: tAdmin('studyStatusNotConsented'), cls: 'bg-stone-soft text-ink-muted' };
+
+  return (
+    <li className="rounded-[var(--radius-card)] border border-stone bg-cream-soft px-4 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <span className="min-w-0">
+          <span className="block truncate text-[14px] font-semibold text-ink">
+            {patient.displayName ?? patient.patientId}
+          </span>
+          <span className="mt-0.5 block text-[12px] text-ink-muted">
+            {tAdmin('studyRecordId')}:{' '}
+            <span className="font-mono">
+              {patient.studyCode ?? tAdmin('studyRecordIdNone')}
+            </span>{' '}
+            · {tAdmin('studyCycles', { count: patient.cycleCount })}
+          </span>
+        </span>
+        {status && (
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${status.cls}`}>
+            {status.label}
+          </span>
+        )}
+      </div>
+
+      {patient.studyIds.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {patient.studyIds.map((sid) => (
+            <span
+              key={sid}
+              className="inline-flex items-center gap-1 rounded-full border border-stone bg-cream px-2 py-0.5 text-[12px] text-ink-soft"
+            >
+              {studyById.get(sid)?.name ?? sid}
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => onRemove(patient.patientId, sid)}
+                aria-label={tAdmin('studyRemoveMember')}
+                className="text-ink-muted hover:text-amber-deep disabled:opacity-60"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {notIn.length > 0 && (
+        <div className="mt-2">
+          <select
+            aria-label={tAdmin('studyAddToStudy')}
+            value=""
+            disabled={busy}
+            onChange={(e) => {
+              const v = e.target.value;
+              e.target.value = '';
+              if (v) onAdd(patient.patientId, v);
+            }}
+            className="rounded-[var(--radius-button)] border border-stone bg-cream px-2 py-1.5 text-[13px] text-ink-soft focus:border-sage focus:outline-none disabled:opacity-60"
+          >
+            <option value="">{tAdmin('studyAddToStudy')}</option>
+            {notIn.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+    </li>
   );
 }

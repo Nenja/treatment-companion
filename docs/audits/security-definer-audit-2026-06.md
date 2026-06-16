@@ -106,46 +106,73 @@ and a normal RPC's grants are unchanged.
 > DB grant now blocks the destructive path regardless, but the route shouldn't
 > be exposed.
 
-### F2 — EXECUTE still defaults to PUBLIC on the 73 app functions — recommendation  *(medium)*
+### F2 — EXECUTE defaulted to PUBLIC on the app functions — FIXED in 0109  *(was: medium)*
 
-Not an active vulnerability (the internal gates reject unauthorized callers),
-but loose hygiene: `anon` can still *invoke* clinician/admin RPCs and merely be
-rejected. Tightening to least-privilege (revoke `anon` EXECUTE except a small
-deliberate allowlist; grant `authenticated` only where needed) reduces attack
-surface and error-message/DoS exposure.
+Not an active vulnerability (the internal gates reject unauthorized callers), but
+loose hygiene: `anon` could still *invoke* clinician/admin RPCs and merely be
+rejected. 0109 tightens this to least privilege.
 
-**Why not done in this batch:** several of these functions are invoked indirectly
-by RLS **policy expressions** (e.g. policies call `current_patient_id()`), so the
-querying role needs EXECUTE on them — revoking blindly would break RLS evaluation
-and take the app down. Doing this safely needs a per-function role-usage map
-(direct RPC + policy invocations) and staging verification. Recommended as its
-own change.
+**The trap that made this delicate:** some of these functions are invoked inside
+RLS **policy expressions**, and policy expressions execute as the *querying* role —
+so if `anon` queries such a table, `anon` needs EXECUTE on the function or the query
+errors instead of cleanly returning zero rows. A `pg_depend` walk showed **exactly
+6** SECURITY DEFINER functions are referenced by any policy, and all 6 are
+referenced by at least one `TO PUBLIC` policy: `clinician_can_access_patient`,
+`current_app_role`, `current_clinician_id`, `current_patient_id`,
+`current_role_is_care_professional`, `current_user_is_admin`. These keep `anon`.
 
-### F3 — FORCE ROW LEVEL SECURITY — deliberately NOT enabled  *(analysis)*
+**What 0109 does:** for the **67** remaining functions (the 83 SECURITY DEFINER
+functions minus those 6, minus the 10 `dev_seed_*` already locked in 0108) it runs
+`REVOKE EXECUTE … FROM PUBLIC, anon` then `GRANT EXECUTE … TO authenticated,
+service_role`. Each was confirmed to be called only from a logged-in
+patient/clinician surface (checked against the app's `.rpc()` call sites; the only
+pre-login auth goes through Supabase Auth, not a custom function), so removing
+`anon` changes no legitimate behaviour. Verified in the harness: post-0109 the 67
+targets show `anon`=0 / `authenticated`=67 / `service_role`=67, the 6 helpers still
+carry `anon`, the 10 dev functions are unchanged, and a from-scratch replay of all
+migrations is clean.
 
-`FORCE ROW LEVEL SECURITY` makes RLS apply to the table **owner** too. The 83
-`SECURITY DEFINER` functions are owned by `postgres` and currently rely on the
-owner-bypass. Forcing RLS is unsafe here:
+**Residual (live-only) check:** the harness can't exercise the logged-out UI, so
+post-deploy confirm that loading the app while signed out — and the visit-code /
+clinician-session flows while signed in — produces no `permission denied for
+function` errors.
 
-1. **76 policies are `TO PUBLIC` but 16 are `TO authenticated`.** Under FORCE
-   RLS, the `postgres`-context operations inside the functions would be filtered
-   by RLS, and on the tables whose only policy is `TO authenticated` there is
-   **no policy that applies to the definer context → silent default-deny**,
-   breaking those write paths.
-2. **Not verifiable in this harness** — here `postgres` is a superuser with
-   `BYPASSRLS`, so it ignores FORCE RLS entirely; the harness would show a green
-   that production wouldn't reproduce.
-3. **Low marginal value here** — every write already goes through the audited,
-   gated RPCs in §3, and direct table access is already RLS-restricted for
-   `anon`/`authenticated`. FORCE RLS mainly guards against a *bug* in a definer
-   function, at the cost of a plausible production-wide write outage.
+### F3 — FORCE ROW LEVEL SECURITY — reviewed again; deliberately NOT enabled  *(analysis, no migration)*
 
-**If it's ever wanted**, the safe path is: (a) add owner/`public`-applicable
-policies (or convert the 16 `TO authenticated` policies) so the definer context
-is covered; (b) confirm Supabase's `postgres` role lacks `BYPASSRLS` in the
-target project; (c) roll out table-by-table against a Supabase **branch/staging**
-with real auth, exercising each RPC; (d) only then enable in production. This is
-a separate, staging-tested change — not a migration to apply blind.
+`FORCE ROW LEVEL SECURITY` makes RLS apply to the table **owner** too. Current
+posture (measured): **28** tables in `public`, **all** with RLS enabled, **none**
+forced; **76** policies are `TO PUBLIC`, **16** are role-scoped only, and **3**
+tables have *only* role-scoped policies. The conclusion isn't merely "hard to
+verify" — FORCE RLS is the wrong tool for this app's architecture:
+
+1. **The threat it addresses is absent here.** FORCE RLS protects against the table
+   *owner* reading/writing around RLS. This app never connects as the owner: all
+   access is via the `authenticated` / `service_role` clients (RLS applies) or via
+   SECURITY DEFINER functions. There is no owner-context query path to guard.
+
+2. **It would break the SECURITY DEFINER pattern, by design.** Those functions run
+   as `postgres` (the owner) and intentionally operate *above* row-scoping — e.g. a
+   clinician function reads a patient's rows after the coarse
+   `clinician_can_access_patient` gate. Under FORCE RLS: on the 3 tables with only
+   role-scoped policies the owner context has **no applicable policy → silent
+   default-deny**; and even where a `TO PUBLIC` policy like
+   `patient_id = current_patient_id()` exists, it would filter a *clinician's*
+   definer function down to the clinician's own patient rows (i.e. nothing),
+   silently breaking clinician and admin read/write paths.
+
+3. **Unverifiable in the replay harness.** Sandbox `postgres` has `BYPASSRLS`, so it
+   ignores FORCE RLS — the harness would show a false green. Any attempt would need
+   a Supabase branch with real JWTs.
+
+**Recommendation: do not enable FORCE RLS.** The sound posture for this design is
+the one already in place — RLS enabled on every table (protecting direct
+`authenticated` access) plus trusted, individually-gated SECURITY DEFINER functions
+for cross-cutting access (§3), now with the `anon` attack surface removed
+(F2 / 0109). If a future redesign ever moved cross-cutting logic out of definer
+functions, FORCE RLS could be revisited via: add owner/`public`-applicable policies
+covering the definer context, confirm the project's `postgres` role lacks
+`BYPASSRLS`, then roll out table-by-table on a Supabase branch exercising every
+patient/clinician/admin flow — never a blind migration.
 
 ---
 

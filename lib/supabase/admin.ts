@@ -334,3 +334,150 @@ export function useConfirmResearchPurge() {
     }
   });
 }
+
+// ---------------------------------------------------------------------------
+// Studies (migration 0110). Study membership is orthogonal to research
+// consent and does NOT change the consent-gated REDCap export; it is an
+// admin grouping for picking out which consented patients are in which study.
+// ---------------------------------------------------------------------------
+
+export interface StudySummary {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+  active: boolean;
+  memberCount: number;
+}
+
+export interface StudyPatientRow {
+  patientId: string;
+  displayName: string | null;
+  /** REDCap record_id; null when the patient is not research-consented. */
+  studyCode: string | null;
+  researchConsent: boolean;
+  withdrawnAt: string | null;
+  purgedAt: string | null;
+  cycleCount: number;
+  studyIds: string[];
+}
+
+export interface StudyOverview {
+  studies: StudySummary[];
+  patients: StudyPatientRow[];
+}
+
+/** Admin read of all studies + every consented-or-enrolled patient. */
+export function useStudyOverview(enabled: boolean) {
+  return useQuery({
+    queryKey: ['studyOverview'],
+    enabled,
+    queryFn: async (): Promise<StudyOverview> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase.rpc('study_overview');
+      if (error) throw error;
+      const raw = (data ?? {}) as {
+        studies?: Record<string, unknown>[];
+        patients?: Record<string, unknown>[];
+      };
+      return {
+        studies: (raw.studies ?? []).map((s): StudySummary => ({
+          id: s.id as string,
+          key: s.key as string,
+          name: s.name as string,
+          description: (s.description as string) ?? null,
+          active: Boolean(s.active),
+          memberCount: Number(s.member_count ?? 0)
+        })),
+        patients: (raw.patients ?? []).map((p): StudyPatientRow => ({
+          patientId: p.patient_id as string,
+          displayName: (p.display_name as string) ?? null,
+          studyCode: (p.study_code as string) ?? null,
+          researchConsent: Boolean(p.research_consent),
+          withdrawnAt: (p.withdrawn_at as string) ?? null,
+          purgedAt: (p.purged_at as string) ?? null,
+          cycleCount: Number(p.cycle_count ?? 0),
+          studyIds: ((p.study_ids as string[]) ?? []).filter(Boolean)
+        }))
+      };
+    }
+  });
+}
+
+export function useCreateStudy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      key: string;
+      name: string;
+      description?: string | null;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('create_study', {
+        p_key: input.key,
+        p_name: input.name,
+        p_description: input.description ?? null
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['studyOverview'] })
+  });
+}
+
+export function useUpdateStudy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      studyId: string;
+      name?: string | null;
+      description?: string | null;
+      active?: boolean | null;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('update_study', {
+        p_study_id: input.studyId,
+        p_name: input.name ?? null,
+        p_description: input.description ?? null,
+        p_active: input.active ?? null
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['studyOverview'] })
+  });
+}
+
+export function useAddPatientToStudy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      studyId: string;
+      patientId: string;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('add_patient_to_study', {
+        p_study_id: input.studyId,
+        p_patient_id: input.patientId
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['studyOverview'] })
+  });
+}
+
+export function useRemovePatientFromStudy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      studyId: string;
+      patientId: string;
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('remove_patient_from_study', {
+        p_study_id: input.studyId,
+        p_patient_id: input.patientId
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['studyOverview'] })
+  });
+}

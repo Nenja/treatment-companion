@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useSetTextScale } from '@/lib/supabase/textScale';
@@ -23,7 +22,6 @@ import { professionLabel } from '@/lib/professionLabel';
  */
 export function AccountMenu() {
   const { user, profile, signOut } = useAuth();
-  const router = useRouter();
   const locale = useLocale();
   const tAppearance = useTranslations('appearance');
   const tA11y = useTranslations('a11y');
@@ -87,10 +85,21 @@ export function AccountMenu() {
     ? `${baseRoleLabel} · Admin`
     : baseRoleLabel;
 
+  // Account-menu destinations use a hard navigation. The check-in wizard
+  // swallows soft client-router navigations (it is why home-exit there
+  // already uses window.location), which previously left the Profile/Admin
+  // menu items doing nothing from that screen.
+  const navHard = (path: string) => {
+    setOpen(false);
+    window.location.assign(path);
+  };
+
   const doSignOut = async () => {
     setOpen(false);
     await signOut();
-    router.replace(locale === 'en' ? '/login' : `/${locale}/login`);
+    // Hard navigation: from the check-in wizard a soft router redirect is
+    // swallowed, so go through the browser to guarantee we reach login.
+    window.location.assign(locale === 'en' ? '/login' : `/${locale}/login`);
   };
 
   return (
@@ -198,12 +207,9 @@ export function AccountMenu() {
               and colour appearance all live there. */}
           <button
             type="button"
-            onClick={() => {
-              setOpen(false);
-              router.push(
-                locale === 'en' ? '/profile' : `/${locale}/profile`
-              );
-            }}
+            onClick={() =>
+              navHard(locale === 'en' ? '/profile' : `/${locale}/profile`)
+            }
             role="menuitem"
             className="block w-full border-b border-stone/50 px-4 py-3 text-left text-[14px] font-medium text-ink-soft hover:bg-stone-soft"
           >
@@ -217,14 +223,13 @@ export function AccountMenu() {
           {profile.isAdmin && (
             <button
               type="button"
-              onClick={() => {
-                setOpen(false);
-                router.push(
+              onClick={() =>
+                navHard(
                   locale === 'en'
                     ? '/clinician/admin'
                     : `/${locale}/clinician/admin`
-                );
-              }}
+                )
+              }
               role="menuitem"
               className="block w-full border-b border-stone/50 px-4 py-3 text-left text-[14px] font-medium text-ink-soft hover:bg-stone-soft"
             >
@@ -239,7 +244,6 @@ export function AccountMenu() {
           <button
             type="button"
             onClick={() => {
-              setOpen(false);
               requestTutorialReplay();
               const dest =
                 profile.role === 'clinician'
@@ -247,7 +251,7 @@ export function AccountMenu() {
                   : profile.role === 'physiotherapist'
                     ? '/physio'
                     : '/';
-              router.push(locale === 'en' ? dest : `/${locale}${dest === '/' ? '' : dest}`);
+              navHard(locale === 'en' ? dest : `/${locale}${dest === '/' ? '' : dest}`);
             }}
             role="menuitem"
             className="block w-full border-b border-stone/50 px-4 py-3 text-left text-[14px] font-medium text-ink-soft hover:bg-stone-soft"

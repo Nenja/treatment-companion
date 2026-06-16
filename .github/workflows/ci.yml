@@ -108,3 +108,14 @@ jobs:
 
       - name: Schema-contract check (app queries vs schema)
         run: node scripts/check-schema-contract.mjs schema.json
+
+      # Runtime RLS-denial tests. Converts the throwaway DB (real policies, all
+      # migrations applied) into one where auth.uid() is impersonatable, then
+      # asserts cross-patient isolation, clinician-session gating (incl. the
+      # 1-hour staleness cutoff), anonymous denial, the 0096 care-team-note
+      # right-of-access boundary, and admin-only study tables. Each denial is
+      # paired with a positive control so a "deny everything" bug can't pass.
+      - name: RLS-denial tests
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/ci/rls-test-setup.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/ci/rls-tests.sql

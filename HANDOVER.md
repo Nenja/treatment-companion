@@ -13,7 +13,11 @@
 > likely next” sections + build tag) and write a fresh root `BUILD.txt`. Treat
 > all of this as part of the deliverable, not an afterthought.
 >
-> _Last updated for batch: `sentry-enable-1`. **Turned Sentry on** (no domain needed — it captures from the `.vercel.app` URL). The only code change: the browser init was renamed `sentry.client.config.ts` → **`instrumentation-client.ts`** (Next.js loads that natively; the old file was **not** being loaded without `withSentryConfig`, so browser errors were silently uncaptured). Server/edge were already correct via `instrumentation.ts`, and `app/global-error.tsx` already reports to Sentry. No dependency or app-logic change. Privacy posture unchanged and confirmed: DSN from `NEXT_PUBLIC_SENTRY_DSN`, `sendDefaultPii:false`, a `beforeSend` that strips request bodies/cookies/headers/query-strings/user/breadcrumb-URLs, traces off; the CSP already allows the EU ingest host. Verified tsc clean + build 109/109. Runbook in **`docs/SENTRY_SETUP.md`** (create an EU-region Sentry project, set `NEXT_PUBLIC_SENTRY_DSN` + `NEXT_PUBLIC_SENTRY_ENVIRONMENT` in Vercel, redeploy, alert rules, DPIA notes; source-maps via withSentryConfig is the one worthwhile later upgrade). **Deploy: add `instrumentation-client.ts`, DELETE `sentry.client.config.ts`, then do the dashboard steps in the runbook.** See §7._
+> _Last updated: **2026-06-15 - clean handover, deploy applied.** Current assessment: `docs/ASSESSMENT-2026-06-15.md` (supersedes `ASSESSMENT-2026-06.md`). This session shipped six deliveries (next16-upgrade-1 / secdef-harden-1 `0108` / e2e-autorun-1 / deps-secfix-1 next-intl 4.13.0+Dependabot / sentry-enable-1 / audit-followups-1 `0109`+FORCE-RLS-decision) - **all now applied live by Nikolaj** (0108+0109 run, Sentry DSN set, deps committed + Dependabot toggles on, renamed-away files deleted) **except backups**, the one remaining operational item (Supabase Pro + PITR + a tested restore). Of the things in Nikolaj's control, backups is the last open item before the external gates (regulatory/DPO sign-off, native-Danish clinical review). **Process note: trust the repo/filesystem over any carried summary.** See section 7 + the top of section 8._
+>
+> _**Update 2026-06-15 (later) — `studies-and-fixes-1`:** new migration **`0110_studies.sql`** (study + study_membership, admin-gated RPCs, study_overview) adds an admin "Studies / Study patients" view — group consented patients into studies and pick them out by REDCap record_id; membership is orthogonal to consent and does **not** change the consent-gated export. Plus five patient-surface fixes (profile language now persists + Back is locale-aware; login honours browser language via next-intl `localeDetection`; DOB picker no longer squished; account-menu navigation works from the check-in wizard). Migrations now **0001–0110** — run `0110`. Build 0110 Method-D verified (15 cases), font-stub build clean, tsc clean, i18n parity (en/da/sv/nb). See §7._
+>
+> _**Update 2026-06-15 (later still) — `rls-denial-tests-1`:** a runtime RLS-denial test suite now runs in CI (real policies, impersonatable `auth.uid()`): cross-patient isolation, clinician-session gating incl. the 1-hour staleness cutoff, anonymous denial, the 0096 care-team-note boundary, and admin-only `study` tables — each with a positive control, negative-control validated. **No app/migration change** (test infra + CI only). It surfaced a documentation/spec divergence: care-team notes (handoff + therapist notes) are **patient-readable for the patient's own rows** since migration `0096` (GDPR right-of-access), which contradicts the "never patient-visible" line in §5.13 / TRANSFER_PROMPT — §5.13 corrected; a decision for Nikolaj on whether that's intended. See §5.14 + §7._
 
 ---
 
@@ -351,8 +355,16 @@ non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
   0087).** New `treatment_handoff` table (1:1 with the cycle) + RLS + the
   clinician-only `set_treatment_handoff` RPC. The physician→therapist note
   (§5.13). DB-verified locally (§5.12 D).
+- `0110_studies.sql` — **`studies-and-fixes-1`, RUN THIS.** New `study` +
+  `study_membership` tables (admin-only RLS) and admin-gated RPCs
+  (`create_study`, `update_study`, `add_patient_to_study`,
+  `remove_patient_from_study`, `study_overview`). Study membership is
+  orthogonal to research consent and does **not** change the consent-gated
+  export; `add_patient_to_study` mints a `study_code` (REDCap record_id) for a
+  consented, non-purged member that lacks one (reuses `study_code_seq`, 0106).
+  Method-D verified, 15 cases (§7).
 
-> If unsure whether the user's DB is current, confirm 0062–0088 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag, **0081** cycle-agnostic suggestions, **0082** check-in undo, **0083** physio goal signals, **0084** physio GAS value, **0085** cycle-agnostic physio suggestions, **0086** goal versioning, **0087** link goal to lineage, **0088** physician→therapist handoff note).
+> If unsure whether the user's DB is current, confirm 0062–0088 are applied (0066 is dev-only; **0067** GAS suggestion-approval, **0068** read-aloud, **0069** wearable ingestion, **0070** treatment-modality, **0071** video task protocol, **0072** clinic video score, **0073** session switching, **0074** NRS baseline/target, **0075** baseline video, **0076** clinic video NRS, **0077** wearable enabled, **0078** nav style, **0079** ITB therapy, **0080** goal therapy tag, **0081** cycle-agnostic suggestions, **0082** check-in undo, **0083** physio goal signals, **0084** physio GAS value, **0085** cycle-agnostic physio suggestions, **0086** goal versioning, **0087** link goal to lineage, **0088** physician→therapist handoff note, **0110** studies + study membership).
 
 ---
 
@@ -669,9 +681,30 @@ the SQL *before* shipping instead of only reasoning about it:
    `lineage_id` was NOT NULL with no default, so the first real goal-approval
    after the migration would have failed; the fix (a BEFORE INSERT lineage
    trigger) was found by the test.
-- **Caveat:** the harness stubs RLS/auth, so it proves the SQL logic and the
-  RPC guards, NOT the real RLS policies — those still need checking on the live
-  Supabase. Still the highest-leverage check available without the user's DB.
+- **Caveat:** the Method-D harness stubs RLS/auth, so it proves the SQL logic and
+  the RPC guards, NOT the real RLS policies. **As of `rls-denial-tests-1` the real
+  policies ARE now exercised** by the RLS-denial suite (§5.14) — a separate harness
+  that applies the real bootstrap + all migrations, makes `auth.uid()`
+  impersonatable, and asserts denial under the actual policies. Live Supabase is
+  still the final word, but "looks right" is now "verified in CI" for the core
+  isolation properties.
+
+### 5.14 RLS-denial test suite (`rls-denial-tests-1`, CI)
+Runtime proof that the database denies what it should — the highest-value check
+for a clinical app holding real patient data. Files: `supabase/ci/rls-test-setup.sql`
+(claim-aware `auth.uid()` reading a `test.uid` GUC; Supabase-like grants so any
+denial is RLS, not a missing GRANT; an `_assert()` that raises; deterministic
+fixtures) and `supabase/ci/rls-tests.sql` (the assertions). Runs in CI's
+`migrations` job after the schema snapshot; reproduce locally with
+`supabase/ci/run-rls-tests.sh`. Each impersonates a user via `SET ROLE` +
+`set_config('test.uid', …)` so the **real** policies decide visibility; every
+denial is paired with a positive control. Covers: cross-patient isolation
+(patient/profile/notes), clinician-session gating including the **1-hour
+staleness cutoff**, anonymous denial, the **0096** care-team-note right-of-access
+boundary (own rows yes, others no), and **admin-only `study`/`study_membership`**
+(0110). Negative control verified: injecting a `using(true)` patient policy makes
+the suite fail; removing it returns to green. **No app/migration change** — test
+infra + CI only.
 
 ### 5.13 Physician → therapist handoff note (`physician-therapist-note`, 0088)
 The **one** sanctioned downward channel (clinic → therapist). The treating
@@ -680,14 +713,28 @@ weekly community therapist plus a **"did the treatment change this visit?"**
 flag (Adjusted / No change / Not specified). Closes the therapist-audit gaps:
 no feedback on a physician action, and no since-last-session delta.
 
-- **Never patient-visible** is enforced by the data model, not just the UI.
+- **⚠️ Patient visibility changed in 0096 (`patient_care_team_notes`).** §5.13
+  was written for 0088/0095, when the handoff/therapist notes had **no patient
+  SELECT policy**. Migration **0096 deliberately added a patient self-read** on
+  all three care-team channels (`treatment_handoff`, `goal_handoff_note`,
+  `therapist_note`) — `using (patient_id = current_patient_id())` — on the
+  GDPR right-of-access rationale (the patient may see records about their own
+  care, surfaced read-only on the patient page). So these notes are **patient-
+  readable for the patient's OWN rows** (never another patient's; clinician
+  access unchanged). The phrasing below ("never patient-visible", "no patient
+  SELECT policy at all") describes the *original* 0088/0095 design and is
+  **superseded by 0096** — caught by the RLS-denial tests (§5.14). If notes
+  were ever intended to be author-private from the patient, that is now a
+  product decision to revisit, not the current behaviour.
+- **(Original 0088/0095 design, for context — superseded by 0096:)**
+  Never patient-visible was enforced by the data model, not just the UI.
   The patient already has row-level read on `treatment_session` (treated-muscles
   pop-up) and Postgres RLS is row- not column-level, so the note **cannot** sit
   on `treatment_session`. It lives in **`treatment_handoff`** (1:1 with the
-  cycle; §4.2), which has **no patient SELECT policy at all**. Read =
+  cycle; §4.2). Read =
   `clinician_can_access_patient(patient_id)` (role-agnostic → physician +
-  therapist; patient excluded). Write = `set_treatment_handoff` (SECURITY
-  DEFINER, **clinician-only** — a physiotherapist cannot author it).
+  therapist) plus the 0096 patient self-read. Write = `set_treatment_handoff`
+  (SECURITY DEFINER, **clinician-only** — a physiotherapist cannot author it).
 - **Physician UI** — `app/[locale]/clinician/treatment/page.tsx`: a sage "Note
   for the therapist" panel under Session notes (tri-state flag buttons +
   short note, maxLength 500, with a "not shown to the patient" hint).
@@ -850,6 +897,33 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **`rls-denial-tests-1` — runtime RLS-denial suite + a notable finding.** Test infrastructure + CI only; **no app or migration change**, so deploying is just dropping the zip (no SQL to run). Adds `supabase/ci/rls-test-setup.sql` + `supabase/ci/rls-tests.sql`, a local runner `supabase/ci/run-rls-tests.sh`, and a step in CI's `migrations` job (full detail §5.14). The suite applies the real bootstrap + every migration, makes `auth.uid()` impersonatable, and asserts denial under the **real** policies: cross-patient isolation, clinician-session gating incl. the 1-hour staleness cutoff, anonymous denial, the 0096 care-team-note boundary, and admin-only `study` tables — each with a positive control. **Negative control verified** (a `using(true)` patient policy makes it fail; removing it passes). Verified locally on a throwaway PG16: all assertions pass; the prior `studies-and-fixes-1` build/tsc are unchanged (no app code touched) and tsc re-confirmed clean.
+  - **★ Finding the suite surfaced — care-team notes are patient-readable.** The docs said the physician→therapist handoff note and therapist notes are **never patient-visible** (HANDOVER §5.13, TRANSFER_PROMPT "the only sanctioned downward channel… never patient-visible"). That was true at 0088/0095 but **migration `0096_patient_care_team_notes` deliberately added a patient self-read** on `treatment_handoff`, `goal_handoff_note`, and `therapist_note` (`patient_id = current_patient_id()`), on a GDPR right-of-access rationale. So a patient **can** read the notes about their own care (never another patient's — that isolation is intact and tested). This is not a code bug — 0096 is intentional and documents itself — but it **contradicts the stated invariant** and has clinical-privacy weight: a clinician or physiotherapist writing one of these notes should know the patient can read it. §5.13 is corrected. **Decision for Nikolaj:** confirm patient-readable is intended, or treat author-private notes as a product change to make.
+
+---
+
+## 7-prev. `studies-and-fixes-1` — study membership + five patient-surface fixes
+
+- **`studies-and-fixes-1`.** App code + one new migration. Deploy = upload zip → Vercel; run `0110` in the Supabase SQL editor.
+  - **Studies (migration `0110_studies.sql`, RUN THIS).** Two tables — `study` (admin-managed; immutable `key` slug, `name`, `description`, `active`) and `study_membership` (many-to-many patient↔study, unique per pair, `on delete cascade`). Both RLS admin-only (`current_user_is_admin()`, mirrors `patient_admin_all`). Admin-gated SECURITY DEFINER RPCs (all `set search_path = public`, `revoke from public` + `grant to authenticated, service_role`): `create_study`, `update_study` (name/description/active; key immutable), `add_patient_to_study` (idempotent; mints a `study_code`/REDCap record_id for a member that is consented + not purged + lacks one, reusing `study_code_seq` from 0106), `remove_patient_from_study`, and `study_overview()` (one read → studies with member counts + every consented-or-enrolled patient with record_id, consent status, cycle count, study_ids). **Membership is orthogonal to research consent and does NOT change the export** — `export_research_dataset` (0106) is untouched and still consent-gated. **Method-D verified** (throwaway PG16, stubbed `current_user_is_admin`/`current_app_role`/`auth.uid` via `_test_ctx`): 15 cases — admin guards on all five RPCs, blank-key rejection, idempotent re-add, code minted only for consented patients, multi-study membership, not-found guards, immutable key on update, cascade FK present, audit trail.
+  - **Admin UI:** `/clinician/admin` gains a **Studies** manager (create / rename / activate-deactivate) and a filterable **Study patients** list (all members · consented-no-study · members-who-withdrew · by study), each row showing the REDCap record_id, consent-status chip, cycle count, study chips with remove, and an add-to-study control. Hooks in `lib/supabase/admin.ts` (`useStudyOverview` + four mutations). **Scope note:** a patient appears here only once research-consented or already enrolled (the overview returns consented-or-member) — the realistic flow is *patient consents → shows under "consented, no study" → admin adds to a study*. Enrolling a never-consented patient is intentionally not offered (keeps the consent-gate posture).
+  - **Fix — profile language.** `LanguageSelect` (cards) now hands the choice to the profile page via `onChoose`; the page **awaits** the `preferred_locale` write before reloading (so it can't be lost to the page unload), routes through the unsaved-changes guard, then hard-navigates to the new-locale path. Profile **Back** now goes to the locale-aware role home (was `router.back()`, which returned to the English `/` you came from). No floating Save needed.
+  - **Fix — login language.** `i18n/routing.ts` `localeDetection` flipped to **true**: a Danish/Swedish/Norwegian browser now lands on its localized entry instead of English. First explicit switcher choice sets the `NEXT_LOCALE` cookie which then pins it (so EN is still forceable by picking it once). **Behaviour change — QA:** confirm an English browser still lands on `/`.
+  - **Fix — DOB picker.** `BirthdatePicker` row moved from a squished `flex` to a 3-track grid (`minmax(0,…)`, month widest) so month names show on a phone.
+  - **Fix — profile from check-in.** `AccountMenu` destinations now use `window.location.assign` (hard nav). The check-in wizard swallows soft client-router navigations (same reason home-exit there already uses `window.location`), which left Profile/Admin doing nothing from that screen. `signOut` post-redirect also hardened.
+  - **Not a bug (no change):** goal text shows in the language the clinician typed it — it is stored data, not a UI string, so it isn't auto-translated.
+  - **Deferred (spec-now-build-later):** biometric login + 2FA. Recommendation captured — TOTP 2FA (Supabase MFA, GA, free; enforce for clinicians/admin, gate sensitive RPCs at `aal2`); biometric as a native-app convenience (device biometrics unlocking a stored session), web passkeys held until Supabase WebAuthn leaves experimental. Best done with the native track, after backups + the external gates.
+  - **Sandbox verification:** font-stub build compiled clean (zero warnings; `layout.tsx` SHA restored `d6901997…`, zero `BUILD-STUB` remnants), `tsc --noEmit` clean, i18n parity across en/da/sv/nb (da carries its pre-existing `_meta` review marker). **Cannot verify here (please QA):** rendered screens / real-device DOB layout, the live locale persist + Back round-trip, `localeDetection` on real browsers, the account-menu nav from the actual check-in wizard, and `0110` RLS/RPC behaviour under live auth.
+
+---
+
+## 7-prev. Handover snapshot (2026-06-15) — six security/ops deliveries
+
+- **SECURITY DEFINER audit follow-ups F2 + F3 (`audit-followups-1`).** SQL + docs only — no app code change, no Vercel deploy needed for this batch.
+  - **F2 — `supabase/migrations/0109_tighten_anon_execute.sql` (least privilege on `anon`).** EXECUTE defaulted to PUBLIC, so `anon` could invoke every SECURITY DEFINER function (harmless on its own — they self-gate — but needless reach). 0109 does `REVOKE EXECUTE … FROM PUBLIC, anon` then `GRANT … TO authenticated, service_role` on **67** functions. **The 6 kept on `anon`** are the only ones any RLS policy references (proved via `pg_depend`), all via `TO PUBLIC` policies, and policy expressions run as the querying role — so `anon` must keep EXECUTE or anon queries would error instead of returning nothing: `clinician_can_access_patient`, `current_app_role`, `current_clinician_id`, `current_patient_id`, `current_role_is_care_professional`, `current_user_is_admin`. The 10 `dev_seed_*` stay service-role-only (0108). Every one of the 67 is called only from a logged-in surface (the only pre-login path is Supabase Auth, not a custom RPC), so no behaviour change. **Verified:** harness post-0109 shows 67 targets `anon`=0/`authenticated`=67/`service_role`=67, the 6 helpers still carry `anon`, dev fns unchanged; from-scratch replay of all migrations clean. **Live-only check** (the harness can't run the logged-out UI): after applying, load the app signed out + run the visit-code/clinician-session flows signed in, and confirm no `permission denied for function` errors.
+  - **F3 — FORCE RLS: reviewed, NOT enabled (analysis, no migration).** Measured: 28 tables, all RLS-enabled, none forced; 76 `TO PUBLIC` + 16 role-scoped policies; 3 tables have only role-scoped policies. FORCE RLS guards against the *owner* bypassing RLS — a path this app doesn't have (it connects only as `authenticated`/`service_role` or via definer functions). Enabling it would subject the trusted, gated SECURITY DEFINER functions (which run as owner and intentionally read across row-scoping) to RLS → silent default-deny on the 3 owner-uncovered tables, and `TO PUBLIC` patient-scoped policies would wrongly filter clinician functions to nothing. Recommendation: keep the current posture (RLS on + gated definers + F2). Full reasoning + the staged recipe (if ever revisited) in `docs/audits/security-definer-audit-2026-06.md` §F3.
+  - **Files:** `supabase/migrations/0109_tighten_anon_execute.sql` (+ standalone copy), `docs/audits/security-definer-audit-2026-06.md` (F2/F3 updated). **Apply:** run `0109` in the Supabase SQL editor. Independent of the still-pending 0108 / Next-16 / deps-secfix / Sentry items.
 
 - **Sentry turned on (`sentry-enable-1`).** tsc clean, build 109/109. No dependency or app-logic change — one file rename plus a runbook.
   - **Why it wasn't working:** the app had `sentry.client.config.ts`, but with **no `withSentryConfig`** in `next.config.ts` nothing imported it into the browser bundle, so **client-side errors were never captured** (server/edge were fine via `instrumentation.ts`). Per Sentry's guidance, renamed it to **`instrumentation-client.ts`**, which Next.js loads natively — browser capture now works without adding the build plugin. `app/global-error.tsx` already calls `Sentry.captureException`, so root render crashes report too once the client SDK initialises.
@@ -2694,18 +2768,34 @@ new-goal + approve calibration forms; current).
 
 ## 8. Pending / next slices
 
-**★ HIGH PRIORITY (Nikolaj flagged, 2026-06) — make the E2E smoke run automatically.**
-Today `.github/workflows/e2e.yml` is manual (`workflow_dispatch`) only, so a broken
-login or check-in is only caught when someone remembers to click "Run workflow".
-Promote it to run on its own: add a `schedule:` (cron) trigger and/or a post-deploy
-hook, keep it pointed at production via `E2E_BASE_URL` + the patient secrets, and
-keep it OFF the push/PR path so it never blocks a deploy. A natural first task for
-the incoming developer. Note the check-in test consumes that week's prompt on
-success, so either seed a fresh prompt per scheduled run or lean on its graceful
-SKIP and treat the login / signed-out-redirect / sign-in checks as the always-on
-signal. (Full suite passes today: login renders · signed-out → /login · patient
-sign-in · complete a weekly check-in.)
+**Roadmap & current status - see `docs/ASSESSMENT-2026-06-15.md`** (supersedes `ASSESSMENT-2026-06.md`).
+Headline: framework-RCE risk closed (Next 16.2.7), SECURITY DEFINER surface audited + hardened, Sentry
+live, E2E auto-runs, Dependabot in - and as of 2026-06-15 all of this is **applied live**. What still
+gates real patients is **not code**: (1) regulatory + DPO sign-off (external), (2) backups + a tested
+restore (the one open ops item), (3) native-Danish clinical-string review.
 
+**★ ONE DEPLOY ITEM REMAINS: BACKUPS.** Confirm Supabase Pro + point-in-time recovery is on, and **test
+one restore** into a scratch project at least once (procedure in `OPS.md`). A backup never restored is a
+hope, and patient data is the one thing that cannot be recreated - this is the highest data-loss risk.
+
+**Applied live by Nikolaj (2026-06-15):** `0108` + `0109` run in the Supabase SQL editor; Sentry DSN set
+in Vercel (EU project); `package.json` + `package-lock.json` committed together + `.github/dependabot.yml`
++ the two Dependabot toggles on; the renamed-away `middleware.ts` / `sentry.client.config.ts` removed.
+*One thing worth a quick eyeball if not already done: load the app logged-out and run a visit-code /
+clinician-session flow once, to confirm `0109` surfaced no `permission denied for function` (static
+analysis says it won't - the app makes no anon RPC calls - but it's a 10-second confirm for a clinical app).*
+
+**Done this session (in the repo; full detail in section 7):** next16-upgrade-1 (Next 16.2.7),
+secdef-harden-1 (`0108`), e2e-autorun-1 (E2E now runs daily + after each prod deploy + manual),
+deps-secfix-1 (next-intl 4.13.0 security fix + Dependabot), sentry-enable-1, and audit-followups-1
+(`0109` + the FORCE-RLS decision).
+
+**Done this session (later) — `studies-and-fixes-1` (in the repo; full detail in §7):** migration `0110`
+(study + study_membership + admin RPCs) with the admin Studies / Study-patients view, plus four
+patient-surface fixes (profile language persist + locale-aware Back, login `localeDetection`, DOB-picker
+layout, account-menu nav from the check-in wizard). **Run `0110`** in Supabase. The admin research-mode
+study list (previously open in §8) is now **built**. Biometric login + 2FA remain **specced/deferred**
+(TOTP via Supabase MFA; biometric as a native-app convenience; web passkeys held until GA).
 
 ### Simplification backlog (the 11-item declutter list — track here)
 Status as of `simplify-cockpit-1`. "We expanded too much" — this list drives the
