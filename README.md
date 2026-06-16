@@ -1,6 +1,6 @@
 # Treatment Companion
 
---A patient-first treatment companion for adults receiving botulinum toxin
+A patient-first treatment companion for adults receiving botulinum toxin
 treatment for spasticity. Mobile-first, accessibility-first, regulatory-safe.
 
 This repository holds the **slice 1 prototype** — the shell, data model,
