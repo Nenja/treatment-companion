@@ -1,54 +1,51 @@
-BUILD - eslint-ci-1   (ESLint flat config wired into CI + a latent-bug finding)
+BUILD - hooks-refactor-1   (fix the treatment-page rules-of-hooks violation)
 
 WHAT THIS IS
-  Cumulative repo snapshot. Tooling + CI, on top of e2e-coverage-1 /
-  staging-ci-gate-1 / rls-denial-tests-1 / studies-and-fixes-1. NO new
-  migration. The ONLY app-code touch is documented as a deliberate NON-change
-  (see the finding) - no behaviour changed. Migrations still 0001-0110.
+  Cumulative repo snapshot, on top of eslint-ci-1. App-code fix to ONE file
+  plus removing the now-unneeded ESLint override. NO new migration, nothing to
+  run. Migrations still 0001-0110.
 
-WHAT CHANGED THIS INCREMENT
-  ESLint (the last P1 code-quality gap from the assessment)
-    - eslint.config.mjs - ESLint 9 flat config: @eslint/js + typescript-eslint
-      recommended, eslint-plugin-react-hooks, @next/eslint-plugin-next
-      (core-web-vitals). devDependencies + package-lock updated.
-    - package.json: new "lint": "eslint ." script, also folded into "verify".
-    - .github/workflows/ci.yml: a "Lint" step in the verify job (npm ci will
-      now install ESLint and run it on every push/PR).
-    - GREEN BASELINE by design so it gates immediately instead of red-flooding:
-      correctness-class rules are ERRORS (React hooks rules, Next footguns,
-      broken code); stylistic / gradually-tightenable rules are WARNINGS that
-      surface without blocking. Empty catch blocks are allowed (intentional
-      pattern). Current: 0 errors, ~79 warnings (50 no-non-null-assertion,
-      25 no-unused-vars, 2 exhaustive-deps, 2 the scoped hooks rule below).
-      The ~79 warnings are good first clean-up tasks for the developer; ratchet
-      rules from 'warn' to 'error' as they're cleared.
+WHAT CHANGED
+  app/[locale]/clinician/treatment/page.tsx - split into two components:
+    - TreatmentRecordInner (thin shell): data fetching + the auth/role/no-
+      session redirect effects + the loading/error guards. Renders the child
+      only once data has loaded.
+    - TreatmentRecordLoaded({ data, session, onSessionRefetch }): holds ALL the
+      loaded-data hooks (form state, hydrate effect, the two previously-
+      offending effects, derived values, handlers, the JSX).
+    Because the child mounts only after the guards pass, every hook now runs
+    unconditionally in a constant order. This removes the latent React
+    "rendered more hooks than during the previous render" crash that the two
+    useEffects-after-an-early-return caused.
 
->>> FINDING - a real React rules-of-hooks violation <<<
-  app/[locale]/clinician/treatment/page.tsx calls TWO useEffects AFTER its
-  loading/error early-returns. On the loading render they're skipped; on the
-  loaded render they run -> React "rendered more hooks than during the previous
-  render" hazard = a latent crash on that core clinician screen.
-  It cannot be fixed by moving code: line ~351 destructures non-null loaded
-  data that the guard guarantees (so the guards can't drop below the hooks),
-  and the hooks depend on values derived after that destructure (so they can't
-  rise above the guards). CORRECT FIX: extract the loaded view into a child
-  component so the parent's guards precede all hooks - a focused, separately
-  tested refactor. Until then react-hooks/rules-of-hooks is a SCOPED WARNING
-  for THAT ONE FILE only (commented in eslint.config.mjs, not silenced); it
-  stays a hard ERROR everywhere else. RECOMMEND doing the refactor as its own
-  task (Claude can take it next).
+    Behaviour preserved: the hooks moved wholesale (same order; they still run
+    only when data is loaded, exactly as before). Props are typed from the
+    hooks' own return types (NonNullable<ReturnType<...>['data']>), so nothing
+    is loosened.
+
+  eslint.config.mjs: removed the scoped warning override for this file.
+    react-hooks/rules-of-hooks is now a hard ERROR everywhere, including here.
 
 VERIFIED HERE
-  - npm run lint exits 0 (no errors).
-  - Font-stub production build compiles clean with ESLint present; layout.tsx
-    restored byte-for-byte (SHA d6901997...), zero BUILD-STUB remnants.
-  - tsc --noEmit clean. ci.yml + package.json parse. Lockfile carries the new
-    devDeps (so CI npm ci installs them).
+  - tsc --noEmit clean (no dropped bindings; props typed correctly).
+  - eslint .: 0 errors, and ZERO rules-of-hooks occurrences (violation gone),
+    with the rule now a hard error globally. ~77 warnings remain (the 2 hooks
+    warnings are gone).
+  - Font-stub production build compiled successfully; the /clinician/treatment
+    route builds for all locales. layout.tsx restored byte-for-byte
+    (SHA d6901997...), zero BUILD-STUB remnants.
 
-YOUR ACTIONS
-  - None required to deploy. After upload, confirm the new Lint step is green
-    in GitHub Actions.
-  - Decide whether to schedule the treatment-page hooks refactor (recommended).
+PLEASE QA (the one thing I can't run - a rendered screen)
+  Open the clinician treatment-recording screen for a patient and confirm it
+  still behaves, since the relocated effects/hydrate drive these:
+    - Recording a NEW cycle (?newCycle=1) and EDITING the current treatment.
+    - Save works; values persist.
+    - "Copy from previous" prefills.
+    - The left-rail section nav highlights as you scroll.
+    - Total units auto-fills from the per-muscle sum, and the manual override
+      still sticks.
+  Functionally it should be identical to before; this only restructures where
+  the hooks live.
 
 MIGRATIONS
   Nothing new. If 0110_studies.sql is not yet applied, run it (copy in

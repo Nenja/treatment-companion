@@ -70,20 +70,5 @@ export default tseslint.config(
   {
     files: ['scripts/**/*.mjs'],
     languageOptions: { globals: { ...globals.node } }
-  },
-
-  // KNOWN pre-existing violation, tracked as a warning (not silenced).
-  // app/[locale]/clinician/treatment/page.tsx calls two useEffects after the
-  // loading/error early-returns, because the loaded UI, its hooks, AND the
-  // guards all live in one component (line ~351 destructures non-null loaded
-  // data that the guard guarantees, so the guards can't move below the hooks,
-  // and the hooks depend on values derived after the destructure, so they
-  // can't move above the guards). The correct fix is to extract the loaded
-  // view into a child component so the parent's guards precede all hooks —
-  // a focused, separately-tested refactor. Until then this stays a WARNING so
-  // the rule remains a hard error everywhere else. Do NOT copy this pattern.
-  {
-    files: ['**/clinician/treatment/page.tsx'],
-    rules: { 'react-hooks/rules-of-hooks': 'warn' }
   }
 );

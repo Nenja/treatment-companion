@@ -66,10 +66,98 @@ export default function TreatmentRecordPage() {
   );
 }
 
+type TreatmentRecordLoadedProps = {
+  data: NonNullable<ReturnType<typeof useClinicianPatientData>['data']>;
+  session: NonNullable<ReturnType<typeof useCurrentClinicianSession>['data']>;
+  onSessionRefetch: () => void;
+};
+
+// Shell: data fetching + the auth/role/no-session redirect guards + the
+// loading/error early-returns. ALL loaded-data hooks live in
+// <TreatmentRecordLoaded> below, which mounts only once the data is in — so
+// the guards here always run BEFORE those hooks. (This is the fix for the
+// previous react-hooks/rules-of-hooks violation, where two effects sat after
+// an early return in a single combined component.)
 function TreatmentRecordInner() {
   const router = useRouter();
   const locale = useLocale();
   const { user, profile, loading: authLoading } = useAuth();
+  const sessionQuery = useCurrentClinicianSession(
+    profile?.id ?? null,
+    profile?.role
+  );
+  const dataQuery = useClinicianPatientData(
+    profile?.id ?? null,
+    profile?.role,
+    sessionQuery.data?.patientId ?? null
+  );
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user || !profile) {
+      router.replace(locale === 'en' ? '/login' : `/${locale}/login`);
+      return;
+    }
+    if (profile.role !== 'clinician') {
+      router.replace(locale === 'en' ? '/' : `/${locale}`);
+    }
+  }, [authLoading, user, profile, router, locale]);
+
+  // No session → unlock screen. Only on a SETTLED no-session result
+  // (status 'success' + data null), never a transient null during a
+  // background refetch — see the detailed note on the patient page.
+  useEffect(() => {
+    if (sessionQuery.status === 'success' && sessionQuery.data === null) {
+      // If the user is deliberately ending the session, the End session flow
+      // handles navigation (with ?ended=1). Stand down so we don't race it.
+      if (isSessionEndingDeliberately()) return;
+      router.replace(
+        (locale === 'en' ? '/clinician' : `/${locale}/clinician`) + '?timeout=1'
+      );
+    }
+  }, [sessionQuery.status, sessionQuery.data, router, locale]);
+
+  if (sessionQuery.isError || dataQuery.isError) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-cream">
+        <ErrorState
+          onRetry={() => {
+            sessionQuery.refetch();
+            dataQuery.refetch();
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (
+    authLoading ||
+    !profile ||
+    profile.role !== 'clinician' ||
+    sessionQuery.isLoading ||
+    !sessionQuery.data ||
+    dataQuery.isLoading ||
+    !dataQuery.data
+  ) {
+    return <div className="min-h-dvh bg-cream" />;
+  }
+
+  return (
+    <TreatmentRecordLoaded
+      data={dataQuery.data}
+      session={sessionQuery.data}
+      onSessionRefetch={() => sessionQuery.refetch()}
+    />
+  );
+}
+
+function TreatmentRecordLoaded({
+  data,
+  session,
+  onSessionRefetch
+}: TreatmentRecordLoadedProps) {
+  const router = useRouter();
+  const locale = useLocale();
   const wide = useWideLayout();
   // Single column capped at the mid width (720px) — wide enough for the
   // single-line muscle rows (which were built for the old ~700px form
@@ -116,15 +204,6 @@ function TreatmentRecordInner() {
     : '-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink';
   const muscleRemoveEndClass =
     '-m-1.5 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink lg:flex';
-  const sessionQuery = useCurrentClinicianSession(
-    profile?.id ?? null,
-    profile?.role
-  );
-  const dataQuery = useClinicianPatientData(
-    profile?.id ?? null,
-    profile?.role,
-    sessionQuery.data?.patientId ?? null
-  );
   const save = useSaveTreatmentSession();
   const setHandoff = useSetTreatmentHandoff();
   const startCycleWithTreatment = useStartCycleWithTreatment();
@@ -177,17 +256,15 @@ function TreatmentRecordInner() {
   // Warn the clinician before the unlock session expires, as a safety
   // net for when they pause (a phone call mid-form). lastActivityAt is
   // refetched every 30s by the session query.
-  const expiry = useSessionExpiryWarning(
-    sessionQuery.data?.lastActivityAt
-  );
+  const expiry = useSessionExpiryWarning(session.lastActivityAt);
 
   // Previous-cycle treatment for "Copy from previous". The hook only
   // fires once we know the current cycle's number (i.e. when dataQuery
   // resolves), and looks at all cycles with cycle_number < current.
   const previousTreatment = usePreviousTreatment(
-    dataQuery.data?.patient.id ?? null,
-    dataQuery.data?.cycle.cycleNumber ?? null,
-    !!dataQuery.data
+    data.patient.id,
+    data.cycle.cycleNumber,
+    true
   );
 
   const [showCopyConfirm, setShowCopyConfirm] = useState(false);
@@ -197,33 +274,6 @@ function TreatmentRecordInner() {
   // line is tapped.
   const [showLastTreatmentModal, setShowLastTreatmentModal] =
     useState(false);
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user || !profile) {
-      router.replace(locale === 'en' ? '/login' : `/${locale}/login`);
-      return;
-    }
-    if (profile.role !== 'clinician') {
-      router.replace(locale === 'en' ? '/' : `/${locale}`);
-    }
-  }, [authLoading, user, profile, router, locale]);
-
-  // No session → unlock screen. Only on a SETTLED no-session result
-  // (status 'success' + data null), never a transient null during a
-  // background refetch — see the detailed note on the patient page.
-  useEffect(() => {
-    if (sessionQuery.status === 'success' && sessionQuery.data === null) {
-      // If the user is deliberately ending the session, the End
-      // session flow handles navigation (with ?ended=1). Stand down so
-      // we don't race it with a ?timeout=1 redirect.
-      if (isSessionEndingDeliberately()) return;
-      router.replace(
-        (locale === 'en' ? '/clinician' : `/${locale}/clinician`) +
-          '?timeout=1'
-      );
-    }
-  }, [sessionQuery.status, sessionQuery.data, router, locale]);
 
   // Form state.
   const [date, setDate] = useState(todayIso());
@@ -265,7 +315,7 @@ function TreatmentRecordInner() {
 
   useEffect(() => {
     if (hydrated) return;
-    if (!dataQuery.data) return;
+    if (!data) return;
 
     if (isNewCycle) {
       // New cycle: start from a blank form (no prefill from the cycle
@@ -277,8 +327,8 @@ function TreatmentRecordInner() {
     }
 
     // Editing the current cycle's treatment: prefill from it.
-    const existing = dataQuery.data.treatment;
-    const cycleData = dataQuery.data.cycle;
+    const existing = data.treatment;
+    const cycleData = data.cycle;
     if (existing) {
       setDate(existing.date);
       setDrugProduct(existing.drugProduct);
@@ -326,27 +376,7 @@ function TreatmentRecordInner() {
       setFaceDisplayMode(cycleData.faceDisplayMode);
     }
     setHydrated(true);
-  }, [dataQuery.data, hydrated, isNewCycle, newCycleDate]);
-
-  if (sessionQuery.isError || dataQuery.isError) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-cream">
-        <ErrorState onRetry={() => { sessionQuery.refetch(); dataQuery.refetch(); }} />
-      </div>
-    );
-  }
-
-  if (
-    authLoading ||
-    !profile ||
-    profile.role !== 'clinician' ||
-    sessionQuery.isLoading ||
-    !sessionQuery.data ||
-    dataQuery.isLoading ||
-    !dataQuery.data
-  ) {
-    return <div className="min-h-dvh bg-cream" />;
-  }
+  }, [data, hydrated, isNewCycle, newCycleDate]);
 
   const {
     patient,
@@ -356,7 +386,7 @@ function TreatmentRecordInner() {
     physioAssessments,
     physioGoalSuggestions,
     physioMuscleSuggestions
-  } = dataQuery.data;
+  } = data;
   const therapistSuggestionCount =
     physioGoalSuggestions.length + physioMuscleSuggestions.length;
   // Therapist modules (the input button + the physician->therapist handoff
@@ -747,7 +777,7 @@ function TreatmentRecordInner() {
                   // Refetch the session so the new last_activity_at is
                   // picked up and the banner clears at once, rather
                   // than waiting up to 30s for the next poll.
-                  onSuccess: () => sessionQuery.refetch()
+                  onSuccess: () => onSessionRefetch()
                 });
               }}
               disabled={touchSession.isPending}
