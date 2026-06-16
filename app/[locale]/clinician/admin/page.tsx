@@ -5,6 +5,7 @@ import { AppHeader } from '@/components/layout/AppHeader';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
+import { useExportRedcapDataset, useSyncRedcapDataset } from '@/lib/redcapExport';
 import {
   useAdminAccounts,
   useCreateAccount,
@@ -134,6 +135,8 @@ export default function AdminPage() {
         <ResearchPurgeSection enabled={!!profile && profile.isAdmin} />
 
         <StudiesSection enabled={!!profile && profile.isAdmin} />
+
+        <ResearchExportSection enabled={!!profile && profile.isAdmin} />
       </main>
     </div>
   );
@@ -1529,5 +1532,71 @@ function StudyPatientCard({
         </div>
       )}
     </li>
+  );
+}
+
+/**
+ * Research data export — CSV download + push-to-REDCap. Admin-only, global
+ * (all consented patients). Lives here on the admin page rather than the
+ * per-patient wearable/observations screen, where it used to be orphaned.
+ */
+function ResearchExportSection({ enabled }: { enabled: boolean }) {
+  const tExport = useTranslations('clinician.researchExport');
+  const exportRedcap = useExportRedcapDataset();
+  const syncRedcap = useSyncRedcapDataset();
+  if (!enabled) return null;
+
+  const btn =
+    'mt-4 flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-soft';
+  const ok =
+    'mt-3 rounded-[var(--radius-button)] border border-sage bg-sage-soft px-4 py-3 text-[14px] text-sage-deep';
+  const err =
+    'mt-3 rounded-[var(--radius-button)] border border-amber-deep bg-amber-soft px-4 py-3 text-[14px] text-amber-deep';
+
+  return (
+    <section className="mt-10">
+      <h2 className="font-display text-[18px] text-ink">{tExport('heading')}</h2>
+      <p className="mt-1 text-[13px] text-ink-soft">{tExport('intro')}</p>
+      {exportRedcap.data && (
+        <div className={ok}>
+          {tExport('result', {
+            patients: exportRedcap.data.patients,
+            rows: exportRedcap.data.rows
+          })}
+        </div>
+      )}
+      {exportRedcap.isError && <div className={err}>{tExport('error')}</div>}
+      <button
+        type="button"
+        onClick={() => exportRedcap.mutate()}
+        disabled={exportRedcap.isPending}
+        className={btn}
+      >
+        {exportRedcap.isPending ? tExport('working') : tExport('button')}
+      </button>
+
+      <p className="mt-6 text-[13px] text-ink-soft">{tExport('syncIntro')}</p>
+      {syncRedcap.data && (
+        <div className={ok}>
+          {tExport('syncResult', {
+            patients: syncRedcap.data.patients,
+            rows: syncRedcap.data.rows
+          })}
+        </div>
+      )}
+      {syncRedcap.isError && (
+        <div className={err}>
+          {tExport('syncError', { message: (syncRedcap.error as Error).message })}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => syncRedcap.mutate()}
+        disabled={syncRedcap.isPending}
+        className={btn}
+      >
+        {syncRedcap.isPending ? tExport('syncWorking') : tExport('syncButton')}
+      </button>
+    </section>
   );
 }

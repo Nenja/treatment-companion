@@ -1,39 +1,33 @@
-BUILD - fix-export-guidance-0111   (hotfix: research export RPC column error)
+BUILD - admin-tool-rail-1   (Admin entry in the patient Tools rail)
 
 WHAT THIS IS
-  Cumulative snapshot on top of retire-dev-scenarios-1. ONE new migration
-  (0111) — a create-or-replace of export_research_dataset(). No schema/data
-  change, no app change. Migrations now 0001-0111.
+  Cumulative snapshot (deploy THIS one). Migrations 0001-0111. UI only; no
+  migration. Supersedes admin-button-actionrow-1 (that put the button on the
+  home header by mistake — reverted here).
 
-THE BUG (hit live during the production sync test)
-  "Sync to REDCap now" failed with:
-    export_research_dataset failed: column m.guidance does not exist
-  Migration 0009 moved `guidance` from the per-muscle table to the SESSION
-  (treatment_session), but the export RPC in 0106 still read `m.guidance`
-  (muscle_injection). It surfaced only now because the JS row-builder tests
-  exercise lib/redcap, not the SQL RPC, so the bad column was never executed.
+CONTAINS (cumulative)
+  - Admin added to the patient-page Tools rail (this delivery).
+  - Research export on the admin page; 0111 export fix; dev scenarios retired.
 
-THE FIX (supabase/migrations/0111_fix_export_guidance.sql)
-  create-or-replace export_research_dataset() reading `s.guidance` (the
-  treatment_session alias already joined in that subquery) instead of
-  `m.guidance`. Everything else identical to 0106.
+THIS CHANGE
+  Added an "Admin" entry (gear icon) to the clinician patient Tools rail
+  (the icon row with Training / Consent / History / Export), shown only to
+  admins. Tapping it navigates to /clinician/admin (where the REDCap export +
+  sync now live). It renders in all three rail variants (toolbar / sidebar /
+  body row) via a new showAdmin prop on PatientActionRow, gated by
+  profile.isAdmin at the three call sites.
+  The clinician HOME page is back to its original state (bottom admin button) —
+  the header-action-row version from the previous build was reverted.
+  New i18n keys clinician.patient.actionAdmin / actionShortAdmin = "Admin"
+  (en/da/sv/nb; same word in all). Removed the short-lived clinician.adminButton
+  key. Parity now 1715 keys.
+  Note: admin is a global tool, not patient-scoped — it sits in the rail only
+  for discoverability; it navigates away from the patient view.
 
-*** YOU MUST RUN 0111 ***  (standalone copy in outputs)
-  Run 0111_fix_export_guidance.sql in the STAGING Supabase SQL editor first,
-  then PRODUCTION. Until you do, the REDCap sync (button + cron) will keep
-  failing with the m.guidance error. No data migration — it just redefines the
-  function.
-
-VERIFIED (Method-D, throwaway Postgres + full staging schema)
-  - Negative control: calling the 0106 version reproduced
-    "column m.guidance does not exist".
-  - After applying 0111: export_research_dataset() returns [] with no error
-    (and since Postgres validates all columns at plan time even with zero rows,
-    this also confirms no OTHER stale column references remain).
-
-FOLLOW-UP (logged in docs/ROADMAP.md)
-  The SQL RPCs aren't covered by the JS tests. A Method-D / CI smoke-call of
-  export_research_dataset() would catch this class of error before shipping.
+VERIFIED
+  tsc clean; eslint 0 errors; check:i18n OK (1715 keys, en/da aligned);
+  font-stub build compiled; layout.tsx SHA restored (d6901997...);
+  0 BUILD-STUB remnants.
 
 MIGRATIONS
-  NEW: 0111_fix_export_guidance.sql  (run in staging, then production)
+  None new. (0111 already run in production.)

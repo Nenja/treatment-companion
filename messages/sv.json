@@ -449,6 +449,8 @@
       "archivedVideosButton": "Arkiverade videor",
       "actionVideo": "Samtycke",
       "actionShortVideo": "Samtycke",
+      "actionAdmin": "Admin",
+      "actionShortAdmin": "Admin",
       "physioPanelTitle": "Terapeutinput",
       "physioVisits": "{count} terapibesök den här perioden",
       "physioNoVisits": "Inga terapibesök registrerade än den här perioden.",

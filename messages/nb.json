@@ -449,6 +449,8 @@
       "archivedVideosButton": "Arkiverte videoer",
       "actionVideo": "Samtykke",
       "actionShortVideo": "Samtykke",
+      "actionAdmin": "Admin",
+      "actionShortAdmin": "Admin",
       "physioPanelTitle": "Terapeutinnspill",
       "physioVisits": "{count} terapibesøk denne perioden",
       "physioNoVisits": "Ingen terapibesøk registrert ennå denne perioden.",

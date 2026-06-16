@@ -449,6 +449,8 @@
       "archivedVideosButton": "Archived videos",
       "actionVideo": "Consent",
       "actionShortVideo": "Consent",
+      "actionAdmin": "Admin",
+      "actionShortAdmin": "Admin",
       "physioPanelTitle": "Therapist input",
       "physioVisits": "{count} therapist visits this cycle",
       "physioNoVisits": "No therapist visits recorded yet this cycle.",

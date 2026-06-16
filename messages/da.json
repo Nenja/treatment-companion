@@ -453,6 +453,8 @@
       "archivedVideosButton": "Arkiverede videoer",
       "actionVideo": "Samtykke",
       "actionShortVideo": "Samtykke",
+      "actionAdmin": "Admin",
+      "actionShortAdmin": "Admin",
       "physioPanelTitle": "Input fra terapeut",
       "physioVisits": "{count} terapibesøg denne cyklus",
       "physioNoVisits": "Ingen terapibesøg registreret i denne cyklus endnu.",
