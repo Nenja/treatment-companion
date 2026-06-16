@@ -1,39 +1,39 @@
-BUILD - retire-dev-scenarios-1   (remove the dev scenario launcher)
+BUILD - fix-export-guidance-0111   (hotfix: research export RPC column error)
 
 WHAT THIS IS
-  Cumulative snapshot on top of redcap-automation-1. Removes the dev scenario
-  launcher. No DB migration. Migrations still 0001-0110.
+  Cumulative snapshot on top of retire-dev-scenarios-1. ONE new migration
+  (0111) — a create-or-replace of export_research_dataset(). No schema/data
+  change, no app change. Migrations now 0001-0111.
 
-WHY
-  The dev scenario launcher signed the user out (supabase.auth.signOut()) and
-  then tried to sign back in via a magic-link token; on an environment without
-  the expected demo accounts it failed AFTER signing out, leaving you on the
-  login screen ("bounces to login even when logged in"). It had no real use, so
-  it's retired.
+THE BUG (hit live during the production sync test)
+  "Sync to REDCap now" failed with:
+    export_research_dataset failed: column m.guidance does not exist
+  Migration 0009 moved `guidance` from the per-muscle table to the SESSION
+  (treatment_session), but the export RPC in 0106 still read `m.guidance`
+  (muscle_injection). It surfaced only now because the JS row-builder tests
+  exercise lib/redcap, not the SQL RPC, so the bad column was never executed.
 
-REMOVED
-  - app/[locale]/dev/scenarios/page.tsx
-  - app/api/dev/scenario/route.ts
-  - lib/dev/scenarios.ts
-  (empty dev/ dirs cleaned up.)
+THE FIX (supabase/migrations/0111_fix_export_guidance.sql)
+  create-or-replace export_research_dataset() reading `s.guidance` (the
+  treatment_session alias already joined in that subquery) instead of
+  `m.guidance`. Everything else identical to 0106.
 
-NOT removed
-  - dev_reseed_all() and the dev seed SQL functions (migrations already applied;
-    still callable from the SQL editor if wanted).
+*** YOU MUST RUN 0111 ***  (standalone copy in outputs)
+  Run 0111_fix_export_guidance.sql in the STAGING Supabase SQL editor first,
+  then PRODUCTION. Until you do, the REDCap sync (button + cron) will keep
+  failing with the m.guidance error. No data migration — it just redefines the
+  function.
 
-KNOCK-ON
-  - ENABLE_DEV_TOOLS / NEXT_PUBLIC_ENABLE_DEV_TOOLS are now unused in code —
-    safe to delete from Vercel (Preview + anywhere else).
-  - e2e/clinician.spec.ts Tier-2 fixme scaffolds referenced /api/dev/scenario;
-    annotated in-file that the mechanism is retired and they need re-grounding
-    (seed via SQL + a reusable visit code). They are test.fixme (not running),
-    so CI is unaffected.
+VERIFIED (Method-D, throwaway Postgres + full staging schema)
+  - Negative control: calling the 0106 version reproduced
+    "column m.guidance does not exist".
+  - After applying 0111: export_research_dataset() returns [] with no error
+    (and since Postgres validates all columns at plan time even with zero rows,
+    this also confirms no OTHER stale column references remain).
 
-VERIFIED
-  tsc --noEmit clean (after clearing the stale .next type cache that briefly
-  referenced the deleted routes); eslint 0 errors; check:i18n OK (1713 keys —
-  the dev page used hardcoded strings, no i18n keys removed); font-stub build
-  compiled with the dev routes gone; layout.tsx SHA restored (d6901997...).
+FOLLOW-UP (logged in docs/ROADMAP.md)
+  The SQL RPCs aren't covered by the JS tests. A Method-D / CI smoke-call of
+  export_research_dataset() would catch this class of error before shipping.
 
 MIGRATIONS
-  Nothing new.
+  NEW: 0111_fix_export_guidance.sql  (run in staging, then production)

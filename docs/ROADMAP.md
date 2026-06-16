@@ -50,6 +50,12 @@ Each item notes **who** owns it — _you_ (dashboard / clinical / decision), _de
   study tables).
 - ✅ **Care-team-notes decision recorded** — patient-readable is intended (the
   patient's own care record); product was already consistent, docs corrected.
+- ✅ **Export RPC hotfix — `0111` (2026-06-16).** `export_research_dataset()`
+  read `m.guidance` but 0009 moved that column to the session; the live
+  REDCap sync threw "column m.guidance does not exist". Fixed to `s.guidance`,
+  Method-D verified (reproduced the error, confirmed the fix runs). The SQL
+  RPCs aren't exercised by the JS tests — a CI/Method-D smoke-call of the
+  research export would catch this class; logged as a hardening follow-up.
 - ✅ **Dev scenario launcher retired (2026-06-16)** — `/dev/scenarios` page,
   `/api/dev/scenario` route, and `lib/dev/scenarios.ts` removed (it signed the
   user out then failed to sign back in — pure friction, no real use). The
