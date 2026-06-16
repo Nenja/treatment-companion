@@ -1,74 +1,60 @@
-BUILD - rls-denial-tests-1   (runtime RLS-denial test suite + a finding)
+BUILD - staging-ci-gate-1   (deploy-on-green + staging guide)
 
 WHAT THIS IS
-  Cumulative repo snapshot. Test infrastructure + CI only on top of
-  studies-and-fixes-1. NO app code change and NO new migration this increment.
-  Stack unchanged: Next.js 16.2.7 / next-intl 4.13.0 / React 19 / Supabase
-  (Postgres 16). Migrations still 0001-0110.
-
-  (This zip still CARRIES studies-and-fixes-1, which needs migration 0110 run
-  if you have not already - see "MIGRATIONS" below.)
+  Cumulative repo snapshot. Docs + ONE inert CI workflow on top of
+  rls-denial-tests-1 / studies-and-fixes-1. NO app code change, NO new
+  migration. Stack unchanged: Next.js 16.2.7 / Supabase (Postgres 16).
+  Migrations still 0001-0110. Nothing to run for this increment.
 
 WHAT CHANGED THIS INCREMENT
-  Runtime RLS-denial test suite (highest-value check for real patient data)
-    - supabase/ci/rls-test-setup.sql - turns the throwaway CI Postgres (real
-      bootstrap + all migrations) into one where RLS can be exercised:
-      auth.uid() reads a per-connection GUC (test.uid) so any user can be
-      impersonated; authenticated/anon get Supabase-like table grants so a
-      denial is RLS and not a missing GRANT; an _assert() raises on a failed
-      expectation; deterministic fixtures (2 patients, a clinician with an
-      active session for A only, an admin, therapist notes, a study).
-    - supabase/ci/rls-tests.sql - the assertions. Each impersonates a user via
-      SET ROLE + set_config('test.uid',...) so the REAL policies decide
-      visibility. Coverage:
-        T1 patient A sees only their own patient row
-        T2 patient A cannot read patient B's profile
-        T3 patient reads only their OWN care-team notes, never another's
-        T4 clinician WITH an active session sees A, never B (+ notes)
-        T5 a STALE session (>1h idle) grants no access
-        T6 anonymous (no JWT) sees nothing
-        T7 study/study_membership are admin-only (+ admin positive control)
-      Every denial is paired with a positive control so a "deny everything"
-      bug cannot pass silently.
-    - supabase/ci/run-rls-tests.sh - run the suite against a local Postgres.
-    - .github/workflows/ci.yml - new "RLS-denial tests" step in the migrations
-      job (after the schema snapshot). Fails the build on any RLS regression.
+  Deploy-on-green (.github/workflows/deploy.yml)
+    - Deploys production via the Vercel CLI ONLY after the CI workflow finishes
+      successfully on `main`. Makes CI a real gate instead of a signal: a red
+      build can no longer go live, even with direct-to-main (zip-upload)
+      commits.
+    - INERT until activated: a guard step skips the whole deploy unless
+      VERCEL_TOKEN is present, so simply having this file in the repo does
+      nothing until you wire it up.
 
-  Verified here:
-    - All assertions pass on a throwaway PG16 (real bootstrap + all migrations).
-    - NEGATIVE CONTROL: injecting a `using(true)` patient SELECT policy makes
-      T1 fail loudly; removing it returns to green - so the suite is not
-      vacuously passing.
-    - tsc --noEmit clean (no app code changed; prior studies-and-fixes-1 build
-      remains valid).
+  Staging + CI-gate guide (docs/STAGING-AND-CI-GATE.md)
+    - Click-path to activate the gate, and to stand up a staging Supabase
+      project + a Vercel Preview environment pointed at it, so changes are
+      tested off real patient data before production.
+    - OPS.md section 4 now points to it.
 
->>> FINDING - PLEASE DECIDE: care-team notes are PATIENT-READABLE <<<
-  The docs (HANDOVER 5.13, TRANSFER_PROMPT) say the physician->therapist
-  handoff note and therapist notes are "never patient-visible". That was true
-  at migrations 0088/0095, but migration 0096_patient_care_team_notes
-  DELIBERATELY added a patient self-read on treatment_handoff,
-  goal_handoff_note, and therapist_note (patient_id = current_patient_id()),
-  citing the patient's GDPR right of access. So a patient CAN read the notes
-  about their own care (never another patient's - that isolation is intact and
-  tested). Not a code bug - 0096 is intentional and self-documenting - but it
-  contradicts the stated invariant and has clinical-privacy weight (anyone
-  writing such a note should know the patient can read it). HANDOVER 5.13 is
-  corrected. DECISION: confirm patient-readable is intended, OR treat
-  author-private care-team notes as a product change to make.
+  Rationale (captured in the guide + HANDOVER): requiring pull requests /
+  branch protection is the right END STATE but breaks your current web
+  zip-upload-to-main flow, so it is deferred to the incoming developer.
+  Deploy-on-green is the friction-free interim that still gates production.
+
+VERIFIED HERE
+  - Both workflow YAML files parse (ci.yml, deploy.yml).
+  - No app code changed; prior build/tsc remain valid.
+
+YOUR ACTIONS (dashboard) - to ACTIVATE (full steps in the guide)
+  Part A - deploy-on-green:
+    1. Vercel -> Project -> Settings -> Git: turn OFF automatic production
+       deployments for `main` (else you get double deploys).
+    2. Add GitHub repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID.
+    3. Push a small change; confirm in GitHub Actions that Deploy runs only
+       after CI is green.
+  Part B - staging:
+    1. Create a second Supabase project (…-staging); run all migrations in it
+       once. New rule: run a migration in staging first, then production.
+    2. Vercel env vars: set the Preview scope of NEXT_PUBLIC_SUPABASE_URL /
+       _ANON_KEY to the staging project (keep Production on the real one).
+    3. Upload to a `staging` branch to get a Preview URL on staging data.
+
+STILL OPEN (from the critical path we agreed)
+  - Tested restore (Supabase Pro + PITR, restore once) - highest data-loss
+    risk, still your action.
+  - Native-Danish clinical-string review.
+  - Decision still pending from rls-denial-tests-1: care-team notes are
+    patient-readable since migration 0096 (see that section / HANDOVER 5.14).
 
 MIGRATIONS
-  Nothing new this increment. If studies-and-fixes-1 (0110_studies.sql) has
-  not been applied yet, run it in the Supabase SQL editor (standalone copy in
+  Nothing new. If 0110_studies.sql is not yet applied, run it (copy in
   outputs). Otherwise no SQL to run.
-
-DEPLOY
-  Upload the zip to GitHub -> Vercel auto-builds. CI will now also run the
-  RLS-denial tests on every push/PR.
-
-PLEASE QA / NOTE (cannot verify here)
-  - The finding decision above (patient-readable care-team notes).
-  - CI will run the new step automatically on the next push; confirm it goes
-    green in GitHub Actions.
 
 NOTE ON THIS ZIP
   Full repo minus node_modules, .next, build artifacts, and .git.

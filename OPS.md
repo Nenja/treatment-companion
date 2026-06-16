@@ -179,6 +179,13 @@ The app cannot be redeployed without these. **Record them in a secure store**
 
 **Ship:** zip → GitHub (GitHub Desktop) → Vercel auto-build. See `DEPLOY.md`.
 
+**CI gate + staging (P1 hardening):** by default Vercel builds whatever lands on
+`main`, so a red CI build can still go live, and there is no staging. See
+**`docs/STAGING-AND-CI-GATE.md`** to (a) switch on **deploy-on-green**
+(`.github/workflows/deploy.yml` — ships production only after CI passes; inert
+until its three Vercel secrets are set) and (b) add a **staging** Supabase
+project + Vercel Preview env so changes are tested off real patient data first.
+
 **Roll back a bad app deploy  [DASHBOARD]:**
 - **Vercel → Deployments → pick the last known-good deployment → Promote to
   Production.** This is instant and is your fastest mitigation for a broken release.
