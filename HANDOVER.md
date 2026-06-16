@@ -291,8 +291,12 @@ modal.
 
 ### 4.6 Migrations & what must be run
 
-`supabase/migrations/` holds the numbered migrations (through **0088**) plus the
-non-numbered seed `demo_seed_test_patients.sql`. Notable recent ones:
+`supabase/migrations/` holds the numbered migrations (through **0111**) plus the
+non-numbered seed `demo_seed_test_patients.sql`. **Latest to run: `0111` —**
+`0111_fix_export_guidance.sql` (`create or replace export_research_dataset()`
+reading `s.guidance` instead of the moved-away `m.guidance`; no schema/data
+change). Run it in **staging** (it was already run in production). Notable
+recent ones:
 
 - `0061` medication rename (`current/previous_antispastic_medication` →
   `current/previous_medication`).
@@ -527,20 +531,28 @@ Also in `docs/audits/`:
 - **`treatment-companion-visual-coherence-audit.md`** — design-token / visual
   consistency pass across the app.
 
-### 5.9 Dev scenario launcher (test environment)
-**DELIVERED (dev-only).** A `/dev/scenarios` page that resets the demo data
-(optional), signs you in as the right account, opens the clinician session
-where needed, and lands you on the screen — no visit codes, minimal clicking.
-Pieces: `lib/dev/scenarios.ts` (the catalog), `app/[locale]/dev/scenarios/page.tsx`
-(the launcher UI), `app/api/dev/scenario/route.ts` (service-role route: reseed
-+ `auth.admin.generateLink` to mint a sign-in token + a reusable `visit_code`
-for professional scenarios), and migration `0066` (`dev_reseed_all`). The
-client calls `verifyOtp` with the token, then `unlock_with_visit_code` for
-clinician/physio scenarios. **Gating (must stay off in prod):**
-`NEXT_PUBLIC_ENABLE_DEV_TOOLS=1` shows the page; `ENABLE_DEV_TOOLS=1` lets the
-route run; both 404/disable otherwise. Needs `SUPABASE_SERVICE_ROLE_KEY` (the
-admin features already use it). **Unverified by me** — I can’t exercise auth or
-a live Supabase; the sign-in/session/seed flow needs on-machine testing.
+### 5.9 Dev scenario launcher (test environment) — **RETIRED 2026-06-16**
+**REMOVED in `retire-dev-scenarios-1`.** `lib/dev/scenarios.ts`,
+`app/[locale]/dev/scenarios/page.tsx`, and `app/api/dev/scenario/route.ts` are
+deleted. It signed the user out (`supabase.auth.signOut()`) then tried to sign
+back in with a magic-link token; on an environment without the expected demo
+accounts it failed *after* signing out, leaving you on the login screen — the
+"bounces to login even when logged in" bug. The `NEXT_PUBLIC_ENABLE_DEV_TOOLS`
+/ `ENABLE_DEV_TOOLS` env vars are now unused (delete from Vercel). Migration
+`0066`'s `dev_reseed_all()` SQL is **untouched** and still callable from the
+Supabase SQL editor. The Tier-2 E2E scaffolds that drove this mechanism need
+re-grounding (seed via SQL + a reusable visit code) — annotated in
+`e2e/clinician.spec.ts`.
+
+<details><summary>What it used to be (historical)</summary>
+
+A `/dev/scenarios` page that reset demo data, signed you in as the right
+account, opened the clinician session, and landed you on the screen. Pieces:
+`lib/dev/scenarios.ts`, `app/[locale]/dev/scenarios/page.tsx`,
+`app/api/dev/scenario/route.ts` (service-role: reseed + `generateLink` +
+reusable `visit_code`), migration `0066`. Gated by the two `*_DEV_TOOLS` env
+vars. Never reliably verified end-to-end.
+</details>
 
 ### 5.10 No-auth demo sandbox — REMOVED (`batch-a`)
 **DELETED** per request. The `/demo` page (`app/[locale]/demo/`) and its
@@ -908,6 +920,20 @@ new-goal + approve calibration forms; current).
 ---
 
 ## 7. Latest delivered build
+
+- **`admin-overview-search-1` — admin-page restructure + search (current; cumulative; no migration).** Deploy this single zip; it folds in every 2026-06-16 delivery below. Admin page reorganised into an **overview band** (title + lead, at-a-glance account counts reused from the existing filter labels, and a jump-link row) + **two grouped domains** — *Accounts & access* (Accounts list · Create account · Active access) and *Research data* (Research export · Studies · Consent pending-deletion); research export promoted from the bottom, consent-deletion queue moved to the end of its group, each section given an `id` for the jump-links. **Free-text search added to the Studies section:** studies list (key/name/description) and study-patients (display name / REDCap `studyCode`) — the latter applied on top of the existing membership-filter dropdown. The Accounts list already had its own name/email search. 7 new `admin.*` i18n keys (en/da/sv/nb; da/sv/nb first-pass — flag for native review); parity **1722** keys. tsc/lint/i18n/font-stub build all green; `layout.tsx` SHA restored.
+
+### 2026-06-16 session — the deliveries folded into the cumulative zip above
+
+- **`admin-tool-rail-1`** — added an **Admin** entry (gear icon) to the clinician patient **Tools rail** (Training/Consent/History/Export), gated to admins via a new `showAdmin` prop on `PatientActionRow`; navigates to `/clinician/admin`. New `clinician.patient.actionAdmin`/`actionShortAdmin` keys. (A prior `admin-button-actionrow-1` that put the button on the clinician-home header was reverted — wrong action row.)
+- **`relocate-export-ux-1`** — moved the REDCap **research export + sync** off the unlinked wearable/observations page onto the **admin page** (`ResearchExportSection`), which is linked from the clinician home + account menu. ⚠ The earlier `retire-dev-scenarios-1` and `fix-export-guidance-0111` zips were built *before* this edit and are half-relocated (export removed from observations, not yet on admin) — **do not deploy them**; the cumulative `admin-overview-search-1` is the only correct artifact.
+- **`fix-export-guidance-0111`** — migration **`0111_fix_export_guidance.sql`**: `export_research_dataset()` read `m.guidance`, but `0009` moved that column to the session — fixed to `s.guidance`. Surfaced as a live sync failure (*"column m.guidance does not exist"*); the JS tests don't exercise the SQL RPC, so it slipped through. Method-D verified (reproduced the error, confirmed the fix returns cleanly). **Run in staging** (already run in production — sync then succeeded, 187 rows / 2 patients). Standalone SQL in outputs.
+- **`retire-dev-scenarios-1`** — removed the dev scenario launcher (`/dev/scenarios`, `/api/dev/scenario`, `lib/dev/scenarios.ts`). It called `signOut()` then tried to sign back in via a magic-link token, and failed *after* signing out — the "bounces to login even when logged in" report. `ENABLE_DEV_TOOLS`/`NEXT_PUBLIC_ENABLE_DEV_TOOLS` are now dead — delete from Vercel. `dev_reseed_all()` SQL untouched. Tier-2 E2E scaffolds referenced this mechanism — annotated in `e2e/clinician.spec.ts` as needing re-grounding (seed via SQL + reusable visit code).
+- **Live ops (dashboard-side, by Nikolaj):** REDCap sync proven end-to-end against the production *test* patients → a REDCap **test** project. **Production outage resolved** — the **Production** Supabase env vars had been un-scoped during the staging split (`NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY` + `SUPABASE_SERVICE_ROLE_KEY`); fixed by restoring Production-scoped values + a fresh build. **Standing rule: never edit/uncheck the shared Supabase vars — only ADD Preview-scoped entries for staging.** Hobby Instant Rollback only goes one step back → fix-forward, not rollback. Env changes require a fresh build.
+
+---
+
+## 7-prev-5. `hooks-refactor-1` — fixed the treatment-page rules-of-hooks violation
 
 - **`hooks-refactor-1` — fixed the treatment-page rules-of-hooks violation.** Resolves the finding from `eslint-ci-1`. `app/[locale]/clinician/treatment/page.tsx` is split into a thin shell `TreatmentRecordInner` (data fetching + the auth/role/no-session redirect effects + the loading/error guards) and a child `TreatmentRecordLoaded({ data, session, onSessionRefetch })` that mounts only once data is loaded and holds **all** the loaded-data hooks (form state, hydrate effect, the two previously-offending effects, derived values, handlers, JSX). Because the child mounts only after the guards pass, every hook now runs unconditionally in a constant order — the latent "rendered more hooks than during the previous render" crash is gone. The move is wholesale (hooks keep their order and run under the same loaded-only condition as before), so behaviour is preserved; props are typed via `NonNullable<ReturnType<typeof useClinicianPatientData>['data']>` etc. so nothing is loosened. The scoped ESLint warning is **removed** — `react-hooks/rules-of-hooks` is now a hard **error** everywhere, including this file, and lint is green (0 errors; ~77 warnings, the 2 hooks warnings gone). Verified: tsc clean, `eslint .` 0 errors with the violation absent, font-stub build compiled (treatment route builds for all locales), `layout.tsx` SHA restored, no stub remnants. **No migration.** **Please QA the treatment screen** (the one thing I can't run): load it for a patient, confirm record/edit/new-cycle, save, "copy from previous", the left-rail scroll highlight, and Total-units auto-fill all still behave — these are what the relocated effects/hydrate drive.
 

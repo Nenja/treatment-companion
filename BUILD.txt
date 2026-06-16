@@ -1,33 +1,51 @@
-BUILD - admin-tool-rail-1   (Admin entry in the patient Tools rail)
+BUILD - admin-overview-search-1   (admin page restructure + search)
 
 WHAT THIS IS
   Cumulative snapshot (deploy THIS one). Migrations 0001-0111. UI only; no
-  migration. Supersedes admin-button-actionrow-1 (that put the button on the
-  home header by mistake — reverted here).
+  migration. Supersedes admin-tool-rail-1.
 
 CONTAINS (cumulative)
-  - Admin added to the patient-page Tools rail (this delivery).
-  - Research export on the admin page; 0111 export fix; dev scenarios retired.
+  - Admin page reorganised with an overview band + two grouped domains (this).
+  - Free-text search added to the Studies section (this).
+  - Admin entry in the patient Tools rail; research export on the admin page;
+    0111 export fix; dev scenarios retired.
 
-THIS CHANGE
-  Added an "Admin" entry (gear icon) to the clinician patient Tools rail
-  (the icon row with Training / Consent / History / Export), shown only to
-  admins. Tapping it navigates to /clinician/admin (where the REDCap export +
-  sync now live). It renders in all three rail variants (toolbar / sidebar /
-  body row) via a new showAdmin prop on PatientActionRow, gated by
-  profile.isAdmin at the three call sites.
-  The clinician HOME page is back to its original state (bottom admin button) —
-  the header-action-row version from the previous build was reverted.
-  New i18n keys clinician.patient.actionAdmin / actionShortAdmin = "Admin"
-  (en/da/sv/nb; same word in all). Removed the short-lived clinician.adminButton
-  key. Parity now 1715 keys.
-  Note: admin is a global tool, not patient-scoped — it sits in the rail only
-  for discoverability; it navigates away from the patient view.
+ADMIN PAGE RESTRUCTURE
+  The page was a flat six-section scroll in an ad-hoc order with a stale intro.
+  Now:
+   - Overview band: title + lead, at-a-glance counts pulled from the loaded
+     account list (patients / physicians / therapists / admins / deactivated),
+     and a row of jump-links to each section.
+   - Grouped into two domains with headers:
+       Accounts & access:  Accounts list · Create account · Active access
+       Research data:       Research export · Studies · Consent pending-deletion
+   - Research export promoted from the bottom; the consent-deletion queue moved
+     to the end of the research group. Each section has an id for the jump-links.
+  Reuses the existing section components; counts reuse existing filter labels.
+
+SEARCH (in addition to the existing filters)
+  Studies section now has two free-text searches:
+   - Studies list — matches study key / name / description.
+   - Study patients — matches display name / REDCap record_id, applied ON TOP of
+     the existing membership filter dropdown.
+  (The Accounts list already had its own name/email search — unchanged.)
+
+NEW i18n KEYS (admin namespace, en/da/sv/nb — da/sv/nb first-pass, flag for
+  native review): lead, groupAccountsTitle, groupResearchTitle, exportTitle,
+  studySearchPlaceholder, studyNoMatches, studyPatientSearchPlaceholder.
+  Parity now 1722 keys.
 
 VERIFIED
-  tsc clean; eslint 0 errors; check:i18n OK (1715 keys, en/da aligned);
+  tsc clean; eslint 0 errors; check:i18n OK (1722 keys, en/da aligned);
   font-stub build compiled; layout.tsx SHA restored (d6901997...);
   0 BUILD-STUB remnants.
 
 MIGRATIONS
-  None new. (0111 already run in production.)
+  None new.
+
+DOCS (consolidated 2026-06-16, same code)
+  HANDOVER.md §7 now logs the full 2026-06-16 session (admin reorg+search,
+  Tools-rail admin, export relocation, 0111, dev-scenario retirement, the
+  env-var/outage ops lesson); §5.9 marked RETIRED; §4.6 migration range → 0111.
+  TRANSFER_PROMPT.md "Where we are" / "What's likely next" rewritten to current
+  state. No code change vs the build verified above.
