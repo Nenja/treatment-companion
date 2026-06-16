@@ -17,7 +17,7 @@ jobs:
     name: Type-check, i18n & build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v4
         with:
@@ -72,7 +72,7 @@ jobs:
       PGPASSWORD: postgres
       PGDATABASE: ci
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # Node is only needed for the schema-contract check below; that script
       # uses Node built-ins only, so no npm install is required.
