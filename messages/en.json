@@ -1616,7 +1616,8 @@
     "errNotActivated": "This account isn’t activated yet. Please contact your clinic.",
     "errRateLimit": "Too many attempts. Please wait a minute, then try again.",
     "errNetwork": "Network problem. Check your connection and try again.",
-    "errGeneric": "Something went wrong signing in. Please try again."
+    "errGeneric": "Something went wrong signing in. Please try again.",
+    "privacyLink": "Your data & privacy"
   },
   "forgotPassword": {
     "title": "Reset your password",

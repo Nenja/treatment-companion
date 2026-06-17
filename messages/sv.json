@@ -1616,7 +1616,8 @@
     "errNotActivated": "Det här kontot är inte aktiverat än. Kontakta din klinik.",
     "errRateLimit": "För många försök. Vänta en minut och försök igen.",
     "errNetwork": "Nätverksproblem. Kontrollera din anslutning och försök igen.",
-    "errGeneric": "Något gick fel vid inloggningen. Försök igen."
+    "errGeneric": "Något gick fel vid inloggningen. Försök igen.",
+    "privacyLink": "Dina uppgifter & integritet"
   },
   "forgotPassword": {
     "title": "Återställ ditt lösenord",
