@@ -776,8 +776,10 @@
       "syncIntro": "Eller send datasættet direkte til REDCap via API'et (kun admin). Kræver at REDCap er konfigureret.",
       "syncButton": "Synkronisér til REDCap nu",
       "syncWorking": "Synkroniserer…",
-      "syncResult": "Synkroniserede {rows} rækker for {patients} patienter til REDCap.",
-      "syncError": "Synkronisering mislykkedes — {message}"
+      "syncResult": "Synkroniseret til REDCap — {patients} patienter, {rows} rækker ({imported} poster bekræftet).",
+      "syncError": "Synkronisering mislykkedes — {message}",
+      "syncPartial": "Importen rapporterede et problem — {message} (REDCap bekræftede {imported} poster).",
+      "syncNoDetail": "ingen fejldetaljer returneret"
     }
   },
   "intro": {
@@ -1030,7 +1032,12 @@
     "studyRemoveMember": "Fjern fra studie",
     "studyMemberAdded": "Føjet til studie.",
     "studyMemberRemoved": "Fjernet fra studie.",
-    "studyActionError": "Kunne ikke opdatere medlemskab. Prøv igen."
+    "studyActionError": "Kunne ikke opdatere medlemskab. Prøv igen.",
+    "back": "Tilbage",
+    "navLabel": "Afsnit",
+    "emailHelper": "Bruges som login-id.",
+    "displayNameHelper": "Vises til klinikeren i patientlisten og patientvisningen.",
+    "tempPasswordHelper": "Genereret automatisk. Del med den nye bruger. De bør ændre den ved første login."
   },
   "patientInfo": {
     "subtitle": "Klinisk baggrund",

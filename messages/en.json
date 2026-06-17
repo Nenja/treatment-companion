@@ -772,8 +772,10 @@
       "syncIntro": "Or push the dataset straight to REDCap via the API (admin only). Requires REDCap to be configured.",
       "syncButton": "Sync to REDCap now",
       "syncWorking": "Syncing…",
-      "syncResult": "Synced {rows} rows for {patients} patients to REDCap.",
-      "syncError": "Sync failed — {message}"
+      "syncResult": "Synced to REDCap — {patients} patients, {rows} rows ({imported} records confirmed).",
+      "syncError": "Sync failed — {message}",
+      "syncPartial": "The import reported a problem — {message} (REDCap confirmed {imported} records).",
+      "syncNoDetail": "no error detail returned"
     }
   },
   "intro": {
@@ -1026,7 +1028,12 @@
     "studyRemoveMember": "Remove from study",
     "studyMemberAdded": "Added to study.",
     "studyMemberRemoved": "Removed from study.",
-    "studyActionError": "Couldn't update membership. Please try again."
+    "studyActionError": "Couldn't update membership. Please try again.",
+    "back": "Back",
+    "navLabel": "Sections",
+    "emailHelper": "Will be the sign-in identifier.",
+    "displayNameHelper": "Shown to the clinician in the patient list and the patient view.",
+    "tempPasswordHelper": "Auto-generated. Share with the new user. They should change it at first sign-in."
   },
   "patientInfo": {
     "subtitle": "Clinical background",
