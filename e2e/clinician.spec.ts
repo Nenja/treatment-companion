@@ -81,6 +81,10 @@ test.describe('clinician', () => {
 /**
  * TIER 2 — write journeys. Run against STAGING with the dev scenario API.
  *
+ * NOTE (2026-06-16): the dev scenario launcher + /api/dev/scenario were
+ * RETIRED. The Tier-2 seeding mechanism below is therefore out of date and
+ * must be re-grounded (e.g. seed via SQL + a reusable visit code) before
+ * these fixme tests are enabled.
  * Mechanism (the app's own, see app/api/dev/scenario/route.ts +
  * lib/dev/scenarios.ts): POST /api/dev/scenario { scenarioId, reseed:true }
  * reseeds and returns { landAs, visitCode } — a reusable visit code for the

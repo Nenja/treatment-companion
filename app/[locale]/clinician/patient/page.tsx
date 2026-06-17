@@ -737,7 +737,8 @@ export default function ClinicianPatientPage() {
     history: t('actionHistory'),
     export: t('actionExport'),
     training: t('actionTraining'),
-    video: t('actionVideo')
+    video: t('actionVideo'),
+    admin: t('actionAdmin')
   };
   const actionShortLabels = {
     medication: t('actionShortMedication'),
@@ -745,7 +746,8 @@ export default function ClinicianPatientPage() {
     history: t('actionShortHistory'),
     export: t('actionShortExport'),
     training: t('actionShortTraining'),
-    video: t('actionShortVideo')
+    video: t('actionShortVideo'),
+    admin: t('actionShortAdmin')
   };
   const onActionSelect = (id: PatientActionId) => {
     touch();
@@ -759,6 +761,10 @@ export default function ClinicianPatientPage() {
       setOpenPanel((cur) => (cur === 'training' ? null : 'training'));
     } else if (id === 'video') {
       setShowVideoPanel(true);
+    } else if (id === 'admin') {
+      router.push(
+        locale === 'en' ? '/clinician/admin' : `/${locale}/clinician/admin`
+      );
     }
   };
 
@@ -885,6 +891,7 @@ export default function ClinicianPatientPage() {
                 labels={actionLabels}
                 shortLabels={actionShortLabels}
                 onSelect={onActionSelect}
+                showAdmin={!!profile?.isAdmin}
               />
             </div>
           )}
@@ -909,6 +916,7 @@ export default function ClinicianPatientPage() {
               labels={actionLabels}
               shortLabels={actionShortLabels}
               onSelect={onActionSelect}
+                showAdmin={!!profile?.isAdmin}
               className="mt-3"
             />
           </div>
@@ -927,6 +935,7 @@ export default function ClinicianPatientPage() {
           labels={actionLabels}
           shortLabels={actionShortLabels}
           onSelect={onActionSelect}
+                showAdmin={!!profile?.isAdmin}
           className={wide ? 'lg:hidden' : ''}
         />
 

@@ -24,7 +24,7 @@ import { useTranslations } from 'next-intl';
  * icon library is bundled).
  */
 
-export type PatientActionId = 'medication' | 'physio' | 'history' | 'export' | 'training' | 'video';
+export type PatientActionId = 'medication' | 'physio' | 'history' | 'export' | 'training' | 'video' | 'admin';
 
 function Badge({ count }: { count: number }) {
   if (count <= 0) return null;
@@ -100,6 +100,14 @@ function iconFor(id: PatientActionId) {
           <path d="M9 12l2 2 4-4" />
         </svg>
       );
+    case 'admin':
+      // gear / settings — admin tools (account management, research export)
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V15z" />
+        </svg>
+      );
   }
 }
 
@@ -110,6 +118,7 @@ export function PatientActionRow({
   labels,
   shortLabels,
   variant = 'row',
+  showAdmin = false,
   className = ''
 }: {
   physioCount: number;
@@ -127,6 +136,9 @@ export function PatientActionRow({
    *  header; 'sidebar' = a vertical icon+label rail down the left edge.
    *  All report taps the same way. */
   variant?: 'row' | 'toolbar' | 'sidebar';
+  /** Append an Admin entry (navigates to the admin page). Gated by the
+   *  page to admins only — it's a global tool, not patient-scoped. */
+  showAdmin?: boolean;
   /** Extra classes appended to the root (e.g. responsive show/hide). */
   className?: string;
 }) {
@@ -135,7 +147,8 @@ export function PatientActionRow({
     { id: 'training' },
     { id: 'video' },
     { id: 'history' },
-    { id: 'export' }
+    { id: 'export' },
+    ...(showAdmin ? [{ id: 'admin' as const }] : [])
   ];
 
   if (variant === 'toolbar') {

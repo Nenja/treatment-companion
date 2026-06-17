@@ -128,3 +128,71 @@ its own env vars — same idea, a bit more setup.
 None of this is a patient-safety *gate* on its own, but together they remove the
 "a bad build or untested migration reaches real patients" risk before clinical
 testing.
+
+---
+
+## Troubleshooting — double deploys & 500s (seen 2026-06-16)
+
+**Symptom.** In Vercel → Deployments, *two* production deploys appear per commit:
+a `main` one taking ~1 min and a `HEAD` one taking ~12 s. The 12 s one serves
+500s ("Your project's URL and Key are required"); the 1 min one works. The live
+app flaps between them and the deployment URL keeps changing.
+
+**Cause — two deploy mechanisms running at once.**
+- `main` / ~1 min = **Vercel's own git build** (it has all env vars at build,
+  so it works). This means activation step 1 below was never done (or got
+  undone): Vercel is still auto-deploying production on push.
+- `HEAD` / ~12 s = **this workflow's prebuilt deploy** (build happens in CI,
+  Vercel just receives the artifact). It 500s because the build-time
+  `NEXT_PUBLIC_*` vars weren't inlined.
+
+**Why the prebuilt build inlines blanks.** `NEXT_PUBLIC_*` vars are baked in at
+**build** time. The CI build gets its env from `vercel pull`, **which does not
+download env vars marked "Sensitive"** in Vercel. If
+`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` are flagged
+Sensitive, the CI build inlines empty strings → runtime 500. (Vercel's own
+build sees them regardless, which is why only the prebuilt deploy breaks.)
+
+**Fix, in this order (don't reorder — step 4 before a working Action = total
+outage):**
+1. **Make the build-time public vars non-Sensitive.** Vercel → Settings →
+   Environment Variables → for `NEXT_PUBLIC_SUPABASE_URL` and
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, ensure they exist for **Production** and are
+   **not** "Sensitive". Server-only secrets (`SUPABASE_SERVICE_ROLE_KEY`,
+   `REDCAP_API_TOKEN`, `CRON_SECRET`) are read at runtime, not inlined — they
+   can stay Sensitive.
+2. The deploy workflow now **fails closed**: it aborts (keeping the last good
+   build live) if those vars are missing after `vercel pull`, or if the built
+   output contains no Supabase URL. So a blank bundle can't reach production.
+3. Push a commit → let the Action run → **confirm the site works** on
+   `treatment-companion.vercel.app`. Only the prebuilt (`HEAD`) deploy should
+   need to succeed; verify it does.
+4. **Now stop the double-deploy.** Vercel → Settings → Build and Deployment →
+   **Ignored Build Step** → set to:
+   `if [ "$VERCEL_ENV" = "production" ]; then exit 0; else exit 1; fi`
+   That cancels Vercel's own *production* git builds (so only the gated Action
+   deploys production) while still building Preview/staging. After this, each
+   commit should show **one** production deploy (`HEAD`, from the Action), not
+   two.
+
+**Always use the stable domain** `treatment-companion.vercel.app`, never the
+per-deploy `…-<hash>.vercel.app` URLs (those change every deploy by design).
+
+### Update — public env now injected from CI secrets (more robust)
+
+Making the `NEXT_PUBLIC_*` vars non-Sensitive *should* be enough for
+`vercel pull` to deliver them, but it proved unreliable in practice. The deploy
+workflow now writes the build-time public vars directly into
+`.vercel/.env.production.local` from **GitHub repo secrets** before
+`vercel build`, so the build no longer depends on `vercel pull` / sensitivity /
+scope at all.
+
+**One-time setup:** add two **repo secrets** (Settings → Secrets and variables →
+Actions → New repository secret) with your **production** values:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+These are public values (they ship in the browser bundle), so they're safe to
+store as CI secrets. Server-only secrets stay in Vercel and are read at runtime.
+If they're missing, the workflow fails fast with a clear message instead of
+shipping a 500.

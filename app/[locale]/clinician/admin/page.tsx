@@ -5,6 +5,7 @@ import { AppHeader } from '@/components/layout/AppHeader';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
+import { useExportRedcapDataset, useSyncRedcapDataset } from '@/lib/redcapExport';
 import {
   useAdminAccounts,
   useCreateAccount,
@@ -70,6 +71,17 @@ export default function AdminPage() {
     !!profile && profile.isAdmin
   );
 
+  const counts = useMemo(() => {
+    const a = accountsQuery.data ?? [];
+    return {
+      patients: a.filter((x) => x.role === 'patient').length,
+      physicians: a.filter((x) => x.role === 'clinician').length,
+      therapists: a.filter((x) => x.role === 'physiotherapist').length,
+      admins: a.filter((x) => x.isAdmin).length,
+      deactivated: a.filter((x) => x.deactivatedAt).length
+    };
+  }, [accountsQuery.data]);
+
   if (authLoading || !profile || !profile.isAdmin) {
     return <div className="min-h-dvh bg-cream" />;
   }
@@ -92,16 +104,58 @@ export default function AdminPage() {
 
       <main className="mx-auto max-w-[640px] px-5 pb-16 pt-6">
         <h1 className="font-display text-[24px] leading-tight text-ink">
-          Admin
+          {tAdmin('eyebrow')}
         </h1>
-        <p className="mt-1 text-[14px] text-ink-soft">
-          Create new patient or clinician accounts and review the
-          account list.
-        </p>
+        <p className="mt-1 text-[14px] text-ink-soft">{tAdmin('lead')}</p>
 
-        <CreateAccountSection />
+        {accountsQuery.data && (
+          <div className="mt-4 flex flex-wrap gap-2 text-[12px] text-ink-soft">
+            {(
+              [
+                ['filterRolePatient', counts.patients],
+                ['filterRoleClinician', counts.physicians],
+                ['filterRoleTherapist', counts.therapists],
+                ['filterRoleAdmin', counts.admins],
+                ['filterStatusInactive', counts.deactivated]
+              ] as const
+            ).map(([key, n]) => (
+              <span
+                key={key}
+                className="rounded-full border border-stone bg-cream-soft px-2.5 py-1"
+              >
+                <span className="font-semibold text-ink">{n}</span> {tAdmin(key)}
+              </span>
+            ))}
+          </div>
+        )}
 
-        <section className="mt-10">
+        <nav className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
+          {(
+            [
+              ['#accounts', tAdmin('accountsTitle')],
+              ['#create', tAdmin('createAccount')],
+              ['#access', tAdmin('accessTitle')],
+              ['#export', tAdmin('exportTitle')],
+              ['#studies', tAdmin('studiesTitle')],
+              ['#purge', tAdmin('purgeTitle')]
+            ] as const
+          ).map(([href, label]) => (
+            <a
+              key={href}
+              href={href}
+              className="text-sage-deep underline-offset-2 hover:underline"
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
+
+        {/* ── Accounts & access ───────────────────────────────── */}
+        <h2 className="eyebrow mt-10 border-t border-stone/60 pt-6">
+          {tAdmin('groupAccountsTitle')}
+        </h2>
+
+        <section id="accounts" className="mt-6 scroll-mt-4">
           <h2 className="font-display text-[18px] text-ink">{tAdmin('accountsTitle')}</h2>
           {accountsQuery.isLoading && (
             <ul className="mt-3 divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
@@ -129,11 +183,30 @@ export default function AdminPage() {
           )}
         </section>
 
-        <AccessSection enabled={!!profile && profile.isAdmin} />
+        <div id="create" className="scroll-mt-4">
+          <CreateAccountSection />
+        </div>
 
-        <ResearchPurgeSection enabled={!!profile && profile.isAdmin} />
+        <div id="access" className="scroll-mt-4">
+          <AccessSection enabled={!!profile && profile.isAdmin} />
+        </div>
 
-        <StudiesSection enabled={!!profile && profile.isAdmin} />
+        {/* ── Research data ───────────────────────────────────── */}
+        <h2 className="eyebrow mt-12 border-t border-stone/60 pt-6">
+          {tAdmin('groupResearchTitle')}
+        </h2>
+
+        <div id="export" className="scroll-mt-4">
+          <ResearchExportSection enabled={!!profile && profile.isAdmin} />
+        </div>
+
+        <div id="studies" className="scroll-mt-4">
+          <StudiesSection enabled={!!profile && profile.isAdmin} />
+        </div>
+
+        <div id="purge" className="scroll-mt-4">
+          <ResearchPurgeSection enabled={!!profile && profile.isAdmin} />
+        </div>
       </main>
     </div>
   );
@@ -1134,6 +1207,8 @@ function StudiesSection({ enabled }: { enabled: boolean }) {
   const removeFromStudy = useRemovePatientFromStudy();
 
   const [filter, setFilter] = useState<StudyFilter>({ kind: 'allMembers' });
+  const [studyQuery, setStudyQuery] = useState('');
+  const [patientQuery, setPatientQuery] = useState('');
 
   const studies = overview.data?.studies ?? [];
   const patients = overview.data?.patients ?? [];
@@ -1143,20 +1218,43 @@ function StudiesSection({ enabled }: { enabled: boolean }) {
     return m;
   }, [studies]);
 
+  // Free-text search over the studies list (key / name / description).
+  const visibleStudies = useMemo(() => {
+    const q = studyQuery.trim().toLowerCase();
+    if (!q) return studies;
+    return studies.filter((s) =>
+      `${s.key} ${s.name} ${s.description ?? ''}`.toLowerCase().includes(q)
+    );
+  }, [studies, studyQuery]);
+
   const filtered = useMemo(() => {
+    const q = patientQuery.trim().toLowerCase();
     return patients.filter((p) => {
+      let matchesFilter: boolean;
       switch (filter.kind) {
         case 'allMembers':
-          return p.studyIds.length > 0;
+          matchesFilter = p.studyIds.length > 0;
+          break;
         case 'study':
-          return p.studyIds.includes(filter.studyId);
+          matchesFilter = p.studyIds.includes(filter.studyId);
+          break;
         case 'consentedNoStudy':
-          return p.researchConsent && p.studyIds.length === 0 && !p.purgedAt;
+          matchesFilter =
+            p.researchConsent && p.studyIds.length === 0 && !p.purgedAt;
+          break;
         case 'withdrawn':
-          return p.studyIds.length > 0 && !!p.withdrawnAt && !p.purgedAt;
+          matchesFilter =
+            p.studyIds.length > 0 && !!p.withdrawnAt && !p.purgedAt;
+          break;
       }
+      if (!matchesFilter) return false;
+      if (!q) return true;
+      // Search participants by name and REDCap record_id.
+      return `${p.displayName ?? ''} ${p.studyCode ?? ''}`
+        .toLowerCase()
+        .includes(q);
     });
-  }, [patients, filter]);
+  }, [patients, filter, patientQuery]);
 
   const onAdd = async (patientId: string, studyId: string) => {
     if (!studyId) return;
@@ -1211,11 +1309,27 @@ function StudiesSection({ enabled }: { enabled: boolean }) {
         </p>
       )}
       {studies.length > 0 && (
-        <ul className="mt-3 divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
-          {studies.map((s) => (
-            <StudyRow key={s.id} study={s} />
-          ))}
-        </ul>
+        <>
+          <input
+            type="text"
+            value={studyQuery}
+            onChange={(e) => setStudyQuery(e.target.value)}
+            placeholder={tAdmin('studySearchPlaceholder')}
+            aria-label={tAdmin('studySearchPlaceholder')}
+            className="mt-3 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[13px] text-ink placeholder:text-ink-muted/60 focus:border-sage focus:outline-none"
+          />
+          {visibleStudies.length === 0 ? (
+            <p className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft px-4 py-3 text-[14px] text-ink-muted">
+              {tAdmin('studyNoMatches')}
+            </p>
+          ) : (
+            <ul className="mt-3 divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
+              {visibleStudies.map((s) => (
+                <StudyRow key={s.id} study={s} />
+              ))}
+            </ul>
+          )}
+        </>
       )}
 
       {/* Study patients */}
@@ -1241,7 +1355,14 @@ function StudiesSection({ enabled }: { enabled: boolean }) {
               ))}
             </select>
           </div>
-
+          <input
+            type="text"
+            value={patientQuery}
+            onChange={(e) => setPatientQuery(e.target.value)}
+            placeholder={tAdmin('studyPatientSearchPlaceholder')}
+            aria-label={tAdmin('studyPatientSearchPlaceholder')}
+            className="mt-3 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[13px] text-ink placeholder:text-ink-muted/60 focus:border-sage focus:outline-none"
+          />
           {filtered.length === 0 ? (
             <p className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft px-4 py-3 text-[14px] text-ink-muted">
               {tAdmin('studyPatientsEmpty')}
@@ -1529,5 +1650,71 @@ function StudyPatientCard({
         </div>
       )}
     </li>
+  );
+}
+
+/**
+ * Research data export — CSV download + push-to-REDCap. Admin-only, global
+ * (all consented patients). Lives here on the admin page rather than the
+ * per-patient wearable/observations screen, where it used to be orphaned.
+ */
+function ResearchExportSection({ enabled }: { enabled: boolean }) {
+  const tExport = useTranslations('clinician.researchExport');
+  const exportRedcap = useExportRedcapDataset();
+  const syncRedcap = useSyncRedcapDataset();
+  if (!enabled) return null;
+
+  const btn =
+    'mt-4 flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-stone disabled:text-ink-soft';
+  const ok =
+    'mt-3 rounded-[var(--radius-button)] border border-sage bg-sage-soft px-4 py-3 text-[14px] text-sage-deep';
+  const err =
+    'mt-3 rounded-[var(--radius-button)] border border-amber-deep bg-amber-soft px-4 py-3 text-[14px] text-amber-deep';
+
+  return (
+    <section className="mt-10">
+      <h2 className="font-display text-[18px] text-ink">{tExport('heading')}</h2>
+      <p className="mt-1 text-[13px] text-ink-soft">{tExport('intro')}</p>
+      {exportRedcap.data && (
+        <div className={ok}>
+          {tExport('result', {
+            patients: exportRedcap.data.patients,
+            rows: exportRedcap.data.rows
+          })}
+        </div>
+      )}
+      {exportRedcap.isError && <div className={err}>{tExport('error')}</div>}
+      <button
+        type="button"
+        onClick={() => exportRedcap.mutate()}
+        disabled={exportRedcap.isPending}
+        className={btn}
+      >
+        {exportRedcap.isPending ? tExport('working') : tExport('button')}
+      </button>
+
+      <p className="mt-6 text-[13px] text-ink-soft">{tExport('syncIntro')}</p>
+      {syncRedcap.data && (
+        <div className={ok}>
+          {tExport('syncResult', {
+            patients: syncRedcap.data.patients,
+            rows: syncRedcap.data.rows
+          })}
+        </div>
+      )}
+      {syncRedcap.isError && (
+        <div className={err}>
+          {tExport('syncError', { message: (syncRedcap.error as Error).message })}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => syncRedcap.mutate()}
+        disabled={syncRedcap.isPending}
+        className={btn}
+      >
+        {syncRedcap.isPending ? tExport('syncWorking') : tExport('syncButton')}
+      </button>
+    </section>
   );
 }
