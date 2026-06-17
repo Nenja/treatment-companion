@@ -70,10 +70,40 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          # Build-time public vars, supplied as repo secrets (see below). These
+          # are NEXT_PUBLIC_* (inlined at build) and are public values anyway.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
           set -euo pipefail
           npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+          # ── Force the build-time public env from CI secrets ─────────────────
+          # NEXT_PUBLIC_* are inlined at BUILD time. Rather than depend on
+          # `vercel pull` delivering them (it skips "Sensitive" vars and is
+          # scope-sensitive — the cause of the 500s), write the authoritative
+          # values into the env file that `vercel build` reads. Within one env
+          # file the FIRST definition wins, so drop any pulled (possibly blank)
+          # copies before appending ours.
+          if [ -z "${NEXT_PUBLIC_SUPABASE_URL:-}" ] || [ -z "${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}" ]; then
+            echo "::error::Repo secrets NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY are not set. Add them in Settings → Secrets and variables → Actions (production values; they're public, safe in CI)."
+            exit 1
+          fi
+          ENVFILE=.vercel/.env.production.local
+          touch "$ENVFILE"
+          sed -i '/^NEXT_PUBLIC_SUPABASE_URL=/d;/^NEXT_PUBLIC_SUPABASE_ANON_KEY=/d' "$ENVFILE"
+          printf 'NEXT_PUBLIC_SUPABASE_URL=%s\n'      "$NEXT_PUBLIC_SUPABASE_URL"      >> "$ENVFILE"
+          printf 'NEXT_PUBLIC_SUPABASE_ANON_KEY=%s\n' "$NEXT_PUBLIC_SUPABASE_ANON_KEY" >> "$ENVFILE"
+
           npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
+
+          # Confirm the public Supabase URL actually got inlined before shipping
+          # (catches a build that ran but didn't bake the value in for any reason).
+          if ! grep -rqs "supabase.co" .vercel/output 2>/dev/null; then
+            echo "::error::Built output contains no Supabase URL — public env wasn't inlined. Refusing to deploy a build that would 500."
+            exit 1
+          fi
+
           # --archive=tgz uploads ONE archive instead of hundreds of individual
           # files. Vercel's free tier caps CLI/API uploads at 5000 FILES per 24h
           # (error code "api-upload-free"); a prebuilt Next build is hundreds of

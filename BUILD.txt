@@ -1,58 +1,50 @@
-BUILD - redcap-automation-1   (server-side REDCap sync: both triggers)
+BUILD - deploy-hardening-2   (inject build-time public env from CI secrets)
 
 WHAT THIS IS
-  Cumulative snapshot on top of redcap-pii-decision-1. Adds the REDCap sync
-  automation (both triggers). New code + UI + i18n + one config file. No DB
-  migration. Migrations still 0001-0110.
+  Cumulative snapshot (deploy this ONE zip). CI workflow + docs only — NO app
+  code change since admin-overview-search-1. Migrations 0001-0111.
 
-WHAT'S NEW
-  - lib/redcap/buildRows.ts  - pure row/CSV builder, extracted from
-    lib/redcapExport.ts (byte-identical mapping logic) so client AND server can
-    share it. redcapExport.ts now imports + re-exports from it (the test, which
-    imports esc/toCsv/patientRows, is unaffected).
-  - lib/redcap/importToRedcap.ts - server-only REDCap API client; chunks rows
-    (2000/chunk) and POSTs content=record/csv/flat, overwriteBehavior=normal.
-  - lib/redcap/runSync.ts - runRedcapSync(): service client -> 0106 RPC ->
-    flatten -> import -> summary. Shared by both triggers.
-  - app/api/admin/redcap-sync/route.ts - TRIGGER 1 (admin button). POST,
-    signed-in-admin gated (profile.is_admin), writes an admin audit event.
-  - app/api/cron/redcap-sync/route.ts - TRIGGER 2 (schedule). GET, CRON_SECRET
-    gated (Vercel Cron sends it as Bearer auth).
-  - vercel.json - cron "0 3 * * 1" (weekly Mon 03:00 UTC) -> the cron route.
-  - app/[locale]/clinician/observations/page.tsx - "Sync to REDCap now" button
-    + result/error, next to the existing "Download REDCap CSV".
-  - messages/{en,da,sv,nb}.json - 5 new keys under clinician.researchExport
-    (syncIntro/syncButton/syncWorking/syncResult/syncError). da/sv/nb are
-    first-pass, flagged for native review.
-  - redcap/AUTOMATION.md - architecture, env vars, limits, DPO gate.
-  - docs/ROADMAP.md - REDCap sync marked BUILT.
+WHY
+  After making NEXT_PUBLIC_SUPABASE_URL/_ANON_KEY non-Sensitive, the prebuilt
+  deploys STILL 500'd. So we stop relying on `vercel pull` for the build-time
+  public vars (it skips Sensitive vars and is scope-sensitive) and instead
+  write them straight into the build's env file from GitHub repo secrets.
 
-YOU MUST SET (Vercel env vars, server-only, NO NEXT_PUBLIC_; Production):
-  REDCAP_API_URL    your instance API endpoint, e.g. https://redcap.x/api/
-  REDCAP_API_TOKEN  the project API token (a credential - never in code/zip)
-  CRON_SECRET       any long random string (gates the scheduled route)
-  Until these are set, both routes return 400 "REDCap not configured" - harmless.
+WHAT CHANGED
+  .github/workflows/deploy.yml: after `vercel pull`, the deploy step now
+   - fails fast if the two repo secrets aren't set;
+   - removes any pulled (possibly blank) NEXT_PUBLIC_SUPABASE_* lines from
+     .vercel/.env.production.local and writes the secret values (first
+     definition wins in a dotenv file, so the blank must go);
+   - builds, then refuses to deploy unless the built output contains a
+     Supabase URL (still fail-closed).
 
-SHAPE
-  Full snapshot, chunked, idempotent. Incremental sync deferred. Cron runs on
-  the production deployment only; weekly is fine on any plan (more-frequent-than
-  -daily needs Pro). maxDuration=60 (Hobby caps lower; fine at current scale).
+*** REQUIRED ONE-TIME SETUP ***
+  GitHub → repo Settings → Secrets and variables → Actions → New repository
+  secret, add BOTH (use your PRODUCTION Supabase values):
+    NEXT_PUBLIC_SUPABASE_URL
+    NEXT_PUBLIC_SUPABASE_ANON_KEY
+  (These are public — they ship in the browser bundle — so they're safe as CI
+  secrets. Server-only keys stay in Vercel.)
 
-*** DPO/DPIA GATE ***
-  Do NOT run against real patient data until the DPO/regulatory sign-off.
-  Automated transfer to REDCap is a processing activity for the DPIA. Test
-  against staging / fake data freely.
+*** IMPORTANT — this only works once THIS deploy.yml is in the repo ***
+  If a 500 persisted after the previous fix, it's likely the updated workflow
+  was never uploaded (e.g. a README edit made directly on GitHub ran the OLD
+  workflow). Deploy THIS zip so the correct workflow is in place.
 
-VERIFIED
-  tsc --noEmit clean; eslint 0 errors (79-warning baseline unchanged);
-  check:i18n OK (1713 keys, en/da aligned); tests/redcapExport.test.ts 12/12;
-  font-stub production build compiled (both new routes registered:
-  /api/admin/redcap-sync, /api/cron/redcap-sync); layout.tsx SHA restored
-  (d6901997...), 0 BUILD-STUB remnants.
+TO GET THE SITE BACK UP RIGHT NOW (while setting the above up)
+  The active production is the broken prebuilt deploy. Quickest restore:
+  GitHub → Actions → "Deploy (production, on green CI)" → ••• → Disable
+  workflow; then in Vercel make sure the Ignored Build Step is NOT skipping
+  production (empty/default) and Redeploy the latest commit — Vercel's own
+  build (the ~1 min one that works) will serve. Re-enable the Action after the
+  secrets are set and you've confirmed a prebuilt deploy works.
 
-CANNOT VERIFY HERE (QA items)
-  The live REDCap API call (no instance/token in sandbox) and the rendered
-  button - exercise these on staging after setting the env vars.
+ORDER ONCE FIXED
+  1. Add the two repo secrets.  2. Deploy this zip.  3. Re-enable the Action.
+  4. Push a commit; confirm treatment-companion.vercel.app works (HEAD deploy).
+  5. THEN set Vercel Ignored Build Step to skip production so only the gated
+     Action deploys: if [ "$VERCEL_ENV" = "production" ]; then exit 0; else exit 1; fi
 
 MIGRATIONS
-  Nothing new.
+  None new.
