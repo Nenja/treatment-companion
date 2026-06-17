@@ -1,51 +1,48 @@
-BUILD - admin-overview-search-1   (admin page restructure + search)
+BUILD - deploy-hardening-1   (fix deploy-on-green double-deploy + 500s)
 
 WHAT THIS IS
-  Cumulative snapshot (deploy THIS one). Migrations 0001-0111. UI only; no
-  migration. Supersedes admin-tool-rail-1.
+  Cumulative snapshot (deploy this ONE zip). CI workflow + docs only — NO app
+  code change since admin-overview-search-1, so no rebuild was needed.
+  Migrations 0001-0111.
 
-CONTAINS (cumulative)
-  - Admin page reorganised with an overview band + two grouped domains (this).
-  - Free-text search added to the Studies section (this).
-  - Admin entry in the patient Tools rail; research export on the admin page;
-    0111 export fix; dev scenarios retired.
+THE PROBLEM (2026-06-16)
+  Two production deploys per commit in Vercel: a `main` ~1 min build (worked)
+  and a `HEAD` ~12 s prebuilt deploy from the GitHub Action (500'd: "Your
+  project's URL and Key are required"). The live alias flapped between them.
+  Causes:
+   1. Vercel's automatic production deploys were never turned off, so BOTH
+      Vercel's own git build AND the Action deployed production.
+   2. The Action's prebuilt build inlined BLANK NEXT_PUBLIC_SUPABASE_* values:
+      those are baked in at build time, the CI build gets env via `vercel pull`,
+      and `vercel pull` does NOT download vars marked "Sensitive" in Vercel.
 
-ADMIN PAGE RESTRUCTURE
-  The page was a flat six-section scroll in an ad-hoc order with a stale intro.
-  Now:
-   - Overview band: title + lead, at-a-glance counts pulled from the loaded
-     account list (patients / physicians / therapists / admins / deactivated),
-     and a row of jump-links to each section.
-   - Grouped into two domains with headers:
-       Accounts & access:  Accounts list · Create account · Active access
-       Research data:       Research export · Studies · Consent pending-deletion
-   - Research export promoted from the bottom; the consent-deletion queue moved
-     to the end of the research group. Each section has an id for the jump-links.
-  Reuses the existing section components; counts reuse existing filter labels.
+WHAT CHANGED HERE
+  .github/workflows/deploy.yml now FAILS CLOSED:
+   - after `vercel pull`, aborts if NEXT_PUBLIC_SUPABASE_URL / _ANON_KEY are
+     missing/blank (with a message telling you to un-mark them Sensitive);
+   - after `vercel build`, aborts if the built output contains no Supabase URL.
+  So a blank/500 bundle can never reach production again — the last good build
+  stays live instead.
+  docs/STAGING-AND-CI-GATE.md gains a "Troubleshooting" runbook with the cause
+  and the ordered fix.
 
-SEARCH (in addition to the existing filters)
-  Studies section now has two free-text searches:
-   - Studies list — matches study key / name / description.
-   - Study patients — matches display name / REDCap record_id, applied ON TOP of
-     the existing membership filter dropdown.
-  (The Accounts list already had its own name/email search — unchanged.)
+*** YOUR DASHBOARD STEPS — IN THIS ORDER (do not reorder) ***
+  1. Vercel → Settings → Environment Variables: make NEXT_PUBLIC_SUPABASE_URL
+     and NEXT_PUBLIC_SUPABASE_ANON_KEY exist for Production and NOT "Sensitive".
+     (Server secrets — service role, REDCAP token, CRON_SECRET — can stay
+     Sensitive; they're runtime, not inlined.)
+  2. Deploy this zip; let the Action run; CONFIRM treatment-companion.vercel.app
+     works. If a var is still Sensitive, the Action now fails loudly instead of
+     shipping a 500 — fix per its error and re-run.
+  3. ONLY THEN, to stop the double-deploy: Vercel → Settings → Build and
+     Deployment → Ignored Build Step =
+       if [ "$VERCEL_ENV" = "production" ]; then exit 0; else exit 1; fi
+     This cancels Vercel's own production git builds (so only the gated Action
+     deploys prod) while still building Preview/staging. After this you should
+     see ONE production deploy per commit (HEAD), not two.
 
-NEW i18n KEYS (admin namespace, en/da/sv/nb — da/sv/nb first-pass, flag for
-  native review): lead, groupAccountsTitle, groupResearchTitle, exportTitle,
-  studySearchPlaceholder, studyNoMatches, studyPatientSearchPlaceholder.
-  Parity now 1722 keys.
-
-VERIFIED
-  tsc clean; eslint 0 errors; check:i18n OK (1722 keys, en/da aligned);
-  font-stub build compiled; layout.tsx SHA restored (d6901997...);
-  0 BUILD-STUB remnants.
+  Always use treatment-companion.vercel.app — never the per-deploy
+  ...-<hash>.vercel.app URLs (those change every deploy by design).
 
 MIGRATIONS
   None new.
-
-DOCS (consolidated 2026-06-16, same code)
-  HANDOVER.md §7 now logs the full 2026-06-16 session (admin reorg+search,
-  Tools-rail admin, export relocation, 0111, dev-scenario retirement, the
-  env-var/outage ops lesson); §5.9 marked RETIRED; §4.6 migration range → 0111.
-  TRANSFER_PROMPT.md "Where we are" / "What's likely next" rewritten to current
-  state. No code change vs the build verified above.

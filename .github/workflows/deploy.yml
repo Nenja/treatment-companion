@@ -73,7 +73,34 @@ jobs:
         run: |
           set -euo pipefail
           npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+          # ── Fail-closed guard ───────────────────────────────────────────
+          # NEXT_PUBLIC_* vars are inlined at BUILD time. The CI build gets its
+          # env from `vercel pull`, which does NOT download vars marked
+          # "Sensitive" in Vercel. If a build-time public var is missing/blank
+          # here, the prebuilt bundle would inline an empty Supabase URL and
+          # 500 at runtime. Better to fail the deploy and keep the last good
+          # build live than to ship a broken one.
+          ENVFILE=.vercel/.env.production.local
+          missing=0
+          for v in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY; do
+            if ! grep -qE "^${v}=.+" "$ENVFILE" 2>/dev/null; then
+              echo "::error::${v} is missing/empty after 'vercel pull'. In Vercel → Settings → Environment Variables, ensure ${v} exists for Production and is NOT marked 'Sensitive' (sensitive vars aren't pulled, so the CI build would inline a blank → 500)."
+              missing=1
+            fi
+          done
+          [ "$missing" = 0 ] || exit 1
+
           npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
+
+          # Belt-and-suspenders: confirm the public Supabase URL actually made
+          # it into the built output before shipping (catches a build that ran
+          # but didn't inline the value for any reason).
+          if ! grep -rqs "supabase.co" .vercel/output 2>/dev/null; then
+            echo "::error::Built output contains no Supabase URL — public env vars weren't inlined. Refusing to deploy a build that would 500."
+            exit 1
+          fi
+
           # --archive=tgz uploads ONE archive instead of hundreds of individual
           # files. Vercel's free tier caps CLI/API uploads at 5000 FILES per 24h
           # (error code "api-upload-free"); a prebuilt Next build is hundreds of
