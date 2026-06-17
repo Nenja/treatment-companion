@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useAuth } from '@/lib/supabase/auth';
 import { LanguageSelect } from '@/components/settings/LanguageSelect';
+import { VersionTag } from '@/components/layout/VersionTag';
 
 /**
  * Email + password login. On success the AuthProvider picks up the new
@@ -203,9 +204,10 @@ export default function LoginPage() {
             href={`${prefix}/privacy`}
             className="text-ink-muted hover:text-ink-soft"
           >
-            Your data &amp; privacy
+            {t('privacyLink')}
           </Link>
         </p>
+        <VersionTag className="mt-6 block text-center text-[11px] text-ink-muted" />
       </main>
     </div>
   );

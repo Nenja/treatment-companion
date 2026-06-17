@@ -1620,7 +1620,8 @@
     "errNotActivated": "Denne konto er ikke aktiveret endnu. Kontakt venligst din klinik.",
     "errRateLimit": "For mange forsøg. Vent et minut, og prøv igen.",
     "errNetwork": "Netværksproblem. Tjek din forbindelse, og prøv igen.",
-    "errGeneric": "Noget gik galt under login. Prøv venligst igen."
+    "errGeneric": "Noget gik galt under login. Prøv venligst igen.",
+    "privacyLink": "Dine data & privatliv"
   },
   "forgotPassword": {
     "title": "Nulstil din adgangskode",

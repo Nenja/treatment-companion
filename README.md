@@ -1,4 +1,4 @@
--# Treatment Companion
+# Treatment Companion
 
 A patient-first treatment companion for adults receiving botulinum toxin
 treatment for spasticity. Mobile-first, accessibility-first, regulatory-safe.

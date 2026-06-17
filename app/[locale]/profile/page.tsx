@@ -17,6 +17,7 @@ import {
 import { useToast } from '@/components/feedback/Toast';
 import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
 import { LanguageSelect, switchLocalePath } from '@/components/settings/LanguageSelect';
+import { VersionTag } from '@/components/layout/VersionTag';
 import { useSetPreferredLocale, type AppLocale } from '@/lib/supabase/locale';
 import { VideoConsentSettings } from '@/components/settings/VideoConsentSettings';
 import {
@@ -491,6 +492,7 @@ export default function ProfilePage() {
         >
           {saving ? t('saving') : t('save')}
         </button>
+        <VersionTag className="mt-8 block text-center text-[11px] text-ink-muted" />
       </main>
 
       {/* Unsaved-changes guard for in-app navigation. */}
