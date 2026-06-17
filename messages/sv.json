@@ -772,8 +772,10 @@
       "syncIntro": "Eller skicka datasetet direkt till REDCap via API:et (endast admin). Kräver att REDCap är konfigurerat.",
       "syncButton": "Synka till REDCap nu",
       "syncWorking": "Synkar…",
-      "syncResult": "Synkade {rows} rader för {patients} patienter till REDCap.",
-      "syncError": "Synkning misslyckades — {message}"
+      "syncResult": "Importerade {imported} av {rows} rader för {patients} patienter till REDCap.",
+      "syncError": "Synkning misslyckades — {message}",
+      "syncPartial": "REDCap accepterade endast {imported} av {rows} rader — importen rapporterade ett problem: {message}",
+      "syncNoDetail": "inga feldetaljer returnerades"
     }
   },
   "intro": {

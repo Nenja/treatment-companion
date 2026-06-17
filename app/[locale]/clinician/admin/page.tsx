@@ -1694,14 +1694,25 @@ function ResearchExportSection({ enabled }: { enabled: boolean }) {
       </button>
 
       <p className="mt-6 text-[13px] text-ink-soft">{tExport('syncIntro')}</p>
-      {syncRedcap.data && (
-        <div className={ok}>
-          {tExport('syncResult', {
-            patients: syncRedcap.data.patients,
-            rows: syncRedcap.data.rows
-          })}
-        </div>
-      )}
+      {syncRedcap.data &&
+        (syncRedcap.data.errors.length > 0 ||
+        syncRedcap.data.imported < syncRedcap.data.rows ? (
+          <div className={err}>
+            {tExport('syncPartial', {
+              imported: syncRedcap.data.imported,
+              rows: syncRedcap.data.rows,
+              message: syncRedcap.data.errors[0] ?? tExport('syncNoDetail')
+            })}
+          </div>
+        ) : (
+          <div className={ok}>
+            {tExport('syncResult', {
+              patients: syncRedcap.data.patients,
+              imported: syncRedcap.data.imported,
+              rows: syncRedcap.data.rows
+            })}
+          </div>
+        ))}
       {syncRedcap.isError && (
         <div className={err}>
           {tExport('syncError', { message: (syncRedcap.error as Error).message })}

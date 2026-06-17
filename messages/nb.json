@@ -772,8 +772,10 @@
       "syncIntro": "Eller send datasettet direkte til REDCap via API-et (kun admin). Krever at REDCap er konfigurert.",
       "syncButton": "Synkroniser til REDCap nå",
       "syncWorking": "Synkroniserer…",
-      "syncResult": "Synkroniserte {rows} rader for {patients} pasienter til REDCap.",
-      "syncError": "Synkronisering mislyktes — {message}"
+      "syncResult": "Importerte {imported} av {rows} rader for {patients} pasienter til REDCap.",
+      "syncError": "Synkronisering mislyktes — {message}",
+      "syncPartial": "REDCap godtok bare {imported} av {rows} rader — importen rapporterte et problem: {message}",
+      "syncNoDetail": "ingen feildetaljer returnert"
     }
   },
   "intro": {

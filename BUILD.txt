@@ -1,50 +1,41 @@
-BUILD - deploy-hardening-2   (inject build-time public env from CI secrets)
+BUILD - redcap-sync-truthful-result-1   (sync reports REDCap's confirmed count + surfaces errors)
 
 WHAT THIS IS
-  Cumulative snapshot (deploy this ONE zip). CI workflow + docs only — NO app
-  code change since admin-overview-search-1. Migrations 0001-0111.
+  Cumulative snapshot (deploy this ONE zip). Migrations 0001-0111. App change
+  (admin sync UI + i18n) + the deploy-hardening-2 workflow.
 
-WHY
-  After making NEXT_PUBLIC_SUPABASE_URL/_ANON_KEY non-Sensitive, the prebuilt
-  deploys STILL 500'd. So we stop relying on `vercel pull` for the build-time
-  public vars (it skips Sensitive vars and is scope-sensitive) and instead
-  write them straight into the build's env file from GitHub repo secrets.
+THE PROBLEM
+  "Synced 187 rows for 2 patients" was reported even though nothing reached
+  REDCap (empty REDCap Logging page). Two bugs:
+   1. The message used `rows` = rows BUILT from the DB, not `imported` =
+      REDCap's confirmed count. So it showed a number even if 0 were imported.
+   2. The admin route returns HTTP 207 when the import has errors; 207 counts
+      as res.ok, so the client treated it as success and HID the errors.
 
-WHAT CHANGED
-  .github/workflows/deploy.yml: after `vercel pull`, the deploy step now
-   - fails fast if the two repo secrets aren't set;
-   - removes any pulled (possibly blank) NEXT_PUBLIC_SUPABASE_* lines from
-     .vercel/.env.production.local and writes the secret values (first
-     definition wins in a dotenv file, so the blank must go);
-   - builds, then refuses to deploy unless the built output contains a
-     Supabase URL (still fail-closed).
+WHAT CHANGED (app/[locale]/clinician/admin/page.tsx + clinician.researchExport i18n)
+  The sync result now:
+   - on success shows REDCap's confirmed count: "Imported {imported} of {rows}
+     rows for {patients} patients into REDCap." (syncResult)
+   - if the import reported errors OR imported < rows, shows an ERROR box with
+     REDCap's actual message: "REDCap accepted only {imported} of {rows} rows —
+     the import reported a problem: {message}" (syncPartial / syncNoDetail).
+  New i18n keys syncPartial, syncNoDetail (en/da/sv/nb; da/sv/nb first-pass).
+  syncResult reworded. Parity 1724 keys.
 
-*** REQUIRED ONE-TIME SETUP ***
-  GitHub → repo Settings → Secrets and variables → Actions → New repository
-  secret, add BOTH (use your PRODUCTION Supabase values):
-    NEXT_PUBLIC_SUPABASE_URL
-    NEXT_PUBLIC_SUPABASE_ANON_KEY
-  (These are public — they ship in the browser bundle — so they're safe as CI
-  secrets. Server-only keys stay in Vercel.)
+WHAT TO DO
+  Deploy, then re-run "Sync to REDCap now". It will now show what REDCap
+  actually said. The empty Logging page means the import never landed — almost
+  certainly:
+   - REDCAP_API_URL is not the API endpoint (it must look like
+     https://<your-redcap-host>/api/  — with /api/ , not the project page URL), or
+   - REDCAP_API_TOKEN is from a different project (tokens are per-project) or
+     expired.
+  The new error message will distinguish these (e.g. an HTTP 403 = bad token; an
+  unparseable/HTML response = wrong URL).
 
-*** IMPORTANT — this only works once THIS deploy.yml is in the repo ***
-  If a 500 persisted after the previous fix, it's likely the updated workflow
-  was never uploaded (e.g. a README edit made directly on GitHub ran the OLD
-  workflow). Deploy THIS zip so the correct workflow is in place.
-
-TO GET THE SITE BACK UP RIGHT NOW (while setting the above up)
-  The active production is the broken prebuilt deploy. Quickest restore:
-  GitHub → Actions → "Deploy (production, on green CI)" → ••• → Disable
-  workflow; then in Vercel make sure the Ignored Build Step is NOT skipping
-  production (empty/default) and Redeploy the latest commit — Vercel's own
-  build (the ~1 min one that works) will serve. Re-enable the Action after the
-  secrets are set and you've confirmed a prebuilt deploy works.
-
-ORDER ONCE FIXED
-  1. Add the two repo secrets.  2. Deploy this zip.  3. Re-enable the Action.
-  4. Push a commit; confirm treatment-companion.vercel.app works (HEAD deploy).
-  5. THEN set Vercel Ignored Build Step to skip production so only the gated
-     Action deploys: if [ "$VERCEL_ENV" = "production" ]; then exit 0; else exit 1; fi
+VERIFIED
+  tsc clean; eslint 0 errors; check:i18n OK (1724 keys); font-stub build
+  compiled; layout SHA restored; 0 BUILD-STUB remnants.
 
 MIGRATIONS
   None new.
