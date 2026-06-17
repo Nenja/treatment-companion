@@ -1,41 +1,48 @@
-BUILD - redcap-sync-truthful-result-1   (sync reports REDCap's confirmed count + surfaces errors)
+BUILD - admin-collapsible-nav-1   (admin floating nav + collapsibles · login language fix · REDCap sync result fixes)
 
 WHAT THIS IS
-  Cumulative snapshot (deploy this ONE zip). Migrations 0001-0111. App change
-  (admin sync UI + i18n) + the deploy-hardening-2 workflow.
+  Cumulative snapshot (deploy this ONE zip; discard intermediates). Migrations
+  0001-0111 (none new). Includes the deploy-hardening-2 workflow.
 
-THE PROBLEM
-  "Synced 187 rows for 2 patients" was reported even though nothing reached
-  REDCap (empty REDCap Logging page). Two bugs:
-   1. The message used `rows` = rows BUILT from the DB, not `imported` =
-      REDCap's confirmed count. So it showed a number even if 0 were imported.
-   2. The admin route returns HTTP 207 when the import has errors; 207 counts
-      as res.ok, so the client treated it as success and HID the errors.
+DESIGN CORRECTIONS IN THIS BUILD
+  1. LOGIN LANGUAGE SWITCHER — "can't switch back to English" FIXED.
+     i18n/routing.ts has localeDetection:true, but LanguageSelect switched
+     locale without setting the NEXT_LOCALE cookie that detection reads — so the
+     unprefixed English path got redirected back to the previous locale. Now
+     sets NEXT_LOCALE on switch (login + profile variants).
 
-WHAT CHANGED (app/[locale]/clinician/admin/page.tsx + clinician.researchExport i18n)
-  The sync result now:
-   - on success shows REDCap's confirmed count: "Imported {imported} of {rows}
-     rows for {patients} patients into REDCap." (syncResult)
-   - if the import reported errors OR imported < rows, shows an ERROR box with
-     REDCap's actual message: "REDCap accepted only {imported} of {rows} rows —
-     the import reported a problem: {message}" (syncPartial / syncNoDetail).
-  New i18n keys syncPartial, syncNoDetail (en/da/sv/nb; da/sv/nb first-pass).
-  syncResult reworded. Parity 1724 keys.
+  2. ADMIN PAGE — floating overview menu + collapsible sections.
+     - New Collapsible (native <details>, accessible) wraps Accounts list,
+       Create account, Research export, Studies, Consent pending-deletion.
+       Active access keeps its own built-in show/hide (not double-wrapped).
+     - Accounts + Create account COLLAPSED by default; the rest open.
+     - Floating side menu fixed in the left gutter on xl+ screens (grouped
+       Accounts & access / Research data); inline link-row is the <xl fallback.
+       Both open the target section and smooth-scroll to it.
 
-WHAT TO DO
-  Deploy, then re-run "Sync to REDCap now". It will now show what REDCap
-  actually said. The empty Logging page means the import never landed — almost
-  certainly:
-   - REDCAP_API_URL is not the API endpoint (it must look like
-     https://<your-redcap-host>/api/  — with /api/ , not the project page URL), or
-   - REDCAP_API_TOKEN is from a different project (tokens are per-project) or
-     expired.
-  The new error message will distinguish these (e.g. an HTTP 403 = bad token; an
-  unparseable/HTML response = wrong URL).
+  3. LOCALIZATION (admin): localized the hardcoded 'Back' label and the three
+     hardcoded Create-account field helpers. New admin.* keys: back, navLabel,
+     emailHelper, displayNameHelper, tempPasswordHelper (en + da/sv/nb
+     first-pass — FLAG for native review). Parity 1729 keys.
+
+ALSO FOLDED IN (this session)
+  - REDCap sync result reporting: reports REDCap's confirmed RECORDS count (not
+    built rows); success = no errors (returnContent=count returns records, not
+    rows, so the old imported<rows check was a false alarm). Pipeline confirmed
+    working end-to-end (TC-0001..TC-0007 in the REDCap test project).
+  - deploy-hardening-2 CI workflow (confirmed working in production).
+
+LOCALIZATION AUDIT (scan)
+  Only physio/progress and privacy skip useTranslations; physio/progress has
+  ZERO hardcoded prose (delegates to localized child components); privacy is
+  intentional legal text. The real offenders were the admin strings above, now
+  fixed. NOTE: an exhaustive guarantee needs an i18n lint rule (recommended,
+  developer-track) — grep is not authoritative.
 
 VERIFIED
-  tsc clean; eslint 0 errors; check:i18n OK (1724 keys); font-stub build
-  compiled; layout SHA restored; 0 BUILD-STUB remnants.
+  tsc clean; eslint 0 errors (80 warnings = baseline); check:i18n 1729 keys
+  en/da aligned; font-stub build compiled; layout.tsx SHA restored
+  (d6901997...); 0 BUILD-STUB remnants; Tailwind group-open:rotate-180 CSS
+  confirmed generated.
 
-MIGRATIONS
-  None new.
+MIGRATIONS  None new.

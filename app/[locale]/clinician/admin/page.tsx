@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -86,12 +86,38 @@ export default function AdminPage() {
     return <div className="min-h-dvh bg-cream" />;
   }
 
+  const goTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el instanceof HTMLDetailsElement) el.open = true;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const navGroups: { label: string; items: { id: string; title: string }[] }[] = [
+    {
+      label: tAdmin('groupAccountsTitle'),
+      items: [
+        { id: 'accounts', title: tAdmin('accountsTitle') },
+        { id: 'create', title: tAdmin('createAccount') },
+        { id: 'access', title: tAdmin('accessTitle') }
+      ]
+    },
+    {
+      label: tAdmin('groupResearchTitle'),
+      items: [
+        { id: 'export', title: tAdmin('exportTitle') },
+        { id: 'studies', title: tAdmin('studiesTitle') },
+        { id: 'purge', title: tAdmin('purgeTitle') }
+      ]
+    }
+  ];
+
   return (
     <div className="min-h-dvh bg-cream">
       <AppHeader
         maxWidthClass="max-w-[640px]"
         back={{
-          label: 'Back',
+          label: tAdmin('back'),
           onClick: () =>
             router.push(locale === 'en' ? '/clinician' : `/${locale}/clinician`)
         }}
@@ -101,6 +127,32 @@ export default function AdminPage() {
           </span>
         }
       />
+
+      {/* Floating overview menu — wide screens only (sits in the left gutter
+          beside the centred 640px column). Narrow screens use the inline row
+          below. Both call goTo(), which opens a collapsed section and scrolls. */}
+      <nav
+        aria-label={tAdmin('navLabel')}
+        className="fixed left-6 top-28 z-10 hidden w-[210px] xl:block"
+      >
+        <div className="rounded-[var(--radius-card)] border border-stone bg-cream-soft/85 p-2 backdrop-blur">
+          {navGroups.map((g) => (
+            <div key={g.label} className="mb-1.5 last:mb-0">
+              <p className="eyebrow px-2 pb-0.5 pt-1.5">{g.label}</p>
+              {g.items.map((it) => (
+                <button
+                  key={it.id}
+                  type="button"
+                  onClick={() => goTo(it.id)}
+                  className="block w-full truncate rounded-[calc(var(--radius-button)-2px)] px-2 py-1.5 text-left text-[13px] text-ink-soft hover:bg-stone-soft hover:text-ink"
+                >
+                  {it.title}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      </nav>
 
       <main className="mx-auto max-w-[640px] px-5 pb-16 pt-6">
         <h1 className="font-display text-[24px] leading-tight text-ink">
@@ -129,25 +181,19 @@ export default function AdminPage() {
           </div>
         )}
 
-        <nav className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
-          {(
-            [
-              ['#accounts', tAdmin('accountsTitle')],
-              ['#create', tAdmin('createAccount')],
-              ['#access', tAdmin('accessTitle')],
-              ['#export', tAdmin('exportTitle')],
-              ['#studies', tAdmin('studiesTitle')],
-              ['#purge', tAdmin('purgeTitle')]
-            ] as const
-          ).map(([href, label]) => (
-            <a
-              key={href}
-              href={href}
-              className="text-sage-deep underline-offset-2 hover:underline"
-            >
-              {label}
-            </a>
-          ))}
+        <nav className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-[13px] xl:hidden">
+          {navGroups
+            .flatMap((g) => g.items)
+            .map((it) => (
+              <button
+                key={it.id}
+                type="button"
+                onClick={() => goTo(it.id)}
+                className="text-sage-deep underline-offset-2 hover:underline"
+              >
+                {it.title}
+              </button>
+            ))}
         </nav>
 
         {/* ── Accounts & access ───────────────────────────────── */}
@@ -155,10 +201,13 @@ export default function AdminPage() {
           {tAdmin('groupAccountsTitle')}
         </h2>
 
-        <section id="accounts" className="mt-6 scroll-mt-4">
-          <h2 className="font-display text-[18px] text-ink">{tAdmin('accountsTitle')}</h2>
+        <Collapsible
+          id="accounts"
+          title={tAdmin('accountsTitle')}
+          defaultOpen={false}
+        >
           {accountsQuery.isLoading && (
-            <ul className="mt-3 divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
+            <ul className="divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream">
               {[0, 1, 2].map((i) => (
                 <li key={i} className="px-4 py-3">
                   <div className="flex items-baseline justify-between gap-3">
@@ -174,20 +223,18 @@ export default function AdminPage() {
             </ul>
           )}
           {accountsQuery.isError && (
-            <p className="mt-3 text-[14px] text-amber-deep">
+            <p className="text-[14px] text-amber-deep">
               {tAdmin('accountsLoadError', { error: (accountsQuery.error as Error).message })}
             </p>
           )}
-          {accountsQuery.data && (
-            <AccountsList accounts={accountsQuery.data} />
-          )}
-        </section>
+          {accountsQuery.data && <AccountsList accounts={accountsQuery.data} />}
+        </Collapsible>
 
-        <div id="create" className="scroll-mt-4">
-          <CreateAccountSection />
-        </div>
+        <Collapsible id="create" title={tAdmin('createAccount')} defaultOpen={false}>
+          <CreateAccountSection embedded />
+        </Collapsible>
 
-        <div id="access" className="scroll-mt-4">
+        <div id="access" className="scroll-mt-24">
           <AccessSection enabled={!!profile && profile.isAdmin} />
         </div>
 
@@ -196,23 +243,71 @@ export default function AdminPage() {
           {tAdmin('groupResearchTitle')}
         </h2>
 
-        <div id="export" className="scroll-mt-4">
-          <ResearchExportSection enabled={!!profile && profile.isAdmin} />
-        </div>
+        <Collapsible id="export" title={tAdmin('exportTitle')}>
+          <ResearchExportSection enabled={!!profile && profile.isAdmin} embedded />
+        </Collapsible>
 
-        <div id="studies" className="scroll-mt-4">
-          <StudiesSection enabled={!!profile && profile.isAdmin} />
-        </div>
+        <Collapsible id="studies" title={tAdmin('studiesTitle')}>
+          <StudiesSection enabled={!!profile && profile.isAdmin} embedded />
+        </Collapsible>
 
-        <div id="purge" className="scroll-mt-4">
-          <ResearchPurgeSection enabled={!!profile && profile.isAdmin} />
-        </div>
+        <Collapsible id="purge" title={tAdmin('purgeTitle')}>
+          <ResearchPurgeSection enabled={!!profile && profile.isAdmin} embedded />
+        </Collapsible>
       </main>
     </div>
   );
 }
 
-function CreateAccountSection() {
+function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+/**
+ * Collapsible admin section card. Native <details> so it is accessible and
+ * keyboard-operable with no extra state; the side-nav opens a target by id.
+ * Sections render `embedded` (no own heading/card) so this owns the title.
+ */
+function Collapsible({
+  id,
+  title,
+  defaultOpen = true,
+  children
+}: {
+  id: string;
+  title: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details
+      id={id}
+      open={defaultOpen}
+      className="group mt-4 scroll-mt-24 overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft"
+    >
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 [&::-webkit-details-marker]:hidden">
+        <span className="font-display text-[18px] text-ink">{title}</span>
+        <ChevronDownIcon className="h-5 w-5 shrink-0 text-ink-muted transition-transform duration-200 group-open:rotate-180" />
+      </summary>
+      <div className="border-t border-stone/60 px-5 pb-5 pt-4">{children}</div>
+    </details>
+  );
+}
+
+function CreateAccountSection({ embedded }: { embedded?: boolean }) {
   const create = useCreateAccount();
   const toast = useToast();
   const tFeedback = useTranslations('feedback');
@@ -297,8 +392,10 @@ function CreateAccountSection() {
   };
 
   return (
-    <section className="mt-8 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5">
-      <h2 className="font-display text-[18px] text-ink">{tAdmin('createAccount')}</h2>
+    <section className={embedded ? '' : 'mt-8 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5'}>
+      {!embedded && (
+        <h2 className="font-display text-[18px] text-ink">{tAdmin('createAccount')}</h2>
+      )}
 
       {createdInfo && (
         <div className="mt-4 rounded-[var(--radius-button)] border border-sage/30 bg-sage-soft/40 p-4">
@@ -407,7 +504,7 @@ function CreateAccountSection() {
         </Field>
       )}
 
-      <Field label={tAdmin('emailLabel')} helper="Will be the sign-in identifier.">
+      <Field label={tAdmin('emailLabel')} helper={tAdmin('emailHelper')}>
         <input
           type="email"
           value={email}
@@ -420,7 +517,7 @@ function CreateAccountSection() {
 
       <Field
         label={tAdmin('displayNameLabel')}
-        helper="Shown to the clinician in the patient list and the patient view."
+        helper={tAdmin('displayNameHelper')}
       >
         <input
           type="text"
@@ -434,7 +531,7 @@ function CreateAccountSection() {
 
       <Field
         label={tAdmin('tempPasswordLabel')}
-        helper="Auto-generated. Share with the new user. They should change it at first sign-in."
+        helper={tAdmin('tempPasswordHelper')}
       >
         <div className="flex items-stretch gap-2">
           <input
@@ -1109,7 +1206,7 @@ function Field({
  * The actual REDCap delete is carried out by the export job; this is the
  * admin's authorisation/attestation that it may proceed.
  */
-function ResearchPurgeSection({ enabled }: { enabled: boolean }) {
+function ResearchPurgeSection({ enabled, embedded }: { enabled: boolean; embedded?: boolean }) {
   const tAdmin = useTranslations('admin');
   const toast = useToast();
   const queue = useResearchPurgeQueue(enabled);
@@ -1126,8 +1223,10 @@ function ResearchPurgeSection({ enabled }: { enabled: boolean }) {
   };
 
   return (
-    <section className="mt-10">
-      <h2 className="font-display text-[18px] text-ink">{tAdmin('purgeTitle')}</h2>
+    <section className={embedded ? '' : 'mt-10'}>
+      {!embedded && (
+        <h2 className="font-display text-[18px] text-ink">{tAdmin('purgeTitle')}</h2>
+      )}
       <p className="mt-1 text-[13px] text-ink-soft">{tAdmin('purgeHelper')}</p>
 
       {queue.isLoading && (
@@ -1199,7 +1298,7 @@ type StudyFilter =
   | { kind: 'consentedNoStudy' }
   | { kind: 'withdrawn' };
 
-function StudiesSection({ enabled }: { enabled: boolean }) {
+function StudiesSection({ enabled, embedded }: { enabled: boolean; embedded?: boolean }) {
   const tAdmin = useTranslations('admin');
   const toast = useToast();
   const overview = useStudyOverview(enabled);
@@ -1284,8 +1383,10 @@ function StudiesSection({ enabled }: { enabled: boolean }) {
   };
 
   return (
-    <section className="mt-10">
-      <h2 className="font-display text-[18px] text-ink">{tAdmin('studiesTitle')}</h2>
+    <section className={embedded ? '' : 'mt-10'}>
+      {!embedded && (
+        <h2 className="font-display text-[18px] text-ink">{tAdmin('studiesTitle')}</h2>
+      )}
       <p className="mt-1 text-[13px] text-ink-soft">{tAdmin('studiesHelper')}</p>
 
       <CreateStudyForm />
@@ -1658,7 +1759,7 @@ function StudyPatientCard({
  * (all consented patients). Lives here on the admin page rather than the
  * per-patient wearable/observations screen, where it used to be orphaned.
  */
-function ResearchExportSection({ enabled }: { enabled: boolean }) {
+function ResearchExportSection({ enabled, embedded }: { enabled: boolean; embedded?: boolean }) {
   const tExport = useTranslations('clinician.researchExport');
   const exportRedcap = useExportRedcapDataset();
   const syncRedcap = useSyncRedcapDataset();
@@ -1672,8 +1773,10 @@ function ResearchExportSection({ enabled }: { enabled: boolean }) {
     'mt-3 rounded-[var(--radius-button)] border border-amber-deep bg-amber-soft px-4 py-3 text-[14px] text-amber-deep';
 
   return (
-    <section className="mt-10">
-      <h2 className="font-display text-[18px] text-ink">{tExport('heading')}</h2>
+    <section className={embedded ? '' : 'mt-10'}>
+      {!embedded && (
+        <h2 className="font-display text-[18px] text-ink">{tExport('heading')}</h2>
+      )}
       <p className="mt-1 text-[13px] text-ink-soft">{tExport('intro')}</p>
       {exportRedcap.data && (
         <div className={ok}>
@@ -1695,12 +1798,10 @@ function ResearchExportSection({ enabled }: { enabled: boolean }) {
 
       <p className="mt-6 text-[13px] text-ink-soft">{tExport('syncIntro')}</p>
       {syncRedcap.data &&
-        (syncRedcap.data.errors.length > 0 ||
-        syncRedcap.data.imported < syncRedcap.data.rows ? (
+        (syncRedcap.data.errors.length > 0 ? (
           <div className={err}>
             {tExport('syncPartial', {
               imported: syncRedcap.data.imported,
-              rows: syncRedcap.data.rows,
               message: syncRedcap.data.errors[0] ?? tExport('syncNoDetail')
             })}
           </div>
@@ -1708,8 +1809,8 @@ function ResearchExportSection({ enabled }: { enabled: boolean }) {
           <div className={ok}>
             {tExport('syncResult', {
               patients: syncRedcap.data.patients,
-              imported: syncRedcap.data.imported,
-              rows: syncRedcap.data.rows
+              rows: syncRedcap.data.rows,
+              imported: syncRedcap.data.imported
             })}
           </div>
         ))}

@@ -99,6 +99,11 @@ export function LanguageSelect({
     if (variant === 'cards' && user) {
       setPreferredLocale.mutate(target);
     }
+    // Pin the locale via the NEXT_LOCALE cookie that `localeDetection` reads.
+    // Without this, switching to English (the unprefixed path) gets redirected
+    // straight back to the previous locale by the detection middleware, because
+    // the cookie still points there — the "can't switch back to English" bug.
+    document.cookie = `NEXT_LOCALE=${target}; path=/; max-age=31536000; samesite=lax`;
     router.replace(switchLocalePath(pathname, locale, target));
   };
 
