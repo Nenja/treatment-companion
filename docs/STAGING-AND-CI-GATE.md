@@ -177,3 +177,22 @@ outage):**
 
 **Always use the stable domain** `treatment-companion.vercel.app`, never the
 per-deploy `…-<hash>.vercel.app` URLs (those change every deploy by design).
+
+### Update — public env now injected from CI secrets (more robust)
+
+Making the `NEXT_PUBLIC_*` vars non-Sensitive *should* be enough for
+`vercel pull` to deliver them, but it proved unreliable in practice. The deploy
+workflow now writes the build-time public vars directly into
+`.vercel/.env.production.local` from **GitHub repo secrets** before
+`vercel build`, so the build no longer depends on `vercel pull` / sensitivity /
+scope at all.
+
+**One-time setup:** add two **repo secrets** (Settings → Secrets and variables →
+Actions → New repository secret) with your **production** values:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+These are public values (they ship in the browser bundle), so they're safe to
+store as CI secrets. Server-only secrets stay in Vercel and are read at runtime.
+If they're missing, the workflow fails fast with a clear message instead of
+shipping a 500.

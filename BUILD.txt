@@ -1,48 +1,50 @@
-BUILD - deploy-hardening-1   (fix deploy-on-green double-deploy + 500s)
+BUILD - deploy-hardening-2   (inject build-time public env from CI secrets)
 
 WHAT THIS IS
   Cumulative snapshot (deploy this ONE zip). CI workflow + docs only — NO app
-  code change since admin-overview-search-1, so no rebuild was needed.
-  Migrations 0001-0111.
+  code change since admin-overview-search-1. Migrations 0001-0111.
 
-THE PROBLEM (2026-06-16)
-  Two production deploys per commit in Vercel: a `main` ~1 min build (worked)
-  and a `HEAD` ~12 s prebuilt deploy from the GitHub Action (500'd: "Your
-  project's URL and Key are required"). The live alias flapped between them.
-  Causes:
-   1. Vercel's automatic production deploys were never turned off, so BOTH
-      Vercel's own git build AND the Action deployed production.
-   2. The Action's prebuilt build inlined BLANK NEXT_PUBLIC_SUPABASE_* values:
-      those are baked in at build time, the CI build gets env via `vercel pull`,
-      and `vercel pull` does NOT download vars marked "Sensitive" in Vercel.
+WHY
+  After making NEXT_PUBLIC_SUPABASE_URL/_ANON_KEY non-Sensitive, the prebuilt
+  deploys STILL 500'd. So we stop relying on `vercel pull` for the build-time
+  public vars (it skips Sensitive vars and is scope-sensitive) and instead
+  write them straight into the build's env file from GitHub repo secrets.
 
-WHAT CHANGED HERE
-  .github/workflows/deploy.yml now FAILS CLOSED:
-   - after `vercel pull`, aborts if NEXT_PUBLIC_SUPABASE_URL / _ANON_KEY are
-     missing/blank (with a message telling you to un-mark them Sensitive);
-   - after `vercel build`, aborts if the built output contains no Supabase URL.
-  So a blank/500 bundle can never reach production again — the last good build
-  stays live instead.
-  docs/STAGING-AND-CI-GATE.md gains a "Troubleshooting" runbook with the cause
-  and the ordered fix.
+WHAT CHANGED
+  .github/workflows/deploy.yml: after `vercel pull`, the deploy step now
+   - fails fast if the two repo secrets aren't set;
+   - removes any pulled (possibly blank) NEXT_PUBLIC_SUPABASE_* lines from
+     .vercel/.env.production.local and writes the secret values (first
+     definition wins in a dotenv file, so the blank must go);
+   - builds, then refuses to deploy unless the built output contains a
+     Supabase URL (still fail-closed).
 
-*** YOUR DASHBOARD STEPS — IN THIS ORDER (do not reorder) ***
-  1. Vercel → Settings → Environment Variables: make NEXT_PUBLIC_SUPABASE_URL
-     and NEXT_PUBLIC_SUPABASE_ANON_KEY exist for Production and NOT "Sensitive".
-     (Server secrets — service role, REDCAP token, CRON_SECRET — can stay
-     Sensitive; they're runtime, not inlined.)
-  2. Deploy this zip; let the Action run; CONFIRM treatment-companion.vercel.app
-     works. If a var is still Sensitive, the Action now fails loudly instead of
-     shipping a 500 — fix per its error and re-run.
-  3. ONLY THEN, to stop the double-deploy: Vercel → Settings → Build and
-     Deployment → Ignored Build Step =
-       if [ "$VERCEL_ENV" = "production" ]; then exit 0; else exit 1; fi
-     This cancels Vercel's own production git builds (so only the gated Action
-     deploys prod) while still building Preview/staging. After this you should
-     see ONE production deploy per commit (HEAD), not two.
+*** REQUIRED ONE-TIME SETUP ***
+  GitHub → repo Settings → Secrets and variables → Actions → New repository
+  secret, add BOTH (use your PRODUCTION Supabase values):
+    NEXT_PUBLIC_SUPABASE_URL
+    NEXT_PUBLIC_SUPABASE_ANON_KEY
+  (These are public — they ship in the browser bundle — so they're safe as CI
+  secrets. Server-only keys stay in Vercel.)
 
-  Always use treatment-companion.vercel.app — never the per-deploy
-  ...-<hash>.vercel.app URLs (those change every deploy by design).
+*** IMPORTANT — this only works once THIS deploy.yml is in the repo ***
+  If a 500 persisted after the previous fix, it's likely the updated workflow
+  was never uploaded (e.g. a README edit made directly on GitHub ran the OLD
+  workflow). Deploy THIS zip so the correct workflow is in place.
+
+TO GET THE SITE BACK UP RIGHT NOW (while setting the above up)
+  The active production is the broken prebuilt deploy. Quickest restore:
+  GitHub → Actions → "Deploy (production, on green CI)" → ••• → Disable
+  workflow; then in Vercel make sure the Ignored Build Step is NOT skipping
+  production (empty/default) and Redeploy the latest commit — Vercel's own
+  build (the ~1 min one that works) will serve. Re-enable the Action after the
+  secrets are set and you've confirmed a prebuilt deploy works.
+
+ORDER ONCE FIXED
+  1. Add the two repo secrets.  2. Deploy this zip.  3. Re-enable the Action.
+  4. Push a commit; confirm treatment-companion.vercel.app works (HEAD deploy).
+  5. THEN set Vercel Ignored Build Step to skip production so only the gated
+     Action deploys: if [ "$VERCEL_ENV" = "production" ]; then exit 0; else exit 1; fi
 
 MIGRATIONS
   None new.
