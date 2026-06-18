@@ -1,30 +1,41 @@
-BUILD - v1.0.0   (versioning LOCKED for the testing phase · cumulative)
+BUILD - v1.0.0   (stack-gap hardening folded into the pre-lock baseline · cumulative)
 
 WHAT THIS IS
-  The version baseline for testing. Deploy this ONE zip. Migrations 0001-0111
-  (none new). Folds in admin-collapsible-nav-1 + deploy-hardening-2 and
-  everything before.
+  The version baseline for testing (v1.0.0, not yet tagged). Deploy this ONE zip.
+  Migrations 0001-0111 (none new). Folds in everything prior + the tech-stack
+  hardening below.
 
-VERSIONING (new in this build)
-  - package.json version: 0.1.0 -> 1.0.0
-  - lib/version.ts: APP_VERSION='1.0.0', BUILD_DATE='2026-06-17'
-      (single source of truth — bump BOTH + package.json on each released build)
-  - In-app version tag (components/layout/VersionTag.tsx) shown on the LOGIN and
-    PROFILE footers as "v1.0.0 · 2026-06-17" so testers can report their build.
-  - CHANGELOG.md added: readable [1.0.0] baseline entry (Added / Changed-Fixed /
-    Known limitations). Full engineering log stays in HANDOVER.md §7.
-  - Localization: login "Your data & privacy" link was hardcoded -> login.privacyLink
-    (en/da/sv/nb). i18n parity 1730 keys.
+TECH-STACK HARDENING ADDED (this build)
+  - noindex: X-Robots-Tag header (next.config.ts) + app/robots.ts disallow all.
+    A clinical app must not be search-indexed.
+  - Health endpoint: GET /api/health -> {status:'ok', version, time}. Point an
+    external uptime monitor (UptimeRobot/Better Uptime/Vercel) at it.
+  - Rate limiting: lib/rateLimit.ts (in-memory fixed window). Applied to
+    redcap-sync (per admin, 5/min), create-account + reset-password (per IP,
+    20/min). Best-effort per serverless instance; swap in KV/Upstash for strict
+    global limits (signature is store-agnostic).
+  - a11y lint: eslint-plugin-jsx-a11y wired as WARNINGS (0 errors preserved;
+    now 244 warnings, ~164 a11y) for the WCAG pass. Deprecated label-has-for off.
 
-LOCK THE VERSION IN GITHUB (after deploying)
-  GitHub Desktop: Repository -> show History -> right-click the commit ->
-  Create Tag -> "v1.0.0" -> push (Push origin will include the tag), OR on
-  github.com: Releases -> Draft a new release -> tag "v1.0.0" -> Publish.
-  The tag immutably marks the build under test.
+  SCAFFOLDED / HANDED OFF (need CLI or Supabase console — not doable in-repo):
+  - Typed DB layer: `npm run gen:types` script + docs/DB-TYPES.md. A dev runs it
+    (Supabase CLI) to produce lib/database.types.ts, then types the clients
+    <Database>. TODO marker left in lib/supabase/browser.ts.
+  - Production auth email (SMTP): documented in OPS.md go-live checklist. Account
+    creation / password reset use Supabase default SMTP (rate-limited/unbranded);
+    configure a real provider before real users.
+
+  OPS.md go-live checklist refreshed: CSP + Next.js update marked done; uptime
+  monitor + custom SMTP items added.
+
+VERSION
+  Unchanged at 1.0.0 (you haven't locked/tagged 1.0 yet). lib/version.ts +
+  package.json stay 1.0.0; CHANGELOG 1.0.0 entry updated to include this
+  hardening + known-limitations (typed DB, auth email, in-memory rate limit).
 
 VERIFIED
-  tsc clean; eslint 0 errors (80 warnings = baseline); check:i18n 1730 keys
-  en/da aligned; font-stub build compiled; layout.tsx SHA restored
-  (d6901997...); 0 BUILD-STUB remnants.
+  tsc clean; eslint 0 errors (244 warnings); check:i18n 1730 keys en/da aligned;
+  font-stub build compiled (/api/health + /robots.txt in manifest); layout.tsx
+  SHA restored (d6901997...); 0 BUILD-STUB remnants.
 
 MIGRATIONS  None new.

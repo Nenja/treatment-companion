@@ -10,6 +10,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 import nextPlugin from '@next/eslint-plugin-next';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
 import globals from 'globals';
 
 export default tseslint.config(
@@ -70,5 +71,20 @@ export default tseslint.config(
   {
     files: ['scripts/**/*.mjs'],
     languageOptions: { globals: { ...globals.node } }
+  },
+
+  // Accessibility — surface recommended a11y issues as WARNINGS so they don't
+  // block CI (0-error gate) but show up for the team to fix. Ratchet to 'error'
+  // once clean. Pairs with the WCAG 2.2 AA real-device pass on the roadmap.
+  {
+    files: ['**/*.{jsx,tsx}'],
+    plugins: { 'jsx-a11y': jsxA11y },
+    rules: {
+      ...Object.fromEntries(
+        Object.keys(jsxA11y.flatConfigs.recommended.rules).map((rule) => [rule, 'warn'])
+      ),
+      // Deprecated and superseded by label-has-associated-control; noisy duplicate.
+      'jsx-a11y/label-has-for': 'off'
+    }
   }
 );

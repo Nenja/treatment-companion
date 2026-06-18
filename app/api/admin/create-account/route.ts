@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseServiceClient } from '@/lib/supabase/serviceClient';
 import { writeAdminAudit } from '@/lib/supabase/adminAudit';
+import { rateLimit, clientIp } from '@/lib/rateLimit';
 
 /**
  * Admin endpoint: create a new patient or clinician account.
@@ -24,6 +25,14 @@ import { writeAdminAudit } from '@/lib/supabase/adminAudit';
  * 409 email already in use, 500 anything else.
  */
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(`account-create:${clientIp(req)}`, 20, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'Too many requests — please wait a moment.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
+
   // 1. Identify the caller from the session cookie.
   const anon = await createSupabaseServerClient();
   const { data: userResp } = await anon.auth.getUser();

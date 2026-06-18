@@ -11,7 +11,8 @@
     "check:i18n": "node scripts/check-i18n-parity.mjs",
     "verify": "npm run lint && npm run typecheck && npm run check:i18n && npm run build",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "gen:types": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" --schema public > lib/database.types.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "10.58.0",
@@ -35,6 +36,7 @@
     "@types/react-dom": "19.0.0",
     "@vitejs/plugin-react": "^6.0.2",
     "eslint": "^9.39.4",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.6.0",
     "jsdom": "^29.1.1",

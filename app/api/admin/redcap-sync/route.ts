@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseServiceClient } from '@/lib/supabase/serviceClient';
 import { writeAdminAudit } from '@/lib/supabase/adminAudit';
 import { runRedcapSync } from '@/lib/redcap/runSync';
+import { rateLimit } from '@/lib/rateLimit';
 
 /**
  * Admin trigger: push the research dataset to REDCap now.
@@ -32,6 +33,15 @@ export async function POST(_req: NextRequest) {
     .maybeSingle();
   if (!caller || caller.is_admin !== true) {
     return NextResponse.json({ error: 'Forbidden: admins only' }, { status: 403 });
+  }
+
+  // A full sync is expensive; cap how often one admin can trigger it.
+  const rl = rateLimit(`redcap-sync:${userResp.user.id}`, 5, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'Too many sync attempts — please wait a moment.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
   }
 
   if (!process.env.REDCAP_API_URL || !process.env.REDCAP_API_TOKEN) {

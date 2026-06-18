@@ -38,7 +38,11 @@ the testing phase; tag it `v1.0.0` in GitHub.
   first-pass (pending native clinical review).
 - **Security & ops:** row-level security throughout, deploy-on-green CI with a
   staging environment, Sentry error monitoring (EU region), scheduled Playwright
-  smoke tests, Dependabot.
+  smoke tests, Dependabot. Enforced CSP + HSTS + `X-Frame-Options`; `noindex`
+  (robots.txt + `X-Robots-Tag`) so the clinical app isn't search-indexed;
+  `/api/health` liveness endpoint for uptime monitoring; in-memory rate limiting
+  on sensitive API routes (`redcap-sync`, `create-account`, `reset-password`);
+  `eslint-plugin-jsx-a11y` surfacing accessibility issues in CI.
 
 ### Changed / Fixed — final polish before lock
 - **Login language switcher** now switches back to English correctly (sets the
@@ -56,6 +60,13 @@ the testing phase; tag it `v1.0.0` in GitHub.
   (migration `0111`), resolving the live sync error.
 
 ### Known limitations at this baseline
+- **Typed database layer scaffolded but not wired** — generated Supabase types
+  (`lib/database.types.ts`) not yet generated/applied, so queries aren't schema-
+  checked at compile time. CLI/dev step — see `docs/DB-TYPES.md`.
+- **Auth emails on Supabase default SMTP** — rate-limited/unbranded; configure a
+  real provider before real users (`OPS.md` go-live checklist).
+- Rate limiting is **in-memory** (per serverless instance) — adequate for the
+  pilot; back with a shared store (KV/Upstash) for strict global limits.
 - REDCap *analysis-readiness* (clean joins / coded-field labels on export) not
   yet dry-run verified; cron sync scheduled but not yet observed firing.
 - sv/nb (and da first-pass) strings await native clinical review.

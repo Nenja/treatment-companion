@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseServiceClient } from '@/lib/supabase/serviceClient';
 import { generateTempPassword } from '@/lib/supabase/admin';
 import { writeAdminAudit } from '@/lib/supabase/adminAudit';
+import { rateLimit, clientIp } from '@/lib/rateLimit';
 
 /**
  * Admin endpoint: reset an account's password to a fresh temporary one.
@@ -23,6 +24,14 @@ import { writeAdminAudit } from '@/lib/supabase/adminAudit';
  * Errors: 401 not signed in, 403 not admin, 400 validation, 500 other.
  */
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(`pw-reset:${clientIp(req)}`, 20, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'Too many requests — please wait a moment.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
+
   const anon = await createSupabaseServerClient();
   const { data: userResp } = await anon.auth.getUser();
   if (!userResp.user) {
