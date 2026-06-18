@@ -41,3 +41,11 @@ VERIFIED
   SHA restored (d6901997...); 0 BUILD-STUB remnants.
 
 MIGRATIONS  None new.
+
+  - a11y pass (safe subset): fixed html-has-lang (global-error), removed a
+    redundant role, and set aria-role ignoreNonDOM (the 8 aria-role warnings were
+    FALSE POSITIVES - custom components with a domain `role` prop). 244->234
+    lint warnings, still 0 errors. Form-label association (~118) and modal
+    keyboard/dialog handling are deferred to the WCAG/screen-reader pass on
+    purpose - quick-hacking them would risk layout breakage or REGRESS real a11y
+    to please the linter. See docs/ROADMAP.md 'Accessibility'.
