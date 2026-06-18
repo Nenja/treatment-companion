@@ -56,6 +56,9 @@ const securityHeaders = [
     value: 'camera=(self), microphone=(self), geolocation=(), browsing-topics=()'
   },
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
+  // A clinical app should never be search-indexed. Belt-and-braces with
+  // app/robots.ts (which disallows crawlers at the robots.txt level).
+  { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
   // ENFORCED 2026-06-16 (was Content-Security-Policy-Report-Only). The policy
   // keeps 'unsafe-inline'/'unsafe-eval' (Next hydration), so this enforces the
   // source allow-list + clickjacking/object-src/base-uri lockdowns without

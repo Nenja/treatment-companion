@@ -123,13 +123,18 @@ Each item notes **who** owns it — _you_ (dashboard / clinical / decision), _de
 
 ## P2 — product threads (sequence by value; no patient-safety gate)
 
-- **REDCap sync — BUILT (2026-06-16).** Both triggers live: an admin "Sync to
-  REDCap now" button (Observations page) + a weekly cron (`vercel.json`). Full
-  snapshot, chunked, idempotent. Needs env vars `REDCAP_API_URL`,
-  `REDCAP_API_TOKEN`, `CRON_SECRET` set in Vercel, and must not run against real
-  patient data until the DPO/DPIA sign-off. Details: `redcap/AUTOMATION.md`.
-  Open: confirm the REDCap project is built from the dictionary + a manual
-  import round-trips; incremental sync deferred.
+- **REDCap sync — BUILT + PROVEN end-to-end (2026-06-17).** Both triggers live: an
+  admin "Sync to REDCap now" button (now on the **admin page**) + a weekly cron
+  (`vercel.json`). Full snapshot, chunked, idempotent. Env vars `REDCAP_API_URL`
+  (server-wide `https://redcap.regionh.dk/api/`), `REDCAP_API_TOKEN` (per-project),
+  `CRON_SECRET`. Sync confirmed: 7 pseudonymous records (TC-0001…TC-0007) with
+  enrolment + repeating instruments. **Analysis-readiness dry-run PASSED**
+  (`redcap_dryrun.R`): per-instrument tidy tables, muscles join to cycle (0
+  orphans), coded fields decode (0 undecoded). Must not run against real patient
+  data until DPO/DPIA sign-off. Cutover: **same project → REDCap "Move to
+  production" (delete all data)**; repoint/remove Preview `REDCAP_API_*` first so
+  staging can't write to the live project; finalise the dictionary before the move
+  (production locks it). Open: confirm the weekly cron actually fires.
 
 - **Therapist surface Slice 2+** — cockpit consuming `therapist_note`, per-goal
   cards, the engagement layer.

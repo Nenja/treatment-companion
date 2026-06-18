@@ -12,6 +12,8 @@ let cached: SupabaseClient | null = null;
 
 export function createSupabaseBrowserClient(): SupabaseClient {
   if (cached) return cached;
+  // TODO(types): once lib/database.types.ts is generated, type this as
+  // createBrowserClient<Database>(...). See docs/DB-TYPES.md.
   cached = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!

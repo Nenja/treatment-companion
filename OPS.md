@@ -25,8 +25,10 @@ to turn it all on, as one checklist rather than scattered decisions:
 - [ ] **Supabase Pro + backups** — upgrade so nightly backups exist (PITR recommended). Backups must be running *before* the first real patient (§2).
 - [ ] **Test the restore once** — restore a backup into a throwaway project so you know it actually works (§2.3).
 - [ ] **Sentry on** — set `NEXT_PUBLIC_SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_ENVIRONMENT=production` in Vercel, then create the alert rules (§1). The code is already in the repo and stays dormant until the DSN is set.
-- [ ] **CSP enforced** — validate the Report-Only CSP in a browser across all three roles, then switch it to enforced in `next.config.ts`.
-- [ ] **Next.js security update** — move off `next@15.1.9` (published advisory) to a patched 15.x.
+- [ ] **Custom auth email (SMTP)** — account-creation and password-reset emails go through Supabase's built-in SMTP, which is **rate-limited and unbranded** by default. Before real users, configure a real provider in **Supabase → Authentication → Emails → SMTP Settings** (e.g. Resend / Postmark / SendGrid) and review the email templates. (The reset-password admin route currently hands the admin a temp password to pass on, precisely because email isn't production-grade yet — see `app/api/admin/reset-password/route.ts`.)
+- [ ] **Uptime monitor** — point an external monitor (UptimeRobot / Better Uptime / Vercel) at **`/api/health`** (returns `{status:'ok', version}`). Sentry catches errors, not downtime.
+- [x] **CSP enforced** — done 2026-06-16 (`Content-Security-Policy` in `next.config.ts`, validated on staging). Follow-up: nonce-based policy to drop `'unsafe-inline'` (P1, `docs/ROADMAP.md`).
+- [x] **Next.js security update** — done; on `next@16.2.7` (was 15.1.9), `next-intl@4.13.0`.
 - [ ] **Compliance pieces in place** — GDPR / DPIA / data-processing agreements / EU residency / retention / DSAR, plus the MDR intended-use work (handled separately) confirmed done.
 - [ ] **Native-Danish review** — clinical strings reviewed by a native speaker.
 
