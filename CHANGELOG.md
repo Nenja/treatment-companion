@@ -60,9 +60,10 @@ the testing phase; tag it `v1.0.0` in GitHub.
   (migration `0111`), resolving the live sync error.
 
 ### Known limitations at this baseline
-- **Typed database layer scaffolded but not wired** — generated Supabase types
-  (`lib/database.types.ts`) not yet generated/applied, so queries aren't schema-
-  checked at compile time. CLI/dev step — see `docs/DB-TYPES.md`.
+- **Typed database layer is LIVE** — `lib/database.types.ts` generated from the
+  real schema and all three Supabase clients typed `<Database>`; every query is
+  schema-checked at compile time. The ~57 mismatches surfaced during adoption
+  were resolved with no runtime change (see `docs/DB-TYPES.md`).
 - **Auth emails on Supabase default SMTP** — rate-limited/unbranded; configure a
   real provider before real users (`OPS.md` go-live checklist).
 - Rate limiting is **in-memory** (per serverless instance) — adequate for the

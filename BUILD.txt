@@ -18,9 +18,11 @@ TECH-STACK HARDENING ADDED (this build)
     now 244 warnings, ~164 a11y) for the WCAG pass. Deprecated label-has-for off.
 
   SCAFFOLDED / HANDED OFF (need CLI or Supabase console — not doable in-repo):
-  - Typed DB layer: `npm run gen:types` script + docs/DB-TYPES.md. A dev runs it
-    (Supabase CLI) to produce lib/database.types.ts, then types the clients
-    <Database>. TODO marker left in lib/supabase/browser.ts.
+  - Typed DB layer LIVE: lib/database.types.ts (30 tables/25 enums/175 funcs) +
+    all 3 clients typed <Database>; every query schema-checked at compile time.
+    The ~57 adoption mismatches resolved with NO runtime change (casts preserve
+    values; ?? undefined only where the SQL param defaults to null). Full verify
+    incl. vitest (41 tests) green. gen:types script + docs/DB-TYPES.md included.
   - Production auth email (SMTP): documented in OPS.md go-live checklist. Account
     creation / password reset use Supabase default SMTP (rate-limited/unbranded);
     configure a real provider before real users.
