@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from './browser';
+import type { Json } from '@/lib/database.types';
 
 /**
  * Client layer for the vendor-neutral wearable / PGHD ingestion scaffold
@@ -85,7 +86,7 @@ export function useImportObservations() {
       const supabase = createSupabaseBrowserClient();
       const { data, error } = await supabase.rpc('import_observations', {
         p_patient_id: args.patientId,
-        p_observations: args.observations.map(toRpcElement)
+        p_observations: args.observations.map(toRpcElement) as unknown as Json
       });
       if (error) throw error;
       return (data as number) ?? 0;

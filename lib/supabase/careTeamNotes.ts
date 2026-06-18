@@ -64,7 +64,7 @@ export function usePatientCareTeamNotes() {
       }
 
       for (const g of goalNotes.data ?? []) {
-        const goal = g.approved_goal as
+        const goal = g.approved_goal as unknown as
           | { patient_facing_text: string | null }
           | { patient_facing_text: string | null }[]
           | null;
