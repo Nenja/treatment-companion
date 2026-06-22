@@ -376,7 +376,7 @@ export function useSubmitCheckin() {
           gas_value: r.gasValue ?? null,
           video_path: r.videoPath ?? null
         })),
-        p_comment: input.comment ?? null,
+        p_comment: input.comment ?? undefined,
         p_submitter_label: input.submitterLabel ?? 'self'
       });
       if (error) throw error;

@@ -108,7 +108,6 @@ export function NotificationsCard({ profileId }: NotificationsCardProps) {
 
   return (
     <section
-      role="region"
       aria-label={t('regionAria')}
       className="mt-6 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4"
     >

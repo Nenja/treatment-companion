@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/lib/database.types';
 
 /**
  * Creates a Supabase client with the service role key for admin
@@ -21,7 +22,7 @@ export function createSupabaseServiceClient() {
       'Missing SUPABASE_SERVICE_ROLE_KEY env var (set in Vercel)'
     );
   }
-  return createClient(url, serviceKey, {
+  return createClient<Database>(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 }

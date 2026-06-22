@@ -65,9 +65,11 @@ export function usePatientInfo(patientId: string | null) {
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
-      const profile = Array.isArray(data.profile)
-        ? data.profile[0]
-        : (data.profile as { display_name?: string } | null);
+      const profileRaw = data.profile as unknown as
+        | { display_name?: string | null }
+        | { display_name?: string | null }[]
+        | null;
+      const profile = Array.isArray(profileRaw) ? profileRaw[0] : profileRaw;
       return {
         patientId: data.id as string,
         displayName: (profile?.display_name as string) ?? 'Patient',
@@ -111,15 +113,15 @@ export function useSetPatientInfo() {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.rpc('set_patient_info', {
         p_patient_id: input.patientId,
-        p_date_of_birth: input.dateOfBirth,
-        p_etiology: input.etiology,
-        p_etiology_detail: input.etiologyDetail,
-        p_affected_side: input.affectedSide,
-        p_onset_year: input.onsetYear,
-        p_ambulation: input.ambulation,
-        p_background_notes: input.backgroundNotes,
-        p_sex: input.sex,
-        p_assistive_devices: input.assistiveDevices
+        p_date_of_birth: input.dateOfBirth as string,
+        p_etiology: input.etiology as Etiology,
+        p_etiology_detail: input.etiologyDetail as string,
+        p_affected_side: input.affectedSide as AffectedSide,
+        p_onset_year: input.onsetYear as number,
+        p_ambulation: input.ambulation as AmbulationStatus,
+        p_background_notes: input.backgroundNotes as string,
+        p_sex: input.sex as Sex,
+        p_assistive_devices: input.assistiveDevices as string
       });
       if (error) throw error;
     },
@@ -234,7 +236,7 @@ export function useSetOwnSex() {
   return useMutation({
     mutationFn: async (sex: Sex | null): Promise<void> => {
       const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.rpc('set_own_sex', { p_sex: sex });
+      const { error } = await supabase.rpc('set_own_sex', { p_sex: sex as Sex });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -275,7 +277,7 @@ export function useSetOwnDateOfBirth() {
     mutationFn: async (iso: string | null): Promise<void> => {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.rpc('set_own_date_of_birth', {
-        p_date_of_birth: iso
+        p_date_of_birth: iso as string
       });
       if (error) throw error;
     },

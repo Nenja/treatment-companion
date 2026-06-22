@@ -151,7 +151,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         id: data.id,
         role: data.role,
         displayName: data.display_name,
-        preferredLocale: data.preferred_locale,
+        preferredLocale: data.preferred_locale as 'da' | 'en' | 'sv' | 'nb',
         email: data.email,
         textScale: Number(data.text_scale) || 1.0,
         mustChangePassword: Boolean(data.must_change_password),

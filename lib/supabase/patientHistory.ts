@@ -103,7 +103,7 @@ export function usePatientHistory(patientId: string | null) {
       const patientLatestByGoal = new Map<string, { week: number; rater: HistoryRater }>();
       const clinicianLatestByGoal = new Map<string, { week: number; rater: HistoryRater }>();
       for (const r of wgrRes.data ?? []) {
-        const ci = Array.isArray(r.weekly_checkin) ? r.weekly_checkin[0] : r.weekly_checkin; if (!ci) continue;
+        const ciRaw = r.weekly_checkin as unknown as { week_number: number | null; treatment_cycle_id: string | null } | { week_number: number | null; treatment_cycle_id: string | null }[] | null; const ci = Array.isArray(ciRaw) ? ciRaw[0] : ciRaw; if (!ci) continue;
         const goalId = r.approved_goal_id as string; const cfg = cfgByGoal.get(goalId) ?? null; const week = ci.week_number as number;
         const pgas = gasEquiv((r.rating_value as number | null) ?? null, (r.nrs_value as number | null) ?? null, cfg);
         if (pgas !== null) {

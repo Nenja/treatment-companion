@@ -18,9 +18,11 @@ TECH-STACK HARDENING ADDED (this build)
     now 244 warnings, ~164 a11y) for the WCAG pass. Deprecated label-has-for off.
 
   SCAFFOLDED / HANDED OFF (need CLI or Supabase console — not doable in-repo):
-  - Typed DB layer: `npm run gen:types` script + docs/DB-TYPES.md. A dev runs it
-    (Supabase CLI) to produce lib/database.types.ts, then types the clients
-    <Database>. TODO marker left in lib/supabase/browser.ts.
+  - Typed DB layer LIVE: lib/database.types.ts (30 tables/25 enums/175 funcs) +
+    all 3 clients typed <Database>; every query schema-checked at compile time.
+    The ~57 adoption mismatches resolved with NO runtime change (casts preserve
+    values; ?? undefined only where the SQL param defaults to null). Full verify
+    incl. vitest (41 tests) green. gen:types script + docs/DB-TYPES.md included.
   - Production auth email (SMTP): documented in OPS.md go-live checklist. Account
     creation / password reset use Supabase default SMTP (rate-limited/unbranded);
     configure a real provider before real users.
@@ -39,3 +41,11 @@ VERIFIED
   SHA restored (d6901997...); 0 BUILD-STUB remnants.
 
 MIGRATIONS  None new.
+
+  - a11y pass (safe subset): fixed html-has-lang (global-error), removed a
+    redundant role, and set aria-role ignoreNonDOM (the 8 aria-role warnings were
+    FALSE POSITIVES - custom components with a domain `role` prop). 244->234
+    lint warnings, still 0 errors. Form-label association (~118) and modal
+    keyboard/dialog handling are deferred to the WCAG/screen-reader pass on
+    purpose - quick-hacking them would risk layout breakage or REGRESS real a11y
+    to please the linter. See docs/ROADMAP.md 'Accessibility'.

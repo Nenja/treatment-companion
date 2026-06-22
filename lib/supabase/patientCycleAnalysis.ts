@@ -138,9 +138,11 @@ export function usePatientCycleAnalysis(patientId: string | null) {
       // Per cycle: week_number -> list of GAS values for that week.
       const weeksByCycle = new Map<string, Map<number, number[]>>();
       for (const r of ratingRows ?? []) {
-        const ci = Array.isArray(r.weekly_checkin)
-          ? r.weekly_checkin[0]
-          : r.weekly_checkin;
+        const ciRaw = r.weekly_checkin as unknown as
+          | { week_number: number | null; treatment_cycle_id: string | null }
+          | { week_number: number | null; treatment_cycle_id: string | null }[]
+          | null;
+        const ci = Array.isArray(ciRaw) ? ciRaw[0] : ciRaw;
         if (!ci) continue;
         const cycleId = ci.treatment_cycle_id as string;
         if (!cycleIds.includes(cycleId)) continue;
