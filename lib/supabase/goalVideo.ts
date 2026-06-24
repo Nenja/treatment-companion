@@ -173,8 +173,8 @@ export function useArchiveGoalVideo() {
       const { error } = await supabase.rpc('archive_goal_video', {
         p_approved_goal_id: input.approvedGoalId,
         p_source: input.source,
-        p_rating_id: (input.ratingId ?? null) as string,
-        p_note: (input.note ?? null) as string
+        p_rating_id: input.ratingId ?? null,
+        p_note: input.note ?? null
       });
       if (error) throw error;
     },

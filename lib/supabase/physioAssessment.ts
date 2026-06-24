@@ -39,7 +39,7 @@ export function useSubmitPhysioAssessment() {
       const { data, error } = await supabase.rpc('submit_physio_assessment', {
         p_patient_id: input.patientId,
         p_date: input.date,
-        p_note: (input.note ?? null) as string,
+        p_note: input.note ?? null,
         p_ratings: input.ratings.map((r) => ({
           approved_goal_id: r.approvedGoalId,
           nrs_value: r.nrsValue,

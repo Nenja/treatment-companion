@@ -79,8 +79,8 @@ export function useStartItbTherapy() {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.rpc('start_itb_therapy', {
         p_patient_id: input.patientId,
-        p_started_on: input.startedOn as string,
-        p_note: input.note as string
+        p_started_on: input.startedOn,
+        p_note: input.note
       });
       if (error) throw error;
     },
@@ -102,9 +102,9 @@ export function useLogItbDoseChange(patientId: string | null) {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.rpc('log_itb_dose_change', {
         p_therapy_id: input.therapyId,
-        p_changed_on: input.changedOn as string,
-        p_dose: input.dose as number,
-        p_note: input.note as string
+        p_changed_on: input.changedOn,
+        p_dose: input.dose,
+        p_note: input.note
       });
       if (error) throw error;
     },

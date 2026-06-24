@@ -1,0 +1,92 @@
+name: E2E smoke
+
+# Browser smoke against the DEPLOYED app. Three triggers:
+#   • workflow_dispatch — run on demand from the Actions tab
+#   • schedule          — daily synthetic-monitoring run; catches prod outages
+#                         or login breakage even when nothing was deployed
+#   • workflow_run      — runs automatically after the "Deploy (production, on
+#                         green CI)" workflow succeeds; catches regressions a
+#                         deploy introduces.
+#
+# (Was deployment_status until 2026-06-16. That broke under deploy-on-green:
+#  the Ignored Build Step now CANCELS Vercel's own production build, so Vercel
+#  no longer emits a "success/Production" deploy event — the old trigger's
+#  condition was never met and the whole job skipped. Production now deploys
+#  via the Deploy workflow, so we key off that instead.)
+#
+# Deliberately NOT on push / pull_request: a browser-level flake must never
+# red-gate a normal commit. The CI workflow's verify job (typecheck/test/build)
+# is the push/PR gate; THIS is post-deploy + scheduled monitoring only.
+#
+# Schedule + workflow_run only take effect once this file is on the
+# DEFAULT branch (main).
+#
+# Requires (Settings -> Secrets and variables -> Actions):
+#   Variables:  E2E_BASE_URL          e.g. https://treatment-companion.vercel.app
+#   Secrets:    E2E_PATIENT_EMAIL     a DEDICATED TEST patient (never a real one)
+#               E2E_PATIENT_PASSWORD  that test account's already-set password
+# Without E2E_BASE_URL the run fails fast; without the creds the two patient
+# tests self-skip and only the login-page / redirect checks run.
+#
+# DATA NOTE: the patient flow completes a weekly check-in as the test account,
+# so each scheduled / post-deploy run consumes that test patient's weekly
+# prompt. The check-in test self-skips once the prompt is used, so repeated
+# runs are safe — but use a dedicated e2e test patient, not one you demo with.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Daily at 06:00 UTC (07:00/08:00 Europe/Copenhagen). Cron is always UTC.
+    # Edit this line to change frequency (e.g. '0 6 * * 1' = Mondays only).
+    - cron: '0 6 * * *'
+  workflow_run:
+    workflows: ["Deploy (production, on green CI)"]
+    types: [completed]
+
+# Run one smoke at a time; let a running one finish rather than cancelling it
+# mid-check-in. A newer queued run replaces an older queued one.
+concurrency:
+  group: e2e-smoke
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # For workflow_run events, only proceed when the Deploy workflow actually
+    # succeeded (i.e. a real production deploy completed). Manual and scheduled
+    # runs are unaffected by this condition.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install app deps
+        run: npm ci
+      - name: Install Playwright + Chromium
+        run: |
+          npm install -D @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Run smoke against the deployed URL
+        env:
+          E2E_BASE_URL: ${{ vars.E2E_BASE_URL }}
+          E2E_PATIENT_EMAIL: ${{ secrets.E2E_PATIENT_EMAIL }}
+          E2E_PATIENT_PASSWORD: ${{ secrets.E2E_PATIENT_PASSWORD }}
+          # Optional: the clinician sign-in / redirect tests run when these are
+          # set (read-only against prod — safe). The Tier-2 write-journeys stay
+          # test.fixme and never run here; run those against staging with the
+          # dev API. See e2e/README.md.
+          E2E_CLINICIAN_EMAIL: ${{ secrets.E2E_CLINICIAN_EMAIL }}
+          E2E_CLINICIAN_PASSWORD: ${{ secrets.E2E_CLINICIAN_PASSWORD }}
+        run: npx playwright test
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/.artifacts/playwright-report
+          retention-days: 7

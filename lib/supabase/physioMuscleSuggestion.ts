@@ -32,7 +32,7 @@ export function useSubmitPhysioMuscleSuggestion() {
           p_muscle: input.muscle,
           p_side: input.side,
           p_rationale: input.rationale,
-          p_related_goal_id: input.relatedGoalId ?? undefined
+          p_related_goal_id: input.relatedGoalId ?? null
         }
       );
       if (error) throw error;

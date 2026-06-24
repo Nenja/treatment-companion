@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from './browser';
-import type { Database } from '@/lib/database.types';
 import type { NrsConfig, NrsDirection, TreatmentModality } from '../types';
 
 export interface GasAnchors {
@@ -228,14 +227,11 @@ export function useClinicianPatientData(
 
       const patient = {
         id: pRow.id as string,
-        displayName: (() => {
-          const prof = pRow.profile as unknown as
-            | { display_name?: string | null }
-            | { display_name?: string | null }[]
-            | null;
-          const dn = Array.isArray(prof) ? prof[0]?.display_name : prof?.display_name;
-          return dn ?? 'Patient';
-        })(),
+        displayName:
+          (Array.isArray(pRow.profile)
+            ? pRow.profile[0]?.display_name
+            : (pRow.profile as { display_name?: string } | null)?.display_name) ??
+          'Patient',
         shareMusclesWithPhysio:
           (pRow.share_muscles_with_physio as boolean) ?? true,
         physioExercisePlan:
@@ -805,17 +801,17 @@ export function useEditGoal() {
       const supabase = createSupabaseBrowserClient();
       const { data, error } = await supabase.rpc('edit_goal', {
         p_source_goal_id: input.sourceGoalId,
-        p_patient_facing_text: input.patientFacingText ?? undefined,
-        p_smart_text: input.smartText ?? undefined,
-        p_nrs_question: input.nrsQuestion ?? undefined,
-        p_nrs_direction: input.nrsDirection ?? undefined,
-        p_nrs_baseline_value: input.nrsBaselineValue ?? undefined,
-        p_nrs_target_value: input.nrsTargetValue ?? undefined,
-        p_anchor_minus2: input.anchorMinus2 ?? undefined,
-        p_anchor_minus1: input.anchorMinus1 ?? undefined,
-        p_anchor_zero: input.anchorZero ?? undefined,
-        p_anchor_plus1: input.anchorPlus1 ?? undefined,
-        p_anchor_plus2: input.anchorPlus2 ?? undefined
+        p_patient_facing_text: input.patientFacingText ?? null,
+        p_smart_text: input.smartText ?? null,
+        p_nrs_question: input.nrsQuestion ?? null,
+        p_nrs_direction: input.nrsDirection ?? null,
+        p_nrs_baseline_value: input.nrsBaselineValue ?? null,
+        p_nrs_target_value: input.nrsTargetValue ?? null,
+        p_anchor_minus2: input.anchorMinus2 ?? null,
+        p_anchor_minus1: input.anchorMinus1 ?? null,
+        p_anchor_zero: input.anchorZero ?? null,
+        p_anchor_plus1: input.anchorPlus1 ?? null,
+        p_anchor_plus2: input.anchorPlus2 ?? null
       });
       if (error) throw error;
       return data as string;
@@ -887,7 +883,7 @@ export function useSetClinicVideoNrs() {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.rpc('set_clinic_video_nrs', {
         p_rating_id: input.ratingId,
-        p_nrs: (input.unusable ? null : input.nrs) as number,
+        p_nrs: input.unusable ? null : input.nrs,
         p_unusable: input.unusable
       });
       if (error) throw error;
@@ -993,7 +989,7 @@ export function useSetTreatmentHandoff() {
       const { error } = await supabase.rpc('set_treatment_handoff', {
         p_cycle_id: input.cycleId,
         p_note: input.note,
-        p_treatment_changed: input.treatmentChanged as boolean
+        p_treatment_changed: input.treatmentChanged
       });
       if (error) throw error;
     },
@@ -1137,7 +1133,7 @@ export function useSetGoalVideoProtocol() {
         p_goal_id: input.goalId,
         p_instruction: input.instruction,
         p_setup: input.setup,
-        p_seconds: input.seconds as number
+        p_seconds: input.seconds
       });
       if (error) throw error;
     },
@@ -1158,7 +1154,7 @@ export function useSetClinicVideoScore() {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.rpc('set_clinic_video_score', {
         p_rating_id: input.ratingId,
-        p_rating: (input.unusable ? null : input.rating) as number,
+        p_rating: input.unusable ? null : input.rating,
         p_unusable: input.unusable
       });
       if (error) throw error;
@@ -1322,9 +1318,9 @@ export function useSaveTreatmentSession() {
         p_date: input.date,
         p_drug_product: input.drugProduct,
         p_total_units: input.totalUnits,
-        p_dilution: (input.dilution ?? null) as string,
-        p_guidance: input.guidance as Database['public']['Enums']['guidance_method'],
-        p_notes: (input.notes ?? null) as string,
+        p_dilution: input.dilution ?? null,
+        p_guidance: input.guidance,
+        p_notes: input.notes ?? null,
         p_injections: input.injections.map((i) => ({
           muscle: i.muscle,
           side: i.side,
@@ -1394,9 +1390,9 @@ export function useStartCycleWithTreatment() {
           p_treatment_date: input.date,
           p_drug_product: input.drugProduct,
           p_total_units: input.totalUnits,
-          p_dilution: (input.dilution ?? null) as string,
-          p_guidance: input.guidance as Database['public']['Enums']['guidance_method'],
-          p_notes: (input.notes ?? null) as string,
+          p_dilution: input.dilution ?? null,
+          p_guidance: input.guidance,
+          p_notes: input.notes ?? null,
           p_injections: input.injections.map((i) => ({
             muscle: i.muscle,
             side: i.side,
@@ -1558,8 +1554,8 @@ export function useSetPatientMedication() {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.rpc('set_patient_medication', {
         p_patient_id: input.patientId,
-        p_current_medication: input.currentMedication as string,
-        p_previous_medication: input.previousMedication as string
+        p_current_medication: input.currentMedication,
+        p_previous_medication: input.previousMedication
       });
       if (error) throw error;
     },

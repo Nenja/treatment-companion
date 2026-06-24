@@ -416,7 +416,7 @@ export function useCreateStudy() {
       const { error } = await supabase.rpc('create_study', {
         p_key: input.key,
         p_name: input.name,
-        p_description: input.description ?? undefined
+        p_description: input.description ?? null
       });
       if (error) throw error;
     },
@@ -436,9 +436,9 @@ export function useUpdateStudy() {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.rpc('update_study', {
         p_study_id: input.studyId,
-        p_name: input.name ?? undefined,
-        p_description: input.description ?? undefined,
-        p_active: input.active ?? undefined
+        p_name: input.name ?? null,
+        p_description: input.description ?? null,
+        p_active: input.active ?? null
       });
       if (error) throw error;
     },

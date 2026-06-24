@@ -1,0 +1,9 @@
+node_modules/
+# native build outputs (the android/ and ios/ projects themselves can be committed
+# once you start customising them — but their build artefacts should not be)
+android/app/build/
+android/build/
+android/.gradle/
+ios/App/build/
+ios/App/Pods/
+.DS_Store

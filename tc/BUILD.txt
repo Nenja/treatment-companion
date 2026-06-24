@@ -1,0 +1,89 @@
+=== 2026-06-23 — iOS / PWA install support ===
+- Added PNG icons (iOS ignores SVG apple-touch-icon): public/apple-touch-icon.png (180, opaque), icon-192.png, icon-512.png, icon-maskable-512.png
+- layout.tsx metadata.icons -> PNG (apple-touch-icon 180); manifest.json icons -> PNG; sw.js notification icon -> PNG
+- Verified: stubbed prod build 'Compiled successfully'; tsc 0 errors; eslint 0 errors; i18n parity intact
+- FONT-RESTORE SHA (new canonical app/[locale]/layout.tsx): 939245bbbfdde208ac38b61cf8769621a0eb08be316ba326bfe4e76eebae66fc
+- (Supersedes prior layout.tsx restore SHA d6901997...; layout legitimately changed for the apple-touch PNG)
+
+BUILD - v1.0.0   (stack-gap hardening folded into the pre-lock baseline · cumulative)
+
+WHAT THIS IS
+  The version baseline for testing (v1.0.0, not yet tagged). Deploy this ONE zip.
+  Migrations 0001-0111 (none new). Folds in everything prior + the tech-stack
+  hardening below.
+
+TECH-STACK HARDENING ADDED (this build)
+  - noindex: X-Robots-Tag header (next.config.ts) + app/robots.ts disallow all.
+    A clinical app must not be search-indexed.
+  - Health endpoint: GET /api/health -> {status:'ok', version, time}. Point an
+    external uptime monitor (UptimeRobot/Better Uptime/Vercel) at it.
+  - Rate limiting: lib/rateLimit.ts (in-memory fixed window). Applied to
+    redcap-sync (per admin, 5/min), create-account + reset-password (per IP,
+    20/min). Best-effort per serverless instance; swap in KV/Upstash for strict
+    global limits (signature is store-agnostic).
+  - a11y lint: eslint-plugin-jsx-a11y wired as WARNINGS (0 errors preserved;
+    now 244 warnings, ~164 a11y) for the WCAG pass. Deprecated label-has-for off.
+
+  SCAFFOLDED / HANDED OFF (need CLI or Supabase console — not doable in-repo):
+  - Typed DB layer LIVE: lib/database.types.ts (30 tables/25 enums/175 funcs) +
+    all 3 clients typed <Database>; every query schema-checked at compile time.
+    The ~57 adoption mismatches resolved with NO runtime change (casts preserve
+    values; ?? undefined only where the SQL param defaults to null). Full verify
+    incl. vitest (41 tests) green. gen:types script + docs/DB-TYPES.md included.
+  - Production auth email (SMTP): documented in OPS.md go-live checklist. Account
+    creation / password reset use Supabase default SMTP (rate-limited/unbranded);
+    configure a real provider before real users.
+
+  OPS.md go-live checklist refreshed: CSP + Next.js update marked done; uptime
+  monitor + custom SMTP items added.
+
+VERSION
+  Unchanged at 1.0.0 (you haven't locked/tagged 1.0 yet). lib/version.ts +
+  package.json stay 1.0.0; CHANGELOG 1.0.0 entry updated to include this
+  hardening + known-limitations (typed DB, auth email, in-memory rate limit).
+
+VERIFIED
+  tsc clean; eslint 0 errors (244 warnings); check:i18n 1730 keys en/da aligned;
+  font-stub build compiled (/api/health + /robots.txt in manifest); layout.tsx
+  SHA restored (d6901997...); 0 BUILD-STUB remnants.
+
+MIGRATIONS  None new.
+
+  - a11y pass (safe subset): fixed html-has-lang (global-error), removed a
+    redundant role, and set aria-role ignoreNonDOM (the 8 aria-role warnings were
+    FALSE POSITIVES - custom components with a domain `role` prop). 244->234
+    lint warnings, still 0 errors. Form-label association (~118) and modal
+    keyboard/dialog handling are deferred to the WCAG/screen-reader pass on
+    purpose - quick-hacking them would risk layout breakage or REGRESS real a11y
+    to please the linter. See docs/ROADMAP.md 'Accessibility'.
+
+  - Security Advisor follow-up: migration 0112_tighten_anon_studies_and_search_path.sql
+    (standalone SQL provided; run in Supabase SQL editor). (a) Revokes anon EXECUTE
+    on the 5 study RPCs (create_study/update_study/add_patient_to_study/
+    remove_patient_from_study/study_overview) - they were added in 0110 AFTER 0109's
+    anon revoke so they still defaulted to PUBLIC (admin-gated internally, so
+    defence-in-depth). (b) Pins search_path=public on nrs_to_gas, gas_label,
+    audit_event_immutable, approved_goal_set_lineage (+ whoami if present). Verified
+    on a throwaway PG16: anon loses EXECUTE on all 5, authenticated/service_role keep
+    it, proconfig shows search_path pinned. The large "authenticated can execute
+    SECURITY DEFINER" advisor list is BY DESIGN (RPCs self-authorize internally) -
+    not actioned. extension_in_public (citext/pg_net) left as-is (low priority,
+    risky to move). DASHBOARD: enable Auth leaked-password protection (HaveIBeenPwned)
+    - one toggle. DRIFT FOUND: `whoami` exists in the DB but not in migrations -
+    investigate/drop or add to a migration.
+
+  - Performance Advisor follow-up: migration 0113_rls_initplan_select_wrap.sql
+    (standalone SQL; run in Supabase SQL editor). PERFORMANCE-only (no security
+    change). Wraps auth.uid() as (select auth.uid()) in the 11 auth_rls_initplan-
+    flagged self-access policies (profile x2, patient, clinician, audit_event x2,
+    push_subscription x3, device_push_token x2) so the planner evaluates it once
+    per statement instead of per row. Verified on a throwaway PG16 under a non-owner
+    role with RLS enforced: per-row visibility + INSERT/DELETE allow/deny identical
+    before vs after; pg_policies shows the wrapped expression. current_app_role() in
+    profile_self_update left untouched (different lint surface).
+    NOT actioned: multiple_permissive_policies (the large list) - consolidating the
+    admin/clinician/patient permissive policies into single OR'd policies is a
+    security-boundary rewrite with near-zero pre-pilot payoff; deferred to a dedicated
+    RLS performance pass (added to ROADMAP). Most rows in that list are also for non-
+    real roles (anon/authenticator/dashboard_user/supabase_privileged_role); only the
+    `authenticated` rows represent real query cost.

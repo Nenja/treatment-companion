@@ -84,9 +84,7 @@ export default tseslint.config(
         Object.keys(jsxA11y.flatConfigs.recommended.rules).map((rule) => [rule, 'warn'])
       ),
       // Deprecated and superseded by label-has-associated-control; noisy duplicate.
-      'jsx-a11y/label-has-for': 'off',
-      // `role` here is a domain prop on custom components (user role), not ARIA
-      'jsx-a11y/aria-role': ['warn', { ignoreNonDOM: true }]
+      'jsx-a11y/label-has-for': 'off'
     }
   }
 );
