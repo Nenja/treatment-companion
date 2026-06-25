@@ -30,6 +30,7 @@ import {
   type StudyPatientRow
 } from '@/lib/supabase/admin';
 import { useToast } from '@/components/feedback/Toast';
+import { QuestionnaireAdminSection } from '@/components/clinician/QuestionnaireAdminSection';
 import { SkeletonBlock } from '@/components/feedback/Skeleton';
 import { classifyError } from '@/lib/feedback';
 import {
@@ -253,6 +254,10 @@ export default function AdminPage() {
 
         <Collapsible id="purge" title={tAdmin('purgeTitle')}>
           <ResearchPurgeSection enabled={!!profile && profile.isAdmin} embedded />
+        </Collapsible>
+
+        <Collapsible id="questionnaires" title={tAdmin('questionnairesTitle')}>
+          <QuestionnaireAdminSection enabled={!!profile && profile.isAdmin} embedded />
         </Collapsible>
       </main>
     </div>

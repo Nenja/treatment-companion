@@ -2,10 +2,10 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from './supabase/browser';
-import { patientRows, toCsv } from './redcap/buildRows';
+import { patientRows, questionnaireRows, toCsv } from './redcap/buildRows';
 
 // Re-export the pure helpers so existing importers (and tests) keep working.
-export { esc, toCsv, patientRows, COLUMNS } from './redcap/buildRows';
+export { esc, toCsv, patientRows, questionnaireRows, COLUMNS } from './redcap/buildRows';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -32,8 +32,10 @@ export function useExportRedcapDataset() {
       const supabase = createSupabaseBrowserClient();
       const { data, error } = await supabase.rpc('export_research_dataset');
       if (error) throw error;
+      const qres = await (supabase as any).rpc('export_questionnaire_responses');
+      if (qres.error) throw qres.error;
       const patients = (data as any[]) ?? [];
-      const rows = patients.flatMap(patientRows);
+      const rows = [...patients.flatMap(patientRows), ...questionnaireRows(qres.data)];
       downloadCsv(toCsv(rows));
       return { patients: patients.length, rows: rows.length };
     }

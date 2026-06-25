@@ -1,0 +1,71 @@
+# codemagic.example.yaml — EXAMPLE iOS build + TestFlight for the Capacitor shell.
+#
+# This is a STARTING TEMPLATE, not a finished config. To use it:
+#   1. Copy this file to the REPO ROOT as `codemagic.yaml`.
+#   2. Create a Codemagic account and connect it to this GitHub repo.
+#   3. In Codemagic: Teams > Integrations > Apple Developer Portal — add an
+#      App Store Connect API key (this is what signs the build; no Mac needed).
+#   4. Replace every <PLACEHOLDER> below.
+#   5. Trigger the workflow from the Codemagic UI (or on push to `main`).
+#
+# Using Capawesome Cloud or Ionic Appflow instead? Ignore this file and follow
+# their Capacitor guide — the steps (API key, Xcode 26, TestFlight) are the same.
+
+workflows:
+  ios-testflight:
+    name: iOS TestFlight (Capacitor)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    integrations:
+      app_store_connect: <YOUR_ASC_API_KEY_NAME_IN_CODEMAGIC>
+
+    environment:
+      xcode: latest          # MUST be Xcode 26+ (Apple requirement since 2026-04-28)
+      cocoapods: default
+      node: 20
+      vars:
+        BUNDLE_ID: "dk.mprc.treatmentcompanion"
+        APP_STORE_APPLE_ID: <NUMERIC_APP_ID_FROM_APP_STORE_CONNECT>
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+
+    scripts:
+      - name: Install mobile deps
+        script: cd mobile && npm ci
+
+      - name: Add iOS platform (first run) and sync web assets
+        script: |
+          cd mobile
+          [ -d ios ] || npx cap add ios
+          npx cap sync ios
+
+      - name: Generate icons & splash from mobile/assets/*
+        script: |
+          cd mobile
+          npm i -D @capacitor/assets
+          npx @capacitor/assets generate --ios || true
+
+      - name: Set up automatic signing (via App Store Connect API key)
+        script: xcode-project use-profiles
+
+      - name: Build & archive .ipa
+        script: |
+          cd mobile/ios/App
+          xcode-project build-ipa \
+            --workspace App.xcworkspace \
+            --scheme App
+
+    artifacts:
+      - mobile/ios/App/build/ios/ipa/*.ipa
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - "Pilot testers"

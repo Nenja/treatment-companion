@@ -89,7 +89,11 @@ export const COLUMNS: string[] = [
   // itb
   'itb_started_on', 'itb_ended_on',
   // itb_dose_change
-  'idc_started_on', 'idc_changed_on', 'idc_dose_mcg_day'
+  'idc_started_on', 'idc_changed_on', 'idc_dose_mcg_day',
+  // questionnaire_item (generic long-format repeating instrument: one row per
+  // item answer, so any admin-authored questionnaire fits a fixed dictionary)
+  'q_key', 'q_version', 'q_lang', 'q_submitted', 'q_week', 'q_cycle_index',
+  'q_filled_by', 'q_item_key', 'q_value', 'q_value_num'
 ];
 
 export type Row = Record<string, string>;
@@ -189,6 +193,34 @@ export function patientRows(p: any): Row[] {
     idc_dose_mcg_day: num(d.dose_mcg_per_day)
   }));
   return rows;
+}
+
+// Generic long-format questionnaire rows: one repeating `questionnaire_item`
+// instance per item answer, keyed by record_id (study_code). Raw values — no
+// code mapping (admin-authored questionnaires are descriptive/raw).
+export function questionnaireRows(records: any): Row[] {
+  const out: Row[] = [];
+  for (const rec of records ?? []) {
+    const rid = String(rec.record_id ?? '');
+    (rec.items ?? []).forEach((qi: any, i: number) => {
+      out.push({
+        record_id: rid,
+        redcap_repeat_instrument: 'questionnaire_item',
+        redcap_repeat_instance: String(i + 1),
+        q_key: txt(qi.q_key),
+        q_version: num(qi.q_version),
+        q_lang: txt(qi.q_lang),
+        q_submitted: ymd(qi.submitted_at),
+        q_week: num(qi.week_number),
+        q_cycle_index: num(qi.cycle_number),
+        q_filled_by: txt(qi.filled_by),
+        q_item_key: txt(qi.item_key),
+        q_value: txt(qi.value_text),
+        q_value_num: num(qi.value_num)
+      });
+    });
+  }
+  return out;
 }
 
 export const esc = (v: string): string => (/[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
