@@ -108,9 +108,6 @@ export default function LoginPage() {
         <h1 className="font-display text-[28px] leading-tight text-ink">
           {t('title')}
         </h1>
-        <p className="mt-2 text-[15px] text-ink-soft">
-          Use the email and password your clinic gave you.
-        </p>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-4">
           <div>

@@ -202,6 +202,11 @@ export default function ProfilePage() {
   // attemptLeave so unsaved form edits are confirmed first.
   const chooseLanguage = (target: AppLocale) => {
     const go = async () => {
+      // Pin the locale via NEXT_LOCALE BEFORE navigating, so the detection
+      // middleware doesn't bounce an unprefixed (English) target back to the
+      // previous locale — the "can't switch back to English" bug. Set first
+      // (synchronously) so it holds even if the persist write is slow/fails.
+      document.cookie = `NEXT_LOCALE=${target}; path=/; max-age=31536000; samesite=lax`;
       try {
         await setPreferredLocale.mutateAsync(target);
       } catch {

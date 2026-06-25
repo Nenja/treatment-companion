@@ -191,3 +191,25 @@ Each item notes **who** owns it — _you_ (dashboard / clinical / decision), _de
 visibility, screen-reader reading flow, live-region announcements for dynamic
 updates (new rating / saved check-in), touch-target size, motion. These need a
 real-device + screen-reader manual pass — they cannot be caught by static lint.
+
+- **RLS performance pass — consolidate permissive policies.** The Supabase Performance Advisor flags `multiple_permissive_policies` on most tables (separate admin/clinician/patient policies per action). Consolidating into single OR'd policies per action is a perf optimisation that only matters at scale; it rewrites the security boundary, so do it as a dedicated, fully Method-D-verified pass, not pre-pilot. The `auth_rls_initplan` half of the advisor was already addressed in migration 0113.
+
+## Questionnaire engine — remaining slices (foundation 0114 shipped + verified)
+- Slice 2: TS types (lib/database.types.ts regen) + data-access helpers in lib/.
+- Slice 3: dynamic questionnaire renderer (render a definition as a check-in page; ride-along after goals via due_questionnaires_for_checkin).
+- Slice 4: clinician/admin authoring + assignment UI (build definitions, assign to study/patient with schedule).
+- Slice 5: i18n for item prompts/options (en/da) — NOTE validated instruments need the official validated translation, not a first-pass.
+- Slice 6: REDCap export mapping (each questionnaire -> a repeating instrument; raw item values).
+- GATES before enabling any NAMED/validated instrument: licence cleared + validated translation + regulatory sign-off (raw-capture keeps it descriptive).
+
+## Questionnaire engine — slice 2 DONE: clinician tool panel (library picker + cadence + manage)
+- Remaining: patient-side renderer (due_questionnaires_for_checkin + submit_questionnaire_response on the check-in page); admin authoring + publish UI; database.types regen (drop rpc casts); REDCap export mapping (each questionnaire -> repeating instrument, raw values).
+
+## Questionnaire engine — slice 3 DONE: patient renderer (post-checkin)
+- Remaining: admin authoring + publish UI; database.types regen; REDCap export mapping (each questionnaire -> repeating instrument, raw values).
+
+## Questionnaire engine — slice 4 DONE: admin authoring + publish UI
+- Remaining: database.types regen (drop the rpc/from casts in questionnaires.ts); REDCap export mapping (each questionnaire -> repeating instrument, raw item values).
+
+## Questionnaire engine — slice 5 DONE: language field/filter + REDCap export. Feature complete.
+- Optional follow-ups: database.types regen (drop rpc/from casts); per-questionnaire wide REDCap instruments if a study needs them (current export is generic long-format).

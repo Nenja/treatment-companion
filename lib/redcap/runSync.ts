@@ -9,7 +9,7 @@
 // optimisation (see redcap/AUTOMATION.md).
 
 import { createSupabaseServiceClient } from '@/lib/supabase/serviceClient';
-import { patientRows } from '@/lib/redcap/buildRows';
+import { patientRows, questionnaireRows } from '@/lib/redcap/buildRows';
 import { importRowsToRedcap, type RedcapImportResult } from '@/lib/redcap/importToRedcap';
 
 export type RedcapSyncSummary = {
@@ -24,8 +24,13 @@ export async function runRedcapSync(): Promise<RedcapSyncSummary> {
     throw new Error(`export_research_dataset failed: ${error.message}`);
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const qres = await (svc as any).rpc('export_questionnaire_responses');
+  if (qres.error) {
+    throw new Error(`export_questionnaire_responses failed: ${qres.error.message}`);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const patients = ((data as any[]) ?? []);
-  const rows = patients.flatMap(patientRows);
+  const rows = [...patients.flatMap(patientRows), ...questionnaireRows(qres.data)];
   const result = await importRowsToRedcap(rows);
   return { patients: patients.length, rows: rows.length, ...result };
 }

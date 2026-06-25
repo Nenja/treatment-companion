@@ -24,7 +24,7 @@ import { useTranslations } from 'next-intl';
  * icon library is bundled).
  */
 
-export type PatientActionId = 'medication' | 'physio' | 'history' | 'export' | 'training' | 'video' | 'admin';
+export type PatientActionId = 'medication' | 'physio' | 'history' | 'export' | 'training' | 'video' | 'questionnaires' | 'admin';
 
 function Badge({ count }: { count: number }) {
   if (count <= 0) return null;
@@ -100,6 +100,17 @@ function iconFor(id: PatientActionId) {
           <path d="M9 12l2 2 4-4" />
         </svg>
       );
+    case 'questionnaires':
+      // survey / form — radio dots beside lines
+      return (
+        <svg {...common}>
+          <rect x="4" y="3" width="16" height="18" rx="2" />
+          <circle cx="8" cy="8" r="1" />
+          <circle cx="8" cy="13" r="1" />
+          <circle cx="8" cy="18" r="1" />
+          <path d="M11 8h6M11 13h6M11 18h4" />
+        </svg>
+      );
     case 'admin':
       // gear / settings — admin tools (account management, research export)
       return (
@@ -148,6 +159,7 @@ export function PatientActionRow({
     { id: 'video' },
     { id: 'history' },
     { id: 'export' },
+    { id: 'questionnaires' },
     ...(showAdmin ? [{ id: 'admin' as const }] : [])
   ];
 

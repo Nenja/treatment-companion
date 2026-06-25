@@ -30,10 +30,9 @@ The native shell exists to (1) put the app in the App Store and Play Store, and
 
 ## Two decisions to make
 
-1. **App ID** — currently a placeholder `dk.treatmentcompanion.app` in
-   `capacitor.config.ts`. **It is permanent once published and can't be changed**,
-   so set it to a reverse-DNS id you're happy with, ideally based on a domain you
-   control. The same id is used on both stores.
+1. **App ID** — **finalised as `dk.mprc.treatmentcompanion`** in
+   `capacitor.config.ts`. **It is permanent once published and can't be changed.**
+   The same id is used on both stores. (For iOS specifics see `IOS_GOLIVE.md`.)
 2. **Name / icon / splash** — name is "Treatment Companion". You'll need a
    1024×1024 PNG icon and a splash image (Milestone 2; placeholders work until then).
 

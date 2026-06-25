@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useCheckinData, useSubmitCheckin, useReopenCheckin, uploadGoalVideo } from '@/lib/supabase/checkin';
+import { PostCheckinQuestionnaires } from '@/components/patient/PostCheckinQuestionnaires';
 import { useCheckinDraft, checkinDraftStorage } from '@/lib/useCheckinDraft';
 import { useModalA11y } from '@/lib/useModalA11y';
 import { isCheckinComplete } from '@/lib/checkinDraft';
@@ -162,8 +163,11 @@ function CheckinPageInner() {
   // Thanks view comes first — see ref comment above.
   if (submittedId) {
     return (
-      <ThanksView
-        onBackHome={goHomeHard}
+      <PostCheckinQuestionnaires
+        weeklyCheckinId={submittedId}
+        thanks={
+          <ThanksView
+            onBackHome={goHomeHard}
         onEditAnswers={async () => {
           try {
             await reopenMutation.mutateAsync(submittedId);
@@ -181,6 +185,8 @@ function CheckinPageInner() {
           }
         }}
         editing={reopenMutation.isPending}
+          />
+        }
       />
     );
   }
