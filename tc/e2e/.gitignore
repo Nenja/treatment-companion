@@ -1,4 +1,0 @@
-# Playwright artifacts (reports, traces, screenshots, videos).
-# Kept under e2e/ so we don't have to touch the repo-root .gitignore.
-.artifacts/
-.cache/

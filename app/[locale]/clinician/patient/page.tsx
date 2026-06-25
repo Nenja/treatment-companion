@@ -57,6 +57,7 @@ import { GoalVideoModal } from '@/components/clinician/GoalVideoModal';
 import { RecordGoalDrawer } from '@/components/clinician/RecordGoalDrawer';
 import { VideoProtocolEditor } from '@/components/clinician/VideoProtocolEditor';
 import { CockpitPanelDrawer } from '@/components/clinician/CockpitPanelDrawer';
+import { QuestionnairePanel } from '@/components/clinician/QuestionnairePanel';
 import {
   PatientActionRow,
   type PatientActionId
@@ -184,6 +185,7 @@ export default function ClinicianPatientPage() {
   } | null>(null);
   const [showScoreQueue, setShowScoreQueue] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showQuestionnaires, setShowQuestionnaires] = useState(false);
   const [showNewCycle, setShowNewCycle] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
   const [showVideoPanel, setShowVideoPanel] = useState(false);
@@ -738,6 +740,7 @@ export default function ClinicianPatientPage() {
     export: t('actionExport'),
     training: t('actionTraining'),
     video: t('actionVideo'),
+    questionnaires: t('actionQuestionnaires'),
     admin: t('actionAdmin')
   };
   const actionShortLabels = {
@@ -747,6 +750,7 @@ export default function ClinicianPatientPage() {
     export: t('actionShortExport'),
     training: t('actionShortTraining'),
     video: t('actionShortVideo'),
+    questionnaires: t('actionShortQuestionnaires'),
     admin: t('actionShortAdmin')
   };
   const onActionSelect = (id: PatientActionId) => {
@@ -761,6 +765,8 @@ export default function ClinicianPatientPage() {
       setOpenPanel((cur) => (cur === 'training' ? null : 'training'));
     } else if (id === 'video') {
       setShowVideoPanel(true);
+    } else if (id === 'questionnaires') {
+      setShowQuestionnaires(true);
     } else if (id === 'admin') {
       router.push(
         locale === 'en' ? '/clinician/admin' : `/${locale}/clinician/admin`
@@ -1568,15 +1574,16 @@ export default function ClinicianPatientPage() {
                     }
                     onExpand={() => setEnlargedGoalId(g.id)}
                   />
-                  {workingOnGoalIds.has(g.id) && (
-                    <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep">
-                      {t('physioWorkingOnTag')}
-                    </p>
-                  )}
-                  {/* Retire action — retires a goal (achieved /
-                      partial / no longer suitable). History is kept;
-                      the goal leaves the patient's future check-ins. */}
-                  <div className="mt-3 flex flex-wrap justify-end gap-2">
+                  {/* Footer row: therapist tag (left) + actions (right),
+                      aligned on one baseline. Retire keeps history; the
+                      goal leaves the patient's future check-ins. */}
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {workingOnGoalIds.has(g.id) && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep">
+                        {t('physioWorkingOnTag')}
+                      </span>
+                    )}
+                    <div className="ml-auto flex flex-wrap justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => setEditGoalTarget(g)}
@@ -1659,6 +1666,7 @@ export default function ClinicianPatientPage() {
                       </svg>
                       {t('retireGoal')}
                     </button>
+                    </div>
                   </div>
                 </li>
               ))}
@@ -1734,6 +1742,13 @@ export default function ClinicianPatientPage() {
             dot showing a speech-bubble icon to see the comment in the
             caption below the chart. */}
       </main>
+
+      {showQuestionnaires && (
+        <QuestionnairePanel
+          patientId={patient.id}
+          onClose={() => setShowQuestionnaires(false)}
+        />
+      )}
 
       {showExport && (
         <ExportModal

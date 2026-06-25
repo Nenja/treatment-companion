@@ -1,3 +1,76 @@
+=== 2026-06-25 — Questionnaire engine slice 5: language + REDCap export ===
+- Migration 0116 (run AFTER 0115): +questionnaire.lang (default 'en'); create_questionnaire +p_lang (drop 7-arg -> 8-arg); list_library_questionnaires +lang return +optional p_lang filter; list_patient_questionnaires +lang; due_questionnaires_for_checkin +lang; NEW export_questionnaire_responses() (clinician-gated, RAW long-format, mirrors export_research_dataset gate). Existing export_research_dataset UNTOUCHED.
+- HARNESS: 0114+0115+0116 apply clean; T9 (lang stored + library lang filter) + T10 (export returns raw items for consented patient, blocks non-clinician) PASSED; prior T1-T8 still pass.
+- REDCap: buildRows +questionnaireRows() + COLUMNS q_* (generic long-format repeating instrument 'questionnaire_item', one row per item answer — fits arbitrary admin-authored questionnaires). redcapExport.ts + runSync.ts fetch export_questionnaire_responses and merge rows. redcap/treatment_companion_datadictionary.csv += questionnaire_item instrument (10 fields). vitest 12/12.
+- Language UI: admin form language select (en/da/sv/nb) + lang badge in list; clinician panel language filter dropdown + lang badges. Questionnaire CONTENT is stored as authored, not app-localized.
+- VERIFIED: tsc 0; eslint 0 errors; production build OK; layout.tsx SHA 939245bb...66fc restored.
+- USER ACTIONS: run 0116 in Supabase (after 0115); re-import the updated data dictionary CSV into REDCap so the questionnaire_item instrument exists before syncing; (optional) regenerate database.types.
+
+=== 2026-06-25 — Questionnaire engine slice 4: admin authoring + publish UI ===
+- lib/supabase/questionnaires.ts: +useAdminQuestionnaires (lists latest version per key + published flag via admin RLS on questionnaire/questionnaire_library), +useCreateQuestionnaire (create_questionnaire), +useSetLibraryVisibility (set_library_visibility).
+- NEW components/clinician/QuestionnaireAdminSection.tsx: existing-list with Publish/Unpublish toggles + a New-questionnaire form with a dynamic item builder (all 7 item types, options editor for choice/likert, min/max for number, required), licensed flag + source note, publish-now toggle.
+- clinician/admin/page.tsx: import + a <Collapsible id=questionnaires> block beside the research sections (admin-gated, embedded).
+- i18n: admin.questionnairesTitle + questionnaireAdmin.* (en + da first-pass); parity preserved.
+- VERIFIED: tsc 0; eslint 0 errors (build-passing). Production build OK (105/105 pages); layout.tsx SHA 939245bb...66fc restored.
+- a11y note: the admin section carries 8 jsx-a11y/control-has-associated-label warnings on controls that DO have visible <label> text (rule is finicky about span-nested labels), consistent with the existing admin sections. Non-blocking; admin-only screen. Minor polish QA item.
+- Needs 0114+0115 applied + (optional) database.types regen. Rendering + live round-trips are admin QA.
+
+=== 2026-06-25 — Questionnaire engine slice 3: patient-side renderer ===
+- lib/supabase/questionnaires.ts: +useDueQuestionnaires (due_questionnaires_for_checkin), +useQuestionnaireItems (questionnaire_item select via narrow cast), +useSubmitQuestionnaireResponse (submit_questionnaire_response).
+- NEW components/patient/QuestionnaireForm.tsx: dynamic renderer for all item types (nrs_0_10, number, text, boolean, single_choice/likert, multi_choice); required validation; raw-answer encoding; a11y labels.
+- NEW components/patient/PostCheckinQuestionnaires.tsx: resolves due questionnaires for the just-submitted check-in and steps through them, then falls through to ThanksView. Wizard untouched.
+- checkin/page.tsx: wrapped the post-submit ThanksView in PostCheckinQuestionnaires(weeklyCheckinId=submittedId). Questionnaires appear AFTER a successful check-in (the only point the weekly_checkin id exists).
+- i18n: questionnaireFill.* (en + da first-pass); parity preserved.
+- VERIFIED: tsc 0; eslint 0 errors (new files clean); production build OK (105/105 pages); layout.tsx SHA 939245bb...66fc restored.
+- Needs 0114+0115 applied + database.types regen (drops the rpc/from casts). Rendering + live round-trips are patient-app QA.
+
+=== 2026-06-25 — Questionnaire engine slice 2: clinician 'Questionnaire' tool panel (UI) ===
+- NEW lib/supabase/questionnaires.ts: react-query hooks (useLibraryQuestionnaires, usePatientQuestionnaires, useAssignQuestionnaire, useSetAssignmentActive) over the 0114/0115 RPCs.
+- NEW components/clinician/QuestionnairePanel.tsx: CockpitPanelDrawer panel — pick from published library + choose cadence (every / every-2 / monthly / first-of-cycle / baseline) + manage enabled (stop/restart); study-level shown read-only.
+- PatientActionRow.tsx: added 'questionnaires' action (type+items+icon).
+- clinician/patient/page.tsx: import, actionLabels/actionShortLabels entries, showQuestionnaires state, onActionSelect branch, panel render (patientId={patient.id}).
+- i18n: clinician.patient.action(Short)Questionnaires + clinician.questionnaires.* (en + da first-pass); key-set parity preserved (only benign _meta diff).
+- VERIFIED: tsc 0 errors; eslint 0 errors (13 pre-existing warnings, none new); production build OK (clinician/patient compiled, 90 prerendered); layout.tsx restored to SHA 939245bb...66fc.
+- TYPES NOTE: questionnaires.ts calls the new RPCs through a narrow rpc cast because lib/database.types.ts predates 0114/0115. After applying 0115 in Supabase, regenerate database.types and the casts can be dropped.
+- NOT UI-VERIFIABLE BY CLAUDE: actual rendering, live RPC round-trips under real auth/RLS, and DA wording — QA in the running app. Requires 0114+0115 applied first.
+
+=== 2026-06-25 — Questionnaire engine split into 0114 (foundation, AS APPLIED) + 0115 (library+clinician delta) ===
+- REASON: 0114 was already applied; create_questionnaire changed 6->7 args, so re-running an edited 0114 would leave a stale overload. Forward-only fix instead.
+- 0114 restored in repo to exactly what was applied (foundation; no library).
+- 0115 = forward delta: questionnaire_library (+backfill publishes existing keys), drops old create_questionnaire(6-arg) and adds 7-arg w/ publish, clinician-capable assign_questionnaire, + set_library_visibility / list_library_questionnaires / list_patient_questionnaires / set_questionnaire_assignment_active.
+- VERIFIED on PG16: apply 0114 then 0115 -> zero errors, exactly ONE create_questionnaire overload, ALL_TESTS_PASSED + T8_PASSED.
+- ACTION: you already ran 0114 -> run 0115 ONLY (Supabase SQL editor). Do NOT re-run 0114.
+
+=== 2026-06-25 — Questionnaire engine 0114 UPDATED: library + clinician-driven assignment ===
+- Added questionnaire_library (key-level publish, admin-curated).
+- create_questionnaire: +p_publish (default true) -> upserts library. Admin-only.
+- New RPCs: set_library_visibility (admin publish/unpublish), list_library_questionnaires (care-pro/admin picker),
+  list_patient_questionnaires (access-gated), set_questionnaire_assignment_active (stop/restart).
+- assign_questionnaire now allows a CLINICIAN with active session to enable a PUBLISHED questionnaire for THAT patient + cadence; study-level stays admin-only; non-admins limited to library.
+- Re-VERIFIED on PG16: ALL_TESTS_PASSED (T1-T7) + T8_PASSED (library/publish, clinician enable+cadence, study/unpublished/no-access blocks, non-admin publish block, toggle access control).
+- Pure SQL; not yet applied -> review then run in Supabase SQL editor (after 0113).
+
+=== 2026-06-25 — Questionnaire engine (slice 1: data foundation) ===
+- migration 0114_questionnaire_engine.sql: questionnaire / questionnaire_item / questionnaire_assignment / questionnaire_response / questionnaire_item_response
+- RAW-CAPTURE ONLY (no scoring stored); versioned defs; assign to study OR patient with schedule rule; responses freeze to version + link to weekly_checkin
+- RPCs: create_questionnaire, assign_questionnaire, due_questionnaires_for_checkin, submit_questionnaire_response (+ _questionnaire_due_for_week helper)
+- RLS mirrors weekly_checkin (patient self / clinician-access / admin). VERIFIED on throwaway PG16: admin gate, versioning, assignment constraints, schedule resolver (specific_weeks/every_checkin/every_n + latest-version), raw capture, required/NRS-range/cross-patient/foreign-checkin guards, care-pro submit, RLS isolation. ALL_TESTS_PASSED.
+- No app-code change (pure SQL); tsc/lint/build unaffected. NOT YET APPLIED in Supabase — review then run in SQL editor.
+
+=== 2026-06-24 — iOS go-live developer-ready artifacts ===
+- mobile/assets/{icon.png(1024 opaque),splash.png,splash-dark.png(2732)} for @capacitor/assets
+- mobile/IOS_GOLIVE.md (consolidated iOS handoff brief: accounts, push wiring, cloud build, TestFlight, privacy, 4.2 caveat)
+- codemagic.example.yaml (iOS build+TestFlight template, root)
+- mobile/README.md appId note corrected to dk.mprc.treatmentcompanion
+- NO app-code change; web/app already iOS-ready. iOS native project NOT generated here (must be cap add ios + pod install on macOS/cloud).
+
+=== 2026-06-23 — iOS / PWA install support ===
+- Added PNG icons (iOS ignores SVG apple-touch-icon): public/apple-touch-icon.png (180, opaque), icon-192.png, icon-512.png, icon-maskable-512.png
+- layout.tsx metadata.icons -> PNG (apple-touch-icon 180); manifest.json icons -> PNG; sw.js notification icon -> PNG
+- Verified: stubbed prod build 'Compiled successfully'; tsc 0 errors; eslint 0 errors; i18n parity intact
+- FONT-RESTORE SHA (new canonical app/[locale]/layout.tsx): 939245bbbfdde208ac38b61cf8769621a0eb08be316ba326bfe4e76eebae66fc
+- (Supersedes prior layout.tsx restore SHA d6901997...; layout legitimately changed for the apple-touch PNG)
+
 BUILD - v1.0.0   (stack-gap hardening folded into the pre-lock baseline · cumulative)
 
 WHAT THIS IS
@@ -18,9 +91,11 @@ TECH-STACK HARDENING ADDED (this build)
     now 244 warnings, ~164 a11y) for the WCAG pass. Deprecated label-has-for off.
 
   SCAFFOLDED / HANDED OFF (need CLI or Supabase console — not doable in-repo):
-  - Typed DB layer: `npm run gen:types` script + docs/DB-TYPES.md. A dev runs it
-    (Supabase CLI) to produce lib/database.types.ts, then types the clients
-    <Database>. TODO marker left in lib/supabase/browser.ts.
+  - Typed DB layer LIVE: lib/database.types.ts (30 tables/25 enums/175 funcs) +
+    all 3 clients typed <Database>; every query schema-checked at compile time.
+    The ~57 adoption mismatches resolved with NO runtime change (casts preserve
+    values; ?? undefined only where the SQL param defaults to null). Full verify
+    incl. vitest (41 tests) green. gen:types script + docs/DB-TYPES.md included.
   - Production auth email (SMTP): documented in OPS.md go-live checklist. Account
     creation / password reset use Supabase default SMTP (rate-limited/unbranded);
     configure a real provider before real users.
@@ -39,3 +114,42 @@ VERIFIED
   SHA restored (d6901997...); 0 BUILD-STUB remnants.
 
 MIGRATIONS  None new.
+
+  - a11y pass (safe subset): fixed html-has-lang (global-error), removed a
+    redundant role, and set aria-role ignoreNonDOM (the 8 aria-role warnings were
+    FALSE POSITIVES - custom components with a domain `role` prop). 244->234
+    lint warnings, still 0 errors. Form-label association (~118) and modal
+    keyboard/dialog handling are deferred to the WCAG/screen-reader pass on
+    purpose - quick-hacking them would risk layout breakage or REGRESS real a11y
+    to please the linter. See docs/ROADMAP.md 'Accessibility'.
+
+  - Security Advisor follow-up: migration 0112_tighten_anon_studies_and_search_path.sql
+    (standalone SQL provided; run in Supabase SQL editor). (a) Revokes anon EXECUTE
+    on the 5 study RPCs (create_study/update_study/add_patient_to_study/
+    remove_patient_from_study/study_overview) - they were added in 0110 AFTER 0109's
+    anon revoke so they still defaulted to PUBLIC (admin-gated internally, so
+    defence-in-depth). (b) Pins search_path=public on nrs_to_gas, gas_label,
+    audit_event_immutable, approved_goal_set_lineage (+ whoami if present). Verified
+    on a throwaway PG16: anon loses EXECUTE on all 5, authenticated/service_role keep
+    it, proconfig shows search_path pinned. The large "authenticated can execute
+    SECURITY DEFINER" advisor list is BY DESIGN (RPCs self-authorize internally) -
+    not actioned. extension_in_public (citext/pg_net) left as-is (low priority,
+    risky to move). DASHBOARD: enable Auth leaked-password protection (HaveIBeenPwned)
+    - one toggle. DRIFT FOUND: `whoami` exists in the DB but not in migrations -
+    investigate/drop or add to a migration.
+
+  - Performance Advisor follow-up: migration 0113_rls_initplan_select_wrap.sql
+    (standalone SQL; run in Supabase SQL editor). PERFORMANCE-only (no security
+    change). Wraps auth.uid() as (select auth.uid()) in the 11 auth_rls_initplan-
+    flagged self-access policies (profile x2, patient, clinician, audit_event x2,
+    push_subscription x3, device_push_token x2) so the planner evaluates it once
+    per statement instead of per row. Verified on a throwaway PG16 under a non-owner
+    role with RLS enforced: per-row visibility + INSERT/DELETE allow/deny identical
+    before vs after; pg_policies shows the wrapped expression. current_app_role() in
+    profile_self_update left untouched (different lint surface).
+    NOT actioned: multiple_permissive_policies (the large list) - consolidating the
+    admin/clinician/patient permissive policies into single OR'd policies is a
+    security-boundary rewrite with near-zero pre-pilot payoff; deferred to a dedicated
+    RLS performance pass (added to ROADMAP). Most rows in that list are also for non-
+    real roles (anon/authenticator/dashboard_user/supabase_privileged_role); only the
+    `authenticated` rows represent real query cost.

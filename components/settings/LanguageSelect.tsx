@@ -78,8 +78,11 @@ export function LanguageSelect({
    * When provided (cards variant), the host page owns persisting the
    * choice and navigating — used by the profile page so it can (a) await
    * the write before the locale reload so it can't be lost to the page
-   * unload, and (b) guard unsaved form edits first. When omitted, the
-   * control persists + switches the URL itself (legacy/segmented path).
+   * unload, and (b) guard unsaved form edits first. NOTE: a host that owns
+   * navigation MUST set the NEXT_LOCALE cookie before navigating (see the
+   * profile page) — otherwise switching back to English bounces back via the
+   * detection middleware. When omitted, the control persists + switches the
+   * URL itself (and pins the cookie) (legacy/segmented path).
    */
   onChoose?: (target: AppLocale) => void;
 }) {

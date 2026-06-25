@@ -157,3 +157,59 @@ Each item notes **who** owns it — _you_ (dashboard / clinical / decision), _de
   later decision, not an omission.
 - **No clinic→patient messaging channel** — intentional; the care-team notes are
   a care-record surface, not a chat.
+
+## Accessibility (a11y) — current state (2026-06-18)
+`eslint-plugin-jsx-a11y` runs as warnings (0 errors). Snapshot after the safe pass:
+
+**Fixed (safe, deterministic):**
+- `html-has-lang` — `app/global-error.tsx` standalone `<html>` now has `lang="en"`.
+- `no-redundant-roles` — dropped `role="region"` on a `<section>` that already
+  has `aria-label` (a named section is already a region landmark).
+- `aria-role` (8) were **false positives** — custom components with a domain
+  `role` prop (`role="clinician"`/`"patient"`), not ARIA. Rule now set
+  `ignoreNonDOM: true` so it only checks real DOM elements.
+
+**Deliberately deferred to the WCAG 2.2 AA + screen-reader pass (NOT hacked silent):**
+- `control-has-associated-label` / `label-has-associated-control` (~118) — form
+  fields whose visible `<label>` isn't programmatically linked to the input. Not
+  centralizable (no shared input component; a helper `<p>` between label and input
+  rules out wrapping the input in the `<label>`). Correct fix is an explicit
+  `htmlFor`/`id` pair per field — a layout-sensitive, per-form refactor that should
+  be verified on a real screen reader.
+- `click-events-have-key-events` / `no-static-element-interactions` /
+  `no-noninteractive-element-interactions` (~27) — almost all are **modal/drawer
+  backdrops** (`<div onClick={onClose}>`). The dialogs already have
+  `role="dialog"` + `aria-modal`. The correct fix is Escape-to-close + focus
+  trap + focus return, NOT making the full-screen backdrop a focusable button
+  (which would *regress* real a11y to satisfy the linter). Belongs in a proper
+  dialog-a11y pass.
+- `media-has-caption` (8) — goal `<video>` elements. Self-recorded clinical
+  movement clips; captions are arguably N/A. Decide during the pass: add a track,
+  or disable the rule per-element with a documented rationale.
+
+**Not lintable at all** (the larger layer): colour contrast, focus order &
+visibility, screen-reader reading flow, live-region announcements for dynamic
+updates (new rating / saved check-in), touch-target size, motion. These need a
+real-device + screen-reader manual pass — they cannot be caught by static lint.
+
+- **RLS performance pass — consolidate permissive policies.** The Supabase Performance Advisor flags `multiple_permissive_policies` on most tables (separate admin/clinician/patient policies per action). Consolidating into single OR'd policies per action is a perf optimisation that only matters at scale; it rewrites the security boundary, so do it as a dedicated, fully Method-D-verified pass, not pre-pilot. The `auth_rls_initplan` half of the advisor was already addressed in migration 0113.
+
+## Questionnaire engine — remaining slices (foundation 0114 shipped + verified)
+- Slice 2: TS types (lib/database.types.ts regen) + data-access helpers in lib/.
+- Slice 3: dynamic questionnaire renderer (render a definition as a check-in page; ride-along after goals via due_questionnaires_for_checkin).
+- Slice 4: clinician/admin authoring + assignment UI (build definitions, assign to study/patient with schedule).
+- Slice 5: i18n for item prompts/options (en/da) — NOTE validated instruments need the official validated translation, not a first-pass.
+- Slice 6: REDCap export mapping (each questionnaire -> a repeating instrument; raw item values).
+- GATES before enabling any NAMED/validated instrument: licence cleared + validated translation + regulatory sign-off (raw-capture keeps it descriptive).
+
+## Questionnaire engine — slice 2 DONE: clinician tool panel (library picker + cadence + manage)
+- Remaining: patient-side renderer (due_questionnaires_for_checkin + submit_questionnaire_response on the check-in page); admin authoring + publish UI; database.types regen (drop rpc casts); REDCap export mapping (each questionnaire -> repeating instrument, raw values).
+
+## Questionnaire engine — slice 3 DONE: patient renderer (post-checkin)
+- Remaining: admin authoring + publish UI; database.types regen; REDCap export mapping (each questionnaire -> repeating instrument, raw values).
+
+## Questionnaire engine — slice 4 DONE: admin authoring + publish UI
+- Remaining: database.types regen (drop the rpc/from casts in questionnaires.ts); REDCap export mapping (each questionnaire -> repeating instrument, raw item values).
+
+## Questionnaire engine — slice 5 DONE: language field/filter + REDCap export. Feature complete.
+- Optional follow-ups: database.types regen (drop rpc/from casts); per-questionnaire wide REDCap instruments if a study needs them (current export is generic long-format).

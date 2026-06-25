@@ -119,11 +119,14 @@ export function usePatientHomeData(
         id: patientRow.id as string,
         // Supabase's typed FK lookup returns either a single object or
         // an array depending on the relationship; handle both shapes.
-        displayName:
-          (Array.isArray(patientRow.profile)
-            ? patientRow.profile[0]?.display_name
-            : (patientRow.profile as { display_name?: string } | null)?.display_name) ??
-          'Patient'
+        displayName: (() => {
+          const prof = patientRow.profile as unknown as
+            | { display_name?: string | null }
+            | { display_name?: string | null }[]
+            | null;
+          const dn = Array.isArray(prof) ? prof[0]?.display_name : prof?.display_name;
+          return dn ?? 'Patient';
+        })()
       };
 
       // Pending (awaiting-review) suggestions — shown as a "sent, your

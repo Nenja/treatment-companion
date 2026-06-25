@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Treatment Companion</string>
-    <string name="title_activity_main">Treatment Companion</string>
-    <string name="package_name">dk.mprc.treatmentcompanion</string>
-    <string name="custom_url_scheme">dk.mprc.treatmentcompanion</string>
-</resources>
