@@ -14,16 +14,6 @@ import type {
   ClinicianPhysioMuscleSuggestion
 } from '@/lib/supabase/clinicianPatient';
 
-const DAY_SHORT_KEYS = [
-  'monShort',
-  'tueShort',
-  'wedShort',
-  'thuShort',
-  'friShort',
-  'satShort',
-  'sunShort'
-] as const;
-
 /**
  * Therapist input for the patient under review — the physiotherapist's
  * activity signals (visit days, adjustment requests) plus their goal and
@@ -50,7 +40,6 @@ export function TherapistInputPanel({
   locale: string;
 }) {
   const t = useTranslations('clinician.patient');
-  const tTraining = useTranslations('training');
   const toast = useToast();
   const resolveAdjustment = useResolveAdjustmentRequest();
 
@@ -59,12 +48,12 @@ export function TherapistInputPanel({
     new Set(physioAssessments.map((a) => a.assessmentDate))
   ).sort();
   const therapyVisitCount = therapyVisitDates.length;
-  const therapyWeekdaysIso = new Set(
-    therapyVisitDates.map((d) => {
-      const day = new Date(d + 'T00:00:00').getDay(); // 0=Sun..6=Sat
-      return day === 0 ? 7 : day;
-    })
-  );
+  const fmtVisitDate = (d: string) =>
+    new Intl.DateTimeFormat(locale, {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short'
+    }).format(new Date(d + 'T00:00:00'));
   // Adjustment requests, newest first.
   const adjustmentRequests = physioAssessments
     .flatMap((a) =>
@@ -101,25 +90,17 @@ export function TherapistInputPanel({
                   {t('physioVisitsCount', { count: therapyVisitCount })}
                 </p>
                 <div
-                  className="mt-2 flex gap-1"
-                  aria-label={t('physioWeekdaysAria')}
+                  className="mt-2 flex flex-wrap gap-1.5"
+                  aria-label={t('physioVisitsHeading')}
                 >
-                  {DAY_SHORT_KEYS.map((key, i) => {
-                    const iso = i + 1;
-                    const on = therapyWeekdaysIso.has(iso);
-                    return (
-                      <span
-                        key={key}
-                        className={`flex h-7 w-9 items-center justify-center rounded-md text-[12px] font-semibold ${
-                          on
-                            ? 'bg-sage-deep text-on-accent'
-                            : 'bg-stone-soft text-ink-muted'
-                        }`}
-                      >
-                        {tTraining(key)}
-                      </span>
-                    );
-                  })}
+                  {therapyVisitDates.map((d) => (
+                    <span
+                      key={d}
+                      className="rounded-md bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep"
+                    >
+                      {fmtVisitDate(d)}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}

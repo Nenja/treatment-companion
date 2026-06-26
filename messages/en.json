@@ -901,7 +901,10 @@
     "comfortReadAloudOn": "On",
     "comfortReadAloudOff": "Off",
     "visitTitle": "At your appointment",
-    "visitBody": "When you see your clinician or therapist, open “Show visit code” and show or read them the code. That lets them open your record for the visit."
+    "visitBody": "When you see your clinician or therapist, open “Show visit code” and show or read them the code. That lets them open your record for the visit.",
+    "comfortDesign": "Style",
+    "comfortDesignRounded": "Rounded",
+    "comfortDesignEditorial": "Editorial"
   },
   "appearance": {
     "heading": "Appearance",
@@ -1250,7 +1253,10 @@
     "physioPatientTitle": "The patient's page",
     "physioPatientBody": "This is your home base for an unlocked patient. The graphs show how each goal is progressing — your assessments and the patient's own ratings. From here you can report progress, suggest goals or muscles for the physician, and record assistive devices in the patient's information.",
     "physioProgressTitle": "Reporting progress",
-    "physioProgressBody": "Rate how each goal is progressing and add a short note for the physician to see at the next visit. Your assessment is kept separate from the patient's own weekly ratings, so both points of view stay visible on the graph."
+    "physioProgressBody": "Rate how each goal is progressing and add a short note for the physician to see at the next visit. Your assessment is kept separate from the patient's own weekly ratings, so both points of view stay visible on the graph.",
+    "tourNudge": "New here? Take a quick tour of this page.",
+    "tourNudgeStart": "Take the tour",
+    "tourNudgeDismiss": "Not now"
   },
   "sex": {
     "female": "Female",
@@ -1982,5 +1988,70 @@
     "type_multi_choice": "Multiple choice",
     "type_likert": "Likert scale",
     "languageLabel": "Language"
+  },
+  "tour": {
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "skip": "Skip",
+    "step": "Step {current} of {total}",
+    "clinicianPatient": {
+      "patientTitle": "The patient you’re reviewing",
+      "patientBody": "You’re in an unlocked session for this patient. Their name and current cycle show here.",
+      "actionsTitle": "Your tools",
+      "actionsBody": "Open patient suggestions, therapist input, the cross-cycle history, and the EHR export from here.",
+      "overviewTitle": "Context & since-last-visit",
+      "overviewBody": "An at-a-glance overview, plus a free-text note tied to this cycle. You also record a new treatment from this column.",
+      "goalsTitle": "Active goals",
+      "goalsBody": "Each goal has its own graph — NRS goals show the raw 0–10 score, GAS goals use descriptive bands.",
+      "endTitle": "Ending the session",
+      "endBody": "When you step away, end the session here. It locks the patient again until you reopen them."
+    },
+    "patientHome": {
+      "welcomeTitle": "Welcome to your home",
+      "welcomeBody": "This is your home screen. It shows where you are in your treatment right now.",
+      "checkinTitle": "Your weekly check-in",
+      "checkinBody": "When a check-in is ready, you start it here. It only takes a couple of minutes.",
+      "goalsTitle": "Your goals",
+      "goalsBody": "Tap here to see your goals and how they’ve been going.",
+      "visitcodeTitle": "Your visit code",
+      "visitcodeBody": "At an appointment, show this code so your clinician can open your record."
+    },
+    "goals": {
+      "goalsTitle": "Your goals",
+      "goalsBody": "Your goals appear here, each with a graph of how it’s going — tap a goal to open it.",
+      "suggestTitle": "Suggest a goal",
+      "suggestBody": "Have a new goal in mind? Suggest it to your care team here."
+    },
+    "physioPatient": {
+      "patientTitle": "The patient you’re seeing",
+      "patientBody": "The patient who shared access with you. Tap the name for their basic info.",
+      "rateTitle": "Rate the visit",
+      "rateBody": "Record how each goal went today and leave a short note for the clinic.",
+      "suggestTitle": "Suggest a goal",
+      "suggestBody": "Think a new goal would help? Suggest it here for the physician to review.",
+      "endTitle": "When you’re done",
+      "endBody": "End the session here when you finish. Your access stays open only while a session is running."
+    },
+    "treatment": {
+      "introTitle": "Recording a treatment",
+      "introBody": "This is where you record today’s treatment for this patient.",
+      "setupTitle": "Set up",
+      "setupBody": "Choose the area and confirm the cycle and treatment details before you add muscles.",
+      "musclesTitle": "Muscles & doses",
+      "musclesBody": "Add each injected muscle with its dose; the face map handles facial muscles."
+    },
+    "history": {
+      "summaryTitle": "Summary",
+      "summaryBody": "A cycle-by-cycle overview — units, goals, benefit, and interval at a glance.",
+      "cyclesTitle": "Cycle by cycle",
+      "cyclesBody": "Open any cycle for its goals, the treatment given, and the patient’s check-ins."
+    },
+    "suggestion": {
+      "detailTitle": "The patient’s suggestion",
+      "detailBody": "What the patient asked for, in their own words, with the area and how important it is to them.",
+      "decideTitle": "Your decision",
+      "decideBody": "Approve it — and set how it’s rated — or set it aside for now."
+    }
   }
 }

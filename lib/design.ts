@@ -5,8 +5,8 @@
  * palette. The palette controls *colour*; the design direction controls
  * *form* (chiefly corner radius and the overall editorial feel).
  *
- *   current   — the rounded look the app shipped with. Default.
- *   editorial — near-square corners; the "warm editorial" direction.
+ *   current   — the rounded look the app shipped with.
+ *   editorial — near-square corners; the "warm editorial" direction. Default.
  *               Keeps the chosen palette's colours and the serif display
  *               font; only the form changes.
  *
@@ -24,11 +24,14 @@ export type DesignId = 'current' | 'editorial';
 /** Selectable options, in picker order. */
 export const DESIGN_IDS: DesignId[] = ['current', 'editorial'];
 
-const DEFAULT_DESIGN: DesignId = 'current';
+const DEFAULT_DESIGN: DesignId = 'editorial';
 
-/** Map a stored value (possibly NULL/legacy) to a DesignId. */
+/** Map a stored value (possibly NULL) to a DesignId. Editorial is the
+ *  default; an explicit 'current' preserves the original rounded look. */
 export function resolveDesignId(stored: string | null | undefined): DesignId {
-  return stored === 'editorial' ? 'editorial' : DEFAULT_DESIGN;
+  if (stored === 'current') return 'current';
+  if (stored === 'editorial') return 'editorial';
+  return DEFAULT_DESIGN;
 }
 
 /**

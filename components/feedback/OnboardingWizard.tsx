@@ -6,7 +6,8 @@ import { useAuth } from '@/lib/supabase/auth';
 import { useDismissIntro } from '@/lib/supabase/intro';
 import { useSetTextScale } from '@/lib/supabase/textScale';
 import { useSetReadAloud } from '@/lib/supabase/readAloud';
-import { useSetNightMode } from '@/lib/supabase/colorScheme';
+import { useSetNightMode, useSetDesign } from '@/lib/supabase/colorScheme';
+import { resolveDesignId, type DesignId } from '@/lib/design';
 import { useSetLayoutPreference } from '@/lib/supabase/layoutPreference';
 import { NavStyleChooser } from '@/components/clinician/NavStyleChooser';
 import {
@@ -373,6 +374,11 @@ export function OnboardingWizard({
             dayLabel={t('comfortDay')}
             nightLabel={t('comfortNight')}
           />
+          <ComfortDesign
+            label={t('comfortDesign')}
+            roundedLabel={t('comfortDesignRounded')}
+            editorialLabel={t('comfortDesignEditorial')}
+          />
           <ComfortReadAloud
             label={t('comfortReadAloud')}
             onLabel={t('comfortReadAloudOn')}
@@ -668,6 +674,49 @@ function ComfortBrightness({
                   currentPalette: profile?.colorScheme ?? null
                 })
               }
+              className={`flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border text-[14px] font-semibold ${
+                isCurrent
+                  ? 'border-sage bg-sage-soft text-sage-deep'
+                  : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
+              }`}
+            >
+              {o.text}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ComfortDesign({
+  label,
+  roundedLabel,
+  editorialLabel
+}: {
+  label: string;
+  roundedLabel: string;
+  editorialLabel: string;
+}) {
+  const { profile } = useAuth();
+  const setDesign = useSetDesign();
+  const current = resolveDesignId(profile?.designVariant);
+  const opts: Array<{ id: DesignId; text: string }> = [
+    { id: 'current', text: roundedLabel },
+    { id: 'editorial', text: editorialLabel }
+  ];
+  return (
+    <div>
+      <p className="text-[13px] font-semibold text-ink-soft">{label}</p>
+      <div className="mt-2 flex gap-1.5">
+        {opts.map((o) => {
+          const isCurrent = current === o.id;
+          return (
+            <button
+              key={o.id}
+              type="button"
+              aria-pressed={isCurrent}
+              onClick={() => setDesign.mutate({ designId: o.id })}
               className={`flex h-11 flex-1 items-center justify-center rounded-[var(--radius-button)] border text-[14px] font-semibold ${
                 isCurrent
                   ? 'border-sage bg-sage-soft text-sage-deep'

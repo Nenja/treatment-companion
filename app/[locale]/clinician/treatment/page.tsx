@@ -802,7 +802,7 @@ function TreatmentRecordLoaded({
         {/* Page identity — moved into the rail so the form column starts at
             the very top with no blank band above it. */}
         <div>
-          <h1 className="font-display text-[22px] leading-tight text-ink">
+          <h1 data-tour="intro" className="font-display text-[22px] leading-tight text-ink">
             {t('recordTitle')}
           </h1>
           <p className="mt-1 text-[13px] text-ink-soft">

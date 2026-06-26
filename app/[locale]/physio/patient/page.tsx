@@ -316,6 +316,7 @@ export default function PhysioPatientPage() {
                 aria-label={tInfo('openInfo', {
                   name: patientNameForHeader
                 })}
+                data-tour="patient"
                 className="group flex min-w-0 flex-1 items-center gap-1 text-left"
               >
                 <span className="truncate font-display text-[20px] leading-tight text-ink group-hover:text-sage-deep">
@@ -347,6 +348,7 @@ export default function PhysioPatientPage() {
             <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
+                data-tour="endsession"
                 onClick={onEndSession}
                 aria-label={t('endSession')}
                 title={t('endSession')}
@@ -542,7 +544,7 @@ export default function PhysioPatientPage() {
                 </div>
 
                 {/* RIGHT — the visit: rate goals, note to clinic, suggest a goal. */}
-                <div className="lg:min-w-0">
+                <div data-tour="rate" className="lg:min-w-0">
                   <PhysioProgressForm
                     patientId={patientData.data.patient.id}
                     goals={patientData.data.goals}
@@ -556,6 +558,7 @@ export default function PhysioPatientPage() {
                     dateAside={
                       <button
                         type="button"
+                        data-tour="suggest"
                         onClick={() => setSuggestGoalOpen((v) => !v)}
                         aria-expanded={suggestGoalOpen}
                         className="inline-flex items-center gap-2 rounded-[var(--radius-button)] border border-dashed border-stone bg-transparent px-4 py-2.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"

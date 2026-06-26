@@ -37,8 +37,8 @@
   --font-display: var(--font-newsreader), Georgia, serif;
   --font-sans: var(--font-atkinson), system-ui, sans-serif;
 
-  --radius-card: 1.25rem;
-  --radius-button: 0.875rem;
+  --radius-card: 0.25rem;
+  --radius-button: 0.1875rem;
 
   /* Page width tokens.
    *
@@ -151,8 +151,9 @@
   color: var(--color-ink-muted);
 }
 
-/* Design direction: editorial = near-square corners (orthogonal to palette). */
-[data-design='editorial'] {
-  --radius-card: 0.25rem;
-  --radius-button: 0.1875rem;
+/* Design direction (orthogonal to palette). Editorial (near-square) is the
+   default, set on :root above. 'current' restores the original rounded look. */
+[data-design='current'] {
+  --radius-card: 1.25rem;
+  --radius-button: 0.875rem;
 }

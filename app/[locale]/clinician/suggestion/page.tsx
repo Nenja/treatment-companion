@@ -351,7 +351,7 @@ function Inner() {
       />
 
       <main className="mx-auto max-w-[480px] px-5 pb-16 pt-6">
-        <section className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5">
+        <section data-tour="detail" className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-5">
           <dl className="space-y-3 text-[14px]">
             <Row label={t('patientWordsLabel')}>
               <p className="font-display text-[18px] leading-snug text-ink">
@@ -383,7 +383,7 @@ function Inner() {
         </section>
 
         {!showApproveForm ? (
-          <section className="mt-8">
+          <section data-tour="decide" className="mt-8">
             <h2 className="font-display text-[18px] text-ink">
               {t('actionsTitle')}
             </h2>

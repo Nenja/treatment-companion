@@ -905,7 +905,10 @@
     "comfortReadAloudOn": "Til",
     "comfortReadAloudOff": "Fra",
     "visitTitle": "Ved din aftale",
-    "visitBody": "Når du møder din kliniker eller terapeut, skal du åbne “Vis besøgskode” og vise eller læse koden højt. Så kan de åbne din journal til besøget."
+    "visitBody": "Når du møder din kliniker eller terapeut, skal du åbne “Vis besøgskode” og vise eller læse koden højt. Så kan de åbne din journal til besøget.",
+    "comfortDesign": "Stil",
+    "comfortDesignRounded": "Afrundet",
+    "comfortDesignEditorial": "Editorial"
   },
   "appearance": {
     "heading": "Udseende",
@@ -1254,7 +1257,10 @@
     "physioPatientTitle": "Patientens side",
     "physioPatientBody": "Dette er din base for en oplåst patient. Graferne viser, hvordan hvert mål skrider frem — dine vurderinger og patientens egne vurderinger. Herfra kan du rapportere fremskridt, foreslå mål eller muskler til lægen og registrere hjælpemidler i patientens oplysninger.",
     "physioProgressTitle": "Rapportering af fremskridt",
-    "physioProgressBody": "Vurdér, hvordan hvert mål skrider frem, og tilføj en kort note, som lægen kan se ved næste besøg. Din vurdering holdes adskilt fra patientens egne ugentlige vurderinger, så begge synsvinkler forbliver synlige på grafen."
+    "physioProgressBody": "Vurdér, hvordan hvert mål skrider frem, og tilføj en kort note, som lægen kan se ved næste besøg. Din vurdering holdes adskilt fra patientens egne ugentlige vurderinger, så begge synsvinkler forbliver synlige på grafen.",
+    "tourNudge": "Ny her? Tag en hurtig rundvisning af siden.",
+    "tourNudgeStart": "Tag rundvisningen",
+    "tourNudgeDismiss": "Ikke nu"
   },
   "sex": {
     "female": "Kvinde",
@@ -1986,5 +1992,70 @@
     "type_multi_choice": "Flervalg",
     "type_likert": "Likert-skala",
     "languageLabel": "Sprog"
+  },
+  "tour": {
+    "back": "Tilbage",
+    "next": "Næste",
+    "done": "Færdig",
+    "skip": "Spring over",
+    "step": "Trin {current} af {total}",
+    "clinicianPatient": {
+      "patientTitle": "Patienten du gennemgår",
+      "patientBody": "Du har en åben session for denne patient. Navn og aktuel cyklus vises her.",
+      "actionsTitle": "Dine værktøjer",
+      "actionsBody": "Åbn patientforslag, terapeut-input, historik på tværs af cyklusser og EPJ-eksport herfra.",
+      "overviewTitle": "Kontekst og siden sidste besøg",
+      "overviewBody": "Et hurtigt overblik samt en fritekstnote knyttet til denne cyklus. Du registrerer også en ny behandling fra denne kolonne.",
+      "goalsTitle": "Aktive mål",
+      "goalsBody": "Hvert mål har sin egen graf — NRS-mål viser den rå 0–10-score, GAS-mål bruger beskrivende bånd.",
+      "endTitle": "Afslut sessionen",
+      "endBody": "Når du går videre, så afslut sessionen her. Patienten låses igen, indtil du åbner dem på ny."
+    },
+    "patientHome": {
+      "welcomeTitle": "Velkommen til din side",
+      "welcomeBody": "Dette er din startside. Den viser, hvor du er i din behandling lige nu.",
+      "checkinTitle": "Dit ugentlige tjek-ind",
+      "checkinBody": "Når et tjek-ind er klar, starter du det her. Det tager kun et par minutter.",
+      "goalsTitle": "Dine mål",
+      "goalsBody": "Tryk her for at se dine mål, og hvordan det er gået.",
+      "visitcodeTitle": "Din besøgskode",
+      "visitcodeBody": "Ved en aftale viser du denne kode, så din kliniker kan åbne din journal."
+    },
+    "goals": {
+      "goalsTitle": "Dine mål",
+      "goalsBody": "Dine mål vises her, hvert med en graf over, hvordan det går — tryk på et mål for at åbne det.",
+      "suggestTitle": "Foreslå et mål",
+      "suggestBody": "Har du et nyt mål i tankerne? Foreslå det til dit behandlerteam her."
+    },
+    "physioPatient": {
+      "patientTitle": "Patienten du ser",
+      "patientBody": "Patienten, der har delt adgang med dig. Tryk på navnet for basisoplysninger.",
+      "rateTitle": "Vurdér besøget",
+      "rateBody": "Registrér, hvordan hvert mål gik i dag, og skriv en kort note til klinikken.",
+      "suggestTitle": "Foreslå et mål",
+      "suggestBody": "Tror du, et nyt mål vil hjælpe? Foreslå det her, så lægen kan vurdere det.",
+      "endTitle": "Når du er færdig",
+      "endBody": "Afslut sessionen her, når du er færdig. Din adgang er kun åben, mens en session kører."
+    },
+    "treatment": {
+      "introTitle": "Registrér en behandling",
+      "introBody": "Her registrerer du dagens behandling for denne patient.",
+      "setupTitle": "Opsætning",
+      "setupBody": "Vælg området, og bekræft cyklus- og behandlingsoplysninger, før du tilføjer muskler.",
+      "musclesTitle": "Muskler og doser",
+      "musclesBody": "Tilføj hver injiceret muskel med dosis; ansigtskortet håndterer ansigtsmuskler."
+    },
+    "history": {
+      "summaryTitle": "Oversigt",
+      "summaryBody": "Et overblik cyklus for cyklus — enheder, mål, gavn og interval ét sted.",
+      "cyclesTitle": "Cyklus for cyklus",
+      "cyclesBody": "Åbn en cyklus for dens mål, den givne behandling og patientens tjek-ind."
+    },
+    "suggestion": {
+      "detailTitle": "Patientens forslag",
+      "detailBody": "Hvad patienten bad om, med deres egne ord, samt området og hvor vigtigt det er for dem.",
+      "decideTitle": "Din beslutning",
+      "decideBody": "Godkend det — og fastsæt, hvordan det vurderes — eller læg det til side for nu."
+    }
   }
 }
