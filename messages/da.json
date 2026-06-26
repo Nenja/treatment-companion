@@ -931,7 +931,11 @@
     "navStyleSide": "Sidemenu",
     "navStyleTopHint": "Ikoner i en række under patientens navn.",
     "navStyleSideHint": "Ikoner i en skinne langs venstre kant.",
-    "displayLabel": "Visning"
+    "displayLabel": "Visning",
+    "designTitle": "Design",
+    "designHint": "Afrundede eller skarpe hjørner. Farverne er de samme.",
+    "designCurrent": "Afrundet",
+    "designEditorial": "Editorial"
   },
   "admin": {
     "roleTherapist": "Terapeut",

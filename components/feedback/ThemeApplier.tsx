@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useAuth } from '@/lib/supabase/auth';
 import { applyAppearance } from '@/lib/supabase/colorScheme';
+import { applyDesign } from '@/lib/design';
 
 /**
  * Applies the active appearance (palette + day/night) to the document
@@ -25,6 +26,11 @@ export function ThemeApplier() {
   const savedPalette = profile?.colorScheme ?? null;
   const savedNight = profile?.nightMode ?? false;
   const hasSavedChoice = savedPalette != null;
+  const savedDesign = profile?.designVariant ?? null;
+
+  useEffect(() => {
+    applyDesign(savedDesign);
+  }, [savedDesign]);
 
   useEffect(() => {
     if (hasSavedChoice) {

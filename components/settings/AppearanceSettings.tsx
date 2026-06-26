@@ -2,9 +2,10 @@
 
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
-import { useSetPalette, useSetNightMode } from '@/lib/supabase/colorScheme';
+import { useSetPalette, useSetNightMode, useSetDesign } from '@/lib/supabase/colorScheme';
 import { useSetReadAloud } from '@/lib/supabase/readAloud';
 import { PALETTES, resolvePaletteId, type Palette } from '@/lib/palettes';
+import { DESIGN_IDS, resolveDesignId, type DesignId } from '@/lib/design';
 
 /**
  * Colour-appearance settings — the palette grid plus the night-mode
@@ -34,7 +35,67 @@ export function AppearanceSettings() {
           <PaletteButton key={p.id} palette={p} />
         ))}
       </div>
+      <DesignSettings />
     </div>
+  );
+}
+
+function DesignSettings() {
+  const tAppearance = useTranslations('appearance');
+  return (
+    <div className="mt-4">
+      <p className="text-[12px] font-semibold text-ink-soft">
+        {tAppearance('designTitle')}
+      </p>
+      <p className="mt-0.5 text-[12px] text-ink-muted">
+        {tAppearance('designHint')}
+      </p>
+      <div className="mt-2 grid grid-cols-2 gap-1.5">
+        {DESIGN_IDS.map((d) => (
+          <DesignButton key={d} id={d} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DesignButton({ id }: { id: DesignId }) {
+  const { profile } = useAuth();
+  const setDesign = useSetDesign();
+  const tAppearance = useTranslations('appearance');
+  const isCurrent = resolveDesignId(profile?.designVariant) === id;
+  const editorial = id === 'editorial';
+  const nameKey = editorial ? 'designEditorial' : 'designCurrent';
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={isCurrent}
+      onClick={() => setDesign.mutate({ designId: id })}
+      className={`flex min-h-11 items-center gap-2 rounded-[var(--radius-button)] border px-2 py-1.5 text-left ${
+        isCurrent
+          ? 'border-sage bg-sage-soft'
+          : 'border-stone bg-cream-soft hover:bg-stone-soft'
+      }`}
+    >
+      <span
+        aria-hidden
+        className="flex h-6 w-6 shrink-0 items-center justify-center border border-ink/15"
+        style={{ borderRadius: editorial ? '2px' : '8px', background: 'var(--color-sage-soft)' }}
+      >
+        <span
+          className="h-3 w-3"
+          style={{ borderRadius: editorial ? '1px' : '4px', background: 'var(--color-sage-deep)' }}
+        />
+      </span>
+      <span
+        className={`text-[13px] font-semibold leading-tight ${
+          isCurrent ? 'text-sage-deep' : 'text-ink-soft'
+        }`}
+      >
+        {tAppearance(nameKey)}
+      </span>
+    </button>
   );
 }
 

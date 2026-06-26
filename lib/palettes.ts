@@ -41,16 +41,10 @@
  * only — never used for anything a user must read to act.
  */
 
-export type PaletteId = 'green' | 'plum' | 'slate' | 'clay' | 'high-contrast';
+export type PaletteId = 'green' | 'clay' | 'high-contrast';
 
 /** The selectable options, in picker order. */
-export const PALETTE_IDS: PaletteId[] = [
-  'green',
-  'plum',
-  'slate',
-  'clay',
-  'high-contrast'
-];
+export const PALETTE_IDS: PaletteId[] = ['green', 'clay', 'high-contrast'];
 
 export interface Palette {
   id: PaletteId;
@@ -101,87 +95,6 @@ export const PALETTES: Palette[] = [
       '--color-focus': '#9cc7d6',
       '--color-on-accent': '#f3efe6',
       '--color-stone-soft': '#30342f'
-    }
-  },
-  // ---- PLUM — soft plum / purple identity ---------------------------
-  {
-    id: 'plum',
-    name: 'Plum',
-    isAccessibility: false,
-    day: {
-      // Warm-neutral surfaces with a faint mauve cast.
-      '--color-cream': '#f3eef2',
-      '--color-cream-soft': '#faf6f9',
-      '--color-ink': '#26212a',
-      '--color-ink-soft': '#504856',
-      '--color-ink-muted': '#6f6675',
-      // Accent: a muted plum. sage-deep is the button fill.
-      '--color-sage': '#7a5680',
-      '--color-sage-deep': '#5d3d63',
-      '--color-sage-soft': '#e4d8e6',
-      // Amber kept warm-gold so the "poor end" stays separate from plum.
-      '--color-amber-soft': '#e8d5a0',
-      '--color-amber-deep': '#705619',
-      '--color-stone': '#e3dce4',
-      '--color-focus': '#2f5563',
-      '--color-on-accent': '#faf6f9',
-      '--color-stone-soft': '#ece6ed'
-    },
-    night: {
-      // Deep aubergine-charcoal backgrounds.
-      '--color-cream': '#1e1a20',
-      '--color-cream-soft': '#28232b',
-      '--color-ink': '#ebe4ec',
-      '--color-ink-soft': '#bbb2bd',
-      '--color-ink-muted': '#918895',
-      // Plum lifted to read on the dark ground.
-      '--color-sage': '#a884ad',
-      '--color-sage-deep': '#86638c',
-      '--color-sage-soft': '#352a38',
-      '--color-amber-soft': '#3d3526',
-      '--color-amber-deep': '#d8bd80',
-      '--color-stone': '#3c3640',
-      '--color-focus': '#9cc7d6',
-      '--color-on-accent': '#150f17',
-      '--color-stone-soft': '#312b34'
-    }
-  },
-  // ---- SLATE — cool slate-blue identity -----------------------------
-  {
-    id: 'slate',
-    name: 'Slate',
-    isAccessibility: false,
-    day: {
-      '--color-cream': '#eef1f5',
-      '--color-cream-soft': '#f7f9fc',
-      '--color-ink': '#1d2530',
-      '--color-ink-soft': '#465061',
-      '--color-ink-muted': '#646d7d',
-      '--color-sage': '#3f6f9e',
-      '--color-sage-deep': '#2b5077',
-      '--color-sage-soft': '#d6e2ee',
-      '--color-amber-soft': '#e8d5a0',
-      '--color-amber-deep': '#705619',
-      '--color-stone': '#dde2e9',
-      '--color-focus': '#1f4c8a',
-      '--color-on-accent': '#f7f9fc',
-      '--color-stone-soft': '#e8ebf0'
-    },
-    night: {
-      '--color-cream': '#161a21',
-      '--color-cream-soft': '#1f242d',
-      '--color-ink': '#e6e9ee',
-      '--color-ink-soft': '#b2b9c4',
-      '--color-ink-muted': '#888f9c',
-      '--color-sage': '#6f9fc9',
-      '--color-sage-deep': '#4f7ba8',
-      '--color-sage-soft': '#243140',
-      '--color-amber-soft': '#3d3526',
-      '--color-amber-deep': '#d8bd80',
-      '--color-stone': '#343b46',
-      '--color-focus': '#8fc0e6',
-      '--color-on-accent': '#0a131c',
-      '--color-stone-soft': '#2a313b'
     }
   },
   // ---- CLAY — warm terracotta identity ------------------------------
@@ -275,8 +188,6 @@ export function resolvePaletteId(
 ): PaletteId {
   switch (stored) {
     case 'green':
-    case 'plum':
-    case 'slate':
     case 'clay':
     case 'high-contrast':
       return stored;
@@ -293,7 +204,7 @@ export function resolvePaletteId(
     case 'blue-night':
     case 'cool-day':
     case 'cool-night':
-      return 'slate';
+      return 'green';
     case 'clay-day':
     case 'clay-night':
       return 'clay';

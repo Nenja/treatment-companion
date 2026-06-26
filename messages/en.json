@@ -927,7 +927,11 @@
     "navStyleSide": "Side menu",
     "navStyleTopHint": "Icons in a row under the patient name.",
     "navStyleSideHint": "Icons in a rail down the left edge.",
-    "displayLabel": "Display"
+    "displayLabel": "Display",
+    "designTitle": "Design",
+    "designHint": "Rounded or crisp corners. Colours stay the same.",
+    "designCurrent": "Rounded",
+    "designEditorial": "Editorial"
   },
   "admin": {
     "roleTherapist": "Therapist",

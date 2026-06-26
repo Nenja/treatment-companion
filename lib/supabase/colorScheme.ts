@@ -8,6 +8,7 @@ import {
   resolvePaletteId,
   type PaletteId
 } from '@/lib/palettes';
+import { applyDesign, type DesignId } from '@/lib/design';
 
 /**
  * Appearance setters.
@@ -88,6 +89,37 @@ export function useSetNightMode() {
           night_mode: input.night,
           color_scheme: resolvePaletteId(input.currentPalette)
         })
+        .eq('id', userResp.user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void refreshProfile();
+    }
+  });
+}
+
+
+/** Set the design direction (current | editorial). Orthogonal to the
+ *  palette; applies optimistically and persists, mirroring useSetPalette. */
+export function useSetDesign() {
+  const { refreshProfile, patchProfile } = useAuth();
+  return useMutation({
+    mutationFn: async (input: { designId: DesignId }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data: userResp } = await supabase.auth.getUser();
+      if (!userResp.user) throw new Error('Not signed in');
+
+      applyDesign(input.designId);
+      patchProfile({ designVariant: input.designId });
+
+      const { error } = await (
+        supabase.from('profile') as unknown as {
+          update: (v: Record<string, unknown>) => {
+            eq: (c: string, val: string) => Promise<{ error: unknown }>;
+          };
+        }
+      )
+        .update({ design_variant: input.designId })
         .eq('id', userResp.user.id);
       if (error) throw error;
     },

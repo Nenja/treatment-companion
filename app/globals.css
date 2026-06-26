@@ -150,3 +150,9 @@
   text-transform: uppercase;
   color: var(--color-ink-muted);
 }
+
+/* Design direction: editorial = near-square corners (orthogonal to palette). */
+[data-design='editorial'] {
+  --radius-card: 0.25rem;
+  --radius-button: 0.1875rem;
+}
