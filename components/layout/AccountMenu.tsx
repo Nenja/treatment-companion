@@ -7,7 +7,6 @@ import { useSetTextScale } from '@/lib/supabase/textScale';
 import { useSetNightMode } from '@/lib/supabase/colorScheme';
 import { useSetLayoutPreference } from '@/lib/supabase/layoutPreference';
 import { NavStyleChooser } from '@/components/clinician/NavStyleChooser';
-import { requestTutorialReplay } from '@/lib/tutorialReplay';
 import { professionLabel } from '@/lib/professionLabel';
 
 /**
@@ -236,28 +235,6 @@ export function AccountMenu() {
               {tMenu('adminLink')}
             </button>
           )}
-
-          {/* Show the onboarding tutorial again. Sets a transient
-              replay flag and navigates to this role's landing screen,
-              where the wizard lives — without touching the persistent
-              has_seen_intro flag. */}
-          <button
-            type="button"
-            onClick={() => {
-              requestTutorialReplay();
-              const dest =
-                profile.role === 'clinician'
-                  ? '/clinician'
-                  : profile.role === 'physiotherapist'
-                    ? '/physio'
-                    : '/';
-              navHard(locale === 'en' ? dest : `/${locale}${dest === '/' ? '' : dest}`);
-            }}
-            role="menuitem"
-            className="block w-full border-b border-stone/50 px-4 py-3 text-left text-[14px] font-medium text-ink-soft hover:bg-stone-soft"
-          >
-            {tAppearance('showTutorialAgain')}
-          </button>
 
           <button
             type="button"

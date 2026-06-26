@@ -1,3 +1,32 @@
+=== 2026-06-26 — Migration 0118: patient owns the data (notes no longer hidden) ===
+- PRINCIPLE FIX: the patient owns their record; nothing about them is hidden from them. Three tables were built 'RLS-isolated from the patient' (clinician-only SELECT, no patient policy):
+    * treatment_handoff (0088)  — physician->therapist cycle handoff note
+    * goal_handoff_note (0090)  — physician->therapist per-goal handoff note
+    * archived_goal_video (0092) — patient's own archived clips + the clinic score they carried
+  0118 adds a patient self-read (patient_id = current_patient_id(), the canonical schema-wide predicate) to all three. READ ONLY — authoring is unchanged (still physician/clinician via the existing SECURITY DEFINER RPCs).
+- TESTED (PG16 harness): policies created; patient A reads own rows in all three; a different patient reads zero (RLS scopes correctly).
+- Tour 'Note to the therapist' copy now tells the clinician the note is patient-readable (write it for the patient too) — corrects my earlier wrong 'patient doesn't see it'.
+- DELIBERATELY LEFT (flagged): questionnaire / questionnaire_library / study are clinician-authored DEFINITIONS, not info about a patient; visit_code_unlock_attempt is a security audit log. Say the word to extend the principle to any of these.
+- FOLLOW-UP (not built): these notes are now ACCESSIBLE to the patient via RLS, but there is no patient-facing SCREEN that shows them yet. Surfacing them in the patient UI is a separate build if you want them visible in-app (vs. accessible via export / subject-access).
+- USER DB ACTION: run 0118_patient_owns_notes.sql in Supabase SQL editor (after 0115/0116/0117). Standalone at outputs/0118_patient_owns_notes.sql.
+- VERIFIED: build OK; i18n parity; layout SHA restored.
+
+=== 2026-06-26 — Tour rethink (3 roles) + tutorial-replay move + notes-copy fix ===
+- Reframed every tour as an essentials-first walkthrough with brief mentions of extras.
+- Cockpit (clinicianPatient) reordered to an intuitive flow: patient -> overview -> goals -> treatment -> actions -> end. Goals step is now the centrepiece (graphs + video review + retirement); 'More tools' (suggestions / therapist input / history / export) demoted to a short mention.
+- patientHome check-in step + physioPatient rate step reworded to name the ONE core weekly action explicitly.
+- Treatment 'Note to the therapist' copy CORRECTED: removed the 'patient doesn't see it' claim (now neutral). See note below re: actual RLS.
+- Moved 'Show tutorial again' from the account menu to Profile > Help (new profile.sectionHelp / tutorialReplayHelper keys). Routed through attemptLeave so unsaved profile edits are confirmed first; hard-navs to role home where the wizard mounts.
+- VERIFIED: tsc 0; eslint 0 errors; build OK; i18n parity; layout SHA restored.
+- OPEN DECISION (needs Nikolaj): handoff note patient-visibility. migration 0088 has a HARD RULE 'NEVER patient-visible' (separate treatment_handoff table + RLS); goal_handoff_note (0090) likewise. Making patients able to read clinician<->therapist notes is a deliberate RLS/data-model reversal with privacy/DPIA implications — NOT changed in code; awaiting confirmation.
+
+=== 2026-06-26 — Tour copy + coverage fixes from live QA ===
+- Cockpit (clinicianPatient): split the overview step — 'Record a treatment' is now its OWN step on the new-treatment button (data-tour=treatment). Goals step now mentions per-goal VIDEO review and goal RETIREMENT. Overview narrowed to context + since-last-visit note.
+- Treatment page: tour expanded 3->6 steps — intro, modules (body/face toggle, data-tour=modules), copy-from-last-treatment (data-tour=copylast), setup (#tsec-setup), muscles (#tsec-muscles), and Note-to-therapist (#tsec-handoff). Covers the three things that were missing (therapist note, copy-last, module choice).
+- Rewrote ALL tour step copy (clinicianPatient, treatment, goals, physioPatient, patientHome, history, suggestion) to be concrete and consistent — says what each thing is AND what you do there. en+da, parity preserved.
+- VERIFIED: tsc 0; eslint 0 errors; build OK; layout SHA 939245bb...66fc restored.
+- NOT Claude-verifiable: live spotlight positioning of the new anchors (treatment modules/copylast/handoff; cockpit treatment button) and that the face/handoff sections are present when expected — QA pass.
+
 === 2026-06-26 — Tour rollout: clinician treatment, history, suggestion ===
 - Registry += treatment (intro, #tsec-setup, #tsec-muscles — reuses existing section ids), history (summary, cycle-by-cycle), suggestion (patient's suggestion, your decision). data-tour anchors added; '?' on each now launches the tour + one-time nudge via the registry.
 - new-goal left on text help by design: an 84-line wrapper around the shared RecordGoalForm; a spotlight there is low value and would push data-tour into a shared component.

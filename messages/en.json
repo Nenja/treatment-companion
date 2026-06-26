@@ -1228,7 +1228,9 @@
     "sectionAccount": "Account",
     "sectionAbout": "About you",
     "sectionLanguage": "Language",
-    "sectionAccessibility": "Accessibility"
+    "sectionAccessibility": "Accessibility",
+    "sectionHelp": "Help",
+    "tutorialReplayHelper": "Walk through the app’s main screens again."
   },
   "help": {
     "buttonLabel": "Help",
@@ -1996,62 +1998,70 @@
     "skip": "Skip",
     "step": "Step {current} of {total}",
     "clinicianPatient": {
-      "patientTitle": "The patient you’re reviewing",
-      "patientBody": "You’re in an unlocked session for this patient. Their name and current cycle show here.",
-      "actionsTitle": "Your tools",
-      "actionsBody": "Open patient suggestions, therapist input, the cross-cycle history, and the EHR export from here.",
-      "overviewTitle": "Context & since-last-visit",
-      "overviewBody": "An at-a-glance overview, plus a free-text note tied to this cycle. You also record a new treatment from this column.",
-      "goalsTitle": "Active goals",
-      "goalsBody": "Each goal has its own graph — NRS goals show the raw 0–10 score, GAS goals use descriptive bands.",
-      "endTitle": "Ending the session",
-      "endBody": "When you step away, end the session here. It locks the patient again until you reopen them."
+      "patientTitle": "The patient you’ve opened",
+      "patientBody": "You’ve unlocked this patient for a session. Their name and where they are in the treatment cycle sit at the top.",
+      "overviewTitle": "Overview",
+      "overviewBody": "A quick read on where things stand since the last visit, with a free-text note you can keep for context.",
+      "goalsTitle": "The goals",
+      "goalsBody": "The heart of the page: each goal has its own graph — NRS goals plot the 0–10 score, GAS goals show descriptive bands. Open a goal to read its check-ins and the patient’s video, or to retire it once it’s met.",
+      "treatmentTitle": "Record a treatment",
+      "treatmentBody": "When you treat the patient, start here — it opens the form to log this visit’s injection (muscles, doses, and the face map).",
+      "actionsTitle": "More tools",
+      "actionsBody": "These open as panels when you need them: the patient’s goal suggestions, the therapist’s input, the full cross-cycle history, and the EHR export.",
+      "endTitle": "End the session",
+      "endBody": "When you step away, end the session here — it locks the patient again until they’re next opened."
     },
     "patientHome": {
       "welcomeTitle": "Welcome to your home",
-      "welcomeBody": "This is your home screen. It shows where you are in your treatment right now.",
+      "welcomeBody": "This is your starting point. The line at the top shows how long it’s been since your last treatment.",
       "checkinTitle": "Your weekly check-in",
-      "checkinBody": "When a check-in is ready, you start it here. It only takes a couple of minutes.",
+      "checkinBody": "This is the main thing to do each week: when a check-in is ready you start it here. It takes a couple of minutes, and your care team sees your answers.",
       "goalsTitle": "Your goals",
-      "goalsBody": "Tap here to see your goals and how they’ve been going.",
+      "goalsBody": "Open this to see your goals and how they’ve been going, and to suggest a new one.",
       "visitcodeTitle": "Your visit code",
       "visitcodeBody": "At an appointment, show this code so your clinician can open your record."
     },
     "goals": {
       "goalsTitle": "Your goals",
-      "goalsBody": "Your goals appear here, each with a graph of how it’s going — tap a goal to open it.",
+      "goalsBody": "Your goals are listed here, each with a graph of how it’s been going. Tap a goal to open its graph.",
       "suggestTitle": "Suggest a goal",
-      "suggestBody": "Have a new goal in mind? Suggest it to your care team here."
+      "suggestBody": "Have something new you’d like to work on? Suggest it here and your care team will review it."
     },
     "physioPatient": {
       "patientTitle": "The patient you’re seeing",
-      "patientBody": "The patient who shared access with you. Tap the name for their basic info.",
+      "patientBody": "The patient who gave you access. Tap their name for basic background and treatment context.",
       "rateTitle": "Rate the visit",
-      "rateBody": "Record how each goal went today and leave a short note for the clinic.",
+      "rateBody": "The main thing you do here: record how each goal went today and add a short note for the clinic — this is what the physician sees before the next treatment.",
       "suggestTitle": "Suggest a goal",
-      "suggestBody": "Think a new goal would help? Suggest it here for the physician to review.",
+      "suggestBody": "If a new goal would help, suggest it here for the physician to review and approve.",
       "endTitle": "When you’re done",
-      "endBody": "End the session here when you finish. Your access stays open only while a session is running."
+      "endBody": "End the session here. Your access stays open only while a session is running."
     },
     "treatment": {
       "introTitle": "Recording a treatment",
-      "introBody": "This is where you record today’s treatment for this patient.",
-      "setupTitle": "Set up",
-      "setupBody": "Choose the area and confirm the cycle and treatment details before you add muscles.",
+      "introBody": "Everything for today’s treatment is on this page — which modules you’re using, the doses, and a note for the therapist. It saves as this cycle’s record.",
+      "modulesTitle": "Body, face, or both",
+      "modulesBody": "Choose the modules this treatment uses: a standard muscle list, the face map, or both. The matching sections appear below — at least one is required.",
+      "copylastTitle": "Start from last time",
+      "copylastBody": "If the plan is similar, copy the previous treatment in one tap and adjust from there — faster than re-entering every muscle. Tap the summary to review it first.",
+      "setupTitle": "Treatment details",
+      "setupBody": "Confirm the drug, the date, and the cycle details before you add doses.",
       "musclesTitle": "Muscles & doses",
-      "musclesBody": "Add each injected muscle with its dose; the face map handles facial muscles."
+      "musclesBody": "Add each injected muscle with its dose. The total updates as you go.",
+      "handoffTitle": "Note to the therapist",
+      "handoffBody": "Leave a short note for the patient’s community physiotherapist and flag whether the treatment changed. Like everything in the record, the patient can read it too — write it for them as well."
     },
     "history": {
-      "summaryTitle": "Summary",
-      "summaryBody": "A cycle-by-cycle overview — units, goals, benefit, and interval at a glance.",
+      "summaryTitle": "The summary",
+      "summaryBody": "Every cycle at a glance — units given, goals, benefit, and the interval to the next treatment.",
       "cyclesTitle": "Cycle by cycle",
-      "cyclesBody": "Open any cycle for its goals, the treatment given, and the patient’s check-ins."
+      "cyclesBody": "Open any cycle for its goals, the treatment that was given, and the patient’s check-ins from that time."
     },
     "suggestion": {
       "detailTitle": "The patient’s suggestion",
-      "detailBody": "What the patient asked for, in their own words, with the area and how important it is to them.",
+      "detailBody": "What the patient asked for, in their own words, with the area it relates to and how important it is to them.",
       "decideTitle": "Your decision",
-      "decideBody": "Approve it — and set how it’s rated — or set it aside for now."
+      "decideBody": "Approve it — setting how it should be rated — or set it aside for now."
     }
   }
 }

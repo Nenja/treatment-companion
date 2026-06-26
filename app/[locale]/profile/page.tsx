@@ -16,6 +16,7 @@ import {
 } from '@/lib/supabase/patientInfo';
 import { useToast } from '@/components/feedback/Toast';
 import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
+import { requestTutorialReplay } from '@/lib/tutorialReplay';
 import { LanguageSelect, switchLocalePath } from '@/components/settings/LanguageSelect';
 import { VersionTag } from '@/components/layout/VersionTag';
 import { useSetPreferredLocale, type AppLocale } from '@/lib/supabase/locale';
@@ -44,6 +45,7 @@ export default function ProfilePage() {
   const locale = useLocale();
   const prefix = locale === 'en' ? '' : `/${locale}`;
   const t = useTranslations('profile');
+  const tAppearance = useTranslations('appearance');
   const { user, profile, loading } = useAuth();
   const updateProfile = useUpdateOwnProfile();
   const setPreferredLocale = useSetPreferredLocale();
@@ -485,6 +487,27 @@ export default function ProfilePage() {
           <div className="mt-3">
             <AppearanceSettings />
           </div>
+        </div>
+
+        {/* Help — replay the onboarding walkthrough. Routed through
+            attemptLeave so unsaved edits are confirmed first; sets a
+            transient replay flag and hard-navigates to this role's home,
+            where the wizard mounts (has_seen_intro is left untouched). */}
+        <div className="mt-10 border-t border-stone/70 pt-7">
+          <p className="eyebrow">{t('sectionHelp')}</p>
+          <p className="mt-2 text-[12px] text-ink-muted">{t('tutorialReplayHelper')}</p>
+          <button
+            type="button"
+            onClick={() =>
+              attemptLeave(() => {
+                requestTutorialReplay();
+                window.location.assign(homeHref);
+              })
+            }
+            className="mt-3 inline-flex h-11 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream px-4 text-[14px] font-semibold text-ink hover:bg-stone-soft"
+          >
+            {tAppearance('showTutorialAgain')}
+          </button>
         </div>
 
         {/* Save — the single write for every form field above. Disabled

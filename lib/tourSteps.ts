@@ -22,9 +22,10 @@ export interface RegisteredTourStep {
 export const TOURS: Record<string, RegisteredTourStep[]> = {
   clinicianPatient: [
     { target: '[data-tour="patient"]', key: 'patient' },
-    { target: '[data-tour="actions"]', key: 'actions' },
     { target: '[data-tour="overview"]', key: 'overview' },
     { target: '[data-tour="goals"]', key: 'goals' },
+    { target: '[data-tour="treatment"]', key: 'treatment' },
+    { target: '[data-tour="actions"]', key: 'actions' },
     { target: '[data-tour="endsession"]', key: 'end' }
   ],
   patientHome: [
@@ -45,8 +46,11 @@ export const TOURS: Record<string, RegisteredTourStep[]> = {
   ],
   treatment: [
     { target: '[data-tour="intro"]', key: 'intro' },
+    { target: '[data-tour="modules"]', key: 'modules' },
+    { target: '[data-tour="copylast"]', key: 'copylast' },
     { target: '#tsec-setup', key: 'setup' },
-    { target: '#tsec-muscles', key: 'muscles' }
+    { target: '#tsec-muscles', key: 'muscles' },
+    { target: '#tsec-handoff', key: 'handoff' }
   ],
   history: [
     { target: '[data-tour="summary"]', key: 'summary' },

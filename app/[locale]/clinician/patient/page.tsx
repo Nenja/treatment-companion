@@ -1309,6 +1309,7 @@ export default function ClinicianPatientPage() {
               touch();
               setShowNewCycle(true);
             }}
+            data-tour="treatment"
             aria-label={t('startNewCycle')}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-button)] bg-sage-deep px-3 py-2 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
           >

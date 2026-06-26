@@ -905,7 +905,7 @@ function TreatmentRecordLoaded({
 
         {/* Treatment areas — toggles deciding which sections appear in the
             form (muscle list / face map). At least one required. */}
-        <div>
+        <div data-tour="modules">
           <div className="eyebrow">{t('areasTitle')}</div>
           <div className="mt-2 flex flex-wrap gap-2">
             <button
@@ -981,7 +981,7 @@ function TreatmentRecordLoaded({
             Horizontal banner: tappable summary left, Copy right; stacks
             on narrow. */}
         {referenceTreatment && (
-          <div className="mb-4 flex flex-col gap-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div data-tour="copylast" className="mb-4 flex flex-col gap-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <button
               type="button"
               onClick={() => setShowLastTreatmentModal(true)}

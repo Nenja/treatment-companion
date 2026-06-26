@@ -1232,7 +1232,9 @@
     "sectionAccount": "Konto",
     "sectionAbout": "Om dig",
     "sectionLanguage": "Sprog",
-    "sectionAccessibility": "Tilgængelighed"
+    "sectionAccessibility": "Tilgængelighed",
+    "sectionHelp": "Hjælp",
+    "tutorialReplayHelper": "Gennemgå appens vigtigste skærme igen."
   },
   "help": {
     "buttonLabel": "Hjælp",
@@ -2000,62 +2002,70 @@
     "skip": "Spring over",
     "step": "Trin {current} af {total}",
     "clinicianPatient": {
-      "patientTitle": "Patienten du gennemgår",
-      "patientBody": "Du har en åben session for denne patient. Navn og aktuel cyklus vises her.",
-      "actionsTitle": "Dine værktøjer",
-      "actionsBody": "Åbn patientforslag, terapeut-input, historik på tværs af cyklusser og EPJ-eksport herfra.",
-      "overviewTitle": "Kontekst og siden sidste besøg",
-      "overviewBody": "Et hurtigt overblik samt en fritekstnote knyttet til denne cyklus. Du registrerer også en ny behandling fra denne kolonne.",
-      "goalsTitle": "Aktive mål",
-      "goalsBody": "Hvert mål har sin egen graf — NRS-mål viser den rå 0–10-score, GAS-mål bruger beskrivende bånd.",
+      "patientTitle": "Patienten, du har åbnet",
+      "patientBody": "Du har åbnet denne patient for en session. Navn og placering i behandlingscyklussen vises øverst.",
+      "overviewTitle": "Overblik",
+      "overviewBody": "Et hurtigt overblik over status siden sidste besøg, med en fritekstnote, du kan bruge som kontekst.",
+      "goalsTitle": "Målene",
+      "goalsBody": "Sidens kerne: hvert mål har sin egen graf — NRS-mål viser 0–10-scoren, GAS-mål viser beskrivende bånd. Åbn et mål for at læse dets tjek-ind og patientens video, eller for at pensionere det, når det er nået.",
+      "treatmentTitle": "Registrér en behandling",
+      "treatmentBody": "Når du behandler patienten, starter du her — det åbner formularen til at registrere dagens injektion (muskler, doser og ansigtskortet).",
+      "actionsTitle": "Flere værktøjer",
+      "actionsBody": "Disse åbner som paneler, når du har brug for dem: patientens målforslag, terapeutens input, den fulde historik på tværs af cyklusser og EPJ-eksport.",
       "endTitle": "Afslut sessionen",
-      "endBody": "Når du går videre, så afslut sessionen her. Patienten låses igen, indtil du åbner dem på ny."
+      "endBody": "Når du går videre, afslutter du sessionen her — den låser patienten igen, indtil de åbnes næste gang."
     },
     "patientHome": {
       "welcomeTitle": "Velkommen til din side",
-      "welcomeBody": "Dette er din startside. Den viser, hvor du er i din behandling lige nu.",
+      "welcomeBody": "Dette er dit udgangspunkt. Linjen øverst viser, hvor længe siden din sidste behandling var.",
       "checkinTitle": "Dit ugentlige tjek-ind",
-      "checkinBody": "Når et tjek-ind er klar, starter du det her. Det tager kun et par minutter.",
+      "checkinBody": "Det er det vigtigste at gøre hver uge: når et tjek-ind er klar, starter du det her. Det tager et par minutter, og dit behandlerteam ser dine svar.",
       "goalsTitle": "Dine mål",
-      "goalsBody": "Tryk her for at se dine mål, og hvordan det er gået.",
+      "goalsBody": "Åbn denne for at se dine mål, og hvordan det er gået — og for at foreslå et nyt.",
       "visitcodeTitle": "Din besøgskode",
       "visitcodeBody": "Ved en aftale viser du denne kode, så din kliniker kan åbne din journal."
     },
     "goals": {
       "goalsTitle": "Dine mål",
-      "goalsBody": "Dine mål vises her, hvert med en graf over, hvordan det går — tryk på et mål for at åbne det.",
+      "goalsBody": "Dine mål står her, hvert med en graf over, hvordan det er gået. Tryk på et mål for at åbne dets graf.",
       "suggestTitle": "Foreslå et mål",
-      "suggestBody": "Har du et nyt mål i tankerne? Foreslå det til dit behandlerteam her."
+      "suggestBody": "Er der noget nyt, du gerne vil arbejde med? Foreslå det her, så dit behandlerteam kan se på det."
     },
     "physioPatient": {
-      "patientTitle": "Patienten du ser",
-      "patientBody": "Patienten, der har delt adgang med dig. Tryk på navnet for basisoplysninger.",
+      "patientTitle": "Patienten, du ser",
+      "patientBody": "Patienten, der har givet dig adgang. Tryk på navnet for basisoplysninger og behandlingskontekst.",
       "rateTitle": "Vurdér besøget",
-      "rateBody": "Registrér, hvordan hvert mål gik i dag, og skriv en kort note til klinikken.",
+      "rateBody": "Det vigtigste, du gør her: registrér, hvordan hvert mål gik i dag, og tilføj en kort note til klinikken — det er, hvad lægen ser før næste behandling.",
       "suggestTitle": "Foreslå et mål",
-      "suggestBody": "Tror du, et nyt mål vil hjælpe? Foreslå det her, så lægen kan vurdere det.",
+      "suggestBody": "Hvis et nyt mål vil hjælpe, så foreslå det her, så lægen kan vurdere og godkende det.",
       "endTitle": "Når du er færdig",
-      "endBody": "Afslut sessionen her, når du er færdig. Din adgang er kun åben, mens en session kører."
+      "endBody": "Afslut sessionen her. Din adgang er kun åben, mens en session kører."
     },
     "treatment": {
       "introTitle": "Registrér en behandling",
-      "introBody": "Her registrerer du dagens behandling for denne patient.",
-      "setupTitle": "Opsætning",
-      "setupBody": "Vælg området, og bekræft cyklus- og behandlingsoplysninger, før du tilføjer muskler.",
+      "introBody": "Alt til dagens behandling er på denne side — hvilke moduler du bruger, doserne og en note til terapeuten. Den gemmes som denne cyklus’ registrering.",
+      "modulesTitle": "Krop, ansigt eller begge",
+      "modulesBody": "Vælg de moduler, behandlingen bruger: en standard-muskelliste, ansigtskortet eller begge. De tilhørende sektioner vises nedenfor — mindst én kræves.",
+      "copylastTitle": "Tag udgangspunkt i sidste gang",
+      "copylastBody": "Hvis planen ligner, så kopiér den forrige behandling med ét tryk og justér derfra — hurtigere end at indtaste hver muskel igen. Tryk på resuméet for at se den først.",
+      "setupTitle": "Behandlingsdetaljer",
+      "setupBody": "Bekræft lægemidlet, datoen og cyklusoplysningerne, før du tilføjer doser.",
       "musclesTitle": "Muskler og doser",
-      "musclesBody": "Tilføj hver injiceret muskel med dosis; ansigtskortet håndterer ansigtsmuskler."
+      "musclesBody": "Tilføj hver injiceret muskel med dosis. Totalen opdateres undervejs.",
+      "handoffTitle": "Note til terapeuten",
+      "handoffBody": "Skriv en kort note til patientens fysioterapeut i kommunen, og markér, om behandlingen er ændret. Som alt andet i journalen kan patienten også læse den — skriv den med patienten for øje."
     },
     "history": {
-      "summaryTitle": "Oversigt",
-      "summaryBody": "Et overblik cyklus for cyklus — enheder, mål, gavn og interval ét sted.",
+      "summaryTitle": "Oversigten",
+      "summaryBody": "Hver cyklus på ét sted — givne enheder, mål, gavn og intervallet til næste behandling.",
       "cyclesTitle": "Cyklus for cyklus",
-      "cyclesBody": "Åbn en cyklus for dens mål, den givne behandling og patientens tjek-ind."
+      "cyclesBody": "Åbn en cyklus for dens mål, den givne behandling og patientens tjek-ind fra den periode."
     },
     "suggestion": {
       "detailTitle": "Patientens forslag",
-      "detailBody": "Hvad patienten bad om, med deres egne ord, samt området og hvor vigtigt det er for dem.",
+      "detailBody": "Hvad patienten bad om, med deres egne ord, med området det vedrører, og hvor vigtigt det er for dem.",
       "decideTitle": "Din beslutning",
-      "decideBody": "Godkend det — og fastsæt, hvordan det vurderes — eller læg det til side for nu."
+      "decideBody": "Godkend det — og fastsæt, hvordan det skal vurderes — eller læg det til side for nu."
     }
   }
 }
