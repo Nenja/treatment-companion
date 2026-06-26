@@ -1,3 +1,13 @@
+=== 2026-06-26 — Design-direction picker + trimmed palettes ===
+- Migration 0117: profile.design_variant text (NULL=current). No new RLS (row-level self-update already covers it). Harness: applies clean, column present.
+- New axis orthogonal to colour: lib/design.ts (DesignId current|editorial, resolveDesignId, applyDesign sets data-design on <html>). globals.css: [data-design='editorial'] overrides --radius-card/--radius-button to near-square. Headings already serif + eyebrows already uppercase, so radius is the defining flip.
+- useSetDesign() in colorScheme.ts (mirrors useSetPalette: optimistic apply + patchProfile + persist design_variant). ThemeApplier applies saved design on load. auth.tsx: profile gains designVariant (select + mapping; row cast until types regen).
+- AppearanceSettings: new Design picker (Rounded | Editorial) with rounded-vs-square preview swatch, beside the palette grid.
+- Palette TRIM: removed Plum and Slate. Kept Green (default), Clay (warm), High contrast (accessibility). PaletteId/PALETTE_IDS/PALETTES updated; resolvePaletteId maps removed/legacy ids -> green safely.
+- i18n: appearance.designTitle/designHint/designCurrent/designEditorial (en+da). Parity preserved.
+- VERIFIED: tsc 0; eslint 0 errors; production build OK (rc=0); layout SHA 939245bb...66fc restored.
+- USER ACTIONS: run 0117 in Supabase; regenerate database.types after (drops the design_variant row/update casts). NOT Claude-verifiable: live radius flip + picker round-trip under real auth — QA in the running app.
+
 === 2026-06-25 — Questionnaire engine slice 5: language + REDCap export ===
 - Migration 0116 (run AFTER 0115): +questionnaire.lang (default 'en'); create_questionnaire +p_lang (drop 7-arg -> 8-arg); list_library_questionnaires +lang return +optional p_lang filter; list_patient_questionnaires +lang; due_questionnaires_for_checkin +lang; NEW export_questionnaire_responses() (clinician-gated, RAW long-format, mirrors export_research_dataset gate). Existing export_research_dataset UNTOUCHED.
 - HARNESS: 0114+0115+0116 apply clean; T9 (lang stored + library lang filter) + T10 (export returns raw items for consented patient, blocks non-clinician) PASSED; prior T1-T8 still pass.

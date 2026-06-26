@@ -42,6 +42,7 @@ export interface AppProfile {
   /** Chosen colour palette id, or null if not yet chosen (the app then
    *  uses the default palette). Legacy values are mapped at read time. */
   colorScheme: string | null;
+  designVariant: string | null;
   /** Day/night toggle. Every palette has a day and a night form. */
   nightMode: boolean;
   /** Accessibility opt-in: when true, show read-aloud (text-to-speech)
@@ -142,36 +143,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data, error } = await supabase
         .from('profile')
         .select(
-          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin, color_scheme, night_mode, read_aloud, profession, profession_other, layout_preference, nav_style, notify_weekday'
+          'id, role, display_name, preferred_locale, email, text_scale, must_change_password, has_seen_intro, is_admin, color_scheme, design_variant, night_mode, read_aloud, profession, profession_other, layout_preference, nav_style, notify_weekday'
         )
         .eq('id', userId)
         .maybeSingle();
       if (error || !data) return null;
+      const row = data as unknown as Record<string, unknown>;
       return {
-        id: data.id,
-        role: data.role,
-        displayName: data.display_name,
-        preferredLocale: data.preferred_locale as 'da' | 'en' | 'sv' | 'nb',
-        email: data.email,
-        textScale: Number(data.text_scale) || 1.0,
-        mustChangePassword: Boolean(data.must_change_password),
-        hasSeenIntro: Boolean(data.has_seen_intro),
-        isAdmin: Boolean(data.is_admin),
-        colorScheme: (data.color_scheme as string | null) ?? null,
-        nightMode: Boolean(data.night_mode),
-        readAloud: Boolean(data.read_aloud),
-        profession: (data.profession as string | null) ?? null,
-        professionOther: (data.profession_other as string | null) ?? null,
+        id: row.id as string,
+        role: row.role as AppProfile['role'],
+        displayName: row.display_name as AppProfile['displayName'],
+        preferredLocale: row.preferred_locale as 'da' | 'en' | 'sv' | 'nb',
+        email: row.email as AppProfile['email'],
+        textScale: Number(row.text_scale) || 1.0,
+        mustChangePassword: Boolean(row.must_change_password),
+        hasSeenIntro: Boolean(row.has_seen_intro),
+        isAdmin: Boolean(row.is_admin),
+        colorScheme: (row.color_scheme as string | null) ?? null,
+        designVariant: (row.design_variant as string | null) ?? null,
+        nightMode: Boolean(row.night_mode),
+        readAloud: Boolean(row.read_aloud),
+        profession: (row.profession as string | null) ?? null,
+        professionOther: (row.profession_other as string | null) ?? null,
         layoutPreference:
-          (data.layout_preference as 'wide' | 'compact' | null) === 'compact'
+          (row.layout_preference as 'wide' | 'compact' | null) === 'compact'
             ? 'compact'
             : 'wide',
         navStyle:
-          (data.nav_style as 'top' | 'side' | null) === 'side' ? 'side' : 'top',
+          (row.nav_style as 'top' | 'side' | null) === 'side' ? 'side' : 'top',
         notifyWeekday:
-          data.notify_weekday === null || data.notify_weekday === undefined
+          row.notify_weekday === null || row.notify_weekday === undefined
             ? null
-            : Number(data.notify_weekday)
+            : Number(row.notify_weekday)
       };
     },
     []
