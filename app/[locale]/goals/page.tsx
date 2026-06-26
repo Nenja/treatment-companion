@@ -116,7 +116,7 @@ export default function PatientGoalsPage() {
           </Card>
         </div>
       ) : (
-        <ul className="mt-5 space-y-3">
+        <ul data-tour="goalslist" className="mt-5 space-y-3">
           {data.goals.map((g) => (
             <li key={g.id}>
               <GoalCard
@@ -144,6 +144,7 @@ export default function PatientGoalsPage() {
         onClick={() =>
           router.push(locale === 'en' ? '/suggest-goal' : `/${locale}/suggest-goal`)
         }
+        data-tour="suggest"
         className="mt-6 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] border border-sage/50 px-4 text-[15px] font-semibold text-sage-deep hover:bg-sage-soft/40"
       >
         <span aria-hidden className="mr-2 text-[17px] leading-none">+</span>

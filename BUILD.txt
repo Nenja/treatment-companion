@@ -1,3 +1,77 @@
+=== 2026-06-26 — Migration 0118: patient owns the data (notes no longer hidden) ===
+- PRINCIPLE FIX: the patient owns their record; nothing about them is hidden from them. Three tables were built 'RLS-isolated from the patient' (clinician-only SELECT, no patient policy):
+    * treatment_handoff (0088)  — physician->therapist cycle handoff note
+    * goal_handoff_note (0090)  — physician->therapist per-goal handoff note
+    * archived_goal_video (0092) — patient's own archived clips + the clinic score they carried
+  0118 adds a patient self-read (patient_id = current_patient_id(), the canonical schema-wide predicate) to all three. READ ONLY — authoring is unchanged (still physician/clinician via the existing SECURITY DEFINER RPCs).
+- TESTED (PG16 harness): policies created; patient A reads own rows in all three; a different patient reads zero (RLS scopes correctly).
+- Tour 'Note to the therapist' copy now tells the clinician the note is patient-readable (write it for the patient too) — corrects my earlier wrong 'patient doesn't see it'.
+- DELIBERATELY LEFT (flagged): questionnaire / questionnaire_library / study are clinician-authored DEFINITIONS, not info about a patient; visit_code_unlock_attempt is a security audit log. Say the word to extend the principle to any of these.
+- FOLLOW-UP (not built): these notes are now ACCESSIBLE to the patient via RLS, but there is no patient-facing SCREEN that shows them yet. Surfacing them in the patient UI is a separate build if you want them visible in-app (vs. accessible via export / subject-access).
+- USER DB ACTION: run 0118_patient_owns_notes.sql in Supabase SQL editor (after 0115/0116/0117). Standalone at outputs/0118_patient_owns_notes.sql.
+- VERIFIED: build OK; i18n parity; layout SHA restored.
+
+=== 2026-06-26 — Tour rethink (3 roles) + tutorial-replay move + notes-copy fix ===
+- Reframed every tour as an essentials-first walkthrough with brief mentions of extras.
+- Cockpit (clinicianPatient) reordered to an intuitive flow: patient -> overview -> goals -> treatment -> actions -> end. Goals step is now the centrepiece (graphs + video review + retirement); 'More tools' (suggestions / therapist input / history / export) demoted to a short mention.
+- patientHome check-in step + physioPatient rate step reworded to name the ONE core weekly action explicitly.
+- Treatment 'Note to the therapist' copy CORRECTED: removed the 'patient doesn't see it' claim (now neutral). See note below re: actual RLS.
+- Moved 'Show tutorial again' from the account menu to Profile > Help (new profile.sectionHelp / tutorialReplayHelper keys). Routed through attemptLeave so unsaved profile edits are confirmed first; hard-navs to role home where the wizard mounts.
+- VERIFIED: tsc 0; eslint 0 errors; build OK; i18n parity; layout SHA restored.
+- OPEN DECISION (needs Nikolaj): handoff note patient-visibility. migration 0088 has a HARD RULE 'NEVER patient-visible' (separate treatment_handoff table + RLS); goal_handoff_note (0090) likewise. Making patients able to read clinician<->therapist notes is a deliberate RLS/data-model reversal with privacy/DPIA implications — NOT changed in code; awaiting confirmation.
+
+=== 2026-06-26 — Tour copy + coverage fixes from live QA ===
+- Cockpit (clinicianPatient): split the overview step — 'Record a treatment' is now its OWN step on the new-treatment button (data-tour=treatment). Goals step now mentions per-goal VIDEO review and goal RETIREMENT. Overview narrowed to context + since-last-visit note.
+- Treatment page: tour expanded 3->6 steps — intro, modules (body/face toggle, data-tour=modules), copy-from-last-treatment (data-tour=copylast), setup (#tsec-setup), muscles (#tsec-muscles), and Note-to-therapist (#tsec-handoff). Covers the three things that were missing (therapist note, copy-last, module choice).
+- Rewrote ALL tour step copy (clinicianPatient, treatment, goals, physioPatient, patientHome, history, suggestion) to be concrete and consistent — says what each thing is AND what you do there. en+da, parity preserved.
+- VERIFIED: tsc 0; eslint 0 errors; build OK; layout SHA 939245bb...66fc restored.
+- NOT Claude-verifiable: live spotlight positioning of the new anchors (treatment modules/copylast/handoff; cockpit treatment button) and that the face/handoff sections are present when expected — QA pass.
+
+=== 2026-06-26 — Tour rollout: clinician treatment, history, suggestion ===
+- Registry += treatment (intro, #tsec-setup, #tsec-muscles — reuses existing section ids), history (summary, cycle-by-cycle), suggestion (patient's suggestion, your decision). data-tour anchors added; '?' on each now launches the tour + one-time nudge via the registry.
+- new-goal left on text help by design: an 84-line wrapper around the shared RecordGoalForm; a spotlight there is low value and would push data-tour into a shared component.
+- i18n: tour.{treatment,history,suggestion}.* (en+da). Parity preserved.
+- VERIFIED: tsc 0; eslint 0 errors; build OK; layout SHA 939245bb...66fc restored.
+- Tour now on: clinicianPatient, patientHome, goals, physioPatient, treatment, history, suggestion. Text help retained: checkin (wizard), new-goal (shared form), clinician landing (single action).
+
+=== 2026-06-26 — Tour rollout: patient goals + physio patient ===
+- Registry (lib/tourSteps.ts) += goals (2 steps: your goals/graphs, suggest a goal) and physioPatient (4 steps: patient, rate the visit, suggest a goal, end session). data-tour anchors added to app/[locale]/goals/page.tsx and app/[locale]/physio/patient/page.tsx. Both pages already had the '?', so they now launch the spotlight tour + get the one-time nudge automatically via the registry.
+- Skipped the clinician LANDING (visit-code unlock) — single-action screen with no '?'; a spotlight tour adds nothing there.
+- i18n: tour.goals.* + tour.physioPatient.* (en+da). Parity preserved.
+- VERIFIED: tsc 0; eslint 0 errors; build OK; layout SHA 939245bb...66fc restored.
+- Remaining easy candidates (anchors + registry entry + strings): clinician treatment, history, new-goal, suggestion.
+
+=== 2026-06-26 — Tour rollout (registry) + patient-home tour + first-visit nudge ===
+- Refactor to a pageKey-keyed tour registry (lib/tourSteps.ts): TOURS[pageKey] = ordered {target, key}. PageHelpButton resolves steps from the registry + tour.{pageKey}.{key}Title/Body, so any page becomes tourable with just data-tour anchors + a registry entry + strings — no layout-prop threading (works through AppShell/AppHeader/WizardLayout, which only pass pageKey). Reverted the clinician-patient inline tourSteps prop accordingly.
+- NUDGE: one-time, dismissible 'New here? Take a quick tour' popover by the '?' on tour pages. Appears after an 800ms beat on first visit; 'Take the tour' launches it, 'Not now' dismisses; opening '?' also marks seen. Seen state in localStorage per pageKey (per-device, low-stakes hint — not account state; no migration). Falls through gracefully if storage is blocked.
+- Patient HOME tour added (pageKey patientHome): 4 steps — welcome/cycle context, weekly check-in CTA, your goals, visit code — with data-tour anchors on app/[locale]/page.tsx.
+- Note: check-in stays on contextual TEXT help by design — a fixed spotlight fits a single dense screen, not a multi-step wizard whose targets change between steps.
+- i18n: tour.{clinicianPatient,patientHome}.* (nested), help.tourNudge/Start/Dismiss, en+da; old flat clinician.patient.tour* removed. Parity preserved.
+- VERIFIED: tsc 0; eslint 0 errors; build OK; layout SHA 939245bb...66fc restored.
+- NOT Claude-verifiable: spotlight positioning + nudge placement on live pages (esp. home vs clinician layouts) — QA pass.
+
+=== 2026-06-26 — Guided spotlight tour on '?' (clinician patient page) ===
+- New components/feedback/GuidedTour.tsx: reusable spotlight/coach-mark engine. Dims screen, box-shadow spotlight over one target at a time, caption card (Back/Next/Done + step counter), keyboard (arrows/Enter/Esc), focus to card, prefers-reduced-motion aware, theme-token styled. resolveTarget() picks the first VISIBLE match so layout variants (toolbar/sidebar/body) resolve correctly.
+- PageHelpButton: optional tourSteps prop. When provided, '?' launches the tour directly; otherwise falls back to the existing text help modal (other pages unchanged).
+- clinician/patient/page.tsx: data-tour anchors (patient header, action row x3 variants, overview/since-last-visit, active goals, end-session) + 5-step tour passed to PageHelpButton.
+- ALSO this delivery: therapist-visits strip replaced with actual visit-date chips (earlier in session).
+- i18n: tour.{back,next,done,skip,step} + clinician.patient.tour* (5 steps), en+da. Parity preserved.
+- VERIFIED: tsc 0; eslint 0 errors; build OK; layout SHA 939245bb...66fc restored.
+- NOT Claude-verifiable: spotlight POSITIONING and scroll behaviour on the live page — QA pass needed (resize, sidebar vs top nav, narrow). Easy to tune (PAD / card placement in GuidedTour).
+
+=== 2026-06-26 — Fix: therapist-visits display (treatment page) ===
+- TherapistInputPanel showed a Mon-Sun weekday strip that collapsed every visit in the (multi-week) cycle onto one 7-day row (each visit reduced to its weekday). Count was correct; the strip was misleading ('looks like one week').
+- Replaced with chips of the ACTUAL visit dates (locale-formatted weekday+day+month via useLocale + Intl). Removed DAY_SHORT_KEYS / therapyWeekdaysIso / tTraining / physioWeekdaysAria usage. tsc 0, eslint 0, build OK, layout SHA restored.
+
+=== 2026-06-26 — Editorial is now the default + design choice in onboarding ===
+- Default flipped to EDITORIAL: globals.css :root now holds the near-square radii; new [data-design='current'] rule restores the rounded look for users who pick it. Baseline approach = no rounded->square flash on load, and editorial applies even before JS.
+- lib/design.ts: DEFAULT_DESIGN='editorial'; resolveDesignId now maps explicit 'current'->current, 'editorial'->editorial, NULL/unknown->editorial. Existing profiles (design_variant NULL) render editorial automatically; an explicit 'current' choice is preserved.
+- Onboarding (intro) Comfort step: new ComfortDesign segmented control (Rounded | Editorial) beside text-size/brightness, persists via useSetDesign — so the choice is offered at first-run setup, not only in profile. Editorial shows selected by default.
+- i18n: intro.comfortDesign/comfortDesignRounded/comfortDesignEditorial (en+da). Parity preserved.
+- No new migration (0117 column already covers it; default is resolved client-side + CSS).
+- VERIFIED: tsc 0; eslint 0 errors; production build OK; layout SHA 939245bb...66fc restored.
+- NOT Claude-verifiable: live appearance of editorial-by-default across screens + onboarding round-trip — QA in the running app (needs 0117 applied).
+
 === 2026-06-26 — Design-direction picker + trimmed palettes ===
 - Migration 0117: profile.design_variant text (NULL=current). No new RLS (row-level self-update already covers it). Harness: applies clean, column present.
 - New axis orthogonal to colour: lib/design.ts (DesignId current|editorial, resolveDesignId, applyDesign sets data-design on <html>). globals.css: [data-design='editorial'] overrides --radius-card/--radius-button to near-square. Headings already serif + eyebrows already uppercase, so radius is the defining flip.

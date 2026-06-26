@@ -785,7 +785,7 @@ export default function ClinicianPatientPage() {
               clinical summary sits on its own line beneath the name. */}
           <div className="flex items-center gap-2">
             <BrandMark showName={false} />
-            <h1 className="m-0 flex min-w-0 flex-1 font-display text-[20px] font-normal leading-tight">
+            <h1 data-tour="patient" className="m-0 flex min-w-0 flex-1 font-display text-[20px] font-normal leading-tight">
               <button
                 type="button"
                 onClick={() =>
@@ -855,6 +855,7 @@ export default function ClinicianPatientPage() {
               </button>
               <button
                 type="button"
+                data-tour="endsession"
                 onClick={() => setConfirmEnd(true)}
                 aria-label={tSession('endSession')}
                 title={tSession('endSession')}
@@ -889,7 +890,7 @@ export default function ClinicianPatientPage() {
               the top instead of being pushed down. Hidden on narrow, where
               the body action row is used instead. */}
           {wide && navStyle === 'top' && (
-            <div className="mt-3 hidden border-t border-stone/60 pt-3 lg:block">
+            <div data-tour="actions" className="mt-3 hidden border-t border-stone/60 pt-3 lg:block">
               <PatientActionRow
                 variant="toolbar"
                 physioCount={physioActionCount}
@@ -907,7 +908,7 @@ export default function ClinicianPatientPage() {
       <main className={mainWidthClass}>
         <div className={gridClass}>
         {sideMenu && (
-          <div className="hidden lg:block lg:sticky lg:top-4">
+          <div data-tour="actions" className="hidden lg:block lg:sticky lg:top-4">
             {/* Rail header, matching "Overview" and "Active goals" so all three
                 columns read as parallel and their content tops line up. */}
             <div className="flex items-center lg:min-h-[39px]">
@@ -935,15 +936,17 @@ export default function ClinicianPatientPage() {
             On the wide layout this is replaced at lg by the header
             toolbar (below the patient name); on narrow/compact it stays
             here in the body flow. */}
-        <PatientActionRow
-          physioCount={physioActionCount}
-          openPanel={openPanel}
-          labels={actionLabels}
-          shortLabels={actionShortLabels}
-          onSelect={onActionSelect}
-                showAdmin={!!profile?.isAdmin}
-          className={wide ? 'lg:hidden' : ''}
-        />
+        <div data-tour="actions">
+          <PatientActionRow
+            physioCount={physioActionCount}
+            openPanel={openPanel}
+            labels={actionLabels}
+            shortLabels={actionShortLabels}
+            onSelect={onActionSelect}
+            showAdmin={!!profile?.isAdmin}
+            className={wide ? 'lg:hidden' : ''}
+          />
+        </div>
 
         {/* Medication panel — opens from the action row.
             Read-only until Edit; Save persists via set_patient_medication
@@ -1293,7 +1296,7 @@ export default function ClinicianPatientPage() {
             lines up with the first goal graph — and because the header has its
             own text it doesn't read as an empty gap. */}
         <div className="flex items-center justify-between gap-3 lg:min-h-[39px]">
-          <h2 className="font-display text-[20px] leading-tight text-ink">
+          <h2 data-tour="overview" className="font-display text-[20px] leading-tight text-ink">
             {t('overviewTitle')}
           </h2>
           {/* New treatment lives here so the context column has a header button
@@ -1306,6 +1309,7 @@ export default function ClinicianPatientPage() {
               touch();
               setShowNewCycle(true);
             }}
+            data-tour="treatment"
             aria-label={t('startNewCycle')}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-button)] bg-sage-deep px-3 py-2 text-[14px] font-semibold text-on-accent hover:bg-ink-soft"
           >
@@ -1401,7 +1405,7 @@ export default function ClinicianPatientPage() {
             visible at the top rather than below the banner. */}
         <div>
         {/* Active goals with progress visualisation */}
-        <section className={wide ? 'mt-10 lg:mt-0' : 'mt-10'}>
+        <section data-tour="goals" className={wide ? 'mt-10 lg:mt-0' : 'mt-10'}>
           <div className="flex max-w-[520px] items-center justify-between gap-3">
             <h2 className="font-display text-[20px] leading-tight text-ink">
               {t('activeGoalsTitle')}

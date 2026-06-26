@@ -138,7 +138,7 @@ export default function ClinicianHistoryPage() {
 
         {!history.isLoading && cycles.length > 0 && (
           <>
-            <section className="mt-7 overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
+            <section data-tour="summary" className="mt-7 overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
               <div className="flex items-baseline justify-between gap-3 px-4 py-3">
                 <h2 className="font-display text-[16px] text-ink">{t('summaryHeading')}</h2>
                 <span className="text-[12px] text-ink-muted">{t('summaryOrient')}</span>
@@ -171,7 +171,7 @@ export default function ClinicianHistoryPage() {
               </div>
             </section>
 
-            <div className="mt-8 mb-3 flex items-baseline gap-2.5">
+            <div data-tour="cycles" className="mt-8 mb-3 flex items-baseline gap-2.5">
               <h2 className="font-display text-[20px] text-ink">{t('cycleByCycle')}</h2>
               <span className="text-[12.5px] text-ink-muted">{t('mostRecentFirst')}</span>
             </div>

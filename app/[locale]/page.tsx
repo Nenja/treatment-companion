@@ -233,14 +233,14 @@ export default function PatientHomePage() {
         })}
       </div>
       {/* Greeting */}
-      <h1 className="font-display text-[24px] leading-tight text-ink">
+      <h1 data-tour="greeting" className="font-display text-[24px] leading-tight text-ink">
         {t('greeting', { name: data.patient.displayName })}
       </h1>
 
       {/* PRIMARY ACTION — the check-in CTA. The one thing the patient
           is here to do, so it leads the screen, directly under the
           greeting, before anything secondary. */}
-      <div className="mt-6">
+      <div data-tour="checkin" className="mt-6">
         <CheckinPromptCard
           pendingPromptId={data.currentPrompt?.id}
           nextDueDate={nextDueDate}
@@ -262,6 +262,7 @@ export default function PatientHomePage() {
         onClick={() =>
           router.push(locale === 'en' ? '/goals' : `/${locale}/goals`)
         }
+        data-tour="goals"
         className="mt-8 flex w-full items-center justify-between gap-3 rounded-[var(--radius-card)] border border-sage/50 px-5 py-4 text-left hover:bg-sage-soft/30"
       >
         <span className="min-w-0">
@@ -298,6 +299,7 @@ export default function PatientHomePage() {
             locale === 'en' ? '/visit-code' : `/${locale}/visit-code`
           )
         }
+        data-tour="visitcode"
         className="mt-3 flex w-full items-center justify-between border-b border-stone/60 py-4 text-left"
       >
         <span className="flex items-center gap-2.5 text-[15px] font-semibold text-ink">
