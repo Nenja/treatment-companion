@@ -973,6 +973,9 @@
     "colCreated": "Created",
     "colStatus": "Status",
     "statusActive": "Active",
+    "colPatientId": "Patient record ID",
+    "patientIdCopied": "Patient ID copied",
+    "copyId": "Copy",
     "describeProfession": "Describe the profession",
     "saving": "Saving…",
     "save": "Save",
@@ -1658,6 +1661,7 @@
     "errRateLimit": "Too many attempts. Please wait a minute, then try again.",
     "errNetwork": "Network problem. Check your connection and try again.",
     "errGeneric": "Something went wrong signing in. Please try again.",
+    "errServer": "Something went wrong on our side while signing in — this isn’t your password. Please try again in a moment.",
     "privacyLink": "Your data & privacy"
   },
   "forgotPassword": {

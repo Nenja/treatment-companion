@@ -1,3 +1,20 @@
+=== 2026-06-28 — Admin page: patient record ID surfaced + all sections collapsed + reorder ===
+- WHY: the questionnaire assignment (and similar) target the patient RECORD id (patient.id), but the admin accounts list is built from PROFILES and AdminAccount.id is the profile/account id — the right id was nowhere in the UI, forcing a SQL lookup.
+- patient.id now reaches the panel: app/api/admin/list-accounts/route.ts selects 'patient(id)' (PostgREST reverse embed; patient.profile_id->profile.id is unique so to-one) and returns patientId (object|array handled). lib/supabase/admin.ts AdminAccount gains patientId: string|null.
+- AccountRow (expanded detail) now shows a copyable "Patient record ID" row for patient-role accounts (mono + Copy button -> clipboard + toast). New keys admin.colPatientId / patientIdCopied / copyId (en + da; da is FIRST-PASS, flag for native review).
+- COLLAPSE-ALL: every top-level section now defaultOpen={false} (studies, questionnaires, export, purge added; accounts/create already false). The Access panel was a bespoke h2 + Show/Hide block — folded into the same Collapsible card: Collapsible gained an onToggle(open) hook, AccessSection is now embedded + driven by a parent accessOpen state (preserves lazy-load: the active-access list only fetches once its section is expanded).
+- ORDER REVIEW: research group reordered to a setup→operations→lifecycle flow: Studies, Questionnaires, Export, Purge (was Export, Studies, Purge, Questionnaires). Questionnaires was also MISSING from the side-nav — now added, in the new order. Accounts group unchanged (Accounts, Create, Access).
+- VERIFIED: tsc 0; eslint 0 errors (pre-existing a11y/hooks warnings only); i18n parity (en/da equal, _meta aside); font-stub build OK 105/105 pages; layout.tsx SHA restored 939245...
+- CANNOT VERIFY (QA on the deployed app):
+    * That PostgREST resolves the profile->patient embed and the Patient record ID actually renders — expand a patient account and confirm. patient has exactly one FK to profile (profile_id), so 'patient(id)' should be unambiguous; if it ever errors, disambiguate as 'patient!patient_profile_id_fkey(id)'.
+    * Clipboard copy + toast on the device/browser.
+    * Visual: every section collapsed on load; Access still lazy-loads its list only when expanded; nav jump opens + scrolls each section (goTo opens <details>).
+=== 2026-06-26 — Login: surface the real auth error (test sign-in debugging) ===
+- The login banner only ever showed friendlyError's fallback ('Something went wrong signing in'), hiding the actual Supabase message. signInWithPassword IS erroring (not a credential error, or it'd say so) — root cause is server/config-side, invisible from the repo.
+- app/[locale]/login/page.tsx: capture code + HTTP status + raw message; console.error them; show a small mono detail line under the banner for any NON-credential failure (a plain wrong password stays clean). Added friendlyError status arg + errServer branch (500 / 'database error' / 'unexpected') with a 'this isn't your password' message (login.errServer, en+da).
+- NOTE: profile fetch selects design_variant (needs 0117). If 0117 isn't applied in an env, sign-in SUCCEEDS but profile is null -> stuck on login with NO banner (different symptom). Not the cause of the screenshot, but verify 0117 is applied.
+- VERIFIED: tsc 0; eslint 0; build OK; i18n parity; layout SHA restored. Pre-pilot: consider gating the detail line off before real patients use it.
+
 === 2026-06-26 — Migration 0118: patient owns the data (notes no longer hidden) ===
 - PRINCIPLE FIX: the patient owns their record; nothing about them is hidden from them. Three tables were built 'RLS-isolated from the patient' (clinician-only SELECT, no patient policy):
     * treatment_handoff (0088)  — physician->therapist cycle handoff note

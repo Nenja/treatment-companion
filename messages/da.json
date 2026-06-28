@@ -977,6 +977,9 @@
     "colCreated": "Oprettet",
     "colStatus": "Status",
     "statusActive": "Aktiv",
+    "colPatientId": "Patient-id (intern)",
+    "patientIdCopied": "Patient-id kopieret",
+    "copyId": "Kopiér",
     "describeProfession": "Beskriv faget",
     "saving": "Gemmer…",
     "save": "Gem",
@@ -1662,6 +1665,7 @@
     "errRateLimit": "For mange forsøg. Vent et minut, og prøv igen.",
     "errNetwork": "Netværksproblem. Tjek din forbindelse, og prøv igen.",
     "errGeneric": "Noget gik galt under login. Prøv venligst igen.",
+    "errServer": "Noget gik galt hos os under login — det er ikke din adgangskode. Prøv igen om lidt.",
     "privacyLink": "Dine data & privatliv"
   },
   "forgotPassword": {

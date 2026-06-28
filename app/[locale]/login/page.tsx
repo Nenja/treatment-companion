@@ -25,6 +25,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Technical detail (code/status/message) shown only for the non-obvious
+  // failures — a wrong password stays clean. Pre-pilot diagnostic aid.
+  const [detail, setDetail] = useState<string | null>(null);
 
   const prefix = locale === 'en' ? '' : `/${locale}`;
 
@@ -59,7 +62,7 @@ export default function LoginPage() {
    * that tells the person what to DO. We never show Supabase's raw
    * string to the user — it's technical and gives no next step.
    */
-  const friendlyError = (raw: string): string => {
+  const friendlyError = (raw: string, status?: number): string => {
     const m = raw.toLowerCase();
     if (m.includes('invalid login') || m.includes('credentials')) {
       return t('errInvalid');
@@ -73,6 +76,13 @@ export default function LoginPage() {
     if (m.includes('network') || m.includes('fetch')) {
       return t('errNetwork');
     }
+    // A 500 / "database error" / "unexpected" is a server- or config-side
+    // failure (email logins disabled, a broken auth trigger, the project
+    // paused, ...) — NOT the person's password. Say so, so they don't keep
+    // retrying credentials that are actually correct.
+    if (status === 500 || m.includes('database error') || m.includes('unexpected')) {
+      return t('errServer');
+    }
     return t('errGeneric');
   };
 
@@ -81,6 +91,7 @@ export default function LoginPage() {
     if (submitting) return;
     setSubmitting(true);
     setError(null);
+    setDetail(null);
 
     const supabase = createSupabaseBrowserClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -89,7 +100,24 @@ export default function LoginPage() {
     });
 
     if (signInError) {
-      setError(friendlyError(signInError.message));
+      const code = (signInError as { code?: string }).code;
+      const status = (signInError as { status?: number }).status;
+      const raw = signInError.message;
+      // Log the real error — friendlyError deliberately hides it from the UI.
+      console.error('[login] signInWithPassword failed:', { code, status, raw });
+      setError(friendlyError(raw, status));
+      // Show the technical detail for anything that isn't a plain wrong
+      // password, so the actual cause (code / HTTP status / message) is visible.
+      const isCredential =
+        code === 'invalid_credentials' ||
+        /invalid login|credentials|email not confirmed/i.test(raw);
+      setDetail(
+        isCredential
+          ? null
+          : [code, status ? `HTTP ${status}` : null, raw]
+              .filter(Boolean)
+              .join(' · ')
+      );
       setSubmitting(false);
       return;
     }
@@ -164,6 +192,11 @@ export default function LoginPage() {
               role="alert"
             >
               {error}
+            </p>
+          )}
+          {detail && (
+            <p className="-mt-2 break-words font-mono text-[11.5px] leading-snug text-ink-muted">
+              {detail}
             </p>
           )}
 
