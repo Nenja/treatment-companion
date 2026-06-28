@@ -155,6 +155,7 @@
       "back": "Tilbage",
       "next": "Fortsæt",
       "submit": "Send min status",
+      "continueToQuestions": "Fortsæt",
       "submitting": "Sender…",
       "cancel": "Annullér",
       "cancelConfirmTitle": "Forlade din status?",
@@ -806,6 +807,18 @@
       "enable": "Aktivér",
       "enabledBadge": "Aktiveret",
       "footnote": "Svar registreres, som de gives, og vises til behandlingsteamet — der beregnes ingen score her.",
+      "responsesHeading": "Svar",
+      "responsesLoading": "Indlæser svar…",
+      "responsesError": "Kunne ikke indlæse svar.",
+      "responsesNone": "Ingen svar indsendt endnu.",
+      "respWeek": "Uge {week}",
+      "respNoItems": "Ingen svar registreret.",
+      "filledSelf": "udfyldt af patienten",
+      "filledCaregiver": "udfyldt af en pårørende",
+      "filledClinician": "udfyldt af en kliniker",
+      "filledTherapist": "udfyldt af en terapeut",
+      "answerYes": "Ja",
+      "answerNo": "Nej",
       "languageFilter": "Sprog:",
       "allLanguages": "Alle sprog"
     }
@@ -977,6 +990,9 @@
     "colCreated": "Oprettet",
     "colStatus": "Status",
     "statusActive": "Aktiv",
+    "colPatientId": "Patient-id (intern)",
+    "patientIdCopied": "Patient-id kopieret",
+    "copyId": "Kopiér",
     "describeProfession": "Beskriv faget",
     "saving": "Gemmer…",
     "save": "Gem",
@@ -1662,6 +1678,7 @@
     "errRateLimit": "For mange forsøg. Vent et minut, og prøv igen.",
     "errNetwork": "Netværksproblem. Tjek din forbindelse, og prøv igen.",
     "errGeneric": "Noget gik galt under login. Prøv venligst igen.",
+    "errServer": "Noget gik galt hos os under login — det er ikke din adgangskode. Prøv igen om lidt.",
     "privacyLink": "Dine data & privatliv"
   },
   "forgotPassword": {
@@ -1946,6 +1963,8 @@
     "loading": "Indlæser…",
     "requiredMissing": "Besvar venligst de påkrævede spørgsmål (markeret med *).",
     "submit": "Send",
+    "continueLabel": "Fortsæt",
+    "finish": "Afslut",
     "submitting": "Sender…",
     "yes": "Ja",
     "no": "Nej"

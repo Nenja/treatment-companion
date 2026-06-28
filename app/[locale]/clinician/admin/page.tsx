@@ -72,6 +72,10 @@ export default function AdminPage() {
     !!profile && profile.isAdmin
   );
 
+  // Drives lazy-loading of the active-access list, which now lives inside a
+  // Collapsible: the list only loads once its section is expanded.
+  const [accessOpen, setAccessOpen] = useState(false);
+
   const counts = useMemo(() => {
     const a = accountsQuery.data ?? [];
     return {
@@ -106,8 +110,9 @@ export default function AdminPage() {
     {
       label: tAdmin('groupResearchTitle'),
       items: [
-        { id: 'export', title: tAdmin('exportTitle') },
         { id: 'studies', title: tAdmin('studiesTitle') },
+        { id: 'questionnaires', title: tAdmin('questionnairesTitle') },
+        { id: 'export', title: tAdmin('exportTitle') },
         { id: 'purge', title: tAdmin('purgeTitle') }
       ]
     }
@@ -235,29 +240,42 @@ export default function AdminPage() {
           <CreateAccountSection embedded />
         </Collapsible>
 
-        <div id="access" className="scroll-mt-24">
-          <AccessSection enabled={!!profile && profile.isAdmin} />
-        </div>
+        <Collapsible
+          id="access"
+          title={tAdmin('accessTitle')}
+          defaultOpen={false}
+          onToggle={setAccessOpen}
+        >
+          <AccessSection
+            enabled={!!profile && profile.isAdmin}
+            open={accessOpen}
+            embedded
+          />
+        </Collapsible>
 
-        {/* ── Research data ───────────────────────────────────── */}
+        {/* ── Research & data ─────────────────────────────────── */}
         <h2 className="eyebrow mt-12 border-t border-stone/60 pt-6">
           {tAdmin('groupResearchTitle')}
         </h2>
 
-        <Collapsible id="export" title={tAdmin('exportTitle')}>
-          <ResearchExportSection enabled={!!profile && profile.isAdmin} embedded />
-        </Collapsible>
-
-        <Collapsible id="studies" title={tAdmin('studiesTitle')}>
+        <Collapsible id="studies" title={tAdmin('studiesTitle')} defaultOpen={false}>
           <StudiesSection enabled={!!profile && profile.isAdmin} embedded />
         </Collapsible>
 
-        <Collapsible id="purge" title={tAdmin('purgeTitle')}>
-          <ResearchPurgeSection enabled={!!profile && profile.isAdmin} embedded />
+        <Collapsible
+          id="questionnaires"
+          title={tAdmin('questionnairesTitle')}
+          defaultOpen={false}
+        >
+          <QuestionnaireAdminSection enabled={!!profile && profile.isAdmin} embedded />
         </Collapsible>
 
-        <Collapsible id="questionnaires" title={tAdmin('questionnairesTitle')}>
-          <QuestionnaireAdminSection enabled={!!profile && profile.isAdmin} embedded />
+        <Collapsible id="export" title={tAdmin('exportTitle')} defaultOpen={false}>
+          <ResearchExportSection enabled={!!profile && profile.isAdmin} embedded />
+        </Collapsible>
+
+        <Collapsible id="purge" title={tAdmin('purgeTitle')} defaultOpen={false}>
+          <ResearchPurgeSection enabled={!!profile && profile.isAdmin} embedded />
         </Collapsible>
       </main>
     </div>
@@ -290,17 +308,22 @@ function Collapsible({
   id,
   title,
   defaultOpen = true,
+  onToggle,
   children
 }: {
   id: string;
   title: string;
   defaultOpen?: boolean;
+  onToggle?: (open: boolean) => void;
   children: ReactNode;
 }) {
   return (
     <details
       id={id}
       open={defaultOpen}
+      onToggle={(e) =>
+        onToggle?.((e.currentTarget as HTMLDetailsElement).open)
+      }
       className="group mt-4 scroll-mt-24 overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft"
     >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 [&::-webkit-details-marker]:hidden">
@@ -740,9 +763,16 @@ function AccountsList({ accounts }: { accounts: AdminAccount[] }) {
  * occasionally-checked view); expanding it loads the live session list.
  * Read-only: this surfaces access, it does not yet revoke it.
  */
-function AccessSection({ enabled }: { enabled: boolean }) {
+function AccessSection({
+  enabled,
+  open,
+  embedded
+}: {
+  enabled: boolean;
+  open: boolean;
+  embedded?: boolean;
+}) {
   const tAdmin = useTranslations('admin');
-  const [open, setOpen] = useState(false);
   const accessQuery = useActiveAccess(enabled && open);
 
   const fmt = (iso: string) => {
@@ -754,61 +784,52 @@ function AccessSection({ enabled }: { enabled: boolean }) {
   };
 
   return (
-    <section className="mt-10">
-      <div className="flex items-center justify-between gap-3">
+    <section className={embedded ? '' : 'mt-10'}>
+      {!embedded && (
         <h2 className="font-display text-[18px] text-ink">
           {tAdmin('accessTitle')}
         </h2>
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
-        >
-          {open ? tAdmin('accessHide') : tAdmin('accessShow')}
-        </button>
-      </div>
-      <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
+      )}
+      <p className="text-[14px] leading-relaxed text-ink-soft">
         {tAdmin('accessIntro')}
       </p>
 
-      {open && (
-        <div className="mt-3">
-          {accessQuery.isLoading && (
-            <p className="text-[14px] text-ink-muted">
-              {tAdmin('accessLoading')}
-            </p>
-          )}
-          {accessQuery.isError && (
-            <p className="text-[14px] text-amber-deep">
-              {tAdmin('accessError')}
-            </p>
-          )}
-          {accessQuery.data && accessQuery.data.length === 0 && (
-            <p className="text-[14px] text-ink-muted">
-              {tAdmin('accessNone')}
-            </p>
-          )}
-          {accessQuery.data && accessQuery.data.length > 0 && (
-            <ul className="divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
-              {accessQuery.data.map((sess: ActiveAccessSession) => (
-                <li key={sess.sessionId} className="px-4 py-3 text-[14px]">
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                    <span className="font-semibold text-ink">
-                      {sess.professionalName}
-                    </span>
-                    <span className="text-[13px] text-ink-muted">
-                      {tAdmin('accessColSince')}: {fmt(sess.lastActivityAt)}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-ink-soft">
-                    {tAdmin('accessColPatient')}: {sess.patientName}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+      <div className="mt-3">
+        {accessQuery.isLoading && (
+          <p className="text-[14px] text-ink-muted">
+            {tAdmin('accessLoading')}
+          </p>
+        )}
+        {accessQuery.isError && (
+          <p className="text-[14px] text-amber-deep">
+            {tAdmin('accessError')}
+          </p>
+        )}
+        {accessQuery.data && accessQuery.data.length === 0 && (
+          <p className="text-[14px] text-ink-muted">
+            {tAdmin('accessNone')}
+          </p>
+        )}
+        {accessQuery.data && accessQuery.data.length > 0 && (
+          <ul className="divide-y divide-stone overflow-hidden rounded-[var(--radius-card)] border border-stone bg-cream-soft">
+            {accessQuery.data.map((sess: ActiveAccessSession) => (
+              <li key={sess.sessionId} className="px-4 py-3 text-[14px]">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                  <span className="font-semibold text-ink">
+                    {sess.professionalName}
+                  </span>
+                  <span className="text-[13px] text-ink-muted">
+                    {tAdmin('accessColSince')}: {fmt(sess.lastActivityAt)}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-ink-soft">
+                  {tAdmin('accessColPatient')}: {sess.patientName}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }
@@ -1005,6 +1026,28 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                       a.deactivatedAt as string
                     ).toLocaleDateString()}`
                   : tAdmin('statusActive')
+              )}
+              {a.role === 'patient' && a.patientId && (
+                <div className="mt-1 flex items-center justify-between gap-3 border-t border-stone/50 pt-1.5">
+                  <span className="shrink-0 text-[13px] text-ink-muted">
+                    {tAdmin('colPatientId')}
+                  </span>
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <code className="truncate font-mono text-[12px] text-ink">
+                      {a.patientId}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(a.patientId as string);
+                        toast.success(tAdmin('patientIdCopied'));
+                      }}
+                      className="shrink-0 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-2 py-0.5 text-[12px] font-semibold text-ink-soft hover:bg-stone-soft"
+                    >
+                      {tAdmin('copyId')}
+                    </button>
+                  </span>
+                </div>
               )}
             </div>
           )}

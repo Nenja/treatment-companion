@@ -151,6 +151,7 @@
       "back": "Back",
       "next": "Continue",
       "submit": "Send my check-in",
+      "continueToQuestions": "Continue",
       "submitting": "Sending…",
       "cancel": "Cancel",
       "cancelConfirmTitle": "Leave your check-in?",
@@ -802,6 +803,18 @@
       "enable": "Enable",
       "enabledBadge": "Enabled",
       "footnote": "Answers are recorded as given and shown to the care team — no score is calculated here.",
+      "responsesHeading": "Responses",
+      "responsesLoading": "Loading responses…",
+      "responsesError": "Could not load responses.",
+      "responsesNone": "No responses submitted yet.",
+      "respWeek": "Week {week}",
+      "respNoItems": "No answers recorded.",
+      "filledSelf": "filled in by the patient",
+      "filledCaregiver": "filled in by a caregiver",
+      "filledClinician": "filled in by a clinician",
+      "filledTherapist": "filled in by a therapist",
+      "answerYes": "Yes",
+      "answerNo": "No",
       "languageFilter": "Language:",
       "allLanguages": "All languages"
     }
@@ -973,6 +986,9 @@
     "colCreated": "Created",
     "colStatus": "Status",
     "statusActive": "Active",
+    "colPatientId": "Patient record ID",
+    "patientIdCopied": "Patient ID copied",
+    "copyId": "Copy",
     "describeProfession": "Describe the profession",
     "saving": "Saving…",
     "save": "Save",
@@ -1658,6 +1674,7 @@
     "errRateLimit": "Too many attempts. Please wait a minute, then try again.",
     "errNetwork": "Network problem. Check your connection and try again.",
     "errGeneric": "Something went wrong signing in. Please try again.",
+    "errServer": "Something went wrong on our side while signing in — this isn’t your password. Please try again in a moment.",
     "privacyLink": "Your data & privacy"
   },
   "forgotPassword": {
@@ -1942,6 +1959,8 @@
     "loading": "Loading…",
     "requiredMissing": "Please answer the required questions (marked *).",
     "submit": "Submit",
+    "continueLabel": "Continue",
+    "finish": "Finish",
     "submitting": "Sending…",
     "yes": "Yes",
     "no": "No"

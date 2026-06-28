@@ -35,7 +35,10 @@ export async function GET() {
   const { data, error } = await admin
     .from('profile')
     .select(
-      'id, email, display_name, role, is_admin, created_at, deactivated_at, profession, profession_other'
+      // patient(id) is an embedded reverse lookup: patient.profile_id -> profile.id
+      // (unique, so at most one). Lets the admin panel surface the patient RECORD
+      // id (distinct from this profile id) for things like questionnaire assignment.
+      'id, email, display_name, role, is_admin, created_at, deactivated_at, profession, profession_other, patient(id)'
     )
     .order('created_at', { ascending: false });
 
@@ -47,16 +50,24 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    accounts: (data ?? []).map((p) => ({
-      id: p.id as string,
-      email: p.email as string,
-      displayName: (p.display_name as string | null) ?? '',
-      role: p.role as string,
-      isAdmin: Boolean(p.is_admin),
-      createdAt: p.created_at as string,
-      deactivatedAt: (p.deactivated_at as string | null) ?? null,
-      profession: (p.profession as string | null) ?? null,
-      professionOther: (p.profession_other as string | null) ?? null
-    }))
+    accounts: (data ?? []).map((p) => {
+      // Embedded patient may arrive as an object or a single-element array
+      // depending on how PostgREST resolves the to-one relationship.
+      const pat = (p as { patient?: { id: string } | { id: string }[] | null })
+        .patient;
+      const patientId = Array.isArray(pat) ? (pat[0]?.id ?? null) : (pat?.id ?? null);
+      return {
+        id: p.id as string,
+        email: p.email as string,
+        displayName: (p.display_name as string | null) ?? '',
+        role: p.role as string,
+        isAdmin: Boolean(p.is_admin),
+        createdAt: p.created_at as string,
+        deactivatedAt: (p.deactivated_at as string | null) ?? null,
+        profession: (p.profession as string | null) ?? null,
+        professionOther: (p.profession_other as string | null) ?? null,
+        patientId
+      };
+    })
   });
 }

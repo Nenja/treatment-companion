@@ -8,8 +8,11 @@ import {
   usePatientQuestionnaires,
   useAssignQuestionnaire,
   useSetAssignmentActive,
+  usePatientQuestionnaireResponses,
   type ScheduleKind,
-  type PatientQuestionnaire
+  type PatientQuestionnaire,
+  type QuestionnaireResponseItem,
+  type QuestionnaireResponseRecord
 } from '@/lib/supabase/questionnaires';
 
 /**
@@ -57,6 +60,9 @@ export function QuestionnairePanel({
 
   // Per-library-row chosen cadence (defaults to "every check-in").
   const [cadence, setCadence] = useState<Record<string, string>>({});
+  // Per-library-row expand state — collapsed by default so a long library is
+  // a scannable list of titles; expanding reveals details + the enable control.
+  const [libOpen, setLibOpen] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
 
   function cadenceLabel(q: Pick<PatientQuestionnaire, 'schedule_kind' | 'schedule_n'>) {
@@ -166,6 +172,9 @@ export function QuestionnairePanel({
         )}
       </div>
 
+      {/* Submitted responses for this patient */}
+      <ResponsesSection patientId={patientId} />
+
       {/* Add from library */}
       <div className="mt-6">
         <h3 className="eyebrow">{t('libraryHeading')}</h3>
@@ -195,56 +204,81 @@ export function QuestionnairePanel({
               const alreadyOn = enabledList.some(
                 (e) => e.questionnaire_key === q.key && e.active && e.source === 'patient'
               );
+              const isOpen = libOpen[q.key] ?? false;
               return (
                 <li
                   key={q.questionnaire_id}
                   className="rounded-[var(--radius-card)] border border-stone bg-cream p-3"
                 >
-                  <p className="text-[14px] font-semibold text-ink">{q.title}</p>
-                  {q.description && (
-                    <p className="mt-0.5 text-[12px] leading-relaxed text-ink-muted">
-                      {q.description}
-                    </p>
+                  <button
+                    type="button"
+                    onClick={() => setLibOpen((s) => ({ ...s, [q.key]: !isOpen }))}
+                    aria-expanded={isOpen}
+                    className="flex w-full items-start justify-between gap-3 text-left"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-[14px] font-semibold text-ink">
+                        {q.title}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] text-ink-muted">
+                        {t('itemCount', { count: q.item_count })}
+                        {` · ${q.lang.toUpperCase()}`}
+                        {alreadyOn && ` · ${t('enabledBadge')}`}
+                      </span>
+                    </span>
+                    <span
+                      aria-hidden
+                      className={`shrink-0 text-[13px] text-ink-muted transition-transform ${
+                        isOpen ? 'rotate-180' : ''
+                      }`}
+                    >
+                      ▾
+                    </span>
+                  </button>
+                  {isOpen && (
+                    <div className="mt-2 border-t border-stone/60 pt-2">
+                      {q.description && (
+                        <p className="text-[12px] leading-relaxed text-ink-muted">
+                          {q.description}
+                        </p>
+                      )}
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <label className="sr-only" htmlFor={`cadence-${q.key}`}>
+                          {t('cadenceLabel')}
+                        </label>
+                        <select
+                          id={`cadence-${q.key}`}
+                          value={cadence[q.key] ?? 'every_checkin'}
+                          onChange={(ev) =>
+                            setCadence((c) => ({ ...c, [q.key]: ev.target.value }))
+                          }
+                          className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-2 py-1.5 text-[12px] text-ink"
+                        >
+                          {CADENCES.map((c) => (
+                            <option key={c.value} value={c.value}>
+                              {c.value === 'every_checkin'
+                                ? t('cadenceEvery')
+                                : c.value === 'every_2'
+                                  ? t('cadenceEveryN', { n: 2 })
+                                  : c.value === 'monthly'
+                                    ? t('cadenceMonthly')
+                                    : c.value === 'first_of_cycle'
+                                      ? t('cadenceFirstOfCycle')
+                                      : t('cadenceBaseline')}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => onEnable(q.key)}
+                          disabled={assign.isPending || alreadyOn}
+                          className="rounded-[var(--radius-button)] border border-sage-deep bg-sage-deep px-3 py-1.5 text-[12px] font-semibold text-on-accent transition-colors hover:opacity-90 disabled:opacity-50"
+                        >
+                          {alreadyOn ? t('enabledBadge') : t('enable')}
+                        </button>
+                      </div>
+                    </div>
                   )}
-                  <p className="mt-0.5 text-[11px] text-ink-muted">
-                    {t('itemCount', { count: q.item_count })}
-                    {` · ${q.lang.toUpperCase()}`}
-                  </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <label className="sr-only" htmlFor={`cadence-${q.key}`}>
-                      {t('cadenceLabel')}
-                    </label>
-                    <select
-                      id={`cadence-${q.key}`}
-                      value={cadence[q.key] ?? 'every_checkin'}
-                      onChange={(ev) =>
-                        setCadence((c) => ({ ...c, [q.key]: ev.target.value }))
-                      }
-                      className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-2 py-1.5 text-[12px] text-ink"
-                    >
-                      {CADENCES.map((c) => (
-                        <option key={c.value} value={c.value}>
-                          {c.value === 'every_checkin'
-                            ? t('cadenceEvery')
-                            : c.value === 'every_2'
-                              ? t('cadenceEveryN', { n: 2 })
-                              : c.value === 'monthly'
-                                ? t('cadenceMonthly')
-                                : c.value === 'first_of_cycle'
-                                  ? t('cadenceFirstOfCycle')
-                                  : t('cadenceBaseline')}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => onEnable(q.key)}
-                      disabled={assign.isPending || alreadyOn}
-                      className="rounded-[var(--radius-button)] border border-sage-deep bg-sage-deep px-3 py-1.5 text-[12px] font-semibold text-on-accent transition-colors hover:opacity-90 disabled:opacity-50"
-                    >
-                      {alreadyOn ? t('enabledBadge') : t('enable')}
-                    </button>
-                  </div>
                 </li>
               );
             })}
@@ -256,5 +290,138 @@ export function QuestionnairePanel({
         {t('footnote')}
       </p>
     </CockpitPanelDrawer>
+  );
+}
+
+/** Human-readable answer for one item, mapping option values back to labels. */
+function formatAnswer(
+  item: QuestionnaireResponseItem,
+  t: ReturnType<typeof useTranslations>
+): string {
+  const labelFor = (val: string) =>
+    item.options?.find((o) => o.value === val)?.label ?? val;
+  switch (item.item_type) {
+    case 'boolean':
+      if (item.value_num != null) return item.value_num === 1 ? t('answerYes') : t('answerNo');
+      if (item.value_text === 'true') return t('answerYes');
+      if (item.value_text === 'false') return t('answerNo');
+      return item.value_text ?? '—';
+    case 'nrs_0_10':
+    case 'number':
+      return item.value_num != null ? String(item.value_num) : (item.value_text ?? '—');
+    case 'single_choice':
+    case 'likert':
+      return item.value_text ? labelFor(item.value_text) : '—';
+    case 'multi_choice':
+      if (!item.value_text) return '—';
+      try {
+        const arr = JSON.parse(item.value_text) as string[];
+        return arr.length ? arr.map(labelFor).join(', ') : '—';
+      } catch {
+        return item.value_text;
+      }
+    case 'text':
+    default:
+      return item.value_text && item.value_text.trim() ? item.value_text : '—';
+  }
+}
+
+/**
+ * Read-only list of the patient's submitted questionnaire responses, newest
+ * first; each expands to show the per-item answers. No score is shown.
+ */
+function ResponsesSection({ patientId }: { patientId: string }) {
+  const t = useTranslations('clinician.questionnaires');
+  const responses = usePatientQuestionnaireResponses(patientId);
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+
+  const list = responses.data ?? [];
+
+  const filledByLabel = (who: QuestionnaireResponseRecord['filled_by']) => {
+    switch (who) {
+      case 'caregiver':
+        return t('filledCaregiver');
+      case 'clinician':
+        return t('filledClinician');
+      case 'therapist':
+        return t('filledTherapist');
+      default:
+        return t('filledSelf');
+    }
+  };
+
+  return (
+    <div className="mt-6">
+      <h3 className="eyebrow">{t('responsesHeading')}</h3>
+      {responses.isLoading ? (
+        <p className="mt-2 text-[13px] text-ink-muted">{t('responsesLoading')}</p>
+      ) : responses.isError ? (
+        <p className="mt-2 text-[13px] text-amber-deep">{t('responsesError')}</p>
+      ) : list.length === 0 ? (
+        <p className="mt-2 text-[13px] text-ink-muted">{t('responsesNone')}</p>
+      ) : (
+        <ul className="mt-2 space-y-2">
+          {list.map((r) => {
+            const isOpen = open[r.response_id] ?? false;
+            const when = (() => {
+              try {
+                return new Date(r.submitted_at).toLocaleDateString();
+              } catch {
+                return r.submitted_at;
+              }
+            })();
+            return (
+              <li
+                key={r.response_id}
+                className="rounded-[var(--radius-card)] border border-stone bg-cream p-3"
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpen((s) => ({ ...s, [r.response_id]: !isOpen }))
+                  }
+                  aria-expanded={isOpen}
+                  className="flex w-full items-start justify-between gap-3 text-left"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-[14px] font-semibold text-ink">
+                      {r.questionnaire_title}
+                    </span>
+                    <span className="mt-0.5 block text-[12px] text-ink-muted">
+                      {when}
+                      {r.week_number != null && ` · ${t('respWeek', { week: r.week_number })}`}
+                      {` · ${filledByLabel(r.filled_by)}`}
+                    </span>
+                  </span>
+                  <span
+                    aria-hidden
+                    className={`shrink-0 text-[13px] text-ink-muted transition-transform ${
+                      isOpen ? 'rotate-180' : ''
+                    }`}
+                  >
+                    ▾
+                  </span>
+                </button>
+                {isOpen && (
+                  <dl className="mt-3 space-y-2 border-t border-stone/60 pt-3">
+                    {r.items.map((item) => (
+                      <div key={item.item_key}>
+                        <dt className="text-[12px] text-ink-muted">{item.prompt}</dt>
+                        <dd className="mt-0.5 whitespace-pre-wrap text-[14px] text-ink">
+                          {formatAnswer(item, t)}
+                        </dd>
+                      </div>
+                    ))}
+                    {r.items.length === 0 && (
+                      <p className="text-[13px] text-ink-muted">{t('respNoItems')}</p>
+                    )}
+                  </dl>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }

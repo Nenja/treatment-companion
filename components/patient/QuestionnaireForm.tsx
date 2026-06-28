@@ -142,7 +142,11 @@ export function QuestionnaireForm({
           disabled={submit.isPending || itemsQuery.isLoading}
           className="w-full rounded-[var(--radius-button)] border border-sage-deep bg-sage-deep px-4 py-3 text-[16px] font-semibold text-on-accent transition-colors hover:opacity-90 disabled:opacity-50"
         >
-          {submit.isPending ? t('submitting') : t('submit')}
+          {submit.isPending
+            ? t('submitting')
+            : step && step.current < step.total
+              ? t('continueLabel')
+              : t('finish')}
         </button>
       </div>
     </div>

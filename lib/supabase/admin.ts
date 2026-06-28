@@ -15,6 +15,12 @@ export interface AdminAccount {
   /** Profession code — therapist accounts only; null otherwise. */
   profession: string | null;
   professionOther: string | null;
+  /**
+   * The patient RECORD id (patient.id) for patient-role accounts — distinct
+   * from `id`, which is the profile/account id. Null for non-patients. Used
+   * where the patient row is the target, e.g. questionnaire assignment.
+   */
+  patientId: string | null;
 }
 
 /**
