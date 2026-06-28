@@ -7,6 +7,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useCheckinData, useSubmitCheckin, useReopenCheckin, uploadGoalVideo } from '@/lib/supabase/checkin';
 import { PostCheckinQuestionnaires } from '@/components/patient/PostCheckinQuestionnaires';
+import { useDueQuestionnairesForWeek } from '@/lib/supabase/questionnaires';
 import { useCheckinDraft, checkinDraftStorage } from '@/lib/useCheckinDraft';
 import { useModalA11y } from '@/lib/useModalA11y';
 import { isCheckinComplete } from '@/lib/checkinDraft';
@@ -86,6 +87,14 @@ function CheckinPageInner() {
   const toast = useToast();
   const tFeedback = useTranslations('feedback');
 
+  // Resolve which questionnaires are due BEFORE submit, by (patient, week), so
+  // they can be folded into the wizard as extra steps under one progress count
+  // instead of ambushing the patient after a "you're done" screen.
+  const dueQ = useDueQuestionnairesForWeek(
+    checkinQuery.data?.patientId ?? null,
+    checkinQuery.data?.prompt.weekNumber ?? null
+  );
+
   const homePath = locale === 'en' ? '/' : `/${locale}`;
   // Leaving the check-in navigates home. A soft router.push proved unreliable
   // from this page (the push was sometimes swallowed), so we do a hard
@@ -162,9 +171,16 @@ function CheckinPageInner() {
 
   // Thanks view comes first — see ref comment above.
   if (submittedId) {
+    const dueList = dueQ.data ?? [];
+    // Core steps = one per goal + training-days + comment. The questionnaire
+    // steps continue this count so the patient sees e.g. "Step 6 of 7".
+    const coreSteps = (checkinQuery.data?.goals.length ?? 0) + 2;
     return (
       <PostCheckinQuestionnaires
         weeklyCheckinId={submittedId}
+        dueList={dueList}
+        stepOffset={coreSteps}
+        displayTotal={coreSteps + dueList.length}
         thanks={
           <ThanksView
             onBackHome={goHomeHard}
@@ -229,6 +245,13 @@ function CheckinPageInner() {
   const trainingStep = activeGoals.length + 1;
   const isTrainingStep = step === trainingStep;
   const isLastStep = step === totalSteps;
+
+  // Questionnaires due this week are shown as extra steps AFTER the core
+  // check-in (core is captured first), but counted into one continuous total
+  // so the last core step reads as "continue", not "finish".
+  const dueCount = dueQ.data?.length ?? 0;
+  const displayTotal = totalSteps + dueCount;
+  const hasQuestionsAfter = isLastStep && dueCount > 0;
 
   const currentStepComplete = (() => {
     if (isLastStep) {
@@ -540,7 +563,7 @@ function CheckinPageInner() {
     <>
       <WizardLayout
         currentStep={step}
-        totalSteps={totalSteps}
+        totalSteps={displayTotal}
         title={title}
         helper={helper}
         onBack={step > 1 ? goBack : undefined}
@@ -556,10 +579,18 @@ function CheckinPageInner() {
           label: isLastStep
             ? submitMutation.isPending
               ? t('submitting') /* falls back to 'Submit…' if missing key */
-              : t('submit')
+              : hasQuestionsAfter
+                ? t('continueToQuestions')
+                : t('submit')
             : t('next'),
           onClick: goNext,
-          disabled: !currentStepComplete || submitMutation.isPending
+          // On the last core step, wait for the due-questionnaire lookup so the
+          // button label is correct (continue vs submit) and we never flash a
+          // false finish.
+          disabled:
+            !currentStepComplete ||
+            submitMutation.isPending ||
+            (isLastStep && dueQ.isLoading)
         }}
       >
         {body}

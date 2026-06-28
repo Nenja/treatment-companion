@@ -8,8 +8,11 @@ import {
   usePatientQuestionnaires,
   useAssignQuestionnaire,
   useSetAssignmentActive,
+  usePatientQuestionnaireResponses,
   type ScheduleKind,
-  type PatientQuestionnaire
+  type PatientQuestionnaire,
+  type QuestionnaireResponseItem,
+  type QuestionnaireResponseRecord
 } from '@/lib/supabase/questionnaires';
 
 /**
@@ -166,6 +169,9 @@ export function QuestionnairePanel({
         )}
       </div>
 
+      {/* Submitted responses for this patient */}
+      <ResponsesSection patientId={patientId} />
+
       {/* Add from library */}
       <div className="mt-6">
         <h3 className="eyebrow">{t('libraryHeading')}</h3>
@@ -256,5 +262,138 @@ export function QuestionnairePanel({
         {t('footnote')}
       </p>
     </CockpitPanelDrawer>
+  );
+}
+
+/** Human-readable answer for one item, mapping option values back to labels. */
+function formatAnswer(
+  item: QuestionnaireResponseItem,
+  t: ReturnType<typeof useTranslations>
+): string {
+  const labelFor = (val: string) =>
+    item.options?.find((o) => o.value === val)?.label ?? val;
+  switch (item.item_type) {
+    case 'boolean':
+      if (item.value_num != null) return item.value_num === 1 ? t('answerYes') : t('answerNo');
+      if (item.value_text === 'true') return t('answerYes');
+      if (item.value_text === 'false') return t('answerNo');
+      return item.value_text ?? '—';
+    case 'nrs_0_10':
+    case 'number':
+      return item.value_num != null ? String(item.value_num) : (item.value_text ?? '—');
+    case 'single_choice':
+    case 'likert':
+      return item.value_text ? labelFor(item.value_text) : '—';
+    case 'multi_choice':
+      if (!item.value_text) return '—';
+      try {
+        const arr = JSON.parse(item.value_text) as string[];
+        return arr.length ? arr.map(labelFor).join(', ') : '—';
+      } catch {
+        return item.value_text;
+      }
+    case 'text':
+    default:
+      return item.value_text && item.value_text.trim() ? item.value_text : '—';
+  }
+}
+
+/**
+ * Read-only list of the patient's submitted questionnaire responses, newest
+ * first; each expands to show the per-item answers. No score is shown.
+ */
+function ResponsesSection({ patientId }: { patientId: string }) {
+  const t = useTranslations('clinician.questionnaires');
+  const responses = usePatientQuestionnaireResponses(patientId);
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+
+  const list = responses.data ?? [];
+
+  const filledByLabel = (who: QuestionnaireResponseRecord['filled_by']) => {
+    switch (who) {
+      case 'caregiver':
+        return t('filledCaregiver');
+      case 'clinician':
+        return t('filledClinician');
+      case 'therapist':
+        return t('filledTherapist');
+      default:
+        return t('filledSelf');
+    }
+  };
+
+  return (
+    <div className="mt-6">
+      <h3 className="eyebrow">{t('responsesHeading')}</h3>
+      {responses.isLoading ? (
+        <p className="mt-2 text-[13px] text-ink-muted">{t('responsesLoading')}</p>
+      ) : responses.isError ? (
+        <p className="mt-2 text-[13px] text-amber-deep">{t('responsesError')}</p>
+      ) : list.length === 0 ? (
+        <p className="mt-2 text-[13px] text-ink-muted">{t('responsesNone')}</p>
+      ) : (
+        <ul className="mt-2 space-y-2">
+          {list.map((r) => {
+            const isOpen = open[r.response_id] ?? false;
+            const when = (() => {
+              try {
+                return new Date(r.submitted_at).toLocaleDateString();
+              } catch {
+                return r.submitted_at;
+              }
+            })();
+            return (
+              <li
+                key={r.response_id}
+                className="rounded-[var(--radius-card)] border border-stone bg-cream p-3"
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpen((s) => ({ ...s, [r.response_id]: !isOpen }))
+                  }
+                  aria-expanded={isOpen}
+                  className="flex w-full items-start justify-between gap-3 text-left"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-[14px] font-semibold text-ink">
+                      {r.questionnaire_title}
+                    </span>
+                    <span className="mt-0.5 block text-[12px] text-ink-muted">
+                      {when}
+                      {r.week_number != null && ` · ${t('respWeek', { week: r.week_number })}`}
+                      {` · ${filledByLabel(r.filled_by)}`}
+                    </span>
+                  </span>
+                  <span
+                    aria-hidden
+                    className={`shrink-0 text-[13px] text-ink-muted transition-transform ${
+                      isOpen ? 'rotate-180' : ''
+                    }`}
+                  >
+                    ▾
+                  </span>
+                </button>
+                {isOpen && (
+                  <dl className="mt-3 space-y-2 border-t border-stone/60 pt-3">
+                    {r.items.map((item) => (
+                      <div key={item.item_key}>
+                        <dt className="text-[12px] text-ink-muted">{item.prompt}</dt>
+                        <dd className="mt-0.5 whitespace-pre-wrap text-[14px] text-ink">
+                          {formatAnswer(item, t)}
+                        </dd>
+                      </div>
+                    ))}
+                    {r.items.length === 0 && (
+                      <p className="text-[13px] text-ink-muted">{t('respNoItems')}</p>
+                    )}
+                  </dl>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }

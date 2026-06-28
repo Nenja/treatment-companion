@@ -209,6 +209,30 @@ export function useDueQuestionnaires(weeklyCheckinId: string | null) {
   });
 }
 
+/**
+ * The same resolution as useDueQuestionnaires, but keyed by (patient, week) so
+ * the check-in wizard can learn what's due BEFORE submit — letting it fold the
+ * questionnaires into one continuous flow with a single progress count.
+ */
+export function useDueQuestionnairesForWeek(
+  patientId: string | null,
+  week: number | null
+) {
+  return useQuery({
+    queryKey: ['dueQuestionnairesForWeek', patientId, week],
+    enabled: !!patientId && week != null,
+    queryFn: async (): Promise<DueQuestionnaire[]> => {
+      const sb = createSupabaseBrowserClient();
+      const { data, error } = await (sb as unknown as { rpc: RpcFn }).rpc(
+        'due_questionnaires_for_week',
+        { p_patient_id: patientId, p_week: week }
+      );
+      if (error) throw new Error(error.message);
+      return (data as DueQuestionnaire[] | null) ?? [];
+    }
+  });
+}
+
 /** The items (questions) of a questionnaire version, in display order. */
 export function useQuestionnaireItems(questionnaireId: string | null) {
   return useQuery({
@@ -254,6 +278,53 @@ export function useSubmitQuestionnaireResponse() {
       );
       if (error) throw new Error(error.message);
       return data as string;
+    }
+  });
+}
+
+// --- Reading submitted responses (clinician / patient display) --------------
+
+export type FillSource = 'patient' | 'caregiver' | 'clinician' | 'therapist';
+
+export interface QuestionnaireResponseItem {
+  item_key: string;
+  position: number;
+  prompt: string;
+  item_type: ItemType;
+  options: { value: string; label: string }[] | null;
+  value_text: string | null;
+  value_num: number | null;
+}
+
+export interface QuestionnaireResponseRecord {
+  response_id: string;
+  questionnaire_key: string;
+  questionnaire_title: string;
+  lang: string;
+  submitted_at: string;
+  filled_by: FillSource;
+  week_number: number | null;
+  cycle_number: number | null;
+  items: QuestionnaireResponseItem[];
+}
+
+/**
+ * Submitted questionnaire responses for one patient, newest first, each with
+ * its per-item answers. Gated server-side to the patient themselves, a clinician
+ * with an active session, or an admin. Raw values only — no scoring.
+ */
+export function usePatientQuestionnaireResponses(patientId: string | null) {
+  return useQuery({
+    queryKey: ['patientQuestionnaireResponses', patientId],
+    enabled: !!patientId,
+    queryFn: async (): Promise<QuestionnaireResponseRecord[]> => {
+      const sb = createSupabaseBrowserClient();
+      const { data, error } = await (sb as unknown as { rpc: RpcFn }).rpc(
+        'list_patient_questionnaire_responses',
+        { p_patient_id: patientId }
+      );
+      if (error) throw new Error(error.message);
+      return (data as QuestionnaireResponseRecord[] | null) ?? [];
     }
   });
 }
