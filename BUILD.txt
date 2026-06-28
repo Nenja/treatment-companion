@@ -1,3 +1,7 @@
+=== 2026-06-28 — Library items collapsed by default (clinician QuestionnairePanel) ===
+- The "Add from the library" list rendered each questionnaire as a tall card (title + description + item count + cadence select + Enable). With several published it was a long wall. Each item is now a collapsed row: title + (item count · LANG · "Enabled" if already on) + chevron; tap to expand the description, cadence picker and Enable button. Per-key open state (libOpen), collapsed by default; aria-expanded set. No i18n changes (reused existing keys); no schema change.
+- VERIFIED: tsc 0; eslint 0; font-stub build 105/105; layout SHA restored.
+- NOTE: this is the clinician per-patient library ("Add from the library"). The admin page's "Questionnaires" list (existingHeading) is already compact single rows.
 === 2026-06-28 — Questionnaires folded into the check-in flow + clinician responses view ===
 - UX FIX (the "why fill it AFTER finishing?" problem): the check-in wizard showed its own "step N of N" and a Submit button, then ambushed the patient with questionnaires. Now they're ONE continuous flow with a single finish; core check-in is still saved first (data integrity), but the patient is never told they're done until they actually are.
 - NEW MIGRATION 0119 (read-only, no schema change), validated in PG16 harness:

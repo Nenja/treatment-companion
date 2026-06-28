@@ -60,6 +60,9 @@ export function QuestionnairePanel({
 
   // Per-library-row chosen cadence (defaults to "every check-in").
   const [cadence, setCadence] = useState<Record<string, string>>({});
+  // Per-library-row expand state — collapsed by default so a long library is
+  // a scannable list of titles; expanding reveals details + the enable control.
+  const [libOpen, setLibOpen] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
 
   function cadenceLabel(q: Pick<PatientQuestionnaire, 'schedule_kind' | 'schedule_n'>) {
@@ -201,56 +204,81 @@ export function QuestionnairePanel({
               const alreadyOn = enabledList.some(
                 (e) => e.questionnaire_key === q.key && e.active && e.source === 'patient'
               );
+              const isOpen = libOpen[q.key] ?? false;
               return (
                 <li
                   key={q.questionnaire_id}
                   className="rounded-[var(--radius-card)] border border-stone bg-cream p-3"
                 >
-                  <p className="text-[14px] font-semibold text-ink">{q.title}</p>
-                  {q.description && (
-                    <p className="mt-0.5 text-[12px] leading-relaxed text-ink-muted">
-                      {q.description}
-                    </p>
+                  <button
+                    type="button"
+                    onClick={() => setLibOpen((s) => ({ ...s, [q.key]: !isOpen }))}
+                    aria-expanded={isOpen}
+                    className="flex w-full items-start justify-between gap-3 text-left"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-[14px] font-semibold text-ink">
+                        {q.title}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] text-ink-muted">
+                        {t('itemCount', { count: q.item_count })}
+                        {` · ${q.lang.toUpperCase()}`}
+                        {alreadyOn && ` · ${t('enabledBadge')}`}
+                      </span>
+                    </span>
+                    <span
+                      aria-hidden
+                      className={`shrink-0 text-[13px] text-ink-muted transition-transform ${
+                        isOpen ? 'rotate-180' : ''
+                      }`}
+                    >
+                      ▾
+                    </span>
+                  </button>
+                  {isOpen && (
+                    <div className="mt-2 border-t border-stone/60 pt-2">
+                      {q.description && (
+                        <p className="text-[12px] leading-relaxed text-ink-muted">
+                          {q.description}
+                        </p>
+                      )}
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <label className="sr-only" htmlFor={`cadence-${q.key}`}>
+                          {t('cadenceLabel')}
+                        </label>
+                        <select
+                          id={`cadence-${q.key}`}
+                          value={cadence[q.key] ?? 'every_checkin'}
+                          onChange={(ev) =>
+                            setCadence((c) => ({ ...c, [q.key]: ev.target.value }))
+                          }
+                          className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-2 py-1.5 text-[12px] text-ink"
+                        >
+                          {CADENCES.map((c) => (
+                            <option key={c.value} value={c.value}>
+                              {c.value === 'every_checkin'
+                                ? t('cadenceEvery')
+                                : c.value === 'every_2'
+                                  ? t('cadenceEveryN', { n: 2 })
+                                  : c.value === 'monthly'
+                                    ? t('cadenceMonthly')
+                                    : c.value === 'first_of_cycle'
+                                      ? t('cadenceFirstOfCycle')
+                                      : t('cadenceBaseline')}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => onEnable(q.key)}
+                          disabled={assign.isPending || alreadyOn}
+                          className="rounded-[var(--radius-button)] border border-sage-deep bg-sage-deep px-3 py-1.5 text-[12px] font-semibold text-on-accent transition-colors hover:opacity-90 disabled:opacity-50"
+                        >
+                          {alreadyOn ? t('enabledBadge') : t('enable')}
+                        </button>
+                      </div>
+                    </div>
                   )}
-                  <p className="mt-0.5 text-[11px] text-ink-muted">
-                    {t('itemCount', { count: q.item_count })}
-                    {` · ${q.lang.toUpperCase()}`}
-                  </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <label className="sr-only" htmlFor={`cadence-${q.key}`}>
-                      {t('cadenceLabel')}
-                    </label>
-                    <select
-                      id={`cadence-${q.key}`}
-                      value={cadence[q.key] ?? 'every_checkin'}
-                      onChange={(ev) =>
-                        setCadence((c) => ({ ...c, [q.key]: ev.target.value }))
-                      }
-                      className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-2 py-1.5 text-[12px] text-ink"
-                    >
-                      {CADENCES.map((c) => (
-                        <option key={c.value} value={c.value}>
-                          {c.value === 'every_checkin'
-                            ? t('cadenceEvery')
-                            : c.value === 'every_2'
-                              ? t('cadenceEveryN', { n: 2 })
-                              : c.value === 'monthly'
-                                ? t('cadenceMonthly')
-                                : c.value === 'first_of_cycle'
-                                  ? t('cadenceFirstOfCycle')
-                                  : t('cadenceBaseline')}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => onEnable(q.key)}
-                      disabled={assign.isPending || alreadyOn}
-                      className="rounded-[var(--radius-button)] border border-sage-deep bg-sage-deep px-3 py-1.5 text-[12px] font-semibold text-on-accent transition-colors hover:opacity-90 disabled:opacity-50"
-                    >
-                      {alreadyOn ? t('enabledBadge') : t('enable')}
-                    </button>
-                  </div>
                 </li>
               );
             })}
