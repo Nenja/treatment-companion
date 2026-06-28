@@ -54,9 +54,13 @@ export interface PatientQuestionnaire {
 }
 
 /** The published library, latest active version per key. Care-pro / admin only. */
-export function useLibraryQuestionnaires(lang?: string | null) {
+export function useLibraryQuestionnaires(
+  lang?: string | null,
+  enabled: boolean = true
+) {
   return useQuery({
     queryKey: ['questionnaireLibrary', lang ?? null],
+    enabled,
     queryFn: async (): Promise<LibraryQuestionnaire[]> => {
       const sb = createSupabaseBrowserClient();
       const { data, error } = await (sb as unknown as { rpc: RpcFn }).rpc(

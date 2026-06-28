@@ -8,11 +8,8 @@ import {
   usePatientQuestionnaires,
   useAssignQuestionnaire,
   useSetAssignmentActive,
-  usePatientQuestionnaireResponses,
   type ScheduleKind,
-  type PatientQuestionnaire,
-  type QuestionnaireResponseItem,
-  type QuestionnaireResponseRecord
+  type PatientQuestionnaire
 } from '@/lib/supabase/questionnaires';
 
 /**
@@ -53,7 +50,10 @@ export function QuestionnairePanel({
 }) {
   const t = useTranslations('clinician.questionnaires');
   const [langFilter, setLangFilter] = useState<string | null>(null);
-  const library = useLibraryQuestionnaires(langFilter);
+  // The library is tucked behind a toggle so it doesn't crowd the panel when
+  // dense; it's only fetched once opened.
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const library = useLibraryQuestionnaires(langFilter, libraryOpen);
   const enabled = usePatientQuestionnaires(patientId);
   const assign = useAssignQuestionnaire();
   const setActive = useSetAssignmentActive(patientId);
@@ -63,6 +63,8 @@ export function QuestionnairePanel({
   // Per-library-row expand state — collapsed by default so a long library is
   // a scannable list of titles; expanding reveals details + the enable control.
   const [libOpen, setLibOpen] = useState<Record<string, boolean>>({});
+  // Free-text filter over the library (title / description / key).
+  const [librarySearch, setLibrarySearch] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   function cadenceLabel(q: Pick<PatientQuestionnaire, 'schedule_kind' | 'schedule_n'>) {
@@ -110,6 +112,17 @@ export function QuestionnairePanel({
   }
 
   const enabledList = enabled.data ?? [];
+
+  const librarySearchLc = librarySearch.trim().toLowerCase();
+  const libraryAll = library.data ?? [];
+  const libraryRows = librarySearchLc
+    ? libraryAll.filter(
+        (q) =>
+          q.title.toLowerCase().includes(librarySearchLc) ||
+          (q.description ?? '').toLowerCase().includes(librarySearchLc) ||
+          q.key.toLowerCase().includes(librarySearchLc)
+      )
+    : libraryAll;
 
   return (
     <CockpitPanelDrawer onClose={onClose}>
@@ -172,13 +185,30 @@ export function QuestionnairePanel({
         )}
       </div>
 
-      {/* Submitted responses for this patient */}
-      <ResponsesSection patientId={patientId} />
-
-      {/* Add from library */}
+      {/* Add from library — behind a toggle so a dense library doesn't crowd
+          the panel; opening it also triggers the fetch. */}
       <div className="mt-6">
-        <h3 className="eyebrow">{t('libraryHeading')}</h3>
-        <label className="mt-2 block text-[12px] text-ink-muted">
+        <button
+          type="button"
+          onClick={() => setLibraryOpen((o) => !o)}
+          aria-expanded={libraryOpen}
+          className="flex w-full items-center justify-between gap-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft px-3 py-2.5 text-left transition-colors hover:bg-stone-soft"
+        >
+          <span className="text-[14px] font-semibold text-ink">
+            {t('libraryToggle')}
+          </span>
+          <span
+            aria-hidden
+            className={`text-[13px] text-ink-muted transition-transform ${
+              libraryOpen ? 'rotate-180' : ''
+            }`}
+          >
+            ▾
+          </span>
+        </button>
+        {libraryOpen && (
+          <div className="mt-3">
+            <label className="block text-[12px] text-ink-muted">
           {t('languageFilter')}{' '}
           <select
             value={langFilter ?? ''}
@@ -194,13 +224,23 @@ export function QuestionnairePanel({
             ))}
           </select>
         </label>
+        <input
+          type="search"
+          value={librarySearch}
+          onChange={(e) => setLibrarySearch(e.target.value)}
+          placeholder={t('searchPlaceholder')}
+          aria-label={t('searchPlaceholder')}
+          className="mt-2 w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[13px] text-ink"
+        />
         {library.isLoading ? (
           <p className="mt-2 text-[13px] text-ink-muted">{t('loading')}</p>
-        ) : (library.data ?? []).length === 0 ? (
+        ) : libraryAll.length === 0 ? (
           <p className="mt-2 text-[13px] text-ink-muted">{t('libraryEmpty')}</p>
+        ) : libraryRows.length === 0 ? (
+          <p className="mt-2 text-[13px] text-ink-muted">{t('searchNoMatches')}</p>
         ) : (
           <ul className="mt-2 space-y-2">
-            {(library.data ?? []).map((q) => {
+            {libraryRows.map((q) => {
               const alreadyOn = enabledList.some(
                 (e) => e.questionnaire_key === q.key && e.active && e.source === 'patient'
               );
@@ -284,6 +324,8 @@ export function QuestionnairePanel({
             })}
           </ul>
         )}
+          </div>
+        )}
       </div>
 
       <p className="mt-6 text-[11px] leading-relaxed text-ink-muted">
@@ -293,135 +335,3 @@ export function QuestionnairePanel({
   );
 }
 
-/** Human-readable answer for one item, mapping option values back to labels. */
-function formatAnswer(
-  item: QuestionnaireResponseItem,
-  t: ReturnType<typeof useTranslations>
-): string {
-  const labelFor = (val: string) =>
-    item.options?.find((o) => o.value === val)?.label ?? val;
-  switch (item.item_type) {
-    case 'boolean':
-      if (item.value_num != null) return item.value_num === 1 ? t('answerYes') : t('answerNo');
-      if (item.value_text === 'true') return t('answerYes');
-      if (item.value_text === 'false') return t('answerNo');
-      return item.value_text ?? '—';
-    case 'nrs_0_10':
-    case 'number':
-      return item.value_num != null ? String(item.value_num) : (item.value_text ?? '—');
-    case 'single_choice':
-    case 'likert':
-      return item.value_text ? labelFor(item.value_text) : '—';
-    case 'multi_choice':
-      if (!item.value_text) return '—';
-      try {
-        const arr = JSON.parse(item.value_text) as string[];
-        return arr.length ? arr.map(labelFor).join(', ') : '—';
-      } catch {
-        return item.value_text;
-      }
-    case 'text':
-    default:
-      return item.value_text && item.value_text.trim() ? item.value_text : '—';
-  }
-}
-
-/**
- * Read-only list of the patient's submitted questionnaire responses, newest
- * first; each expands to show the per-item answers. No score is shown.
- */
-function ResponsesSection({ patientId }: { patientId: string }) {
-  const t = useTranslations('clinician.questionnaires');
-  const responses = usePatientQuestionnaireResponses(patientId);
-  const [open, setOpen] = useState<Record<string, boolean>>({});
-
-  const list = responses.data ?? [];
-
-  const filledByLabel = (who: QuestionnaireResponseRecord['filled_by']) => {
-    switch (who) {
-      case 'caregiver':
-        return t('filledCaregiver');
-      case 'clinician':
-        return t('filledClinician');
-      case 'therapist':
-        return t('filledTherapist');
-      default:
-        return t('filledSelf');
-    }
-  };
-
-  return (
-    <div className="mt-6">
-      <h3 className="eyebrow">{t('responsesHeading')}</h3>
-      {responses.isLoading ? (
-        <p className="mt-2 text-[13px] text-ink-muted">{t('responsesLoading')}</p>
-      ) : responses.isError ? (
-        <p className="mt-2 text-[13px] text-amber-deep">{t('responsesError')}</p>
-      ) : list.length === 0 ? (
-        <p className="mt-2 text-[13px] text-ink-muted">{t('responsesNone')}</p>
-      ) : (
-        <ul className="mt-2 space-y-2">
-          {list.map((r) => {
-            const isOpen = open[r.response_id] ?? false;
-            const when = (() => {
-              try {
-                return new Date(r.submitted_at).toLocaleDateString();
-              } catch {
-                return r.submitted_at;
-              }
-            })();
-            return (
-              <li
-                key={r.response_id}
-                className="rounded-[var(--radius-card)] border border-stone bg-cream p-3"
-              >
-                <button
-                  type="button"
-                  onClick={() =>
-                    setOpen((s) => ({ ...s, [r.response_id]: !isOpen }))
-                  }
-                  aria-expanded={isOpen}
-                  className="flex w-full items-start justify-between gap-3 text-left"
-                >
-                  <span className="min-w-0">
-                    <span className="block text-[14px] font-semibold text-ink">
-                      {r.questionnaire_title}
-                    </span>
-                    <span className="mt-0.5 block text-[12px] text-ink-muted">
-                      {when}
-                      {r.week_number != null && ` · ${t('respWeek', { week: r.week_number })}`}
-                      {` · ${filledByLabel(r.filled_by)}`}
-                    </span>
-                  </span>
-                  <span
-                    aria-hidden
-                    className={`shrink-0 text-[13px] text-ink-muted transition-transform ${
-                      isOpen ? 'rotate-180' : ''
-                    }`}
-                  >
-                    ▾
-                  </span>
-                </button>
-                {isOpen && (
-                  <dl className="mt-3 space-y-2 border-t border-stone/60 pt-3">
-                    {r.items.map((item) => (
-                      <div key={item.item_key}>
-                        <dt className="text-[12px] text-ink-muted">{item.prompt}</dt>
-                        <dd className="mt-0.5 whitespace-pre-wrap text-[14px] text-ink">
-                          {formatAnswer(item, t)}
-                        </dd>
-                      </div>
-                    ))}
-                    {r.items.length === 0 && (
-                      <p className="text-[13px] text-ink-muted">{t('respNoItems')}</p>
-                    )}
-                  </dl>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
-}

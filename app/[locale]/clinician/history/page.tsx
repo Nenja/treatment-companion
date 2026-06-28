@@ -13,6 +13,11 @@ import {
   type HistoryGoal,
   type HistoryRater
 } from '@/lib/supabase/patientHistory';
+import {
+  usePatientQuestionnaireResponses,
+  type QuestionnaireResponseRecord
+} from '@/lib/supabase/questionnaires';
+import { formatAnswer } from '@/lib/questionnaireAnswers';
 import { GoalSparkline } from '@/components/clinician/GoalSparkline';
 import { SkeletonScreen, SkeletonBlock } from '@/components/feedback/Skeleton';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -178,6 +183,8 @@ export default function ClinicianHistoryPage() {
             <div className="space-y-4">
               {cycles.map((c, i) => <CycleCard key={c.id} c={c} defaultOpen={i === 0} t={t} locale={locale} />)}
             </div>
+
+            <QuestionnaireResponsesSection patientId={patientId} locale={locale} />
           </>
         )}
       </main>
@@ -287,5 +294,99 @@ function GoalRow({ g, t }: { g: HistoryGoal; t: T }) {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Full questionnaire-response history for the patient (all cycles), newest
+ * first; each response expands to its per-item answers. This is the durable
+ * archive — the "Since last visit" card only surfaces the recent ones. Reads
+ * the same access-gated RPC; read-only, no scoring.
+ */
+function QuestionnaireResponsesSection({
+  patientId,
+  locale
+}: {
+  patientId: string | null;
+  locale: string;
+}) {
+  const tQ = useTranslations('clinician.questionnaires');
+  const responses = usePatientQuestionnaireResponses(patientId);
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const list = responses.data ?? [];
+
+  const filledByLabel = (who: QuestionnaireResponseRecord['filled_by']) =>
+    who === 'caregiver'
+      ? tQ('filledCaregiver')
+      : who === 'clinician'
+        ? tQ('filledClinician')
+        : who === 'therapist'
+          ? tQ('filledTherapist')
+          : tQ('filledSelf');
+
+  return (
+    <section className="mt-8">
+      <h2 className="font-display text-[20px] text-ink">{tQ('responsesHeading')}</h2>
+      {responses.isLoading ? (
+        <p className="mt-2 text-[14px] text-ink-muted">{tQ('responsesLoading')}</p>
+      ) : responses.isError ? (
+        <p className="mt-2 text-[14px] text-amber-deep">{tQ('responsesError')}</p>
+      ) : list.length === 0 ? (
+        <p className="mt-2 text-[14px] text-ink-muted">{tQ('responsesNone')}</p>
+      ) : (
+        <ul className="mt-3 space-y-2">
+          {list.map((r) => {
+            const isOpen = open[r.response_id] ?? false;
+            return (
+              <li
+                key={r.response_id}
+                className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3"
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpen((s) => ({ ...s, [r.response_id]: !isOpen }))}
+                  aria-expanded={isOpen}
+                  className="flex w-full items-start justify-between gap-3 text-left"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-[15px] font-semibold text-ink">
+                      {r.questionnaire_title}
+                    </span>
+                    <span className="mt-0.5 block text-[12px] text-ink-muted">
+                      {formatLongDate(r.submitted_at, locale)}
+                      {r.week_number != null && ` · ${tQ('respWeek', { week: r.week_number })}`}
+                      {` · ${filledByLabel(r.filled_by)}`}
+                    </span>
+                  </span>
+                  <span
+                    aria-hidden
+                    className={`shrink-0 text-[13px] text-ink-muted transition-transform ${
+                      isOpen ? 'rotate-180' : ''
+                    }`}
+                  >
+                    ▾
+                  </span>
+                </button>
+                {isOpen && (
+                  <dl className="mt-3 space-y-2 border-t border-stone/60 pt-3">
+                    {r.items.map((item) => (
+                      <div key={item.item_key}>
+                        <dt className="text-[12px] text-ink-muted">{item.prompt}</dt>
+                        <dd className="mt-0.5 whitespace-pre-wrap text-[14px] text-ink">
+                          {formatAnswer(item, tQ)}
+                        </dd>
+                      </div>
+                    ))}
+                    {r.items.length === 0 && (
+                      <p className="text-[13px] text-ink-muted">{tQ('respNoItems')}</p>
+                    )}
+                  </dl>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }

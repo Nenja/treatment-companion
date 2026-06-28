@@ -3,8 +3,14 @@
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { formatLongDate } from '@/lib/dates';
+import { useModalA11y } from '@/lib/useModalA11y';
+import { formatAnswer } from '@/lib/questionnaireAnswers';
 import { VideoPlayerModal } from '@/components/clinician/VideoPlayerModal';
 import { useSetClinicVideoScore } from '@/lib/supabase/clinicianPatient';
+import {
+  usePatientQuestionnaireResponses,
+  type QuestionnaireResponseRecord
+} from '@/lib/supabase/questionnaires';
 import {
   usePatientObservations,
   type Observation
@@ -146,10 +152,14 @@ export function VisitChanges({
   const t = useTranslations('visitChanges');
   const tLast = useTranslations('lastTreatment');
   const tv = useTranslations('clinician.video');
+  const tQ = useTranslations('clinician.questionnaires');
+  const tA11y = useTranslations('a11y');
   const locale = useLocale();
   const setClinicScore = useSetClinicVideoScore();
   const observationsQuery = usePatientObservations(patientId);
   const wearable = buildWearableSeries(observationsQuery.data ?? []);
+  const responsesQuery = usePatientQuestionnaireResponses(patientId);
+  const [openQ, setOpenQ] = useState<string | null>(null);
   const [video, setVideo] = useState<{
     path: string;
     title: string;
@@ -173,6 +183,30 @@ export function VisitChanges({
   const anchoredToTreatment = !!lastTreatmentDate;
   const anchorIso = lastTreatmentDate ?? cycleStartDate;
   const anchorMs = new Date(anchorIso).getTime();
+
+  // Questionnaire responses since the anchor, grouped by questionnaire so the
+  // card shows one button per questionnaire (a modal lists its answers).
+  const qGroups: {
+    key: string;
+    title: string;
+    records: QuestionnaireResponseRecord[];
+  }[] = [];
+  {
+    const byKey = new Map<string, (typeof qGroups)[number]>();
+    for (const r of responsesQuery.data ?? []) {
+      if (new Date(r.submitted_at).getTime() < anchorMs) continue;
+      const g = byKey.get(r.questionnaire_key);
+      if (g) g.records.push(r);
+      else
+        byKey.set(r.questionnaire_key, {
+          key: r.questionnaire_key,
+          title: r.questionnaire_title,
+          records: [r]
+        });
+    }
+    qGroups.push(...byKey.values());
+  }
+  const openGroup = openQ ? qGroups.find((g) => g.key === openQ) ?? null : null;
 
   const since = [...checkins]
     .filter((c) => new Date(c.submittedAt).getTime() >= anchorMs)
@@ -469,6 +503,50 @@ export function VisitChanges({
           )}
         </>
       )}
+      {qGroups.length > 0 && (
+        <div className="mt-3">
+          <p className="text-[12px] font-semibold text-ink-soft">
+            {t('questionnairesHeading')}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {qGroups.map((g) => (
+              <button
+                key={g.key}
+                type="button"
+                onClick={() => setOpenQ(g.key)}
+                className="inline-flex items-center gap-1.5 rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[13px] font-semibold text-sage-deep hover:bg-stone-soft"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M9 5h6M9 5a2 2 0 0 0-2 2v0M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M7 7H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2M9 13l2 2 4-4" />
+                </svg>
+                {g.title}
+                <span className="ml-1 rounded-full bg-stone-soft px-1.5 py-0.5 text-[11px] font-semibold text-ink-muted">
+                  {g.records.length}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {openGroup && (
+        <QuestionnaireResponsesModal
+          group={openGroup}
+          onClose={() => setOpenQ(null)}
+          tQ={tQ}
+          tA11y={tA11y}
+          formatDate={(iso) => formatLongDate(iso, locale)}
+        />
+      )}
       {video && (
         <VideoPlayerModal
           path={video.path}
@@ -493,5 +571,83 @@ export function VisitChanges({
         />
       )}
     </section>
+  );
+}
+
+/** Modal listing every response for one questionnaire (since the anchor),
+ *  newest first, each with its per-item answers. Read-only, no score. */
+function QuestionnaireResponsesModal({
+  group,
+  onClose,
+  tQ,
+  tA11y,
+  formatDate
+}: {
+  group: { key: string; title: string; records: QuestionnaireResponseRecord[] };
+  onClose: () => void;
+  tQ: ReturnType<typeof useTranslations>;
+  tA11y: ReturnType<typeof useTranslations>;
+  formatDate: (iso: string) => string;
+}) {
+  const containerRef = useModalA11y(onClose);
+  const filledByLabel = (who: QuestionnaireResponseRecord['filled_by']) =>
+    who === 'caregiver'
+      ? tQ('filledCaregiver')
+      : who === 'clinician'
+        ? tQ('filledClinician')
+        : who === 'therapist'
+          ? tQ('filledTherapist')
+          : tQ('filledSelf');
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 sm:items-center sm:p-4">
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={group.title}
+        className="flex max-h-[92vh] w-full max-w-[480px] flex-col overflow-hidden rounded-t-[var(--radius-card)] border border-stone bg-cream sm:rounded-[var(--radius-card)]"
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-stone/70 px-5 py-3">
+          <span className="font-display text-[18px] text-ink">{group.title}</span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={tA11y('close')}
+            className="rounded-full p-1 text-ink-muted hover:bg-stone-soft hover:text-ink"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="space-y-4 overflow-y-auto px-5 py-4">
+          {group.records.map((r) => (
+            <div
+              key={r.response_id}
+              className="rounded-[var(--radius-card)] border border-stone bg-cream-soft p-3"
+            >
+              <p className="text-[12px] text-ink-muted">
+                {formatDate(r.submitted_at)}
+                {r.week_number != null && ` · ${tQ('respWeek', { week: r.week_number })}`}
+                {` · ${filledByLabel(r.filled_by)}`}
+              </p>
+              <dl className="mt-2 space-y-2">
+                {r.items.map((item) => (
+                  <div key={item.item_key}>
+                    <dt className="text-[12px] text-ink-muted">{item.prompt}</dt>
+                    <dd className="mt-0.5 whitespace-pre-wrap text-[14px] text-ink">
+                      {formatAnswer(item, tQ)}
+                    </dd>
+                  </div>
+                ))}
+                {r.items.length === 0 && (
+                  <p className="text-[13px] text-ink-muted">{tQ('respNoItems')}</p>
+                )}
+              </dl>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
