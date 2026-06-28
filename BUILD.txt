@@ -1,3 +1,10 @@
+=== 2026-06-28 — Library moved behind an "Available questionnaires" toggle ===
+- The "Add from the library" block (search + language filter + list) crowded the QuestionnairePanel and would dominate it with a dense library. It's now collapsed behind an "Available questionnaires" toggle button (libraryToggle); opening it reveals the search/filter/list. useLibraryQuestionnaires gained an `enabled` arg (default true) and is passed libraryOpen, so the library is only FETCHED when opened (lazy). Enabled list + Responses remain always-visible above it.
+- New key clinician.questionnaires.libraryToggle (en + da; da first-pass). libraryHeading retained (still used as the search/section context, now unused header text — harmless, parity intact).
+- VERIFIED: tsc 0; eslint 0; i18n parity; font-stub build 105/105; layout SHA restored.
+=== 2026-06-28 — Library search (clinician QuestionnairePanel) ===
+- Added a search box to the "Add from the library" list. Free-text, client-side, case-insensitive; matches questionnaire title, description, or key. New librarySearch state; libraryRows derived by filter. Empty states distinguished: nothing published -> libraryEmpty; published but filtered out -> searchNoMatches. Sits under the language filter; works together with it. New keys clinician.questionnaires.searchPlaceholder / searchNoMatches (en + da; da first-pass).
+- VERIFIED: tsc 0; eslint 0; i18n parity en==da; font-stub build 105/105; layout SHA restored.
 === 2026-06-28 — Library items collapsed by default (clinician QuestionnairePanel) ===
 - The "Add from the library" list rendered each questionnaire as a tall card (title + description + item count + cadence select + Enable). With several published it was a long wall. Each item is now a collapsed row: title + (item count · LANG · "Enabled" if already on) + chevron; tap to expand the description, cadence picker and Enable button. Per-key open state (libOpen), collapsed by default; aria-expanded set. No i18n changes (reused existing keys); no schema change.
 - VERIFIED: tsc 0; eslint 0; font-stub build 105/105; layout SHA restored.

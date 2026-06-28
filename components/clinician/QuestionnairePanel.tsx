@@ -53,7 +53,10 @@ export function QuestionnairePanel({
 }) {
   const t = useTranslations('clinician.questionnaires');
   const [langFilter, setLangFilter] = useState<string | null>(null);
-  const library = useLibraryQuestionnaires(langFilter);
+  // The library is tucked behind a toggle so it doesn't crowd the panel when
+  // dense; it's only fetched once opened.
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const library = useLibraryQuestionnaires(langFilter, libraryOpen);
   const enabled = usePatientQuestionnaires(patientId);
   const assign = useAssignQuestionnaire();
   const setActive = useSetAssignmentActive(patientId);
@@ -63,6 +66,8 @@ export function QuestionnairePanel({
   // Per-library-row expand state — collapsed by default so a long library is
   // a scannable list of titles; expanding reveals details + the enable control.
   const [libOpen, setLibOpen] = useState<Record<string, boolean>>({});
+  // Free-text filter over the library (title / description / key).
+  const [librarySearch, setLibrarySearch] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   function cadenceLabel(q: Pick<PatientQuestionnaire, 'schedule_kind' | 'schedule_n'>) {
@@ -110,6 +115,17 @@ export function QuestionnairePanel({
   }
 
   const enabledList = enabled.data ?? [];
+
+  const librarySearchLc = librarySearch.trim().toLowerCase();
+  const libraryAll = library.data ?? [];
+  const libraryRows = librarySearchLc
+    ? libraryAll.filter(
+        (q) =>
+          q.title.toLowerCase().includes(librarySearchLc) ||
+          (q.description ?? '').toLowerCase().includes(librarySearchLc) ||
+          q.key.toLowerCase().includes(librarySearchLc)
+      )
+    : libraryAll;
 
   return (
     <CockpitPanelDrawer onClose={onClose}>
@@ -175,10 +191,30 @@ export function QuestionnairePanel({
       {/* Submitted responses for this patient */}
       <ResponsesSection patientId={patientId} />
 
-      {/* Add from library */}
+      {/* Add from library — behind a toggle so a dense library doesn't crowd
+          the panel; opening it also triggers the fetch. */}
       <div className="mt-6">
-        <h3 className="eyebrow">{t('libraryHeading')}</h3>
-        <label className="mt-2 block text-[12px] text-ink-muted">
+        <button
+          type="button"
+          onClick={() => setLibraryOpen((o) => !o)}
+          aria-expanded={libraryOpen}
+          className="flex w-full items-center justify-between gap-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft px-3 py-2.5 text-left transition-colors hover:bg-stone-soft"
+        >
+          <span className="text-[14px] font-semibold text-ink">
+            {t('libraryToggle')}
+          </span>
+          <span
+            aria-hidden
+            className={`text-[13px] text-ink-muted transition-transform ${
+              libraryOpen ? 'rotate-180' : ''
+            }`}
+          >
+            ▾
+          </span>
+        </button>
+        {libraryOpen && (
+          <div className="mt-3">
+            <label className="block text-[12px] text-ink-muted">
           {t('languageFilter')}{' '}
           <select
             value={langFilter ?? ''}
@@ -194,13 +230,23 @@ export function QuestionnairePanel({
             ))}
           </select>
         </label>
+        <input
+          type="search"
+          value={librarySearch}
+          onChange={(e) => setLibrarySearch(e.target.value)}
+          placeholder={t('searchPlaceholder')}
+          aria-label={t('searchPlaceholder')}
+          className="mt-2 w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[13px] text-ink"
+        />
         {library.isLoading ? (
           <p className="mt-2 text-[13px] text-ink-muted">{t('loading')}</p>
-        ) : (library.data ?? []).length === 0 ? (
+        ) : libraryAll.length === 0 ? (
           <p className="mt-2 text-[13px] text-ink-muted">{t('libraryEmpty')}</p>
+        ) : libraryRows.length === 0 ? (
+          <p className="mt-2 text-[13px] text-ink-muted">{t('searchNoMatches')}</p>
         ) : (
           <ul className="mt-2 space-y-2">
-            {(library.data ?? []).map((q) => {
+            {libraryRows.map((q) => {
               const alreadyOn = enabledList.some(
                 (e) => e.questionnaire_key === q.key && e.active && e.source === 'patient'
               );
@@ -283,6 +329,8 @@ export function QuestionnairePanel({
               );
             })}
           </ul>
+        )}
+          </div>
         )}
       </div>
 
