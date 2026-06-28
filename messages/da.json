@@ -1737,6 +1737,7 @@
     "gasP1": "bedre end forventet",
     "gasP2": "meget bedre end forventet",
     "videosHeading": "Videoer",
+    "questionnairesHeading": "Spørgeskemaer",
     "videoLabel": "{goal} · Uge {week}",
     "videoTitle": "{goal} — Uge {week}",
     "wearableHeading": "Data fra bærbar enhed",
