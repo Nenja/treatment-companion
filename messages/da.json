@@ -1969,6 +1969,12 @@
     "submit": "Send",
     "continueLabel": "Fortsæt",
     "finish": "Afslut",
+    "continueLabel": "Fortsæt",
+    "finish": "Afslut",
+    "finishLater": "Afslut senere",
+    "leaveBody": "Din status er allerede gemt. Vil du forlade de resterende spørgsmål for nu?",
+    "leaveConfirm": "Forlad",
+    "keepGoing": "Fortsæt",
     "submitting": "Sender…",
     "yes": "Ja",
     "no": "Nej"

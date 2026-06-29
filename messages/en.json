@@ -1965,6 +1965,12 @@
     "submit": "Submit",
     "continueLabel": "Continue",
     "finish": "Finish",
+    "continueLabel": "Continue",
+    "finish": "Finish",
+    "finishLater": "Finish later",
+    "leaveBody": "Your check-in is already saved. Leave the remaining questions for now?",
+    "leaveConfirm": "Leave",
+    "keepGoing": "Keep going",
     "submitting": "Sending…",
     "yes": "Yes",
     "no": "No"

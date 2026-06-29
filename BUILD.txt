@@ -1,3 +1,10 @@
+=== 2026-06-28 — Questionnaire fill: add an exit ("Finish later") ===
+- FIX: patients were trapped in the post-check-in questionnaire(s) — submit was the only control, no way out. Added an exit affordance to QuestionnaireForm (header "Finish later", shown when an onExit is provided). Because the core check-in is already saved at the seam before questionnaires render, exiting is non-destructive to the check-in; only the current questionnaire's in-progress answers are dropped.
+- GUARD: if the current questionnaire has any entered answers, "Finish later" opens an inline confirm (leaveBody + Leave / Keep going) so taps don't lose typed answers; with nothing entered it exits immediately.
+- WIRING: PostCheckinQuestionnaires passes onExit={() => setIndex(dueList.length)}, which skips the remaining questionnaires and lands on the existing thank-you (which confirms the check-in saved + offers home). Already-submitted questionnaires in the sequence remain saved.
+- i18n: questionnaireFill.finishLater / leaveBody / leaveConfirm / keepGoing (en + da; da first-pass). No schema change.
+- VERIFIED: tsc 0; eslint 0; i18n parity; font-stub build 105/105; layout SHA restored.
+- NOTE: this is an EXIT, not a per-question Back. Going back to re-edit an already-submitted questionnaire in a multi-questionnaire sequence isn't supported (each submits on continue). Say the word if you want step-back between questionnaires.
 === 2026-06-28 — Full questionnaire-response history restored, in the History tab ===
 - Kept the new "Since last visit" buttons (recent, grouped by questionnaire) AND re-added the full responses archive — but now on the clinician History page (/clinician/history), not the QuestionnairePanel. New QuestionnaireResponsesSection at the bottom of the cycle-by-cycle list: ALL responses for the patient (all cycles), newest first, each expandable to its prompt/answer pairs. Read-only, no score.
 - DEDUP: extracted formatAnswer into lib/questionnaireAnswers.ts; VisitChanges and the History section both import it (removed VisitChanges' local copy + its now-unused QuestionnaireResponseItem import).

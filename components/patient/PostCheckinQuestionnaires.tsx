@@ -42,6 +42,7 @@ export function PostCheckinQuestionnaires({
       assignmentId={current.assignment_id}
       step={{ current: stepOffset + index + 1, total }}
       onDone={() => setIndex((i) => i + 1)}
+      onExit={() => setIndex(dueList.length)}
     />
   );
 }
