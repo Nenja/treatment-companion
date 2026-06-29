@@ -5,11 +5,13 @@ import { useTranslations } from 'next-intl';
 /**
  * Horizontal action row for the clinician patient page.
  *
- * Four entry points, always visible under the patient name:
- *   - medication           (no count — opens an inline panel)
- *   - therapist input      (count badge — opens an inline panel)
- *   - history              (no count — navigates to the history page)
- *   - export               (no count — opens the export modal)
+ * Entry points, always visible under the patient name, in review-first order:
+ *   - history          (navigates to the longitudinal record)
+ *   - questionnaires   (opens the questionnaire panel)
+ *   - training         (count badge — opens an inline panel)
+ *   - export           (opens the EHR-note export modal)
+ *   - consent          (the shield/video button — opens the consent panel)
+ *   - admin            (admins only — navigates to the global admin page)
  *
  * The row only renders the buttons and their count badges, and reports
  * taps via onSelect. WHAT happens on tap (open a panel, navigate, open
@@ -155,11 +157,11 @@ export function PatientActionRow({
 }) {
   const tA11y = useTranslations('a11y');
   const items: { id: PatientActionId; count?: number }[] = [
-    { id: 'training' },
-    { id: 'video' },
     { id: 'history' },
-    { id: 'export' },
     { id: 'questionnaires' },
+    { id: 'training' },
+    { id: 'export' },
+    { id: 'video' },
     ...(showAdmin ? [{ id: 'admin' as const }] : [])
   ];
 

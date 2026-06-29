@@ -22,7 +22,8 @@ export function QuestionnaireForm({
   weeklyCheckinId,
   assignmentId,
   step,
-  onDone
+  onDone,
+  onExit
 }: {
   questionnaireId: string;
   title: string;
@@ -30,6 +31,9 @@ export function QuestionnaireForm({
   assignmentId: string | null;
   step?: { current: number; total: number };
   onDone: () => void;
+  /** Leave the questionnaire flow without finishing (the check-in is already
+   *  saved). When omitted, no exit control is shown. */
+  onExit?: () => void;
 }) {
   const t = useTranslations('questionnaireFill');
   const itemsQuery = useQuestionnaireItems(questionnaireId);
@@ -38,6 +42,18 @@ export function QuestionnaireForm({
   // item_key -> raw value (multi_choice keeps a string[] internally).
   const [values, setValues] = useState<Record<string, string | string[]>>({});
   const [error, setError] = useState<string | null>(null);
+  const [confirmingExit, setConfirmingExit] = useState(false);
+
+  const hasAnswers = Object.values(values).some((v) =>
+    Array.isArray(v) ? v.length > 0 : v != null && v !== ''
+  );
+
+  function handleExit() {
+    if (!onExit) return;
+    // Guard against losing in-progress answers; the check-in itself is safe.
+    if (hasAnswers) setConfirmingExit(true);
+    else onExit();
+  }
 
   const items = itemsQuery.data ?? [];
 
@@ -91,12 +107,25 @@ export function QuestionnaireForm({
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-[560px] flex-col px-5 py-8">
-      {step && step.total > 1 && (
-        <p className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
-          {t('step', { current: step.current, total: step.total })}
-        </p>
-      )}
-      <h1 className="mt-1 font-display text-[22px] leading-tight text-ink">
+      <div className="flex items-center justify-between gap-3">
+        {step && step.total > 1 ? (
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-ink-muted">
+            {t('step', { current: step.current, total: step.total })}
+          </p>
+        ) : (
+          <span />
+        )}
+        {onExit && (
+          <button
+            type="button"
+            onClick={handleExit}
+            className="shrink-0 text-[13px] font-semibold text-ink-muted underline-offset-2 hover:text-ink hover:underline"
+          >
+            {t('finishLater')}
+          </button>
+        )}
+      </div>
+      <h1 className="mt-2 font-display text-[22px] leading-tight text-ink">
         {title}
       </h1>
       <p className="mt-1 text-[14px] leading-relaxed text-ink-muted">
@@ -135,20 +164,45 @@ export function QuestionnaireForm({
         </p>
       )}
 
-      <div className="mt-8">
-        <button
-          type="button"
-          onClick={onSubmit}
-          disabled={submit.isPending || itemsQuery.isLoading}
-          className="w-full rounded-[var(--radius-button)] border border-sage-deep bg-sage-deep px-4 py-3 text-[16px] font-semibold text-on-accent transition-colors hover:opacity-90 disabled:opacity-50"
-        >
-          {submit.isPending
-            ? t('submitting')
-            : step && step.current < step.total
-              ? t('continueLabel')
-              : t('finish')}
-        </button>
-      </div>
+      {confirmingExit ? (
+        <div className="mt-8 rounded-[var(--radius-card)] border border-stone bg-cream-soft p-4">
+          <p className="text-[14px] leading-relaxed text-ink">{t('leaveBody')}</p>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmingExit(false);
+                onExit?.();
+              }}
+              className="flex-1 rounded-[var(--radius-button)] border border-stone bg-cream px-4 py-2.5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
+            >
+              {t('leaveConfirm')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingExit(false)}
+              className="flex-1 rounded-[var(--radius-button)] border border-sage-deep bg-sage-deep px-4 py-2.5 text-[15px] font-semibold text-on-accent hover:opacity-90"
+            >
+              {t('keepGoing')}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-8">
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={submit.isPending || itemsQuery.isLoading}
+            className="w-full rounded-[var(--radius-button)] border border-sage-deep bg-sage-deep px-4 py-3 text-[16px] font-semibold text-on-accent transition-colors hover:opacity-90 disabled:opacity-50"
+          >
+            {submit.isPending
+              ? t('submitting')
+              : step && step.current < step.total
+                ? t('continueLabel')
+                : t('finish')}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
