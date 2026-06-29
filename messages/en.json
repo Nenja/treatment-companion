@@ -1,4 +1,19 @@
 {
+  "wearables": {
+    "heading": "Wearable",
+    "helper": "Connect a wearable to share activity and health data (e.g. heart rate, steps, sleep) with your care team. You can disconnect at any time.",
+    "connect": "Connect a wearable",
+    "connecting": "Opening…",
+    "connectError": "Couldn't start the connection. Please try again.",
+    "disconnect": "Disconnect",
+    "statusConnected": "Connected",
+    "statusPending": "Waiting for confirmation",
+    "statusRevoked": "Disconnected",
+    "statusError": "Connection problem",
+    "lastSync": "last synced {when}",
+    "never": "not yet",
+    "consentNote": "Your data is shared through a GDPR-compliant data processor and stored with your record. It is shown as-is to your care team and is not used to make automatic decisions."
+  },
   "app": {
     "name": "Treatment Companion"
   },

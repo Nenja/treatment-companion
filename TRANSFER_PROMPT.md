@@ -92,3 +92,16 @@ not skip the work. Reusable audit/review prompts are welcome.
 **Your first reply:** confirm you've read `HANDOVER.md`, state the current build
 + migration in a line or two, and either wait for my “go” or ask the one thing
 you need to start.
+
+---
+
+**Since this prompt was last fully rewritten (catch-up, newest work):** the
+questionnaire engine (migrations 0114–0119) and a **wearable ingestion module via
+an EU aggregator** (migration **0120**, ships **OFF**) have landed — so the
+current migration ceiling is **0120**, not 0111. The wearable module is
+documented in `HANDOVER.md §5.15` and **`lib/wearables/README.md`** (env vars,
+the aggregator-contract reconciliation checklist, and the DPIA/DPA/sub-processor
+compliance gates). It is descriptive-only and feature-flagged off; before real
+patient data it needs DPO sign-off and `aggregator.ts` reconciled against the
+chosen aggregator's live docs. **User DB action:** apply
+`0120_wearable_connection.sql`, then `npm run gen:types`.

@@ -21,6 +21,7 @@ import { LanguageSelect, switchLocalePath } from '@/components/settings/Language
 import { VersionTag } from '@/components/layout/VersionTag';
 import { useSetPreferredLocale, type AppLocale } from '@/lib/supabase/locale';
 import { VideoConsentSettings } from '@/components/settings/VideoConsentSettings';
+import { WearableConnectPanel } from '@/components/patient/WearableConnectPanel';
 import {
   professionOptions,
   type ProfessionCode
@@ -457,6 +458,8 @@ export default function ProfilePage() {
             </p>
           </div>
         )}
+
+        {isPatient && <WearableConnectPanel />}
 
         {isPatient && (
           <div className="mt-10 border-t border-stone/70 pt-7">

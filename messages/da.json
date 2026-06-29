@@ -1,4 +1,19 @@
 {
+  "wearables": {
+    "heading": "Bærbar enhed",
+    "helper": "Forbind en bærbar enhed for at dele aktivitets- og helbredsdata (f.eks. puls, skridt, søvn) med dit behandlingsteam. Du kan afbryde forbindelsen når som helst.",
+    "connect": "Forbind en enhed",
+    "connecting": "Åbner…",
+    "connectError": "Forbindelsen kunne ikke startes. Prøv igen.",
+    "disconnect": "Afbryd",
+    "statusConnected": "Forbundet",
+    "statusPending": "Afventer bekræftelse",
+    "statusRevoked": "Afbrudt",
+    "statusError": "Forbindelsesproblem",
+    "lastSync": "senest synkroniseret {when}",
+    "never": "endnu ikke",
+    "consentNote": "Dine data deles via en GDPR-kompatibel databehandler og gemmes sammen med din journal. De vises som de er til dit behandlingsteam og bruges ikke til at træffe automatiske beslutninger."
+  },
   "_meta": {
     "status": "PLACEHOLDER — needs native Danish reviewer before any user testing",
     "reviewedBy": null
