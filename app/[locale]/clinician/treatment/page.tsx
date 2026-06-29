@@ -36,6 +36,8 @@ import { TherapistInputPanel } from '@/components/clinician/TherapistInputPanel'
 import { GoalHandoffNotes } from '@/components/clinician/GoalHandoffNotes';
 import { EndSessionButton } from '@/components/clinician/EndSessionButton';
 import { FaceMap } from '@/components/clinician/FaceMap';
+import { ExportModal } from '@/components/clinician/ExportModal';
+import { buildEhrExport, type ExportTranslator } from '@/lib/ehrExport';
 import { isSessionEndingDeliberately } from '@/lib/sessionEndSignal';
 import { classifyError } from '@/lib/feedback';
 
@@ -211,6 +213,7 @@ function TreatmentRecordLoaded({
   const toast = useToast();
   const tFeedback = useTranslations('feedback');
   const t = useTranslations('treatment');
+  const tExport = useTranslations('ehrExport');
   // Localised labels for guidance methods and injection sides — defined
   // here so they can use the page's translator. Replace the module-level
   // English helpers at the call sites.
@@ -269,6 +272,10 @@ function TreatmentRecordLoaded({
 
   const [showCopyConfirm, setShowCopyConfirm] = useState(false);
   const [showTherapist, setShowTherapist] = useState(false);
+  // After a successful save we show a confirmation step (instead of leaving
+  // immediately) offering the EHR note for the treatment just recorded.
+  const [saved, setSaved] = useState(false);
+  const [showExport, setShowExport] = useState(false);
 
   // Last-treatment details modal — shown when the compact summary
   // line is tapped.
@@ -697,7 +704,9 @@ function TreatmentRecordLoaded({
       });
       touchSession.mutate();
       toast.success(tFeedback('successTreatment'));
-      back();
+      // Stay on a confirmation step so the clinician can grab the EHR note for
+      // the treatment just recorded; "Done" then returns to the patient page.
+      setSaved(true);
     } catch (err) {
       const key = classifyError(err);
       toast.error(tFeedback(key));
@@ -1423,6 +1432,84 @@ function TreatmentRecordLoaded({
           }}
         />
       )}
+
+      {saved && !showExport && (
+        <SavedDialog
+          title={t('savedTitle')}
+          body={t('savedBody')}
+          exportLabel={t('savedEhrNote')}
+          doneLabel={t('savedDone')}
+          onExport={() => setShowExport(true)}
+          onDone={back}
+        />
+      )}
+
+      {showExport && (
+        <ExportModal
+          initialText={buildEhrExport({
+            cycle: {
+              cycleNumber: isNewCycle
+                ? cycle.cycleNumber + 1
+                : cycle.cycleNumber,
+              startDate: isNewCycle ? date : cycle.startDate,
+              modality: cycle.modality
+            },
+            treatment: {
+              date,
+              drugProduct,
+              totalUnits: totalUnitsNum,
+              dilution: dilution.trim() || undefined,
+              guidance,
+              injections: [
+                ...(includesStandard
+                  ? validInjections.map((i) => ({
+                      muscle: i.muscle,
+                      side: i.side,
+                      doseUnits: parseFloat(i.doseUnits),
+                      note: i.note.trim() || undefined,
+                      isFace: false
+                    }))
+                  : []),
+                ...(includesFace
+                  ? faceMarks.map((m) => ({
+                      muscle: m.muscle,
+                      side: m.side,
+                      doseUnits: m.doseUnits,
+                      note: m.note || undefined,
+                      isFace: true
+                    }))
+                  : [])
+              ],
+              notes: notes.trim() || undefined
+            },
+            goals: [...activeGoals, ...data.archivedGoals].map((g) => ({
+              id: g.id,
+              patientFacingText: g.patientFacingText,
+              kind: g.kind,
+              nrsDirection: g.nrs?.direction,
+              nrsBaseline: g.nrs?.baselineValue ?? null,
+              nrsTarget: g.nrs?.targetValue ?? null,
+              anchors: g.gas ?? null
+            })),
+            // A treatment marks the start of a cycle, so its own cycle has no
+            // check-ins yet; in edit mode show the current cycle's check-ins.
+            checkins: isNewCycle
+              ? []
+              : data.checkins.map((c) => ({
+                  weekNumber: c.weekNumber,
+                  comment: c.comment ?? undefined,
+                  ratings: c.ratings.map((r) => ({
+                    approvedGoalId: r.approvedGoalId,
+                    ratingValue: r.ratingValue as -2 | -1 | 0 | 1 | 2 | null,
+                    nrsValue: r.nrsValue
+                  }))
+                })),
+            locale,
+            t: tExport as unknown as ExportTranslator
+          })}
+          onClose={() => setShowExport(false)}
+        />
+      )}
     </div>
   );
 }
@@ -1597,3 +1684,56 @@ function Field({
   );
 }
 
+
+/**
+ * Post-save confirmation. Lets the clinician grab the EHR note for the
+ * treatment just recorded, or head back to the patient page. Escape / outside
+ * intent resolves to "Done" (the save already succeeded).
+ */
+function SavedDialog({
+  title,
+  body,
+  exportLabel,
+  doneLabel,
+  onExport,
+  onDone
+}: {
+  title: string;
+  body: string;
+  exportLabel: string;
+  doneLabel: string;
+  onExport: () => void;
+  onDone: () => void;
+}) {
+  const ref = useModalA11y(onDone);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4">
+      <div
+        ref={ref}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="w-full max-w-[420px] rounded-[var(--radius-card)] border border-stone bg-cream p-5"
+      >
+        <h2 className="font-display text-[20px] leading-tight text-ink">{title}</h2>
+        <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">{body}</p>
+        <div className="mt-5 flex gap-2">
+          <button
+            type="button"
+            onClick={onExport}
+            className="flex-1 rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-2.5 text-[15px] font-semibold text-ink-soft hover:bg-stone-soft"
+          >
+            {exportLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onDone}
+            className="flex-1 rounded-[var(--radius-button)] border border-sage-deep bg-sage-deep px-4 py-2.5 text-[15px] font-semibold text-on-accent hover:opacity-90"
+          >
+            {doneLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
