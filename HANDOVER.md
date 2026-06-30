@@ -778,6 +778,49 @@ no feedback on a physician action, and no since-last-session delta.
   on the clinician patient page (they re-open the treatment form to see/edit
   it); it is single-shot per cycle (no thread); and it has no read receipt.
 
+### 5.15 Wearable ingestion via an EU aggregator (`0120`) — ships OFF
+
+Patients link a wearable (default Garmin) through an EU data **aggregator** (one
+integration → many providers; the aggregator holds the Garmin partnership). The
+aggregator pushes data to `POST /api/wearables/webhook`, which normalizes into
+the existing `observation` store (0069) — the clinician "wearable trend" (§5.8 /
+`VisitChanges`) already renders it. **Descriptive only**: no scores/alerts.
+
+- **DB (0120):** `wearable_connection` (patient↔aggregator link, status enum,
+  consent/sync timestamps; RLS patient-owns + clinician-read). Two SECURITY
+  DEFINER RPCs **granted to `service_role` only**: `set_wearable_connection_status`
+  (auth/deauth path) and `ingest_wearable_observations` (data path — resolves
+  patient from a `connected` row, forces `observation.source` from the provider,
+  dedups like `import_observations`). Needed because `import_observations`
+  authorizes a USER session and a webhook has none. Validated in the PG16 harness.
+- **Metric selection (0121):** `wearable_connection.metrics text[]` allowlist;
+  the webhook ingests only listed metrics (clinician choice + data-minimisation;
+  default steps/heart_rate/sleep_duration, empty = none). Set via
+  `set_wearable_import_metrics` (authorizes patient/clinician/admin, updates only
+  the allowlist, granted to `authenticated`). Clinician edits on the patient page
+  (`WearableImportSettings`); patient sees what's shared on `/profile`.
+  **Auth hardening note:** that RPC coalesces each authorization disjunct to
+  false — the same `... or current_app_role()='admin'` pattern in **0069
+  `import_observations`** can evaluate to NULL and skip its guard when the role
+  is NULL (not exploitable for real users, who always have a role); a forward
+  hardening migration for 0069 is worth doing if you want belt-and-braces.
+- **App:** `lib/wearables/{types,normalize,aggregator}.ts`,
+  `app/api/wearables/{connect,webhook,disconnect}/route.ts` (nodejs runtime),
+  `lib/supabase/wearableConnections.ts`, `components/patient/WearableConnectPanel.tsx`
+  (on `/profile`). **`aggregator.ts` is the only file with the external wire
+  contract** — written to a representative pattern; reconcile with the chosen
+  aggregator's live docs.
+- **Gating:** OFF by default. `NEXT_PUBLIC_WEARABLES_ENABLED` shows the UI; the
+  connect API 503s until the server env vars are set. Full env list, the
+  reconciliation checklist, and the **DPIA / DPA / sub-processor** gates are in
+  **`lib/wearables/README.md`**.
+- **Types:** `wearable_connection` + the two functions were hand-added to the
+  generated `lib/database.types.ts`; `npm run gen:types` after applying 0120
+  reproduces them.
+- **Provisional codings:** HR / resting HR / steps / SpO₂ / respiration use
+  confirmed LOINC; sleep / HRV / stress / calories / distance are provisional
+  (`urn:tc:wearable-metric`) pending terminology sign-off.
+
 ## 6. Build history (tags, oldest → newest)
 
 `copy-to-other-side` → `trim-header-and-meds` → `meds-to-actionrow` →

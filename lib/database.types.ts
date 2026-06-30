@@ -1758,6 +1758,59 @@ export type Database = {
           },
         ]
       }
+      wearable_connection: {
+        Row: {
+          aggregator: string
+          aggregator_user_id: string | null
+          connected_at: string | null
+          consented_at: string | null
+          created_at: string
+          id: string
+          last_sync_at: string | null
+          metrics: string[]
+          patient_id: string
+          provider: string
+          revoked_at: string | null
+          status: Database["public"]["Enums"]["wearable_connection_status"]
+        }
+        Insert: {
+          aggregator: string
+          aggregator_user_id?: string | null
+          connected_at?: string | null
+          consented_at?: string | null
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          metrics?: string[]
+          patient_id: string
+          provider: string
+          revoked_at?: string | null
+          status?: Database["public"]["Enums"]["wearable_connection_status"]
+        }
+        Update: {
+          aggregator?: string
+          aggregator_user_id?: string | null
+          connected_at?: string | null
+          consented_at?: string | null
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          metrics?: string[]
+          patient_id?: string
+          provider?: string
+          revoked_at?: string | null
+          status?: Database["public"]["Enums"]["wearable_connection_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wearable_connection_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patient"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2251,6 +2304,26 @@ export type Database = {
         }
         Returns: undefined
       }
+      ingest_wearable_observations: {
+        Args: {
+          p_aggregator: string
+          p_aggregator_user_id: string
+          p_observations: Json
+        }
+        Returns: number
+      }
+      set_wearable_import_metrics: {
+        Args: { p_connection_id: string; p_metrics: string[] }
+        Returns: undefined
+      }
+      set_wearable_connection_status: {
+        Args: {
+          p_aggregator_user_id: string
+          p_connection_id: string
+          p_status: Database["public"]["Enums"]["wearable_connection_status"]
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       ambulation_status:
@@ -2342,6 +2415,11 @@ export type Database = {
         | "baclofen_pump"
         | "surgery"
         | "other"
+      wearable_connection_status:
+        | "pending"
+        | "connected"
+        | "revoked"
+        | "error"
     }
     CompositeTypes: {
       face_mark_input: {
@@ -2614,6 +2692,12 @@ export const Constants = {
         "baclofen_pump",
         "surgery",
         "other",
+      ],
+      wearable_connection_status: [
+        "pending",
+        "connected",
+        "revoked",
+        "error",
       ],
     },
   },
