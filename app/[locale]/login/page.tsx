@@ -10,6 +10,20 @@ import { LanguageSelect } from '@/components/settings/LanguageSelect';
 import { VersionTag } from '@/components/layout/VersionTag';
 
 /**
+ * Whether to show the raw technical detail (Supabase code / HTTP status /
+ * message) under a login error. Shown only outside production — local dev and
+ * Vercel preview — because on the production login screen it would leak
+ * server/config internals to anyone. Fails CLOSED: if the environment can't be
+ * positively identified as dev/preview, the detail is hidden. To see it on a
+ * preview deploy, set NEXT_PUBLIC_VERCEL_ENV (or NEXT_PUBLIC_SENTRY_ENVIRONMENT)
+ * in the Vercel env vars — the same signal Sentry uses.
+ */
+const SHOW_LOGIN_ERROR_DETAIL =
+  process.env.NODE_ENV === 'development' ||
+  (process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT ??
+    process.env.NEXT_PUBLIC_VERCEL_ENV) === 'preview';
+
+/**
  * Email + password login. On success the AuthProvider picks up the new
  * session and refreshes the user/profile, then this page redirects
  * based on the resolved profile role.
@@ -106,13 +120,15 @@ export default function LoginPage() {
       // Log the real error — friendlyError deliberately hides it from the UI.
       console.error('[login] signInWithPassword failed:', { code, status, raw });
       setError(friendlyError(raw, status));
-      // Show the technical detail for anything that isn't a plain wrong
-      // password, so the actual cause (code / HTTP status / message) is visible.
+      // Technical detail (code / HTTP status / raw message) helps diagnose a
+      // non-credential failure, but it must not reach real users on production
+      // — gate it to dev/preview. The raw error is still logged above and
+      // captured by Sentry regardless.
       const isCredential =
         code === 'invalid_credentials' ||
         /invalid login|credentials|email not confirmed/i.test(raw);
       setDetail(
-        isCredential
+        !SHOW_LOGIN_ERROR_DETAIL || isCredential
           ? null
           : [code, status ? `HTTP ${status}` : null, raw]
               .filter(Boolean)
