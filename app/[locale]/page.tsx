@@ -7,6 +7,7 @@ import { addDaysIso } from '@/lib/dates';
 import { useAuth } from '@/lib/supabase/auth';
 import { usePatientHomeData } from '@/lib/supabase/patientHome';
 import { AppShell } from '@/components/layout/AppShell';
+import { CheckinOutboxBanner } from '@/components/patient/CheckinOutboxBanner';
 import { PatientHomeSkeleton } from '@/components/layout/PatientHomeSkeleton';
 import { SafetyNotice } from '@/components/layout/SafetyNotice';
 import { CheckinPromptCard } from '@/components/cards/CheckinPromptCard';
@@ -224,6 +225,10 @@ export default function PatientHomePage() {
     <AppShell helpPageKey="patientHome">
       {/* One-time orientation — shown only on a new patient's first visit. */}
       <OnboardingWizard role="patient" replayOnly />
+
+      {/* Offline: replays any queued check-in once back online; shows a quiet
+          status line while some are still waiting. */}
+      <CheckinOutboxBanner />
 
       {/* Cycle context eyebrow — plain language, just "weeks since
           treatment" so the patient doesn't have to think in cycles. */}

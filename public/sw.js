@@ -1,25 +1,128 @@
 // Service worker for Treatment Companion.
 //
-// Two responsibilities right now:
-//   1. Receive web push events and display notifications.
-//   2. Route notification clicks back into the app (open /checkin).
+// Responsibilities:
+//   1. Web push: receive push events + route notification clicks (unchanged).
+//   2. Offline support: an installable PWA that loads its static assets from
+//      cache and shows a friendly offline page when there's no connection.
 //
-// Caching for offline support is intentionally NOT implemented here.
-// A patient who is offline can't submit a check-in to the database
-// anyway; pretending the app works offline would make things worse.
-// We register a no-op fetch handler so the SW counts as "controlling"
-// the page (required for some PWA install prompts).
+// SAFETY DESIGN (this controls every user, so it's deliberately conservative):
+//   - Navigations are NETWORK-FIRST. Online users ALWAYS get the freshest app;
+//     the cache is only a fallback. This is what prevents a "stuck on stale
+//     code" failure, and it means a fixed deploy propagates normally.
+//   - API calls (/api/*), cross-origin requests (e.g. Supabase), and any
+//     non-GET request are NEVER cached or intercepted — authenticated/clinical
+//     data must not sit in a device cache. The SW only caches PUBLIC static
+//     assets (Next build chunks, icons, the offline page).
+//   - Authenticated HTML pages are NOT cached either; offline navigation shows
+//     /offline.html instead. (Combined with the check-in outbox, a patient who
+//     loses connection keeps their saved data and sees a clear message.)
+//
+// RECOVERY: bump CACHE_VERSION and redeploy to purge old caches. To fully
+// remove the SW in an emergency, replace this file's body with:
+//   self.addEventListener('install', () => self.skipWaiting());
+//   self.addEventListener('activate', (e) => e.waitUntil(
+//     self.registration.unregister()
+//       .then(() => self.clients.matchAll())
+//       .then((cs) => cs.forEach((c) => c.navigate(c.url)))));
+// and redeploy.
 
-self.addEventListener('install', () => {
+const CACHE_VERSION = 'tc-cache-v1';
+const PRECACHE = [
+  '/offline.html',
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/apple-touch-icon.png'
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches
+      .open(CACHE_VERSION)
+      .then((cache) => cache.addAll(PRECACHE))
+      .catch(() => {
+        // A missing precache asset must not block install.
+      })
+  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k))
+      );
+      await self.clients.claim();
+    })()
+  );
 });
 
-self.addEventListener('fetch', () => {
-  // No-op: let the browser handle the request normally.
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+
+  // Only handle GETs. Submits, RPCs, uploads etc. go straight to the network.
+  if (req.method !== 'GET') return;
+
+  const url = new URL(req.url);
+
+  // Never intercept cross-origin (Supabase, aggregator, fonts CDN) or our API.
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/')) return;
+
+  // Navigations: network-first, fall back to the offline page when offline.
+  // The HTML itself is never cached (it can be authenticated/per-patient).
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      (async () => {
+        try {
+          return await fetch(req);
+        } catch {
+          const cache = await caches.open(CACHE_VERSION);
+          const offline = await cache.match('/offline.html');
+          return offline || Response.error();
+        }
+      })()
+    );
+    return;
+  }
+
+  // Immutable Next build assets (content-hashed) + precached files:
+  // cache-first — the filename changes when the content changes, so a cached
+  // copy can't go stale.
+  if (url.pathname.startsWith('/_next/static/') || PRECACHE.includes(url.pathname)) {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(CACHE_VERSION);
+        const hit = await cache.match(req);
+        if (hit) return hit;
+        try {
+          const res = await fetch(req);
+          if (res.ok) cache.put(req, res.clone());
+          return res;
+        } catch {
+          return hit || Response.error();
+        }
+      })()
+    );
+    return;
+  }
+
+  // Other same-origin GETs (images, icons, fonts): stale-while-revalidate.
+  event.respondWith(
+    (async () => {
+      const cache = await caches.open(CACHE_VERSION);
+      const hit = await cache.match(req);
+      const network = fetch(req)
+        .then((res) => {
+          if (res.ok && res.type === 'basic') cache.put(req, res.clone());
+          return res;
+        })
+        .catch(() => hit || Response.error());
+      return hit || network;
+    })()
+  );
 });
 
 self.addEventListener('push', (event) => {

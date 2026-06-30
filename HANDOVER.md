@@ -115,8 +115,10 @@ blocks that host, so a real build **fails** unless you stub them first.
    (unrelated, ignore).
 6. **Restore** `app/[locale]/layout.tsx` from `/tmp/layout.tsx.orig`, then verify:
    - `sha256sum` of the restored file ==
-     `5a1cf0da324497bc26f2a10bb332d8aced01d68bb7b8e533abc7ef62fdae90d9`
-     (current as of `physician-therapist-note`; **was** `6b5bb2fd…`, and
+     `6e231e47637ccee79b1811b67adb9dfe833f07c147cb0fd9e09c16abdfeb8105`
+     (current as of `pwa-service-worker`: layout now mounts
+     `<ServiceWorkerRegistrar/>`; **was** `939245…` through the wearables work,
+     `5a1cf0da…` at `physician-therapist-note`, and
      `cfaf492…` before that — layout.tsx evolves, so recompute from the backup
      you took this session rather than trusting a frozen hash).
    - **zero** `BUILD-STUB` remnants anywhere in `app components lib`.
@@ -820,6 +822,61 @@ the existing `observation` store (0069) — the clinician "wearable trend" (§5.
 - **Provisional codings:** HR / resting HR / steps / SpO₂ / respiration use
   confirmed LOINC; sleep / HRV / stress / calories / distance are provisional
   (`urn:tc:wearable-metric`) pending terminology sign-off.
+
+### 5.16 Offline-resilient check-in (outbox) — `0` migrations
+
+A patient whose connection drops while submitting a check-in doesn't lose it.
+Draft answers already persist (`useCheckinDraft`, localStorage). The submit now
+falls back to a durable **outbox**: `lib/checkinOutbox.ts` (localStorage queue),
+`lib/offline.ts` (`isOnline` / `isOfflineError`), `lib/useCheckinOutbox.ts`
+(flush on mount + `online`), surfaced by `components/patient/CheckinOutboxBanner.tsx`
+on the patient home. Idempotency needs no migration: `submit_weekly_checkin_v4`
+rejects a non-pending prompt, so a replay after a lost ack can't duplicate —
+the flusher treats that as success (`isAlreadySubmittedError`). The check-in
+page shows an `OfflineSavedView` and skips questionnaires on the offline path
+(they need the server id; they stay due). **Deferred:** the PWA/service-worker
+app-shell (opening the app with zero connection) — needs preview-deploy testing
+before it's safe to ship. **DPIA flag:** the outbox stores patient check-in data
+on the device until it syncs (cleared on success); note it before real data.
+
+### 5.17 Auth-guard NULL hardening (`0122`)
+
+`import_observations` (0069) used `... or current_app_role() = 'admin'`, which
+evaluates the whole OR to NULL when the role is NULL, and `if not NULL then
+raise` doesn't fire — an unauthorized caller could slip through (not exploitable
+for real users, who always have a role). **0122** re-creates it with each
+disjunct `coalesce`d to false (harness-verified: unauthorized now blocked, 0
+rows leaked). Same fix shipped inline in `set_wearable_import_metrics` (0121).
+The wearable webhook was also hardened: 2 MB body cap → 413, Sentry on
+signature/JSON failures, and a 500-on-unexpected-error so the aggregator's
+(idempotent) retry redelivers rather than dropping a batch.
+
+### 5.18 PWA service worker — offline shell (`public/sw.js`)
+
+There was already a push-only SW (`public/sw.js`) that registered *only* when a
+patient opted into notifications. It now also does conservative offline
+caching, and registers for **everyone** on load via
+`components/pwa/ServiceWorkerRegistrar.tsx` (mounted in the locale layout) →
+`ensureServiceWorkerRegistered()` in `lib/pwa.ts`. The `manifest.json` + icons
+already existed, so the app is installable.
+
+Deliberately cautious because the SW controls every user:
+- **Navigations are network-first** — online users always get the freshest app;
+  the cache is only a fallback. This is what prevents a stale-code lock-in.
+- **Never cached:** `/api/*`, cross-origin (Supabase/aggregator), non-GET, and
+  authenticated HTML pages. No patient/clinical data lives in a device cache.
+- **Cached:** content-hashed `/_next/static/` (cache-first, can't go stale),
+  icons/manifest (precache), other static GETs (stale-while-revalidate).
+- **Offline navigation** serves `public/offline.html` (static, bilingual, no
+  patient data) — paired with the check-in outbox so a patient keeps saved data
+  and sees a clear message. It does **not** make the authed app usable offline
+  (that would mean caching authed pages — intentionally not done).
+
+**Recovery / kill-switch:** bump `CACHE_VERSION` in `sw.js` + redeploy to purge
+caches; the file's header comment carries a copy-paste self-unregistering SW for
+emergencies. **Verify on a Vercel PREVIEW first** (DevTools → Application →
+Service Workers / Lighthouse PWA, then airplane-mode a navigation → offline
+page) before it reaches production patients — it can't be tested locally here.
 
 ## 6. Build history (tags, oldest → newest)
 

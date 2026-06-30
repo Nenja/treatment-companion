@@ -6,6 +6,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
 import { useCheckinData, useSubmitCheckin, useReopenCheckin, uploadGoalVideo } from '@/lib/supabase/checkin';
+import type { SubmitCheckinInput } from '@/lib/supabase/checkin';
+import { enqueueCheckin } from '@/lib/checkinOutbox';
+import { isOnline, isOfflineError } from '@/lib/offline';
 import { PostCheckinQuestionnaires } from '@/components/patient/PostCheckinQuestionnaires';
 import { useDueQuestionnairesForWeek } from '@/lib/supabase/questionnaires';
 import { useCheckinDraft, checkinDraftStorage } from '@/lib/useCheckinDraft';
@@ -125,6 +128,7 @@ function CheckinPageInner() {
   // the redirect synchronously.
   const submittingRef = useRef(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [queuedOffline, setQueuedOffline] = useState(false);
   // Recorded videos, keyed by goal id. Kept in ephemeral state (not the
   // persisted draft) because Blobs can't be serialised to storage and
   // are only relevant in this session, right before submit.
@@ -168,6 +172,11 @@ function CheckinPageInner() {
     patient: safePatient,
     prompt: safePrompt
   });
+
+  // Saved offline — queued for upload when the connection returns.
+  if (queuedOffline) {
+    return <OfflineSavedView onBackHome={goHomeHard} />;
+  }
 
   // Thanks view comes first — see ref comment above.
   if (submittedId) {
@@ -291,6 +300,7 @@ function CheckinPageInner() {
 
     submittingRef.current = true;
 
+    let pendingInput: SubmitCheckinInput | null = null;
     try {
       // Upload any recorded videos first and collect their Storage paths.
       // A video is optional, so a failed upload must NOT block the
@@ -332,14 +342,28 @@ function CheckinPageInner() {
           : base;
       });
 
-      const id = await submitMutation.mutateAsync({
+      const input = {
         promptId: prompt.id,
         ratings,
         comment: draft.comment?.trim() || undefined,
         submitterLabel: draft.submitterLabel ?? 'self',
         trainingDays: draft.trainingDays ?? [],
         trainingDaysTherapist: draft.trainingDaysTherapist ?? []
-      });
+      };
+      pendingInput = input;
+
+      // Offline: queue the submit and confirm. It uploads automatically once
+      // the connection returns. Questionnaires need the server id, so they're
+      // skipped here — they stay due for the next online visit.
+      if (!isOnline()) {
+        enqueueCheckin(input);
+        checkinDraftStorage.clear(prompt.id);
+        reset();
+        setQueuedOffline(true);
+        return;
+      }
+
+      const id = await submitMutation.mutateAsync(input);
 
       checkinDraftStorage.clear(prompt.id);
       reset();
@@ -349,6 +373,15 @@ function CheckinPageInner() {
         toast.error(tFeedback('videoUploadPartial'));
       }
     } catch (err) {
+      // A connection that dropped mid-submit falls back to the outbox rather
+      // than surfacing an error (the prompt-pending check makes replay safe).
+      if (pendingInput && isOfflineError(err)) {
+        enqueueCheckin(pendingInput);
+        checkinDraftStorage.clear(prompt.id);
+        reset();
+        setQueuedOffline(true);
+        return;
+      }
       console.error('submitCheckin failed', err);
       submittingRef.current = false;
       toast.error(tFeedback(classifyError(err)));
@@ -777,6 +810,29 @@ function SummaryRow({
       <dd className="mt-1 whitespace-pre-wrap text-[14px] leading-relaxed text-ink">
         {value}
       </dd>
+    </div>
+  );
+}
+
+function OfflineSavedView({ onBackHome }: { onBackHome: () => void }) {
+  const t = useTranslations('offline');
+  return (
+    <div className="min-h-dvh bg-cream">
+      <main className="mx-auto max-w-[480px] px-5 py-16">
+        <h1 className="font-display text-[28px] leading-tight text-ink">
+          {t('savedTitle')}
+        </h1>
+        <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
+          {t('savedBody')}
+        </p>
+        <button
+          type="button"
+          onClick={onBackHome}
+          className="mt-8 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft"
+        >
+          {t('backHome')}
+        </button>
+      </main>
     </div>
   );
 }

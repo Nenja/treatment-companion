@@ -1,4 +1,10 @@
 {
+  "offline": {
+    "pendingCheckins": "{count, plural, one {# check-in gemt på denne enhed – den uploades, når du er online igen.} other {# check-ins gemt på denne enhed – de uploades, når du er online igen.}}",
+    "savedTitle": "Gemt på din enhed",
+    "savedBody": "Du er offline, så dit check-in er gemt her og uploades automatisk, så snart du har forbindelse. Du kan roligt lukke appen.",
+    "backHome": "Tilbage til forsiden"
+  },
   "wearables": {
     "heading": "Bærbar enhed",
     "helper": "Forbind en bærbar enhed for at dele aktivitets- og helbredsdata (f.eks. puls, skridt, søvn) med dit behandlingsteam. Du kan afbryde forbindelsen når som helst.",

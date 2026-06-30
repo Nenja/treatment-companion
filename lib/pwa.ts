@@ -54,6 +54,24 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 }
 
 /**
+ * Registers the service worker for offline support + installability, for ALL
+ * users — independent of push (which requires PushManager + Notification and
+ * is opt-in). Only needs `serviceWorker` support. Idempotent: the push opt-in
+ * flow registers the same worker, and repeat calls return the same
+ * registration.
+ */
+export async function ensureServiceWorkerRegistered(): Promise<void> {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
+    return;
+  }
+  try {
+    await navigator.serviceWorker.register('/sw.js');
+  } catch (err) {
+    console.error('Service worker registration failed', err);
+  }
+}
+
+/**
  * Convert the VAPID public key from base64url string to a Uint8Array,
  * which is what PushManager.subscribe() requires.
  */

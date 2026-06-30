@@ -358,6 +358,58 @@ export function useReopenCheckin() {
 }
 
 /**
+ * Performs the check-in submit (the submit RPC plus the best-effort
+ * training-days follow-up). Extracted from the mutation so the offline outbox
+ * can replay the exact same request on reconnect.
+ */
+export async function submitCheckinRequest(
+  input: SubmitCheckinInput
+): Promise<string> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase.rpc('submit_weekly_checkin_v4', {
+    p_prompt_id: input.promptId,
+    p_ratings: input.ratings.map((r) => ({
+      approved_goal_id: r.approvedGoalId,
+      nrs_value: r.nrsValue ?? null,
+      gas_value: r.gasValue ?? null,
+      video_path: r.videoPath ?? null
+    })),
+    p_comment: input.comment ?? undefined,
+    p_submitter_label: input.submitterLabel ?? 'self'
+  });
+  if (error) throw error;
+  const checkinId = data as string;
+
+  // Training days (home + with therapist) are stored on the check-in via a
+  // small follow-up RPC. Best-effort: the check-in is already saved, so we
+  // don't reject on failure.
+  if (input.trainingDays || input.trainingDaysTherapist) {
+    try {
+      const { error: tdErr } = await supabase.rpc('set_checkin_training_days', {
+        p_checkin_id: checkinId,
+        p_days: input.trainingDays ?? [],
+        p_days_therapist: input.trainingDaysTherapist ?? []
+      });
+      if (tdErr) console.error('set_checkin_training_days failed', tdErr);
+    } catch (e) {
+      console.error('set_checkin_training_days threw', e);
+    }
+  }
+
+  return checkinId;
+}
+
+/**
+ * True when an error means the prompt was already consumed — i.e. a prior
+ * submit actually succeeded even though the client never saw the ack. The
+ * offline outbox uses this to treat a replay as done instead of retrying.
+ */
+export function isAlreadySubmittedError(err: unknown): boolean {
+  const msg = (err as { message?: string } | null)?.message ?? '';
+  return /not pending|already/i.test(msg);
+}
+
+/**
  * Submits a check-in via the submit_weekly_checkin_v4 RPC. The server
  * derives GAS from NRS for NRS goals, and stores the picked level
  * directly for GAS goals. A single check-in may mix both kinds. An
@@ -366,43 +418,8 @@ export function useReopenCheckin() {
 export function useSubmitCheckin() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: SubmitCheckinInput): Promise<string> => {
-      const supabase = createSupabaseBrowserClient();
-      const { data, error } = await supabase.rpc('submit_weekly_checkin_v4', {
-        p_prompt_id: input.promptId,
-        p_ratings: input.ratings.map((r) => ({
-          approved_goal_id: r.approvedGoalId,
-          nrs_value: r.nrsValue ?? null,
-          gas_value: r.gasValue ?? null,
-          video_path: r.videoPath ?? null
-        })),
-        p_comment: input.comment ?? undefined,
-        p_submitter_label: input.submitterLabel ?? 'self'
-      });
-      if (error) throw error;
-      const checkinId = data as string;
-
-      // Training days (home + with therapist) are stored on the check-in
-      // via a small follow-up RPC (keeps the submit RPC stable). Best-effort:
-      // the check-in is already saved, so we don't reject on failure.
-      if (input.trainingDays || input.trainingDaysTherapist) {
-        try {
-          const { error: tdErr } = await supabase.rpc(
-            'set_checkin_training_days',
-            {
-              p_checkin_id: checkinId,
-              p_days: input.trainingDays ?? [],
-              p_days_therapist: input.trainingDaysTherapist ?? []
-            }
-          );
-          if (tdErr) console.error('set_checkin_training_days failed', tdErr);
-        } catch (e) {
-          console.error('set_checkin_training_days threw', e);
-        }
-      }
-
-      return checkinId;
-    },
+    mutationFn: (input: SubmitCheckinInput): Promise<string> =>
+      submitCheckinRequest(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['patientHome'] });
       qc.invalidateQueries({ queryKey: ['checkin'] });
