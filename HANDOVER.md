@@ -851,6 +851,15 @@ The wearable webhook was also hardened: 2 MB body cap → 413, Sentry on
 signature/JSON failures, and a 500-on-unexpected-error so the aggregator's
 (idempotent) retry redelivers rather than dropping a batch.
 
+**Grant-gap fix (0123):** production verification found the two 0120 webhook
+RPCs (`ingest_wearable_observations`, `set_wearable_connection_status`) still
+had the default EXECUTE-to-PUBLIC grant (anon + authenticated could call them);
+0120's service-role-only lockdown hadn't taken. Migration
+`0123_assert_wearable_rpc_service_role_only.sql` re-asserts it forward
+(revoke from public/anon/authenticated, grant to service_role; idempotent,
+harness-verified). Exposure was theoretical (wearables off, no connected rows).
+**Apply 0123 to production AND staging.**
+
 ### 5.18 PWA service worker — offline shell (`public/sw.js`)
 
 There was already a push-only SW (`public/sw.js`) that registered *only* when a
