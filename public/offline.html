@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Offline — Treatment Companion</title>
+    <meta name="theme-color" content="#3f5a4b" />
+    <style>
+      :root {
+        --cream: #f6f1e8;
+        --cream-soft: #fbf9f4;
+        --ink: #232220;
+        --ink-soft: #4a4843;
+        --ink-muted: #8a857b;
+        --sage-deep: #3f5a4b;
+        --stone: #d9d2c5;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        background: var(--cream);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        line-height: 1.5;
+      }
+      .card {
+        max-width: 420px;
+        width: 100%;
+        background: var(--cream-soft);
+        border: 1px solid var(--stone);
+        border-radius: 6px;
+        padding: 28px 24px;
+        text-align: center;
+      }
+      .dot {
+        width: 44px;
+        height: 44px;
+        border-radius: 999px;
+        background: var(--sage-deep);
+        opacity: 0.12;
+        margin: 0 auto 18px;
+      }
+      h1 { font-size: 22px; margin: 0 0 6px; color: var(--ink); }
+      .sub { font-size: 15px; color: var(--ink-soft); margin: 0 0 18px; }
+      p { font-size: 14px; color: var(--ink-soft); margin: 0 0 10px; }
+      .da { color: var(--ink-muted); }
+      button {
+        margin-top: 14px;
+        width: 100%;
+        height: 46px;
+        border: none;
+        border-radius: 6px;
+        background: var(--sage-deep);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:active { opacity: 0.9; }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="dot" aria-hidden="true"></div>
+      <h1>You're offline</h1>
+      <p class="sub">You need a connection to load this page.</p>
+      <p>
+        Don't worry — anything you've already saved (like a check-in) will
+        upload automatically as soon as you're back online.
+      </p>
+      <p class="da">
+        Du er offline. Det, du allerede har gemt, uploades automatisk, når du er
+        online igen.
+      </p>
+      <button type="button" onclick="location.reload()">Try again</button>
+    </main>
+  </body>
+</html>

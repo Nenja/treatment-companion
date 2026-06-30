@@ -1,4 +1,10 @@
 {
+  "offline": {
+    "pendingCheckins": "{count, plural, one {# check-in saved on this device — it will upload when you're back online.} other {# check-ins saved on this device — they will upload when you're back online.}}",
+    "savedTitle": "Saved on your device",
+    "savedBody": "You're offline, so your check-in is saved here and will upload automatically as soon as you have a connection. You can close the app safely.",
+    "backHome": "Back to home"
+  },
   "wearables": {
     "heading": "Wearable",
     "helper": "Connect a wearable to share activity and health data (e.g. heart rate, steps, sleep) with your care team. You can disconnect at any time.",
