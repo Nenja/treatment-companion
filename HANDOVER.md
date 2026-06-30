@@ -860,6 +860,35 @@ had the default EXECUTE-to-PUBLIC grant (anon + authenticated could call them);
 harness-verified). Exposure was theoretical (wearables off, no connected rows).
 **Apply 0123 to production AND staging.**
 
+**Anon-grant gap (0124):** the full SECURITY DEFINER sweep
+(`has_function_privilege` over every `prosecdef` fn) found 12 more functions
+still anon-executable — the questionnaire module + `set_wearable_import_metrics`
+— added after the original ~67-fn anon-revoke audit. Migration
+`0124_revoke_anon_on_post_audit_definer_fns.sql` revokes anon and re-asserts
+authenticated+service_role, leaving the 6 RLS predicate helpers
+(`current_*`, `clinician_can_access_patient`) anon-executable as intended.
+Harness-verified. The RLS table sweep was clean (all tables RLS-on).
+**Apply 0124 to production AND staging.**
+
+**Questionnaire guard audit — DONE (0125).** Of the 12 fns 0124 revoked anon on,
+5 also NULL-propagated: `due_questionnaires_for_checkin`,
+`due_questionnaires_for_week`, `list_patient_questionnaire_responses`,
+`export_questionnaire_responses`, `list_library_questionnaires`. Real residual
+threat post-0124: a logged-in clinician/physio without an active session for the
+target patient could read that patient's questionnaire due-lists + responses
+(bypassing session-gated access). `0125_harden_questionnaire_fn_guards.sql`
+recreates the 5 verbatim except the guard (disjuncts coalesced; export uses
+`is distinct from`). Harness-verified (unauthorized denied; authorized clinician
+and own-patient still allowed; all 5 parse). The other 7 fns were checked and are
+safe (coalesced admin gate / `null and false=false` collapse / definite
+clinician_can_access backstop). **Apply 0125 to production AND staging.**
+
+**Saved security check:** `supabase/checks/verify_security_invariants.sql` —
+re-run after every migration. Asserts: all tables RLS-on; only the 6 predicate
+helpers are anon-executable (auto-catches a forgotten anon-revoke on any new
+SECURITY DEFINER fn — the 0120/0124 bug class); webhook RPCs service_role-only;
+import_observations coalesce-hardened.
+
 ### 5.18 PWA service worker — offline shell (`public/sw.js`)
 
 There was already a push-only SW (`public/sw.js`) that registered *only* when a
