@@ -40,6 +40,7 @@ import { usePatientObservations } from '@/lib/supabase/observations';
 import { ItbTrack } from '@/components/clinician/ItbTrack';
 import { useItbTherapy } from '@/lib/supabase/itb';
 import { VisitChanges } from '@/components/clinician/VisitChanges';
+import { WearableImportSettings } from '@/components/clinician/WearableImportSettings';
 import {
   LastTreatmentModal,
   type LastTreatment
@@ -1340,6 +1341,9 @@ export default function ClinicianPatientPage() {
             consentClinical={patient.videoConsentClinical}
             onShowLastTreatment={() => setShowLastTreatment(true)}
           />
+        </div>
+        <div className="mt-4">
+          <WearableImportSettings patientId={patient.id} />
         </div>
         <div className="mt-4">
           <BackgroundCard

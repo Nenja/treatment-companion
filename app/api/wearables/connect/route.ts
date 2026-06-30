@@ -66,7 +66,7 @@ export async function POST(req: Request) {
       },
       { onConflict: 'patient_id,provider' }
     )
-    .select('id')
+    .select('id, metrics')
     .single();
   if (upsertErr || !conn) {
     return NextResponse.json(
@@ -83,7 +83,8 @@ export async function POST(req: Request) {
     const { url } = await createConnectSession({
       connectionId: conn.id,
       provider,
-      redirectUrl
+      redirectUrl,
+      metrics: (conn.metrics as string[] | null) ?? []
     });
     return NextResponse.json({ url });
   } catch {

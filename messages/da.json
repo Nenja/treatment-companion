@@ -12,7 +12,25 @@
     "statusError": "Forbindelsesproblem",
     "lastSync": "senest synkroniseret {when}",
     "never": "endnu ikke",
-    "consentNote": "Dine data deles via en GDPR-kompatibel databehandler og gemmes sammen med din journal. De vises som de er til dit behandlingsteam og bruges ikke til at træffe automatiske beslutninger."
+    "consentNote": "Dine data deles via en GDPR-kompatibel databehandler og gemmes sammen med din journal. De vises som de er til dit behandlingsteam og bruges ikke til at træffe automatiske beslutninger.",
+    "sharing": "Deler: {list}",
+    "importHeading": "Importerede data",
+    "importHelper": "Vælg hvilke målinger der skal importeres fra patientens enhed. Kun de valgte indsamles og gemmes.",
+    "save": "Gem",
+    "saving": "Gemmer…",
+    "saved": "Gemt",
+    "metrics": {
+      "steps": "Skridt",
+      "heart_rate": "Puls",
+      "resting_heart_rate": "Hvilepuls",
+      "sleep_duration": "Søvnvarighed",
+      "hrv": "Pulsvariabilitet",
+      "spo2": "Iltmætning",
+      "respiration": "Respirationsfrekvens",
+      "stress": "Stress",
+      "calories": "Kalorier",
+      "distance": "Distance"
+    }
   },
   "_meta": {
     "status": "PLACEHOLDER — needs native Danish reviewer before any user testing",

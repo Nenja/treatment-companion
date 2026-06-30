@@ -12,7 +12,25 @@
     "statusError": "Connection problem",
     "lastSync": "last synced {when}",
     "never": "not yet",
-    "consentNote": "Your data is shared through a GDPR-compliant data processor and stored with your record. It is shown as-is to your care team and is not used to make automatic decisions."
+    "consentNote": "Your data is shared through a GDPR-compliant data processor and stored with your record. It is shown as-is to your care team and is not used to make automatic decisions.",
+    "sharing": "Sharing: {list}",
+    "importHeading": "Imported data",
+    "importHelper": "Choose which measurements to import from the patient's device. Only the selected ones are collected and stored.",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "metrics": {
+      "steps": "Steps",
+      "heart_rate": "Heart rate",
+      "resting_heart_rate": "Resting heart rate",
+      "sleep_duration": "Sleep duration",
+      "hrv": "Heart rate variability",
+      "spo2": "Blood oxygen",
+      "respiration": "Respiratory rate",
+      "stress": "Stress",
+      "calories": "Calories",
+      "distance": "Distance"
+    }
   },
   "app": {
     "name": "Treatment Companion"

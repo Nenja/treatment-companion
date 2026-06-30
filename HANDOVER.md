@@ -793,6 +793,17 @@ the existing `observation` store (0069) — the clinician "wearable trend" (§5.
   patient from a `connected` row, forces `observation.source` from the provider,
   dedups like `import_observations`). Needed because `import_observations`
   authorizes a USER session and a webhook has none. Validated in the PG16 harness.
+- **Metric selection (0121):** `wearable_connection.metrics text[]` allowlist;
+  the webhook ingests only listed metrics (clinician choice + data-minimisation;
+  default steps/heart_rate/sleep_duration, empty = none). Set via
+  `set_wearable_import_metrics` (authorizes patient/clinician/admin, updates only
+  the allowlist, granted to `authenticated`). Clinician edits on the patient page
+  (`WearableImportSettings`); patient sees what's shared on `/profile`.
+  **Auth hardening note:** that RPC coalesces each authorization disjunct to
+  false — the same `... or current_app_role()='admin'` pattern in **0069
+  `import_observations`** can evaluate to NULL and skip its guard when the role
+  is NULL (not exploitable for real users, who always have a role); a forward
+  hardening migration for 0069 is worth doing if you want belt-and-braces.
 - **App:** `lib/wearables/{types,normalize,aggregator}.ts`,
   `app/api/wearables/{connect,webhook,disconnect}/route.ts` (nodejs runtime),
   `lib/supabase/wearableConnections.ts`, `components/patient/WearableConnectPanel.tsx`

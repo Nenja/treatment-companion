@@ -69,6 +69,9 @@ export async function createConnectSession(opts: {
   connectionId: string;
   provider: string;
   redirectUrl: string;
+  /** Selected metrics, so the aggregator can request only the matching
+   *  provider scopes where supported (best-effort, vendor-dependent). */
+  metrics?: string[];
 }): Promise<{ url: string }> {
   const cfg = aggregatorConfig();
   const res = await fetch(`${cfg.baseUrl}/connect/session`, {
@@ -80,7 +83,8 @@ export async function createConnectSession(opts: {
     body: JSON.stringify({
       provider: opts.provider,
       reference_id: opts.connectionId,
-      redirect_url: opts.redirectUrl
+      redirect_url: opts.redirectUrl,
+      metrics: opts.metrics ?? []
     })
   });
   if (!res.ok) {

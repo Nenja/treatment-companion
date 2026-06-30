@@ -109,3 +109,27 @@ export type WearableEvent =
     }
   | { kind: 'deauth'; aggregatorUserId: string }
   | { kind: 'data'; aggregatorUserId: string; samples: WearableSample[] };
+
+/**
+ * The metrics a clinician can choose to import, in display order. Keys index
+ * into METRIC_CODES; the UI localizes each via `wearables.metrics.<key>`.
+ */
+export const IMPORTABLE_METRIC_KEYS = [
+  'steps',
+  'heart_rate',
+  'resting_heart_rate',
+  'sleep_duration',
+  'hrv',
+  'spo2',
+  'respiration',
+  'stress',
+  'calories',
+  'distance'
+] as const;
+
+/** Conservative starter allowlist (matches the SQL column default in 0121). */
+export const DEFAULT_IMPORT_METRICS: string[] = [
+  'steps',
+  'heart_rate',
+  'sleep_duration'
+];

@@ -66,6 +66,13 @@ export function WearableConnectPanel() {
                         : t('never')
                     })}`}
                 </p>
+                {c.status === 'connected' && c.metrics.length > 0 && (
+                  <p className="mt-0.5 text-[12px] text-ink-muted">
+                    {t('sharing', {
+                      list: c.metrics.map((m) => t(`metrics.${m}`)).join(', ')
+                    })}
+                  </p>
+                )}
               </div>
               <button
                 type="button"

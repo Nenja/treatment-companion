@@ -1767,6 +1767,7 @@ export type Database = {
           created_at: string
           id: string
           last_sync_at: string | null
+          metrics: string[]
           patient_id: string
           provider: string
           revoked_at: string | null
@@ -1780,6 +1781,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_sync_at?: string | null
+          metrics?: string[]
           patient_id: string
           provider: string
           revoked_at?: string | null
@@ -1793,6 +1795,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_sync_at?: string | null
+          metrics?: string[]
           patient_id?: string
           provider?: string
           revoked_at?: string | null
@@ -2308,6 +2311,10 @@ export type Database = {
           p_observations: Json
         }
         Returns: number
+      }
+      set_wearable_import_metrics: {
+        Args: { p_connection_id: string; p_metrics: string[] }
+        Returns: undefined
       }
       set_wearable_connection_status: {
         Args: {

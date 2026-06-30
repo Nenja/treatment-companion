@@ -15,6 +15,7 @@ clear of medical-device decision support). Keep it that way.
 | Layer | File |
 |---|---|
 | Connection model + ingestion RPCs | `supabase/migrations/0120_wearable_connection.sql` |
+| Per-connection metric allowlist + setter RPC | `supabase/migrations/0121_wearable_import_metrics.sql` |
 | Metric→coding map, internal types | `lib/wearables/types.ts` |
 | Sample → observation element mapping | `lib/wearables/normalize.ts` |
 | **Aggregator wire contract (the seam)** | `lib/wearables/aggregator.ts` |
@@ -39,6 +40,29 @@ clear of medical-device decision support). Keep it that way.
 
 Both write RPCs are SECURITY DEFINER and granted to **`service_role` only** — a
 signed-in user cannot call them. The webhook runs with the service client.
+
+## Choosing which metrics to import (0121)
+
+Each connection carries a `metrics text[]` allowlist of normalized metric keys
+(`steps`, `heart_rate`, `hrv`, …). **The webhook drops any sample whose metric
+isn't listed before it reaches `observation`** — so the clinician decides what's
+collected, which is both clinically focused and GDPR data-minimising. New
+connections start with a conservative default (`steps`, `heart_rate`,
+`sleep_duration`); an empty list imports nothing.
+
+- The clinician edits the list on the patient page
+  (`components/clinician/WearableImportSettings.tsx`, a checkbox list); the
+  patient sees what's shared on `/profile`.
+- Writes go through `set_wearable_import_metrics(connection_id, metrics)` — a
+  SECURITY DEFINER RPC that authorizes the patient (own), a clinician with
+  access, or an admin, and updates **only** the allowlist (never status). Safe
+  to grant to `authenticated`.
+- The selected metrics are also passed to the aggregator connect session as a
+  scope hint (`createConnectSession`), so where the aggregator supports
+  scope-limited authorization, un-selected data needn't leave the provider at
+  all. Best-effort and vendor-dependent — confirm in the aggregator's docs.
+- The selectable catalog + display order is `IMPORTABLE_METRIC_KEYS` in
+  `types.ts`; labels are localized under `wearables.metrics.<key>`.
 
 ## ⚠️ Reconcile before it works end to end
 

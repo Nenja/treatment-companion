@@ -70,7 +70,20 @@ export async function POST(req: Request) {
         });
       }
     } else if (event.kind === 'data') {
-      const elements = toObservationElements(event.samples);
+      // The connection's allowlist decides what we keep. Drop everything else
+      // before it ever reaches the store (clinician choice + data-minimisation).
+      const { data: conn } = await supabase
+        .from('wearable_connection')
+        .select('metrics')
+        .eq('aggregator', cfg.aggregator)
+        .eq('aggregator_user_id', event.aggregatorUserId)
+        .eq('status', 'connected')
+        .maybeSingle();
+      if (!conn) continue; // no live connection for this end-user
+      const allow = new Set((conn.metrics as string[] | null) ?? []);
+      if (allow.size === 0) continue; // nothing selected → import nothing
+      const selected = event.samples.filter((s) => allow.has(s.metric));
+      const elements = toObservationElements(selected);
       if (elements.length === 0) continue;
       const { data: n } = await supabase.rpc('ingest_wearable_observations', {
         p_aggregator: cfg.aggregator,

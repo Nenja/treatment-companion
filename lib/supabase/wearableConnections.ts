@@ -21,6 +21,7 @@ export interface WearableConnection {
   provider: string;
   aggregator: string;
   status: WearableConnectionStatus;
+  metrics: string[];
   connectedAt: string | null;
   lastSyncAt: string | null;
   revokedAt: string | null;
@@ -41,7 +42,7 @@ export function useWearableConnections(enabled = true) {
       const { data, error } = await supabase
         .from('wearable_connection')
         .select(
-          'id, provider, aggregator, status, connected_at, last_sync_at, revoked_at'
+          'id, provider, aggregator, status, metrics, connected_at, last_sync_at, revoked_at'
         )
         .order('created_at', { ascending: true });
       if (error) throw error;
@@ -50,10 +51,65 @@ export function useWearableConnections(enabled = true) {
         provider: r.provider as string,
         aggregator: r.aggregator as string,
         status: r.status as WearableConnectionStatus,
+        metrics: (r.metrics as string[] | null) ?? [],
         connectedAt: (r.connected_at as string | null) ?? null,
         lastSyncAt: (r.last_sync_at as string | null) ?? null,
         revokedAt: (r.revoked_at as string | null) ?? null
       }));
+    }
+  });
+}
+
+/**
+ * A specific patient's connections, for the clinician view (RLS allows a
+ * clinician with an active session to read them). Same shape as the patient
+ * hook; used to configure which metrics to import.
+ */
+export function useWearableConnectionsForPatient(patientId: string | null) {
+  return useQuery({
+    queryKey: ['wearableConnections', patientId],
+    enabled: !!patientId && wearablesEnabled(),
+    queryFn: async (): Promise<WearableConnection[]> => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase
+        .from('wearable_connection')
+        .select(
+          'id, provider, aggregator, status, metrics, connected_at, last_sync_at, revoked_at'
+        )
+        .eq('patient_id', patientId as string)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return (data ?? []).map((r) => ({
+        id: r.id as string,
+        provider: r.provider as string,
+        aggregator: r.aggregator as string,
+        status: r.status as WearableConnectionStatus,
+        metrics: (r.metrics as string[] | null) ?? [],
+        connectedAt: (r.connected_at as string | null) ?? null,
+        lastSyncAt: (r.last_sync_at as string | null) ?? null,
+        revokedAt: (r.revoked_at as string | null) ?? null
+      }));
+    }
+  });
+}
+
+/** Sets the import allowlist for a connection (clinician / patient / admin). */
+export function useSetWearableMetrics() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      connectionId: string;
+      metrics: string[];
+    }): Promise<void> => {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.rpc('set_wearable_import_metrics', {
+        p_connection_id: args.connectionId,
+        p_metrics: args.metrics
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['wearableConnections'] });
     }
   });
 }
