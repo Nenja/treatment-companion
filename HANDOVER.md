@@ -1128,6 +1128,36 @@ Windows voice + restart Firefox to see them. iOS ships Danish; most Android has
 or can add it. Verified: tsc 0, eslint 0, vitest 41/41, font-stub build 112.
 layout SHA unchanged.
 
+### 5.27 Profile: undo on the save bar + accessibility collapsed (2026-06-30)
+
+Follow-ups on the profile restructure. All roles share the one `/profile` route
+(linked ungated in the account menu), so these apply to patient, physiotherapist
+and clinician alike.
+
+- **Undo on the save bar.** The sticky bar now carries an "Undo" action beside
+  Save. `discardChanges()` reverts every staged field (name, profession, sex,
+  reminder day, research + video consent) to the last-saved baseline; nothing is
+  written, so `dirty` clears and the bar hides. Direct action, no confirm — it
+  only returns to the saved state. Save reduced to px-5 and the "Unsaved changes"
+  label truncates so the three items fit on narrow phones.
+- **Accessibility (Appearance) collapsed.** The colour-palette / night-mode
+  section is now a collapsed `CollapsibleSection` with a "Saves automatically"
+  hint, matching the other set-once banners. Safe because the account menu
+  already exposes quick text-size + night-mode for every role; only the full
+  palette is tucked away. Language stays visible (switched more often).
+- `CollapsibleSection` generalised: optional `hint` (muted right-side label) and
+  optional `editedLabel`; a section shows the amber "Edited" chip when it holds
+  unsaved staged edits, else the hint.
+- +1 key `profile.discard` (all four locales).
+
+Other-role profile review: the non-patient view is already lean — Language,
+Appearance (collapsed), Your details (collapsed: name/email/password, +profession
+for physiotherapists), Help. No reminders/consents/wearable/sex for them. The
+restructure + undo benefit them automatically; no separate page exists to review.
+
+Verified: tsc 0, eslint 0 errors, i18n parity 2025, vitest 41/41, build 112.
+layout SHA unchanged.
+
 ## 6. Build history (tags, oldest → newest)
 
 `copy-to-other-side` → `trim-header-and-meds` → `meds-to-actionrow` →

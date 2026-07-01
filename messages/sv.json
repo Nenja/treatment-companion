@@ -1274,7 +1274,8 @@
     "sectionSharing": "Det du delar",
     "sharingIntro": "Bestäm vad du delar med ditt vårdteam, och hur. Du kan ändra detta när som helst.",
     "sharingSummary": "Samtycken och datadelning",
-    "edited": "Ändrad"
+    "edited": "Ändrad",
+    "discard": "Ångra"
   },
   "help": {
     "buttonLabel": "Hjälp",

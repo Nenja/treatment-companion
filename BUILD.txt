@@ -1,3 +1,10 @@
+=== 2026-06-30 — Profile: undo on save bar + accessibility collapsed (no migration) ===
+- Save bar: added "Undo" (t('discard')) beside Save. discardChanges() reverts all staged fields to baseline; no write, bar hides. Save px-5, "Unsaved changes" truncates for narrow phones.
+- Appearance/accessibility section now a collapsed CollapsibleSection with "Saves automatically" hint (quick text-size + night mode remain in the account menu for all roles). Language stays visible.
+- CollapsibleSection generalized: optional hint (muted right label) + optional editedLabel; amber "Edited" chip when the section holds unsaved staged edits, else the hint.
+- +1 i18n key profile.discard (en Undo / da Fortryd / sv Ångra / nb Angre).
+- Shared /profile route serves all roles (linked ungated in account menu), so undo + restructure apply to patient/physiotherapist/clinician. Non-patient view already lean: Language, Appearance(collapsed), Your details(collapsed), Help.
+- Verified: tsc 0, eslint 0 errors, parity 2025, vitest 41/41, build 112. layout SHA unchanged.
 === 2026-06-30 — Read-aloud gated on matching-language voice (no migration) ===
 - Decision (per Nikolaj): hide read-aloud when the device has no voice for the app's language, rather than read in the English fallback.
 - useSpeak now returns hasVoice (recomputed via pickVoice on voiceschanged + on locale change; effect deps [locale]). ReadAloudButton gates render on hasVoice alongside readAloud pref / supported / text.
