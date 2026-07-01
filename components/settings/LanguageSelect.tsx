@@ -1,6 +1,6 @@
 'use client';
 
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/supabase/auth';
 import { useSetPreferredLocale, type AppLocale } from '@/lib/supabase/locale';
@@ -91,6 +91,7 @@ export function LanguageSelect({
   const pathname = usePathname();
   const { user } = useAuth();
   const setPreferredLocale = useSetPreferredLocale();
+  const tA11y = useTranslations('a11y');
 
   const choose = (target: AppLocale) => {
     if (target === locale) return;
@@ -114,7 +115,7 @@ export function LanguageSelect({
     return (
       <div
         role="group"
-        aria-label="Language"
+        aria-label={tA11y('language')}
         className="inline-flex items-center gap-0.5 rounded-[var(--radius-button)] border border-stone bg-cream-soft p-0.5"
       >
         <GlobeIcon className="ml-1 mr-0.5 h-3.5 w-3.5 text-ink-muted" />
@@ -141,7 +142,7 @@ export function LanguageSelect({
   }
 
   return (
-    <div role="radiogroup" aria-label="Language" className="grid grid-cols-2 gap-1.5">
+    <div role="radiogroup" aria-label={tA11y('language')} className="grid grid-cols-2 gap-1.5">
       {LANGS.map((l) => {
         const current = l.code === locale;
         return (

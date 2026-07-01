@@ -40,7 +40,7 @@ export default function GlobalError({
       >
         <div style={{ maxWidth: '360px', textAlign: 'center' }}>
           <h1 style={{ fontSize: '20px', marginBottom: '8px' }}>
-            Something went wrong
+            Something went wrong · Noget gik galt
           </h1>
           <p
             style={{
@@ -50,8 +50,7 @@ export default function GlobalError({
               marginBottom: '20px'
             }}
           >
-            The app ran into an unexpected problem. Please try again. If
-            it keeps happening, contact your clinic.
+            The app ran into an unexpected problem. Please try again. If it keeps happening, contact your clinic. — Appen stødte på et uventet problem. Prøv igen. Sker det gentagne gange, så kontakt din klinik.
           </p>
           <button
             type="button"
@@ -68,7 +67,7 @@ export default function GlobalError({
               cursor: 'pointer'
             }}
           >
-            Reload
+            Reload · Genindlæs
           </button>
         </div>
       </body>

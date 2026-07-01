@@ -2,6 +2,7 @@
 
 import type { NrsDirection } from '@/lib/types';
 import { ReadAloudButton } from '@/components/feedback/ReadAloudButton';
+import { useTranslations } from 'next-intl';
 
 interface GoalRatingPickerProps {
   ariaLabel: string;
@@ -46,13 +47,14 @@ export function GoalRatingPicker({
   value,
   onChange
 }: GoalRatingPickerProps) {
+  const t = useTranslations('patient.checkin');
   const interacted = typeof value === 'number';
 
   // Which numeric end is "good"? higherIsBetter -> 10 is good;
   // lowerIsBetter -> 0 is good. Used only for colour + end labels.
   const goodIsHigh = direction === 'higherIsBetter';
-  const lowLabel = goodIsHigh ? 'Worst' : 'Best';
-  const highLabel = goodIsHigh ? 'Best' : 'Worst';
+  const lowLabel = goodIsHigh ? t('scaleWorst') : t('scaleBest');
+  const highLabel = goodIsHigh ? t('scaleBest') : t('scaleWorst');
 
   // Tint a number by how "good" it is, so the row reads as a gradient
   // from poor to good in the SAME direction the colour always means.
@@ -157,9 +159,7 @@ export function GoalRatingPicker({
       </div>
 
       {!interacted && (
-        <p className="mt-6 text-center text-[14px] text-ink-muted">
-          Tap a number to choose your rating.
-        </p>
+        <p className="mt-6 text-center text-[14px] text-ink-muted">{t('tapNumberHint')}</p>
       )}
     </div>
   );

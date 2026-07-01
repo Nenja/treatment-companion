@@ -152,9 +152,7 @@ export function GasGoalRatingPicker({
       </div>
 
       {!interacted && (
-        <p className="mt-6 text-center text-[14px] text-ink-muted">
-          Tap the option that fits best.
-        </p>
+        <p className="mt-6 text-center text-[14px] text-ink-muted">{t('tapOptionHint')}</p>
       )}
     </div>
   );

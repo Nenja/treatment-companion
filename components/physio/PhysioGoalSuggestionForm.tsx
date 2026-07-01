@@ -63,21 +63,14 @@ export function PhysioGoalSuggestionForm({
   return (
     <div>
       <section className="mt-6">
-        <h2 className="font-display text-[20px] text-ink">
-          Suggest a goal
-        </h2>
-        <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
-          Recommend a new treatment goal for the physician to consider
-          at the next injection visit.
-        </p>
+        <h2 className="font-display text-[20px] text-ink">{t('goalSuggestTitle')}</h2>
+        <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">{t('goalSuggestHint')}</p>
 
         <div className="mt-5">
           <label
             htmlFor="physio-goal"
             className="block text-[14px] font-semibold text-ink"
-          >
-            Suggested goal
-          </label>
+          >{t('goalSuggestedLabel')}</label>
           <textarea
             id="physio-goal"
             value={goal}
@@ -93,12 +86,8 @@ export function PhysioGoalSuggestionForm({
           <label
             htmlFor="physio-rationale"
             className="block text-[14px] font-semibold text-ink"
-          >
-            Clinical rationale
-          </label>
-          <p className="mt-0.5 text-[14px] text-ink-muted">
-            What you observed that led to this suggestion.
-          </p>
+          >{t('rationaleLabel')}</label>
+          <p className="mt-0.5 text-[14px] text-ink-muted">{t('goalRationaleHint')}</p>
           <textarea
             id="physio-rationale"
             value={rationale}
@@ -121,15 +110,11 @@ export function PhysioGoalSuggestionForm({
       </section>
 
       <section className="mt-10">
-        <h2 className="font-display text-[20px] text-ink">
-          Suggestions made
-        </h2>
+        <h2 className="font-display text-[20px] text-ink">{t('goalSuggestionsMadeTitle')}</h2>
         {existing.isLoading ? (
           <p className="mt-3 text-[14px] text-ink-muted">{t('loading')}</p>
         ) : !existing.data || existing.data.length === 0 ? (
-          <p className="mt-3 text-[14px] text-ink-muted">
-            No goal suggestions made yet this cycle.
-          </p>
+          <p className="mt-3 text-[14px] text-ink-muted">{t('goalSuggestionsEmpty')}</p>
         ) : (
           <ul className="mt-3 space-y-3">
             {existing.data.map((s) => (

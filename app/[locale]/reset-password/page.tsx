@@ -107,19 +107,13 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-dvh bg-cream">
         <main className="mx-auto max-w-[420px] px-5 py-12">
-          <h1 className="font-display text-[28px] leading-tight text-ink">
-            Password updated
-          </h1>
-          <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
-            Your new password is saved. Use it next time you sign in.
-          </p>
+          <h1 className="font-display text-[28px] leading-tight text-ink">{t('doneTitle')}</h1>
+          <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">{t('doneBody')}</p>
           <button
             type="button"
             onClick={() => router.replace(prefix || '/')}
             className="mt-8 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft"
-          >
-            Continue
-          </button>
+          >{t('continue')}</button>
         <p className="mt-6 text-center text-[13px]">
           <Link
             href={`${prefix}/support`}
@@ -218,9 +212,7 @@ export default function ResetPasswordPage() {
                 {show ? t('hide') : t('show')}
               </button>
             </div>
-            <p className="mt-1 text-[13px] text-ink-muted">
-              At least 8 characters.
-            </p>
+            <p className="mt-1 text-[13px] text-ink-muted">{t('minChars')}</p>
           </div>
 
           <div>

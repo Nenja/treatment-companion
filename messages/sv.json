@@ -202,7 +202,12 @@
       "videoAddedHint": "Tryck för att granska eller göra om",
       "videoModalTitle": "Valfri video",
       "videoModalDone": "Klar",
-      "catchUpBanner": "Tidigare vecka · Vecka {week}"
+      "catchUpBanner": "Tidigare vecka · Vecka {week}",
+      "continueToQuestions": "Fortsätt",
+      "tapOptionHint": "Tryck på det alternativ som passar bäst.",
+      "tapNumberHint": "Tryck på en siffra för att välja din skattning.",
+      "scaleBest": "Bäst",
+      "scaleWorst": "Sämst"
     }
   },
   "domain": {
@@ -464,7 +469,9 @@
       "physioDismissedToast": "Avfärdat.",
       "physioConsideredToast": "Markerat som övervägt.",
       "physioActionError": "Det gick inte att spara — försök igen.",
-      "videoConsentEducational": "Samtycke till att använda videor i undervisningssyfte"
+      "videoConsentEducational": "Samtycke till att använda videor i undervisningssyfte",
+      "actionQuestionnaires": "Frågeformulär",
+      "actionShortQuestionnaires": "Formulär"
     },
     "review": {
       "title": "Granska förslag",
@@ -776,6 +783,47 @@
       "syncError": "Synkning misslyckades — {message}",
       "syncPartial": "Importen rapporterade ett problem — {message} (REDCap bekräftade {imported} poster).",
       "syncNoDetail": "inga feldetaljer returnerades"
+    },
+    "questionnaires": {
+      "title": "Frågeformulär",
+      "intro": "Välj frågeformulär från biblioteket och hur ofta patienten ombeds fylla i dem.",
+      "enabledHeading": "Aktiverade för denna patient",
+      "noneEnabled": "Inga frågeformulär aktiverade än.",
+      "loading": "Laddar…",
+      "stopped": "stoppad",
+      "studyManaged": "Studie",
+      "stop": "Stoppa",
+      "restart": "Starta om",
+      "libraryHeading": "Lägg till från biblioteket",
+      "libraryToggle": "Tillgängliga frågeformulär",
+      "libraryEmpty": "Inga frågeformulär är publicerade i biblioteket än.",
+      "searchPlaceholder": "Sök i biblioteket…",
+      "searchNoMatches": "Inga frågeformulär matchar din sökning.",
+      "itemCount": "{count, plural, one {# fråga} other {# frågor}}",
+      "cadenceLabel": "Hur ofta",
+      "cadenceEvery": "Varje incheckning",
+      "cadenceEveryN": "En gång var {n}:e incheckning",
+      "cadenceMonthly": "Ungefär månadsvis",
+      "cadenceFirstOfCycle": "Första incheckningen i varje cykel",
+      "cadenceBaseline": "Endast baslinje",
+      "cadenceSpecificWeeks": "Specifika veckor",
+      "enable": "Aktivera",
+      "enabledBadge": "Aktiverad",
+      "footnote": "Svaren registreras som de ges och visas för vårdteamet — ingen poäng beräknas här.",
+      "responsesHeading": "Svar",
+      "responsesLoading": "Laddar svar…",
+      "responsesError": "Kunde inte ladda svar.",
+      "responsesNone": "Inga svar inskickade än.",
+      "respWeek": "Vecka {week}",
+      "respNoItems": "Inga svar registrerade.",
+      "filledSelf": "ifylld av patienten",
+      "filledCaregiver": "ifylld av en närstående",
+      "filledClinician": "ifylld av en kliniker",
+      "filledTherapist": "ifylld av en terapeut",
+      "answerYes": "Ja",
+      "answerNo": "Nej",
+      "languageFilter": "Språk:",
+      "allLanguages": "Alla språk"
     }
   },
   "intro": {
@@ -873,7 +921,10 @@
     "comfortReadAloudOn": "På",
     "comfortReadAloudOff": "Av",
     "visitTitle": "Vid ditt besök",
-    "visitBody": "När du träffar din kliniker eller terapeut öppnar du ”Visa besökskod” och visar eller läser upp koden. Då kan de öppna din journal för besöket."
+    "visitBody": "När du träffar din kliniker eller terapeut öppnar du ”Visa besökskod” och visar eller läser upp koden. Då kan de öppna din journal för besöket.",
+    "comfortDesign": "Stil",
+    "comfortDesignRounded": "Rundad",
+    "comfortDesignEditorial": "Editorial"
   },
   "appearance": {
     "heading": "Utseende",
@@ -899,7 +950,11 @@
     "navStyleSide": "Sidomeny",
     "navStyleTopHint": "Ikoner i en rad under patientens namn.",
     "navStyleSideHint": "Ikoner i en list längs vänsterkanten.",
-    "displayLabel": "Visning"
+    "displayLabel": "Visning",
+    "designTitle": "Design",
+    "designHint": "Rundade eller skarpa hörn. Färgerna är desamma.",
+    "designCurrent": "Rundad",
+    "designEditorial": "Editorial"
   },
   "admin": {
     "roleTherapist": "Terapeut",
@@ -1033,7 +1088,24 @@
     "navLabel": "Avsnitt",
     "emailHelper": "Används som inloggnings-id.",
     "displayNameHelper": "Visas för klinikern i patientlistan och patientvyn.",
-    "tempPasswordHelper": "Genereras automatiskt. Dela med den nya användaren. De bör ändra den vid första inloggningen."
+    "tempPasswordHelper": "Genereras automatiskt. Dela med den nya användaren. De bör ändra den vid första inloggningen.",
+    "colPatientId": "Patientjournal-ID",
+    "patientIdCopied": "Patient-ID kopierat",
+    "copyId": "Kopiera",
+    "questionnairesTitle": "Frågeformulär",
+    "roleOptPatient": "Patient",
+    "roleOptPhysician": "Läkare",
+    "regenerate": "Generera ny",
+    "makeAdminLabel": "Gör även detta konto till administratör",
+    "makeAdminHint": "Administratörer kan skapa konton och hantera administratörsåtkomst. Detta är skilt från rollen ovan.",
+    "statusInactive": "Inaktiv",
+    "badgeAdmin": "Administratör",
+    "editNameLabel": "Namn",
+    "editProfessionLabel": "Profession",
+    "roleChangeHint": "Rollen kan inte ändras här. För att ändra en roll, inaktivera detta konto och skapa ett nytt.",
+    "cancel": "Avbryt",
+    "deleteConfirmTitle": "Radera detta konto permanent?",
+    "deleteConfirmBody": "Detta kan inte ångras. Det raderar kontot och all dess data — för en patient omfattar det varje behandlingscykel och incheckning. Överväg att inaktivera i stället. Skriv e-postadressen nedan för att bekräfta."
   },
   "patientInfo": {
     "subtitle": "Klinisk bakgrund",
@@ -1192,7 +1264,17 @@
     "sectionAccount": "Konto",
     "sectionAbout": "Om dig",
     "sectionLanguage": "Språk",
-    "sectionAccessibility": "Tillgänglighet"
+    "sectionAccessibility": "Tillgänglighet",
+    "sectionHelp": "Hjälp",
+    "tutorialReplayHelper": "Gå igenom appens huvudskärmar igen.",
+    "unsavedChanges": "Osparade ändringar",
+    "savesAutomatically": "Sparas automatiskt",
+    "sectionReminders": "Påminnelser",
+    "sectionDetails": "Dina uppgifter",
+    "sectionSharing": "Det du delar",
+    "sharingIntro": "Bestäm vad du delar med ditt vårdteam, och hur. Du kan ändra detta när som helst.",
+    "sharingSummary": "Samtycken och datadelning",
+    "edited": "Ändrad"
   },
   "help": {
     "buttonLabel": "Hjälp",
@@ -1217,7 +1299,14 @@
     "physioPatientTitle": "Patientens sida",
     "physioPatientBody": "Det här är din bas för en upplåst patient. Graferna visar hur varje mål utvecklas — dina bedömningar och patientens egna bedömningar. Härifrån kan du rapportera framsteg, föreslå mål eller muskler till läkaren och registrera hjälpmedel i patientens information.",
     "physioProgressTitle": "Rapportera framsteg",
-    "physioProgressBody": "Bedöm hur varje mål utvecklas och lägg till en kort anteckning som läkaren kan se vid nästa besök. Din bedömning hålls åtskild från patientens egna veckovisa bedömningar, så att båda synvinklarna förblir synliga i grafen."
+    "physioProgressBody": "Bedöm hur varje mål utvecklas och lägg till en kort anteckning som läkaren kan se vid nästa besök. Din bedömning hålls åtskild från patientens egna veckovisa bedömningar, så att båda synvinklarna förblir synliga i grafen.",
+    "tourNudge": "Ny här? Ta en snabb rundtur på sidan.",
+    "tourNudgeStart": "Ta rundturen",
+    "tourNudgeDismiss": "Inte nu",
+    "sheetTitle": "Hjälp",
+    "takeTour": "Ta en rundtur på sidan",
+    "contactHint": "Frågor eller problem med appen? Hör av dig så hjälper vi till.",
+    "contactSupport": "Kontakta support"
   },
   "sex": {
     "female": "Kvinna",
@@ -1366,7 +1455,14 @@
     "adjustTotal": "Justera summan",
     "muscleSumLabel": "Muskelsumma:",
     "useTheSum": "använd summan",
-    "saveChart": "Spara diagram"
+    "saveChart": "Spara diagram",
+    "savedTitle": "Behandling sparad",
+    "savedBody": "Du kan kopiera journalanteckningen för den här behandlingen nu, eller senare från patientsidan.",
+    "savedEhrNote": "Journalanteckning",
+    "savedDone": "Klar",
+    "accessExpiryTitle": "Din patientåtkomst håller på att gå ut",
+    "accessExpiryBody": "Du har ungefär {minutes, plural, one {# minut} other {# minuter}} kvar. Spara den här behandlingen, eller håll din åtkomst öppen om du behöver mer tid.",
+    "keepWorking": "Fortsätt arbeta"
   },
   "goalVideo": {
     "introTitle": "Spela in en kort video (frivilligt)",
@@ -1497,7 +1593,11 @@
     "needSmart": "SMART-beskrivningen",
     "needNrsQuestion": "Den veckovisa frågan patienten ser",
     "needNrsRange": "En utgångspunkt och ett mål (0–10)",
-    "needAnchors": "Alla fem utfallsnivåer"
+    "needAnchors": "Alla fem utfallsnivåer",
+    "patientPhrasingHint": "Vardagsspråk, som patienten själv skulle säga det.",
+    "smartLabel": "Klinisk (SMART) beskrivning",
+    "smartHint": "Din kliniska formulering av samma mål.",
+    "noPatientSelected": "Ingen patient vald. Öppna detta från en patients sida."
   },
   "physioForms": {
     "loading": "Läser in…",
@@ -1553,7 +1653,24 @@
     "ratingHeading": "Din bedömning i dag",
     "ratingOptional": "valfritt",
     "rateShort": "Bedöm",
-    "flaggedShort": "Markerat"
+    "flaggedShort": "Markerat",
+    "muscleSuggestTitle": "Föreslå en muskel",
+    "muscleSuggestHint": "Markera en muskel som kan vara involverad, för läkaren att överväga vid nästa injektionsbesök.",
+    "muscleLabel": "Muskel",
+    "sideLabel": "Sida",
+    "relatedGoalLabel": "Relaterat mål",
+    "optionalSuffix": "(valfritt)",
+    "relatedGoalHint": "Koppla muskeln till ett mål om observationen uppstod i det målets sammanhang.",
+    "rationaleLabel": "Klinisk motivering",
+    "muscleRationaleHint": "Vad du observerade som ledde till att markera denna muskel.",
+    "muscleSuggestionsMadeTitle": "Muskelförslag lämnade",
+    "muscleSuggestionsEmpty": "Inga muskelförslag har lämnats än denna cykel.",
+    "goalSuggestTitle": "Föreslå ett mål",
+    "goalSuggestHint": "Rekommendera ett nytt behandlingsmål för läkaren att överväga vid nästa injektionsbesök.",
+    "goalSuggestedLabel": "Föreslaget mål",
+    "goalRationaleHint": "Vad du observerade som ledde till detta förslag.",
+    "goalSuggestionsMadeTitle": "Lämnade förslag",
+    "goalSuggestionsEmpty": "Inga målförslag har lämnats än denna cykel."
   },
   "notifications": {
     "regionAria": "Aktivera aviseringar",
@@ -1594,7 +1711,8 @@
     "chartColWeek": "Vecka",
     "chartColRating": "Bedömning",
     "chartNoData": "Inga bedömningar rapporterade än.",
-    "back": "Tillbaka"
+    "back": "Tillbaka",
+    "language": "Språk"
   },
   "accountMenu": {
     "adminLink": "Administration",
@@ -1617,7 +1735,8 @@
     "errRateLimit": "För många försök. Vänta en minut och försök igen.",
     "errNetwork": "Nätverksproblem. Kontrollera din anslutning och försök igen.",
     "errGeneric": "Något gick fel vid inloggningen. Försök igen.",
-    "privacyLink": "Dina uppgifter & integritet"
+    "privacyLink": "Dina uppgifter & integritet",
+    "errServer": "Något gick fel hos oss vid inloggningen — det är inte ditt lösenord. Försök igen om en stund."
   },
   "forgotPassword": {
     "title": "Återställ ditt lösenord",
@@ -1646,7 +1765,15 @@
     "errMismatch": "De två lösenorden stämmer inte överens.",
     "errSameAsCurrent": "Välj ett lösenord som skiljer sig från ditt nuvarande.",
     "errWeak": "Välj ett starkare lösenord.",
-    "errGeneric": "Det gick inte att uppdatera ditt lösenord. Försök igen."
+    "errGeneric": "Det gick inte att uppdatera ditt lösenord. Försök igen.",
+    "invalidTitle": "Länken har gått ut",
+    "invalidBody": "Länkar för lösenordsåterställning kan bara användas en gång, och de går ut en kort stund efter att de skickats. Begär en ny så mejlar vi dig en färsk länk.",
+    "requestNewLink": "Begär en ny länk",
+    "backToSignIn": "Tillbaka till inloggning",
+    "doneTitle": "Lösenordet uppdaterat",
+    "doneBody": "Ditt nya lösenord är sparat. Använd det nästa gång du loggar in.",
+    "continue": "Fortsätt",
+    "minChars": "Minst 8 tecken."
   },
   "visitChanges": {
     "title": "Sedan senaste besöket",
@@ -1676,7 +1803,8 @@
     "videoTitle": "{goal} — Vecka {week}",
     "wearableHeading": "Wearable-trend",
     "peakLabel": "Max effekt",
-    "recentLabel": "Senaste"
+    "recentLabel": "Senaste",
+    "questionnairesHeading": "Frågeformulär"
   },
   "itb": {
     "title": "Intratekal baklofen",
@@ -1894,5 +2022,201 @@
     "statusOff": "Inget samtycke till inspelning",
     "grant": "Registrera samtycke till inspelning",
     "withdraw": "Återkalla"
+  },
+  "offline": {
+    "pendingCheckins": "{count, plural, one {# incheckning sparad på den här enheten – den laddas upp när du är online igen.} other {# incheckningar sparade på den här enheten – de laddas upp när du är online igen.}}",
+    "savedTitle": "Sparat på din enhet",
+    "savedBody": "Du är offline, så din incheckning sparas här och laddas upp automatiskt så snart du har anslutning. Du kan stänga appen tryggt.",
+    "backHome": "Tillbaka till startsidan"
+  },
+  "questionnaireAdmin": {
+    "existingHeading": "Frågeformulär",
+    "loading": "Laddar…",
+    "none": "Inga frågeformulär än.",
+    "versionLabel": "{key} · v{version}",
+    "licensedBadge": "Licensierat instrument",
+    "publishedBadge": "I biblioteket",
+    "unpublishedBadge": "Inte publicerad",
+    "publish": "Publicera",
+    "unpublish": "Avpublicera",
+    "newTitle": "Nytt frågeformulär",
+    "keyLabel": "Nyckel",
+    "keyHint": "En kort, stabil identifierare (bokstäver, siffror, understreck). Återanvänds mellan versioner.",
+    "titleLabel": "Titel",
+    "descriptionLabel": "Beskrivning (valfritt)",
+    "itemsHeading": "Frågor",
+    "itemNumber": "Fråga {n}",
+    "addItem": "+ Lägg till fråga",
+    "removeItem": "Ta bort",
+    "promptLabel": "Frågetext",
+    "typeLabel": "Typ",
+    "requiredLabel": "Obligatorisk",
+    "optionsLabel": "Alternativ",
+    "optionsHint": "Ett per rad. Använd \"värde | etikett\" för att lagra en kod, eller bara etiketten.",
+    "minLabel": "Min",
+    "maxLabel": "Max",
+    "licensedLabel": "Detta är ett namngivet / validerat instrument",
+    "licensedHint": "Publicera först när dess licens och validerade översättning är godkända.",
+    "sourceNoteLabel": "Käll- / licensnotering",
+    "publishLabel": "Publicera till läkarbiblioteket nu",
+    "create": "Skapa frågeformulär",
+    "creating": "Skapar…",
+    "created": "Skapade “{title}”.",
+    "validationKeyTitle": "Nyckel och titel krävs.",
+    "validationItems": "Lägg till minst en fråga.",
+    "validationOptions": "Lägg till minst ett alternativ för “{prompt}”.",
+    "type_nrs_0_10": "0–10-skala",
+    "type_number": "Tal",
+    "type_text": "Fritext",
+    "type_boolean": "Ja / Nej",
+    "type_single_choice": "Enkelval",
+    "type_multi_choice": "Flerval",
+    "type_likert": "Likert-skala",
+    "languageLabel": "Språk"
+  },
+  "questionnaireFill": {
+    "intro": "Ditt vårdteam har också bett dig fylla i detta.",
+    "step": "{current} av {total}",
+    "loading": "Laddar…",
+    "requiredMissing": "Besvara de obligatoriska frågorna (markerade med *).",
+    "submit": "Skicka",
+    "continueLabel": "Fortsätt",
+    "finish": "Slutför",
+    "finishLater": "Slutför senare",
+    "leaveBody": "Din incheckning är redan sparad. Vill du lämna de återstående frågorna för nu?",
+    "leaveConfirm": "Lämna",
+    "keepGoing": "Fortsätt",
+    "submitting": "Skickar…",
+    "yes": "Ja",
+    "no": "Nej"
+  },
+  "support": {
+    "back": "Tillbaka",
+    "title": "Hjälp och support",
+    "intro": "Behöver du hjälp med appen? Här ser du hur du når oss, och svar på några vanliga frågor.",
+    "emergencyTitle": "Inte för akuta medicinska tillstånd",
+    "emergencyBody": "Den här appen och dess supportinkorg bevakas inte dygnet runt och är inte till för akuta medicinska problem. Ring 112 vid en medicinsk nödsituation. Vid akuta men icke livshotande hälsobesvär, kontakta din klinik direkt.",
+    "contactTitle": "Kontakta teamet",
+    "contactBody": "Mejla oss om allt som rör appen — att logga in, använda en funktion eller ett problem du har stött på. Skriv inte känsliga hälsouppgifter i ditt meddelande.",
+    "emailButton": "Mejla support",
+    "emailSubject": "Treatment Companion support",
+    "noEmailFallback": "Din klinik ger dig e-postadressen till support.",
+    "faqTitle": "Vanliga frågor",
+    "faqSigninQ": "Jag kan inte logga in",
+    "faqSigninBody": "Om du har glömt ditt lösenord kan du återställa det från inloggningsskärmen.",
+    "faqSigninLink": "Återställ ditt lösenord",
+    "faqDataQ": "Vem kan se mina uppgifter?",
+    "faqDataBody": "Ditt vårdteam. Du kan läsa vad appen har om dig, och hur det skyddas, på integritetssidan.",
+    "dataTitle": "Dina uppgifter och integritet",
+    "dataBody": "Du äger dina uppgifter. För att be om en kopia av dina uppgifter, eller få dem raderade, mejla supportadressen ovan så hanterar vi din begäran. Integritetssidan förklarar dina rättigheter i sin helhet.",
+    "dataPrivacyLink": "Läs om dina uppgifter och integritet",
+    "menuLink": "Hjälp och support",
+    "loginLink": "Hjälp och support"
+  },
+  "tour": {
+    "back": "Tillbaka",
+    "next": "Nästa",
+    "done": "Klar",
+    "skip": "Hoppa över",
+    "step": "Steg {current} av {total}",
+    "clinicianPatient": {
+      "patientTitle": "Patienten du har öppnat",
+      "patientBody": "Du har låst upp den här patienten för en session. Namnet och var de befinner sig i behandlingscykeln visas överst.",
+      "overviewTitle": "Översikt",
+      "overviewBody": "En snabb bild av läget sedan förra besöket, med en fritextnotering du kan spara som sammanhang.",
+      "goalsTitle": "Målen",
+      "goalsBody": "Sidans hjärta: varje mål har sin egen graf — NRS-mål visar 0–10-poängen, GAS-mål visar beskrivande band. Öppna ett mål för att läsa dess incheckningar och patientens video, eller för att avsluta det när det är uppnått.",
+      "treatmentTitle": "Registrera en behandling",
+      "treatmentBody": "När du behandlar patienten börjar du här — det öppnar formuläret för att registrera besökets injektion (muskler, doser och ansiktskartan).",
+      "actionsTitle": "Fler verktyg",
+      "actionsBody": "Dessa öppnas som paneler när du behöver dem: patientens målförslag, terapeutens input, den fullständiga historiken över cykler och journalexporten.",
+      "endTitle": "Avsluta sessionen",
+      "endBody": "När du går vidare avslutar du sessionen här — det låser patienten igen tills de öppnas nästa gång."
+    },
+    "patientHome": {
+      "welcomeTitle": "Välkommen till din startsida",
+      "welcomeBody": "Detta är din utgångspunkt. Raden överst visar hur länge sedan din senaste behandling var.",
+      "checkinTitle": "Din veckovisa incheckning",
+      "checkinBody": "Detta är det viktigaste att göra varje vecka: när en incheckning är klar startar du den här. Det tar ett par minuter, och ditt vårdteam ser dina svar.",
+      "goalsTitle": "Dina mål",
+      "goalsBody": "Öppna denna för att se dina mål och hur det har gått — och för att föreslå ett nytt.",
+      "visitcodeTitle": "Din besökskod",
+      "visitcodeBody": "Vid ett besök visar du den här koden så att din kliniker kan öppna din journal."
+    },
+    "goals": {
+      "goalsTitle": "Dina mål",
+      "goalsBody": "Dina mål listas här, vart och ett med en graf över hur det har gått. Tryck på ett mål för att öppna dess graf.",
+      "suggestTitle": "Föreslå ett mål",
+      "suggestBody": "Har du något nytt du vill arbeta med? Föreslå det här så granskar ditt vårdteam det."
+    },
+    "physioPatient": {
+      "patientTitle": "Patienten du träffar",
+      "patientBody": "Patienten som gav dig åtkomst. Tryck på namnet för grundläggande bakgrund och behandlingssammanhang.",
+      "rateTitle": "Skatta besöket",
+      "rateBody": "Det viktigaste du gör här: registrera hur varje mål gick idag och lägg till en kort notering till kliniken — det är vad läkaren ser före nästa behandling.",
+      "suggestTitle": "Föreslå ett mål",
+      "suggestBody": "Om ett nytt mål skulle hjälpa, föreslå det här för läkaren att granska och godkänna.",
+      "endTitle": "När du är klar",
+      "endBody": "Avsluta sessionen här. Din åtkomst är öppen bara medan en session pågår."
+    },
+    "treatment": {
+      "introTitle": "Registrera en behandling",
+      "introBody": "Allt för dagens behandling finns på den här sidan — vilka moduler du använder, doserna och en notering till terapeuten. Den sparas som denna cykels registrering.",
+      "modulesTitle": "Kropp, ansikte eller båda",
+      "modulesBody": "Välj de moduler behandlingen använder: en standardmuskellista, ansiktskartan eller båda. De tillhörande avsnitten visas nedanför — minst en krävs.",
+      "copylastTitle": "Utgå från förra gången",
+      "copylastBody": "Om planen liknar, kopiera den föregående behandlingen med ett tryck och justera därifrån — snabbare än att skriva in varje muskel igen. Tryck på sammanfattningen för att granska den först.",
+      "setupTitle": "Behandlingsdetaljer",
+      "setupBody": "Bekräfta läkemedlet, datumet och cykeldetaljerna innan du lägger till doser.",
+      "musclesTitle": "Muskler och doser",
+      "musclesBody": "Lägg till varje injicerad muskel med sin dos. Totalen uppdateras efter hand.",
+      "handoffTitle": "Notering till terapeuten",
+      "handoffBody": "Lämna en kort notering till patientens fysioterapeut i kommunen och markera om behandlingen ändrades. Precis som allt i journalen kan patienten också läsa den — skriv den med dem i åtanke också."
+    },
+    "history": {
+      "summaryTitle": "Sammanfattningen",
+      "summaryBody": "Varje cykel i överblick — givna enheter, mål, nytta och intervallet till nästa behandling.",
+      "cyclesTitle": "Cykel för cykel",
+      "cyclesBody": "Öppna en cykel för dess mål, behandlingen som gavs och patientens incheckningar från den tiden."
+    },
+    "suggestion": {
+      "detailTitle": "Patientens förslag",
+      "detailBody": "Vad patienten bad om, med sina egna ord, med området det gäller och hur viktigt det är för dem.",
+      "decideTitle": "Ditt beslut",
+      "decideBody": "Godkänn det — och ange hur det ska skattas — eller lägg det åt sidan för nu."
+    }
+  },
+  "wearables": {
+    "heading": "Bärbar enhet",
+    "helper": "Anslut en bärbar enhet för att dela aktivitets- och hälsodata (t.ex. puls, steg, sömn) med ditt vårdteam. Du kan koppla från när som helst.",
+    "connect": "Anslut en enhet",
+    "connecting": "Öppnar…",
+    "connectError": "Anslutningen kunde inte startas. Försök igen.",
+    "disconnect": "Koppla från",
+    "statusConnected": "Ansluten",
+    "statusPending": "Väntar på bekräftelse",
+    "statusRevoked": "Frånkopplad",
+    "statusError": "Anslutningsproblem",
+    "lastSync": "senast synkroniserad {when}",
+    "never": "inte än",
+    "consentNote": "Dina data delas via ett GDPR-kompatibelt personuppgiftsbiträde och lagras med din journal. De visas som de är för ditt vårdteam och används inte för att fatta automatiska beslut.",
+    "sharing": "Delar: {list}",
+    "importHeading": "Importerade data",
+    "importHelper": "Välj vilka mätningar som ska importeras från patientens enhet. Endast de valda samlas in och lagras.",
+    "save": "Spara",
+    "saving": "Sparar…",
+    "saved": "Sparat",
+    "metrics": {
+      "steps": "Steg",
+      "heart_rate": "Puls",
+      "resting_heart_rate": "Vilopuls",
+      "sleep_duration": "Sömnlängd",
+      "hrv": "Pulsvariabilitet",
+      "spo2": "Syremättnad",
+      "respiration": "Andningsfrekvens",
+      "stress": "Stress",
+      "calories": "Kalorier",
+      "distance": "Distans"
+    }
   }
 }

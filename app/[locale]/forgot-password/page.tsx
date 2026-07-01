@@ -88,10 +88,7 @@ export default function ForgotPasswordPage() {
         <h1 className="font-display text-[28px] leading-tight text-ink">
           {t('title')}
         </h1>
-        <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
-          Enter the email your clinic has for you. We&apos;ll send a
-          link to set a new password.
-        </p>
+        <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">{t('intro')}</p>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-4">
           <div>
@@ -134,9 +131,7 @@ export default function ForgotPasswordPage() {
           <Link
             href={`${prefix}/login`}
             className="font-semibold text-sage-deep hover:text-ink"
-          >
-            Back to sign in
-          </Link>
+          >{t('backToSignIn')}</Link>
         </p>
 
         <p className="mt-4 text-center text-[13px]">

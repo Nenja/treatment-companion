@@ -182,9 +182,7 @@ export function RecordGoalForm({
         <label className="block text-[14px] font-semibold text-ink">
           {t('goalLabel')}
         </label>
-        <p className="mt-1 text-[14px] text-ink-muted">
-          Plain language, as the patient would say it.
-        </p>
+        <p className="mt-1 text-[14px] text-ink-muted">{t('patientPhrasingHint')}</p>
         <textarea
           value={patientText}
           onChange={(e) => setPatientText(e.target.value)}
@@ -196,12 +194,8 @@ export function RecordGoalForm({
       </div>
 
       <div className="mt-7">
-        <label className="block text-[14px] font-semibold text-ink">
-          Clinical (SMART) description
-        </label>
-        <p className="mt-1 text-[14px] text-ink-muted">
-          Your clinical phrasing of the same goal.
-        </p>
+        <label className="block text-[14px] font-semibold text-ink">{t('smartLabel')}</label>
+        <p className="mt-1 text-[14px] text-ink-muted">{t('smartHint')}</p>
         <textarea
           value={smartText}
           onChange={(e) => setSmartText(e.target.value)}

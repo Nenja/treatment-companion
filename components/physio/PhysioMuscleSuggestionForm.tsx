@@ -82,22 +82,15 @@ export function PhysioMuscleSuggestionForm({
   return (
     <div>
       <section className="mt-6">
-        <h2 className="font-display text-[20px] text-ink">
-          Suggest a muscle
-        </h2>
-        <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
-          Flag a muscle that may be involved, for the physician to
-          consider at the next injection visit.
-        </p>
+        <h2 className="font-display text-[20px] text-ink">{t('muscleSuggestTitle')}</h2>
+        <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">{t('muscleSuggestHint')}</p>
 
         {/* Muscle name */}
         <div className="mt-5">
           <label
             htmlFor="physio-muscle"
             className="block text-[14px] font-semibold text-ink"
-          >
-            Muscle
-          </label>
+          >{t('muscleLabel')}</label>
           <input
             id="physio-muscle"
             type="text"
@@ -111,9 +104,7 @@ export function PhysioMuscleSuggestionForm({
 
         {/* Side — three-way segmented control */}
         <div className="mt-5">
-          <span className="block text-[14px] font-semibold text-ink">
-            Side
-          </span>
+          <span className="block text-[14px] font-semibold text-ink">{t('sideLabel')}</span>
           <div
             role="radiogroup"
             aria-label={t('sideAria')}
@@ -145,13 +136,10 @@ export function PhysioMuscleSuggestionForm({
               htmlFor="physio-muscle-goal"
               className="block text-[14px] font-semibold text-ink"
             >
-              Related goal{' '}
-              <span className="text-ink-muted">(optional)</span>
+              {t('relatedGoalLabel')}{' '}
+              <span className="text-ink-muted">{t('optionalSuffix')}</span>
             </label>
-            <p className="mt-0.5 text-[14px] text-ink-muted">
-              Link this muscle to a goal if the observation came up in
-              that goal&apos;s context.
-            </p>
+            <p className="mt-0.5 text-[14px] text-ink-muted">{t('relatedGoalHint')}</p>
             <select
               id="physio-muscle-goal"
               value={relatedGoalId}
@@ -173,12 +161,8 @@ export function PhysioMuscleSuggestionForm({
           <label
             htmlFor="physio-muscle-rationale"
             className="block text-[14px] font-semibold text-ink"
-          >
-            Clinical rationale
-          </label>
-          <p className="mt-0.5 text-[14px] text-ink-muted">
-            What you observed that led to flagging this muscle.
-          </p>
+          >{t('rationaleLabel')}</label>
+          <p className="mt-0.5 text-[14px] text-ink-muted">{t('muscleRationaleHint')}</p>
           <textarea
             id="physio-muscle-rationale"
             value={rationale}
@@ -201,15 +185,11 @@ export function PhysioMuscleSuggestionForm({
       </section>
 
       <section className="mt-10">
-        <h2 className="font-display text-[20px] text-ink">
-          Muscle suggestions made
-        </h2>
+        <h2 className="font-display text-[20px] text-ink">{t('muscleSuggestionsMadeTitle')}</h2>
         {existing.isLoading ? (
           <p className="mt-3 text-[14px] text-ink-muted">{t('loading')}</p>
         ) : !existing.data || existing.data.length === 0 ? (
-          <p className="mt-3 text-[14px] text-ink-muted">
-            No muscle suggestions made yet this cycle.
-          </p>
+          <p className="mt-3 text-[14px] text-ink-muted">{t('muscleSuggestionsEmpty')}</p>
         ) : (
           <ul className="mt-3 space-y-3">
             {existing.data.map((s) => {

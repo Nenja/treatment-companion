@@ -242,7 +242,11 @@
       "videoAddedHint": "Tap to review or redo",
       "videoModalTitle": "Optional video",
       "videoModalDone": "Done",
-      "catchUpBanner": "Earlier week · Week {week}"
+      "catchUpBanner": "Earlier week · Week {week}",
+      "tapOptionHint": "Tap the option that fits best.",
+      "tapNumberHint": "Tap a number to choose your rating.",
+      "scaleBest": "Best",
+      "scaleWorst": "Worst"
     }
   },
   "domain": {
@@ -1127,7 +1131,20 @@
     "emailHelper": "Will be the sign-in identifier.",
     "displayNameHelper": "Shown to the clinician in the patient list and the patient view.",
     "tempPasswordHelper": "Auto-generated. Share with the new user. They should change it at first sign-in.",
-    "questionnairesTitle": "Questionnaires"
+    "questionnairesTitle": "Questionnaires",
+    "roleOptPatient": "Patient",
+    "roleOptPhysician": "Physician",
+    "regenerate": "Regenerate",
+    "makeAdminLabel": "Also make this account an admin",
+    "makeAdminHint": "Admins can create accounts and manage admin access. This is separate from the role above.",
+    "statusInactive": "Inactive",
+    "badgeAdmin": "Admin",
+    "editNameLabel": "Name",
+    "editProfessionLabel": "Profession",
+    "roleChangeHint": "Role cannot be changed here. To change a role, deactivate this account and create a new one.",
+    "cancel": "Cancel",
+    "deleteConfirmTitle": "Permanently delete this account?",
+    "deleteConfirmBody": "This cannot be undone. It deletes the account and all of its data — for a patient, that includes every treatment cycle and check-in. Consider deactivating instead. To confirm, type the email below."
   },
   "patientInfo": {
     "subtitle": "Clinical background",
@@ -1288,7 +1305,15 @@
     "sectionLanguage": "Language",
     "sectionAccessibility": "Accessibility",
     "sectionHelp": "Help",
-    "tutorialReplayHelper": "Walk through the app’s main screens again."
+    "tutorialReplayHelper": "Walk through the app’s main screens again.",
+    "unsavedChanges": "Unsaved changes",
+    "savesAutomatically": "Saves automatically",
+    "sectionReminders": "Reminders",
+    "sectionDetails": "Your details",
+    "sectionSharing": "What you share",
+    "sharingIntro": "Control what you share with your care team, and how. You can change these at any time.",
+    "sharingSummary": "Consents and data sharing",
+    "edited": "Edited"
   },
   "help": {
     "buttonLabel": "Help",
@@ -1473,7 +1498,10 @@
     "adjustTotal": "Adjust total",
     "muscleSumLabel": "Muscle sum:",
     "useTheSum": "use the sum",
-    "saveChart": "Save chart"
+    "saveChart": "Save chart",
+    "accessExpiryTitle": "Your patient access is about to expire",
+    "accessExpiryBody": "You have about {minutes, plural, one {# minute} other {# minutes}} left. Save this treatment, or keep your access open if you need more time.",
+    "keepWorking": "Keep working"
   },
   "goalVideo": {
     "introTitle": "Record a short video (optional)",
@@ -1604,7 +1632,11 @@
     "needSmart": "The SMART description",
     "needNrsQuestion": "The weekly question the patient sees",
     "needNrsRange": "A starting point and target (0–10)",
-    "needAnchors": "All five outcome levels"
+    "needAnchors": "All five outcome levels",
+    "patientPhrasingHint": "Plain language, as the patient would say it.",
+    "smartLabel": "Clinical (SMART) description",
+    "smartHint": "Your clinical phrasing of the same goal.",
+    "noPatientSelected": "No patient selected. Open this from a patient's page."
   },
   "physioForms": {
     "loading": "Loading…",
@@ -1660,7 +1692,24 @@
     "ratingHeading": "Your rating today",
     "ratingOptional": "optional",
     "rateShort": "Rate",
-    "flaggedShort": "Flagged"
+    "flaggedShort": "Flagged",
+    "muscleSuggestTitle": "Suggest a muscle",
+    "muscleSuggestHint": "Flag a muscle that may be involved, for the physician to consider at the next injection visit.",
+    "muscleLabel": "Muscle",
+    "sideLabel": "Side",
+    "relatedGoalLabel": "Related goal",
+    "optionalSuffix": "(optional)",
+    "relatedGoalHint": "Link this muscle to a goal if the observation came up in that goal's context.",
+    "rationaleLabel": "Clinical rationale",
+    "muscleRationaleHint": "What you observed that led to flagging this muscle.",
+    "muscleSuggestionsMadeTitle": "Muscle suggestions made",
+    "muscleSuggestionsEmpty": "No muscle suggestions made yet this cycle.",
+    "goalSuggestTitle": "Suggest a goal",
+    "goalSuggestHint": "Recommend a new treatment goal for the physician to consider at the next injection visit.",
+    "goalSuggestedLabel": "Suggested goal",
+    "goalRationaleHint": "What you observed that led to this suggestion.",
+    "goalSuggestionsMadeTitle": "Suggestions made",
+    "goalSuggestionsEmpty": "No goal suggestions made yet this cycle."
   },
   "notifications": {
     "regionAria": "Enable notifications",
@@ -1701,7 +1750,8 @@
     "chartColWeek": "Week",
     "chartColRating": "Rating",
     "chartNoData": "No ratings reported yet.",
-    "back": "Back"
+    "back": "Back",
+    "language": "Language"
   },
   "accountMenu": {
     "adminLink": "Admin",
@@ -1729,7 +1779,7 @@
   },
   "forgotPassword": {
     "title": "Reset your password",
-    "intro": "Enter the email your clinic has for you. We’ll send a link to reset your password.",
+    "intro": "Enter the email your clinic has for you. We'll send a link to set a new password.",
     "emailLabel": "Email",
     "submit": "Send reset link",
     "submitting": "Sending…",
@@ -1758,7 +1808,11 @@
     "invalidTitle": "This link has expired",
     "invalidBody": "Password reset links can only be used once, and they expire a short while after they're sent. Request a new one and we'll email you a fresh link.",
     "requestNewLink": "Request a new link",
-    "backToSignIn": "Back to sign in"
+    "backToSignIn": "Back to sign in",
+    "doneTitle": "Password updated",
+    "doneBody": "Your new password is saved. Use it next time you sign in.",
+    "continue": "Continue",
+    "minChars": "At least 8 characters."
   },
   "visitChanges": {
     "title": "Since last visit",

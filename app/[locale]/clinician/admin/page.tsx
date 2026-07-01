@@ -467,9 +467,7 @@ function CreateAccountSection({ embedded }: { embedded?: boolean }) {
                 ? 'border-sage bg-sage-soft text-sage-deep'
                 : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
             }`}
-          >
-            Patient
-          </button>
+          >{tAdmin('roleOptPatient')}</button>
           <button
             type="button"
             onClick={() => setRole('clinician')}
@@ -478,9 +476,7 @@ function CreateAccountSection({ embedded }: { embedded?: boolean }) {
                 ? 'border-sage bg-sage-soft text-sage-deep'
                 : 'border-stone bg-cream text-ink-soft hover:bg-stone-soft'
             }`}
-          >
-            Physician
-          </button>
+          >{tAdmin('roleOptPhysician')}</button>
           <button
             type="button"
             onClick={() => setRole('physiotherapist')}
@@ -573,9 +569,7 @@ function CreateAccountSection({ embedded }: { embedded?: boolean }) {
             type="button"
             onClick={() => setTempPassword(generateTempPassword())}
             className="flex h-[44px] items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
-          >
-            Regenerate
-          </button>
+          >{tAdmin('regenerate')}</button>
         </div>
       </Field>
 
@@ -594,13 +588,8 @@ function CreateAccountSection({ embedded }: { embedded?: boolean }) {
           className="mt-0.5 h-5 w-5 shrink-0 accent-sage-deep"
         />
         <span>
-          <span className="block text-[14px] font-semibold text-ink">
-            Also make this account an admin
-          </span>
-          <span className="block text-[13px] text-ink-muted">
-            Admins can create accounts and manage admin access. This is
-            separate from the role above.
-          </span>
+          <span className="block text-[14px] font-semibold text-ink">{tAdmin('makeAdminLabel')}</span>
+          <span className="block text-[13px] text-ink-muted">{tAdmin('makeAdminHint')}</span>
         </span>
       </label>
 
@@ -975,14 +964,10 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
         </span>
         <span className="flex shrink-0 items-center gap-1.5">
           {isDeactivated && (
-            <span className="rounded-full border border-amber-deep/40 bg-amber-soft px-2 py-0.5 text-[12px] uppercase tracking-wider text-amber-deep">
-              Inactive
-            </span>
+            <span className="rounded-full border border-amber-deep/40 bg-amber-soft px-2 py-0.5 text-[12px] uppercase tracking-wider text-amber-deep">{tAdmin('statusInactive')}</span>
           )}
           {a.isAdmin && (
-            <span className="rounded-full border border-sage/50 bg-sage-soft px-2 py-0.5 text-[12px] uppercase tracking-wider text-sage-deep">
-              Admin
-            </span>
+            <span className="rounded-full border border-sage/50 bg-sage-soft px-2 py-0.5 text-[12px] uppercase tracking-wider text-sage-deep">{tAdmin('badgeAdmin')}</span>
           )}
           <span className="rounded-full border border-stone bg-cream px-2 py-0.5 text-[13px] uppercase tracking-wider text-ink-muted">
             {a.role}
@@ -1055,9 +1040,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
           {/* --- Edit form --- */}
           {editing && (
             <div className="rounded-[var(--radius-button)] bg-cream px-3 py-3">
-              <label className="block text-[13px] font-semibold text-ink-soft">
-                Name
-              </label>
+              <label className="block text-[13px] font-semibold text-ink-soft">{tAdmin('editNameLabel')}</label>
               <input
                 type="text"
                 value={name}
@@ -1067,9 +1050,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
               />
               {isTherapist && (
                 <div className="mt-3">
-                  <label className="block text-[13px] font-semibold text-ink-soft">
-                    Profession
-                  </label>
+                  <label className="block text-[13px] font-semibold text-ink-soft">{tAdmin('editProfessionLabel')}</label>
                   <select
                     value={profession}
                     onChange={(e) =>
@@ -1097,10 +1078,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                   )}
                 </div>
               )}
-              <p className="mt-2 text-[12px] text-ink-muted">
-                Role cannot be changed here. To change a role, deactivate
-                this account and create a new one.
-              </p>
+              <p className="mt-2 text-[12px] text-ink-muted">{tAdmin('roleChangeHint')}</p>
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
@@ -1117,9 +1095,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                     setName(a.displayName);
                   }}
                   className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
-                >
-                  Cancel
-                </button>
+                >{tAdmin('cancel')}</button>
               </div>
             </div>
           )}
@@ -1178,15 +1154,8 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
           {/* --- Permanent-delete confirmation --- */}
           {confirmingDelete && (
             <div className="mt-3 rounded-[var(--radius-button)] border border-amber-deep/40 bg-amber-soft/60 px-3 py-3">
-              <p className="text-[13px] font-semibold text-ink">
-                Permanently delete this account?
-              </p>
-              <p className="mt-1 text-[12px] leading-relaxed text-ink-soft">
-                This cannot be undone. It deletes the account and all of
-                its data — for a patient, that includes every treatment
-                cycle and check-in. Consider deactivating instead.
-                To confirm, type the email below.
-              </p>
+              <p className="text-[13px] font-semibold text-ink">{tAdmin('deleteConfirmTitle')}</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-ink-soft">{tAdmin('deleteConfirmBody')}</p>
               <input
                 type="text"
                 value={deleteTyped}
@@ -1211,9 +1180,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                   type="button"
                   onClick={() => setConfirmingDelete(false)}
                   className="rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-1.5 text-[13px] font-semibold text-ink-soft hover:bg-stone-soft"
-                >
-                  Cancel
-                </button>
+                >{tAdmin('cancel')}</button>
               </div>
             </div>
           )}
