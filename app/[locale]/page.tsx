@@ -9,7 +9,6 @@ import { usePatientHomeData } from '@/lib/supabase/patientHome';
 import { AppShell } from '@/components/layout/AppShell';
 import { CheckinOutboxBanner } from '@/components/patient/CheckinOutboxBanner';
 import { PatientHomeSkeleton } from '@/components/layout/PatientHomeSkeleton';
-import { SafetyNotice } from '@/components/layout/SafetyNotice';
 import { CheckinPromptCard } from '@/components/cards/CheckinPromptCard';
 import { CatchUpCard } from '@/components/cards/CatchUpCard';
 import { NotificationDayModal } from '@/components/cards/NotificationDayModal';
@@ -98,9 +97,6 @@ export default function PatientHomePage() {
             {t('errorHint')}
           </p>
         </Card>
-        <div className="mt-10">
-          <SafetyNotice />
-        </div>
       </AppShell>
     );
   }
@@ -206,9 +202,6 @@ export default function PatientHomePage() {
           </Card>
         </div>
 
-        <div className="mt-10">
-          <SafetyNotice />
-        </div>
       </AppShell>
     );
   }
@@ -365,11 +358,9 @@ export default function PatientHomePage() {
 
       <CareTeamNotes />
 
-      {/* Safety notice + a quiet data & privacy link. The visit-code row's
-          hairline above acts as the divider, so this notice drops its own top
-          rule and sits close beneath it (no empty band, no double line). */}
+      {/* A quiet data & privacy link, sitting just beneath the visit-code
+          row's hairline. */}
       <div className="mt-5">
-        <SafetyNotice topRule={false} />
         <button
           type="button"
           onClick={() =>
