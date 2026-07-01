@@ -50,9 +50,7 @@ function NewGoalInner() {
     return (
       <div className="min-h-dvh bg-cream">
         <main className="mx-auto max-w-[480px] px-5 py-12">
-          <p className="text-[15px] text-ink-soft">
-            No patient selected. Open this from a patient&apos;s page.
-          </p>
+          <p className="text-[15px] text-ink-soft">{t('noPatientSelected')}</p>
         </main>
       </div>
     );

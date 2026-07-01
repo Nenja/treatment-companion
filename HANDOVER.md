@@ -969,6 +969,60 @@ menu. Replaced with one predictable control.
   unchanged. Note: the `profile` page uses a bespoke header (not `AppHeader`),
   so it shows the account menu's help item but not the pill — minor, reachable.
 
+### 5.21 Localization sweep — hardcoded UI strings (2026-06-30)
+
+Full-app audit for user-facing strings bypassing `next-intl` (user data like
+goal/check-in free text out of scope). Regex scan of `app/**` + `components/**`
+for JSX text + user-facing attrs (140 raw candidates → ~55 real after triage).
+
+**Fixed (55 strings, all en + da first-pass — flag for native review):**
+`physioForms` (both suggest-goal / suggest-muscle forms — headings, labels,
+hints, empty states, "Related goal (optional)"); `admin` (role toggles, edit +
+delete dialogs, status/admin badges, "Cancel"×2); `newGoal` (RecordGoalForm
+patient-phrasing + SMART labels; new-goal no-patient guard); `treatment`
+(patient-access **expiry banner** — ICU plural `{minutes, plural, …}` + "Keep
+working"); `resetPassword` (done state); `forgotPassword` (intro + back link);
+`patient.checkin` (rating-picker prompts **and** the `'Best'`/`'Worst'` scale
+ends, which were hardcoded in a ternary — caught by eye, not the scan);
+`a11y.language` (both `LanguageSelect` aria-labels). Parity 2016, en/da aligned.
+
+**Intentional exceptions:** `privacy/page.tsx` (English by design — legal draft
+pending professional translation + DPO); `Wordmark.tsx` "Treatment Companion"
+(brand name); `global-error.tsx` (renders outside the locale provider — made
+**bilingual inline** EN · DA instead of using the hook).
+
+**Flagged, not fixed:** `AppShell.tsx` "Skip to main content" + `Skeleton.tsx`
+"Loading" live in **server components** → need `getTranslations`/client refactor;
+screen-reader-only, deliberately deferred.
+
+**Durable follow-up (v1.x):** a regex sweep can't see literals in `{expr}` /
+ternaries / consts (proven by the Best/Worst case), so add
+`eslint-plugin-i18next` `no-literal-string` (warn) in CI to burn down the long
+tail and stop regression. Report: `localization-sweep-2026-06-30.md`.
+Verified tsc 0 / eslint 0 / parity 2016 / font-stub build 112. layout SHA
+unchanged.
+
+### 5.22 Swedish + Norwegian brought to full parity (2026-06-30)
+
+sv/nb had drifted to 85.8% (286 keys behind en — the whole session's support
+page, Help control, and localization sweep never landed there, since only en↔da
+is parity-gated). Filled all 286 in both languages as a **Claude first-pass,
+flagged for native Swedish/Norwegian clinical review** (same status as da).
+
+- Anchored to the existing sv/nb vocabulary (Läkare/Lege, Terapeuter, Avbryt,
+  Laddar…/Laster…, Tillbaka/Tilbake) so the new strings aren't a second dialect.
+- ICU plurals reproduced structurally (`itemCount`, `offline.pendingCheckins`,
+  `treatment.accessExpiryBody`); all placeholder names (`{count}`, `{minutes}`,
+  `{n}`, `{when}`, `{list}`, `{key}`, `{version}`, `{title}`, `{prompt}`,
+  `{current}`, `{total}`, `{week}`) verified identical to en.
+- **All four locales now at 2016 keys, 0 missing.** Verified: placeholder-parity
+  check 0 mismatches, ICU brace-balance OK, font-stub build 112/112 (renders the
+  sv/nb static pages — no IntlError). layout SHA unchanged.
+- Note: sv/nb remain **not** parity-gated (`check-i18n-parity.mjs` still checks
+  en↔da only). Now that they're complete, promoting them into the gate is a
+  one-line option if you want CI to keep them from drifting again — deferred as a
+  policy call, since they're first-pass and a native reviewer may re-word.
+
 ## 6. Build history (tags, oldest → newest)
 
 `copy-to-other-side` → `trim-header-and-meds` → `meds-to-actionrow` →

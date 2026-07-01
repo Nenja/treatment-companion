@@ -246,7 +246,11 @@
       "videoAddedHint": "Tryk for at se eller optage igen",
       "videoModalTitle": "Valgfri video",
       "videoModalDone": "Færdig",
-      "catchUpBanner": "Tidligere uge · Uge {week}"
+      "catchUpBanner": "Tidligere uge · Uge {week}",
+      "tapOptionHint": "Tryk på den mulighed, der passer bedst.",
+      "tapNumberHint": "Tryk på et tal for at vælge din vurdering.",
+      "scaleBest": "Bedst",
+      "scaleWorst": "Værst"
     }
   },
   "domain": {
@@ -1131,7 +1135,20 @@
     "emailHelper": "Bruges som login-id.",
     "displayNameHelper": "Vises til klinikeren i patientlisten og patientvisningen.",
     "tempPasswordHelper": "Genereret automatisk. Del med den nye bruger. De bør ændre den ved første login.",
-    "questionnairesTitle": "Spørgeskemaer"
+    "questionnairesTitle": "Spørgeskemaer",
+    "roleOptPatient": "Patient",
+    "roleOptPhysician": "Læge",
+    "regenerate": "Generér igen",
+    "makeAdminLabel": "Gør også denne konto til administrator",
+    "makeAdminHint": "Administratorer kan oprette konti og administrere administratoradgang. Dette er adskilt fra rollen ovenfor.",
+    "statusInactive": "Inaktiv",
+    "badgeAdmin": "Administrator",
+    "editNameLabel": "Navn",
+    "editProfessionLabel": "Profession",
+    "roleChangeHint": "Rollen kan ikke ændres her. For at ændre en rolle skal du deaktivere denne konto og oprette en ny.",
+    "cancel": "Annuller",
+    "deleteConfirmTitle": "Slet denne konto permanent?",
+    "deleteConfirmBody": "Dette kan ikke fortrydes. Det sletter kontoen og alle dens data — for en patient omfatter det alle behandlingscyklusser og check-ins. Overvej at deaktivere i stedet. Skriv e-mailen nedenfor for at bekræfte."
   },
   "patientInfo": {
     "subtitle": "Klinisk baggrund",
@@ -1477,7 +1494,10 @@
     "adjustTotal": "Justér total",
     "muscleSumLabel": "Muskelsum:",
     "useTheSum": "brug summen",
-    "saveChart": "Gem diagram"
+    "saveChart": "Gem diagram",
+    "accessExpiryTitle": "Din patientadgang udløber snart",
+    "accessExpiryBody": "Du har omkring {minutes, plural, one {# minut} other {# minutter}} tilbage. Gem denne behandling, eller hold din adgang åben, hvis du har brug for mere tid.",
+    "keepWorking": "Fortsæt arbejdet"
   },
   "goalVideo": {
     "introTitle": "Optag en kort video (valgfrit)",
@@ -1608,7 +1628,11 @@
     "needSmart": "SMART-beskrivelsen",
     "needNrsQuestion": "Det ugentlige spørgsmål, patienten ser",
     "needNrsRange": "Et udgangspunkt og et mål (0–10)",
-    "needAnchors": "Alle fem udfaldsniveauer"
+    "needAnchors": "Alle fem udfaldsniveauer",
+    "patientPhrasingHint": "I hverdagssprog, som patienten selv ville sige det.",
+    "smartLabel": "Klinisk (SMART) beskrivelse",
+    "smartHint": "Din kliniske formulering af det samme mål.",
+    "noPatientSelected": "Ingen patient valgt. Åbn dette fra en patients side."
   },
   "physioForms": {
     "loading": "Indlæser…",
@@ -1664,7 +1688,24 @@
     "ratingHeading": "Din vurdering i dag",
     "ratingOptional": "valgfrit",
     "rateShort": "Vurdér",
-    "flaggedShort": "Markeret"
+    "flaggedShort": "Markeret",
+    "muscleSuggestTitle": "Foreslå en muskel",
+    "muscleSuggestHint": "Markér en muskel, der kan være involveret, som lægen kan overveje ved næste injektionsbesøg.",
+    "muscleLabel": "Muskel",
+    "sideLabel": "Side",
+    "relatedGoalLabel": "Relateret mål",
+    "optionalSuffix": "(valgfrit)",
+    "relatedGoalHint": "Knyt musklen til et mål, hvis observationen opstod i det måls sammenhæng.",
+    "rationaleLabel": "Klinisk begrundelse",
+    "muscleRationaleHint": "Hvad du observerede, der førte til at markere denne muskel.",
+    "muscleSuggestionsMadeTitle": "Muskelforslag afgivet",
+    "muscleSuggestionsEmpty": "Ingen muskelforslag afgivet endnu i denne cyklus.",
+    "goalSuggestTitle": "Foreslå et mål",
+    "goalSuggestHint": "Anbefal et nyt behandlingsmål, som lægen kan overveje ved næste injektionsbesøg.",
+    "goalSuggestedLabel": "Foreslået mål",
+    "goalRationaleHint": "Hvad du observerede, der førte til dette forslag.",
+    "goalSuggestionsMadeTitle": "Forslag afgivet",
+    "goalSuggestionsEmpty": "Ingen målforslag afgivet endnu i denne cyklus."
   },
   "notifications": {
     "regionAria": "Aktivér notifikationer",
@@ -1705,7 +1746,8 @@
     "chartColWeek": "Uge",
     "chartColRating": "Vurdering",
     "chartNoData": "Ingen vurderinger registreret endnu.",
-    "back": "Tilbage"
+    "back": "Tilbage",
+    "language": "Sprog"
   },
   "accountMenu": {
     "adminLink": "Administration",
@@ -1733,7 +1775,7 @@
   },
   "forgotPassword": {
     "title": "Nulstil din adgangskode",
-    "intro": "Indtast den e-mail, din klinik har til dig. Vi sender et link til at nulstille din adgangskode.",
+    "intro": "Indtast den e-mail, din klinik har registreret. Vi sender et link til at oprette en ny adgangskode.",
     "emailLabel": "E-mail",
     "submit": "Send nulstillingslink",
     "submitting": "Sender…",
@@ -1762,7 +1804,11 @@
     "invalidTitle": "Linket er udløbet",
     "invalidBody": "Links til nulstilling af adgangskode kan kun bruges én gang, og de udløber kort efter, at de er sendt. Bed om et nyt, så sender vi dig et friskt link på e-mail.",
     "requestNewLink": "Bed om et nyt link",
-    "backToSignIn": "Tilbage til login"
+    "backToSignIn": "Tilbage til login",
+    "doneTitle": "Adgangskode opdateret",
+    "doneBody": "Din nye adgangskode er gemt. Brug den, næste gang du logger ind.",
+    "continue": "Fortsæt",
+    "minChars": "Mindst 8 tegn."
   },
   "visitChanges": {
     "title": "Siden sidste besøg",

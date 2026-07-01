@@ -1,3 +1,18 @@
+=== 2026-06-30 — Swedish + Norwegian to full parity (no migration) ===
+- sv/nb were 85.8% (286 keys behind en: this session's support page, Help control, and i18n sweep had only landed in en+da, since only en↔da is parity-gated).
+- Filled all 286 keys in BOTH sv and nb as Claude first-pass, flagged for native Swedish/Norwegian clinical review. Anchored to existing sv/nb vocabulary for consistency.
+- ICU plurals reproduced (itemCount, offline.pendingCheckins, treatment.accessExpiryBody); all placeholder names verified identical to en (0 mismatches).
+- All four locales now 2016 keys, 0 missing. Verified: placeholder-parity 0 mismatches, ICU brace-balance OK, font-stub build 112/112 (renders sv/nb pages, no IntlError). layout SHA unchanged (6e231e…).
+- sv/nb still NOT in the parity gate (check-i18n-parity.mjs = en↔da only). Optional one-liner to add them now that they're complete — left as a policy call (first-pass, native review may re-word).
+
+=== 2026-06-30 — Localization sweep: hardcoded UI strings (no migration) ===
+- Audited app/** + components/** for user-facing strings bypassing next-intl (user free-text out of scope). Regex scan -> 140 raw candidates -> ~55 real after triage.
+- Fixed 55 strings (all en + da first-pass, flag for native review): physioForms (both physio suggestion forms), admin (role toggles, edit/delete dialogs, badges, Cancel x2), newGoal (RecordGoalForm + new-goal guard), treatment (patient-access expiry banner: ICU plural {minutes, plural,…} + Keep working), resetPassword (done state), forgotPassword (intro + back link), patient.checkin (rating-picker prompts + Best/Worst scale ends that were hardcoded in a ternary), a11y.language (both LanguageSelect aria-labels).
+- Intentional exceptions: privacy/page.tsx (legal draft, English by design), Wordmark "Treatment Companion" (brand), global-error.tsx (outside locale provider -> made bilingual EN·DA inline).
+- Flagged not fixed: AppShell "Skip to main content" + Skeleton "Loading" (server components -> need getTranslations/client refactor; screen-reader-only).
+- Durable follow-up (v1.x): add eslint-plugin-i18next no-literal-string (warn) in CI — regex can't catch literals in {expr}/ternaries (proven by Best/Worst).
+- Verified: tsc 0, eslint 0, parity 2016 (en/da), font-stub build 112/112. layout SHA unchanged (6e231e…). Report: localization-sweep-2026-06-30.md.
+
 === 2026-06-30 — Always-present "Help" control (help-discoverability-1; no migration) ===
 - Chosen shape (user): icon + "Help" label in the header, on every screen, routed to support.
 - PageHelpButton rewritten: labelled "? Help" pill, pageKey now OPTIONAL, always rendered. AppHeader + WizardLayout render it unconditionally (was gated on helpPageKey) -> present on all authed screens (AppHeader is the single header, used via AppShell + clinician/physio pages; TopBar is retired).

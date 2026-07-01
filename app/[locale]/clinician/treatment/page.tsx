@@ -770,13 +770,10 @@ function TreatmentRecordLoaded({
             className="mt-5 rounded-[var(--radius-card)] border border-amber-deep/40 bg-amber-soft/40 p-4"
           >
             <p className="text-[15px] font-semibold text-ink">
-              Your patient access is about to expire
+              {t('accessExpiryTitle')}
             </p>
             <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">
-              You have about {expiry.minutesLeft}{' '}
-              {expiry.minutesLeft === 1 ? 'minute' : 'minutes'} left.
-              Save this treatment, or keep your access open if you need
-              more time.
+              {t('accessExpiryBody', { minutes: expiry.minutesLeft })}
             </p>
             <button
               type="button"
@@ -791,9 +788,7 @@ function TreatmentRecordLoaded({
               }}
               disabled={touchSession.isPending}
               className="mt-3 flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:opacity-50"
-            >
-              Keep working
-            </button>
+            >{t('keepWorking')}</button>
           </div>
         )}
 
