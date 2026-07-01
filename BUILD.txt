@@ -1,3 +1,8 @@
+=== 2026-06-30 — Clinician goals: remove physio "working on" tag + click-header collapse (no migration) ===
+- Removed physioWorkingOnTag chip + its workingOnGoalIds derivation from the clinician goal footer (no useful signal). i18n key left unused.
+- GoalProgressView: when collapsible, the header (title + weeks-reported) is itself the toggle button (chevron moved onto it, aria-expanded, title is the accessible name). Export/enlarge icons remain independent (no nested buttons). Non-collapsible call sites unchanged.
+- Collapsed still shows title -> check-in count -> action row (edit/retire/video); only the chart body collapses.
+- Verified: tsc 0, eslint 0 errors, parity 2027, vitest 41/41, build 112. layout SHA unchanged.
 === 2026-06-30 — Clinician goals per-goal collapse (no migration) ===
 - GoalProgressView: added optional collapsible + defaultOpen props. When collapsible, header (goal title + weeks-reported) stays visible; a chevron toggles the chart body (per-instance useState). Other 4 call sites omit the prop (modal/tour/physio unchanged).
 - clinician/patient/page.tsx: GoalProgressView called with `collapsible defaultOpen={bontGoals.length <= 2}` -> charts expanded at <=2 active goals, default-collapsed at >2, each independently toggleable. Header per goal remains (matches patient goals page intent).

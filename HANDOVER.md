@@ -1243,6 +1243,24 @@ the collapse too if wanted.
 Verified: tsc 0, eslint 0 errors, i18n parity 2027, vitest 41/41, build 112.
 layout SHA unchanged. No migration.
 
+### 5.30 Clinician goals: remove physio "working on" tag + click-header to collapse (2026-06-30)
+
+Two tweaks to the per-goal cards on the clinician patient view:
+- Removed the "therapist working on this goal" chip (`physioWorkingOnTag`) from the
+  goal footer — it carried no useful signal. Its now-dead `workingOnGoalIds`
+  derivation was deleted too. (The i18n key is left in place, unused.)
+- The collapse toggle is now the header itself: when `collapsible`, the goal
+  title + weeks-reported block is a single button (chevron moved onto it,
+  aria-expanded, the title text is its accessible name). The export/enlarge icon
+  buttons stay as independent controls beside it, so nothing nests. Non-collapsible
+  call sites (modal/tour/physio) render the plain header as before.
+
+Collapsed state still shows: title → weeks-reported (check-in count) → action row
+(edit/retire/video); only the chart body collapses.
+
+Verified: tsc 0, eslint 0 errors, i18n parity 2027, vitest 41/41, build 112.
+layout SHA unchanged. No migration.
+
 ## 6. Build history (tags, oldest → newest)
 
 `copy-to-other-side` → `trim-header-and-meds` → `meds-to-actionrow` →
