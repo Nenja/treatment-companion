@@ -1,3 +1,13 @@
+=== 2026-06-30 — Read-aloud gated on matching-language voice (no migration) ===
+- Decision (per Nikolaj): hide read-aloud when the device has no voice for the app's language, rather than read in the English fallback.
+- useSpeak now returns hasVoice (recomputed via pickVoice on voiceschanged + on locale change; effect deps [locale]). ReadAloudButton gates render on hasVoice alongside readAloud pref / supported / text.
+- Also normalised underscore lang tags (da_DK -> da-DK) in pickVoice.
+- QA note: on Windows/Firefox WITHOUT a Danish voice, read-aloud buttons are now ABSENT by design. Install Danish Windows voice + restart Firefox to see them. iOS ships Danish.
+- Verified: tsc 0, eslint 0, vitest 41/41, font-stub build 112. layout SHA unchanged.
+=== 2026-06-30 — Read-aloud voice matching: normalise underscore lang tags (no migration) ===
+- lib/useSpeak.ts pickVoice: normalise voice.lang and target ('_' -> '-') before comparing, so da_DK-style tags match da-DK. Behaviour otherwise unchanged.
+- Root cause of "still English" is almost certainly platform: Firefox on Windows exposes only OS-installed voices, and Windows ships no Danish TTS voice by default -> nothing to pick -> default (English). Provided an in-browser voice-diagnostic widget to confirm per-device. iOS ships Danish; Android often needs it added.
+- Verified: tsc 0, eslint 0, font-stub build 112. layout SHA unchanged.
 === 2026-06-30 — Patient profile restructure + goals-button graphic (no migration) ===
 - Goals button (patient home): added a target/bullseye graphic in a sage tile to the "Your goals" entry (was text + chevron only). Decorative; label unchanged.
 - Profile page restructure (LAYOUT ONLY — no consent wording/behaviour change): routine-first order (Reminders, Language, Appearance with "Saves automatically"), then set-once material collapsed by default via a new local CollapsibleSection (chevron, aria-expanded, collapsed summary, "Edited" chip when the section holds unsaved staged edits). "Your details" (name/email/password/profession/sex) and "What you share" (research + video consent + wearable panel, consolidated under one heading + intro) are collapsed. Per-section dirty parsed from baseline snapshot; sticky bar + leave guard unchanged.

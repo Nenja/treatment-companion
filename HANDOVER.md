@@ -1107,6 +1107,27 @@ Verified: tsc 0, eslint 0 errors, 4-locale parity (2024), vitest 41/41, font-stu
 build 112. layout SHA unchanged. Real-device QA still owed: collapse/scroll feel
 and the sticky bar on the smallest screens.
 
+### 5.26 Read-aloud hidden when no matching-language voice (2026-06-30)
+
+Follow-up to the voice-selection fix. Diagnosed the "still English" report as a
+platform limitation, not a bug: Firefox on Windows exposes only OS-installed
+voices, and Windows ships no Danish TTS voice by default, so there was nothing to
+pick and it fell back to English. (Confirmed via an in-browser voice diagnostic.)
+
+Decision: rather than read in a wrong-language fallback voice, **hide read-aloud
+when the device has no voice for the app's language.** `useSpeak` now exposes
+`hasVoice` (recomputed from `pickVoice` on `voiceschanged` and on locale change);
+`ReadAloudButton` gates on it alongside the existing preference / support / text
+checks. So the speaker button simply doesn't appear on a device that can't read
+the current language correctly, and reappears once a matching voice is installed.
+Also normalised underscore lang tags (`da_DK`→`da-DK`) in matching.
+
+Consequence for QA: on a Windows/Firefox machine without a Danish voice, the
+read-aloud buttons are now ABSENT by design (not a regression). Install a Danish
+Windows voice + restart Firefox to see them. iOS ships Danish; most Android has
+or can add it. Verified: tsc 0, eslint 0, vitest 41/41, font-stub build 112.
+layout SHA unchanged.
+
 ## 6. Build history (tags, oldest → newest)
 
 `copy-to-other-side` → `trim-header-and-meds` → `meds-to-actionrow` →
