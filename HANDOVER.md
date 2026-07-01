@@ -1261,6 +1261,23 @@ Collapsed state still shows: title → weeks-reported (check-in count) → actio
 Verified: tsc 0, eslint 0 errors, i18n parity 2027, vitest 41/41, build 112.
 layout SHA unchanged. No migration.
 
+### 5.31 Remove front-page emergency disclaimer from patient home (2026-06-30)
+
+Per Nikolaj: the "Ikke til akut hjælp" / "Not for urgent care" `SafetyNotice`
+was removed from the patient home (all three states: error, empty, main) plus its
+import. Rationale: the fuller emergency guidance (`support.emergencyTitle`/
+`emergencyBody`, incl. "Ring 112") already lives on the support/help page, so the
+home-page notice was redundant. The `safety.*` i18n keys and the `SafetyNotice`
+component file are left in place but unused (easy to reinstate). `checkin`'s
+`commentSafetyNote` ("For urgent concerns, contact your clinic") is unaffected.
+
+Note flagged to Nikolaj: the home is the most-seen surface, so this drops the
+emergency framing from where the most eyes land; it remains reachable via Help.
+His clinical call.
+
+Verified: tsc 0, eslint 0 errors, i18n parity 2027, vitest 41/41, build 112.
+layout SHA unchanged. No migration.
+
 ## 6. Build history (tags, oldest → newest)
 
 `copy-to-other-side` → `trim-header-and-meds` → `meds-to-actionrow` →

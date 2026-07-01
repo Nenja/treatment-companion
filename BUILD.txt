@@ -1,3 +1,8 @@
+=== 2026-06-30 — Remove front-page emergency disclaimer from patient home (no migration) ===
+- Removed SafetyNotice ("Ikke til akut hjælp"/"Not for urgent care") from patient home app/[locale]/page.tsx (error/empty/main states) + its import. Redundant with the fuller support-page emergency notice (support.emergencyTitle/emergencyBody, "Ring 112").
+- safety.* i18n keys + SafetyNotice component left unused (reinstatable). checkin.commentSafetyNote unaffected.
+- Flagged: drops emergency framing from the most-seen surface; remains on Help. Nikolaj's clinical call.
+- Verified: tsc 0, eslint 0 errors, parity 2027, vitest 41/41, build 112. layout SHA unchanged.
 === 2026-06-30 — Clinician goals: remove physio "working on" tag + click-header collapse (no migration) ===
 - Removed physioWorkingOnTag chip + its workingOnGoalIds derivation from the clinician goal footer (no useful signal). i18n key left unused.
 - GoalProgressView: when collapsible, the header (title + weeks-reported) is itself the toggle button (chevron moved onto it, aria-expanded, title is the accessible name). Export/enlarge icons remain independent (no nested buttons). Non-collapsible call sites unchanged.
