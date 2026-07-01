@@ -107,7 +107,7 @@ function StartItbCard({
               type="date"
               value={startedOn}
               onChange={(e) => setStartedOn(e.target.value)}
-              className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
+              className="mt-1 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
             />
           </label>
           <label className="block">
@@ -120,7 +120,7 @@ function StartItbCard({
               rows={2}
               maxLength={2000}
               placeholder={t('notePlaceholder')}
-              className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+              className="mt-1 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
             />
           </label>
           <div className="flex gap-2">
@@ -296,7 +296,7 @@ function DoseModal({
               type="date"
               value={changedOn}
               onChange={(e) => setChangedOn(e.target.value)}
-              className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
+              className="mt-1 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
             />
           </label>
           <label className="block">
@@ -311,7 +311,7 @@ function DoseModal({
               value={doseText}
               onChange={(e) => setDoseText(e.target.value)}
               placeholder={t('doseUnit')}
-              className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
+              className="mt-1 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
             />
           </label>
           <label className="block">
@@ -323,7 +323,7 @@ function DoseModal({
               onChange={(e) => setNote(e.target.value)}
               rows={2}
               maxLength={2000}
-              className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+              className="mt-1 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
             />
           </label>
         </div>

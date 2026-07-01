@@ -507,7 +507,7 @@ function CreateAccountSection({ embedded }: { embedded?: boolean }) {
             onChange={(e) =>
               setProfession(e.target.value as ProfessionCode)
             }
-            className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-3 text-[14px] font-semibold text-ink focus:border-sage focus:outline-none"
+            className="mt-2 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-3 text-[14px] font-semibold text-ink focus:border-sage focus:outline-none"
           >
             {professionOptions(locale === 'da' ? 'da' : 'en').map((opt) => (
               <option key={opt.code} value={opt.code}>
@@ -522,7 +522,7 @@ function CreateAccountSection({ embedded }: { embedded?: boolean }) {
               onChange={(e) => setProfessionOther(e.target.value)}
               placeholder={tAdmin('professionOtherPlaceholder')}
               maxLength={60}
-              className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2.5 text-[14px] text-ink focus:border-sage focus:outline-none"
+              className="mt-2 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2.5 text-[14px] text-ink focus:border-sage focus:outline-none"
             />
           )}
         </Field>
@@ -1046,7 +1046,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 maxLength={80}
-                className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
+                className="mt-1 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
               />
               {isTherapist && (
                 <div className="mt-3">
@@ -1056,7 +1056,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                     onChange={(e) =>
                       setProfession(e.target.value as ProfessionCode)
                     }
-                    className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[14px] font-semibold text-ink focus:border-sage focus:outline-none"
+                    className="mt-1 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-3 py-2 text-[14px] font-semibold text-ink focus:border-sage focus:outline-none"
                   >
                     {professionOptions(locale === 'da' ? 'da' : 'en').map(
                       (opt) => (
@@ -1073,7 +1073,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                       onChange={(e) => setProfessionOther(e.target.value)}
                       placeholder={tAdmin('describeProfession')}
                       maxLength={60}
-                      className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
+                      className="mt-2 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
                     />
                   )}
                 </div>
@@ -1161,7 +1161,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
                 value={deleteTyped}
                 onChange={(e) => setDeleteTyped(e.target.value)}
                 placeholder={a.email}
-                className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[13px] text-ink focus:border-sage focus:outline-none"
+                className="mt-2 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[13px] text-ink focus:border-sage focus:outline-none"
               />
               <div className="mt-3 flex gap-2">
                 <button
@@ -1191,7 +1191,7 @@ function AccountRow({ account: a }: { account: AdminAccount }) {
 }
 
 const inputClasses =
-  'mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2.5 text-[15px] text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none';
+  'mt-1.5 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2.5 text-[15px] text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none';
 
 function Field({
   label,
@@ -1432,7 +1432,7 @@ function StudiesSection({ enabled, embedded }: { enabled: boolean; embedded?: bo
             onChange={(e) => setStudyQuery(e.target.value)}
             placeholder={tAdmin('studySearchPlaceholder')}
             aria-label={tAdmin('studySearchPlaceholder')}
-            className="mt-3 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[13px] text-ink placeholder:text-ink-muted/60 focus:border-sage focus:outline-none"
+            className="mt-3 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[13px] text-ink placeholder:text-ink-muted/60 focus:border-sage focus:outline-none"
           />
           {visibleStudies.length === 0 ? (
             <p className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft px-4 py-3 text-[14px] text-ink-muted">
@@ -1477,7 +1477,7 @@ function StudiesSection({ enabled, embedded }: { enabled: boolean; embedded?: bo
             onChange={(e) => setPatientQuery(e.target.value)}
             placeholder={tAdmin('studyPatientSearchPlaceholder')}
             aria-label={tAdmin('studyPatientSearchPlaceholder')}
-            className="mt-3 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[13px] text-ink placeholder:text-ink-muted/60 focus:border-sage focus:outline-none"
+            className="mt-3 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[13px] text-ink placeholder:text-ink-muted/60 focus:border-sage focus:outline-none"
           />
           {filtered.length === 0 ? (
             <p className="mt-3 rounded-[var(--radius-card)] border border-stone bg-cream-soft px-4 py-3 text-[14px] text-ink-muted">
@@ -1533,7 +1533,7 @@ function CreateStudyForm() {
   };
 
   const inputClass =
-    'mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none';
+    'mt-1 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none';
 
   return (
     <div className="mt-4 rounded-[var(--radius-card)] border border-stone bg-cream-soft px-4 py-4">
@@ -1612,7 +1612,7 @@ function StudyRow({ study }: { study: StudySummary }) {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-1.5 text-[14px] text-ink focus:border-sage focus:outline-none"
+            className="block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-1.5 text-[14px] text-ink focus:border-sage focus:outline-none"
           />
           <button
             type="button"

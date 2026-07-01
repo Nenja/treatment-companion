@@ -64,7 +64,7 @@ export function NoteToClinicCard({ patientId }: { patientId: string }) {
         maxLength={5000}
         rows={3}
         placeholder={t('placeholder')}
-        className="mt-3 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2.5 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+        className="mt-3 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2.5 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
       />
       <div className="mt-2 flex items-center gap-3">
         {error && <p className="text-[13px] text-amber-deep">{t('error')}</p>}

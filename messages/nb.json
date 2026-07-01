@@ -1713,7 +1713,9 @@
     "chartColRating": "Vurdering",
     "chartNoData": "Ingen vurderinger registrert ennå.",
     "back": "Tilbake",
-    "language": "Språk"
+    "language": "Språk",
+    "collapseChart": "Skjul graf for: {goal}",
+    "expandChart": "Vis graf for: {goal}"
   },
   "accountMenu": {
     "adminLink": "Administrasjon",

@@ -112,7 +112,7 @@ export function WizardLayout({
                       aria-hidden
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] ${
                         s.done
-                          ? 'bg-sage text-on-accent'
+                          ? 'bg-sage-deep text-on-accent'
                           : isCurrent
                             ? 'border-2 border-sage bg-cream-soft text-sage-deep'
                             : 'border border-stone bg-cream-soft text-ink-muted'

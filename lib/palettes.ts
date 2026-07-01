@@ -69,7 +69,7 @@ export const PALETTES: Palette[] = [
       '--color-cream-soft': '#fbf8f2',
       '--color-ink': '#1f2421',
       '--color-ink-soft': '#4b5450',
-      '--color-ink-muted': '#686d69',
+      '--color-ink-muted': '#5c605c',
       '--color-sage': '#5c7a6a',
       '--color-sage-deep': '#3f5a4b',
       '--color-sage-soft': '#dce6de',
@@ -78,14 +78,15 @@ export const PALETTES: Palette[] = [
       '--color-stone': '#e5dfd3',
       '--color-focus': '#2f5563',
       '--color-on-accent': '#fbf8f2',
-      '--color-stone-soft': '#efeae0'
+      '--color-stone-soft': '#efeae0',
+      '--color-field-border': '#8a7e64'
     },
     night: {
       '--color-cream': '#1c1f1d',
       '--color-cream-soft': '#262a27',
       '--color-ink': '#ece7dd',
       '--color-ink-soft': '#b9bdb6',
-      '--color-ink-muted': '#8f948d',
+      '--color-ink-muted': '#a1a7a0',
       '--color-sage': '#7fa08e',
       '--color-sage-deep': '#5c7a6a',
       '--color-sage-soft': '#2f3a34',
@@ -93,8 +94,9 @@ export const PALETTES: Palette[] = [
       '--color-amber-deep': '#d8bd80',
       '--color-stone': '#3a3f3b',
       '--color-focus': '#9cc7d6',
-      '--color-on-accent': '#f3efe6',
-      '--color-stone-soft': '#30342f'
+      '--color-on-accent': '#ffffff',
+      '--color-stone-soft': '#30342f',
+      '--color-field-border': '#787c77'
     }
   },
   // ---- CLAY — warm terracotta identity ------------------------------
@@ -107,7 +109,7 @@ export const PALETTES: Palette[] = [
       '--color-cream-soft': '#fbf6f1',
       '--color-ink': '#2a221e',
       '--color-ink-soft': '#574b44',
-      '--color-ink-muted': '#766860',
+      '--color-ink-muted': '#685a52',
       '--color-sage': '#b06245',
       '--color-sage-deep': '#8a4630',
       '--color-sage-soft': '#ecd9cf',
@@ -117,23 +119,25 @@ export const PALETTES: Palette[] = [
       '--color-stone': '#e6dbd2',
       '--color-focus': '#2f5563',
       '--color-on-accent': '#fbf6f1',
-      '--color-stone-soft': '#efe6dd'
+      '--color-stone-soft': '#efe6dd',
+      '--color-field-border': '#8a7d62'
     },
     night: {
       '--color-cream': '#201b18',
       '--color-cream-soft': '#2b2522',
       '--color-ink': '#ede4dc',
       '--color-ink-soft': '#bdb2a9',
-      '--color-ink-muted': '#938880',
+      '--color-ink-muted': '#a49a91',
       '--color-sage': '#cf8568',
-      '--color-sage-deep': '#b06245',
+      '--color-sage-deep': '#bd6e50',
       '--color-sage-soft': '#3a2c25',
       '--color-amber-soft': '#3d3526',
       '--color-amber-deep': '#dcc086',
       '--color-stone': '#3f3833',
       '--color-focus': '#9cc7d6',
       '--color-on-accent': '#1a0f0a',
-      '--color-stone-soft': '#332c27'
+      '--color-stone-soft': '#332c27',
+      '--color-field-border': '#7f7a72'
     }
   },
   // ---- HIGH CONTRAST — dedicated low-vision palette -----------------
@@ -155,7 +159,8 @@ export const PALETTES: Palette[] = [
       '--color-stone': '#6b6b6b',
       '--color-focus': '#0033aa',
       '--color-on-accent': '#ffffff',
-      '--color-stone-soft': '#e0e0e0'
+      '--color-stone-soft': '#e0e0e0',
+      '--color-field-border': '#595959'
     },
     night: {
       '--color-cream': '#000000',
@@ -171,7 +176,8 @@ export const PALETTES: Palette[] = [
       '--color-stone': '#8a8a8a',
       '--color-focus': '#7fd4ff',
       '--color-on-accent': '#06140d',
-      '--color-stone-soft': '#1f1f1f'
+      '--color-stone-soft': '#1f1f1f',
+      '--color-field-border': '#8a8a8a'
     }
   }
 ];

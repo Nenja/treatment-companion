@@ -215,7 +215,7 @@ export default function ClinicianUnlockPage() {
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
-            className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-4 text-center font-mono text-[26px] font-bold tracking-[0.15em] text-ink placeholder:text-ink-muted/50 focus:border-sage focus:outline-none"
+            className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-4 py-4 text-center font-mono text-[26px] font-bold tracking-[0.15em] text-ink placeholder:text-ink-muted/50 focus:border-sage focus:outline-none"
             maxLength={7}
           />
           {error && (

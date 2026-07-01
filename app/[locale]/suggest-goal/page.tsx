@@ -192,7 +192,7 @@ export default function SuggestGoalPage() {
               value={draft.otherDomainText ?? ''}
               onChange={(e) => update({ otherDomainText: e.target.value })}
               placeholder={t('step1.otherPlaceholder')}
-              className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-3 text-[16px] text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
+              className="mt-2 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-4 py-3 text-[16px] text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
               maxLength={60}
             />
           </div>
@@ -213,7 +213,7 @@ export default function SuggestGoalPage() {
           onChange={(e) => update({ patientWording: e.target.value })}
           placeholder={t('step2.placeholder')}
           rows={5}
-          className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-3 text-[16px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
+          className="block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-4 py-3 text-[16px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
           maxLength={500}
         />
         <ExamplesBlock title={t('step2.examplesTitle')}>
@@ -253,7 +253,7 @@ export default function SuggestGoalPage() {
           onChange={(e) => update({ difficultyContext: e.target.value })}
           placeholder={t('step4.placeholder')}
           rows={4}
-          className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-3 text-[16px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
+          className="block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-4 py-3 text-[16px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
           maxLength={500}
         />
 

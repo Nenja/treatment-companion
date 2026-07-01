@@ -49,7 +49,7 @@ export function PatientVideoConsentGate({
           type="checkbox"
           checked={educational}
           onChange={(e) => setEducational(e.target.checked)}
-          className="mt-1 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
+          className="mt-1 h-4 w-4 shrink-0 rounded border-ink-muted text-sage-deep focus:ring-sage"
         />
         <span>
           {t('educationalLabel')}

@@ -77,7 +77,7 @@ export function PhysioGoalSuggestionForm({
             onChange={(e) => setGoal(e.target.value)}
             rows={2}
             maxLength={500}
-            className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
+            className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-3 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
             placeholder={t('goalPlaceholder')}
           />
         </div>
@@ -94,7 +94,7 @@ export function PhysioGoalSuggestionForm({
             onChange={(e) => setRationale(e.target.value)}
             rows={4}
             maxLength={1000}
-            className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
+            className="mt-2 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-3 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
             placeholder={t('goalRationalePlaceholder')}
           />
         </div>

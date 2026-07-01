@@ -33,7 +33,7 @@ export function VideoConsentSettings({
             type="checkbox"
             checked={clinical}
             onChange={(e) => onChange({ clinical: e.target.checked, educational })}
-            className="mt-1 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
+            className="mt-1 h-4 w-4 shrink-0 rounded border-ink-muted text-sage-deep focus:ring-sage"
           />
           <span>
             {t('recordingLabel')}
@@ -47,7 +47,7 @@ export function VideoConsentSettings({
             type="checkbox"
             checked={educational}
             onChange={(e) => onChange({ clinical, educational: e.target.checked })}
-            className="mt-1 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
+            className="mt-1 h-4 w-4 shrink-0 rounded border-ink-muted text-sage-deep focus:ring-sage"
           />
           <span>
             {t('educationalLabel')}
