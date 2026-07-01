@@ -25,6 +25,7 @@ export default function SignupPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('signup');
+  const tSupport = useTranslations('support');
   const { user, profile, loading } = useAuth();
 
   const [role, setRole] = useState<'patient' | 'physiotherapist'>('patient');
@@ -321,6 +322,13 @@ export default function SignupPage() {
             className="text-ink-muted hover:text-ink-soft"
           >
             {t('privacyLink')}
+          </Link>
+          <span className="mx-2 text-ink-muted" aria-hidden>·</span>
+          <Link
+            href={`${prefix}/support`}
+            className="text-ink-muted hover:text-ink-soft"
+          >
+            {tSupport('loginLink')}
           </Link>
         </p>
       </main>

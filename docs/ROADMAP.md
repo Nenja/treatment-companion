@@ -1,215 +1,207 @@
-# Treatment Companion — Roadmap & Hardening Backlog (living doc)
+# Treatment Companion — Roadmap (living doc)
 
-_Last updated: 2026-06-16._
+_Last updated: 2026-06-30._
 
-This is the **living** forward plan. The dated `ASSESSMENT-2026-06-15.md` is the
-point-in-time snapshot it grew out of; when the two disagree, this file is newer.
-Priorities use the same bands as the assessment: **P0** = before any real patient,
-**P1** = hardening shortly after, **P2** = product threads (no safety gate).
+This is the **living** forward plan. `HANDOVER.md` holds history/architecture;
+this file holds what's next; `OPS.md` holds run-time operations. When the dated
+`ASSESSMENT-*.md` snapshots disagree with this file, this file is newer.
 
-Each item notes **who** owns it — _you_ (dashboard / clinical / decision), _dev_
-(the incoming developer), or _external_ (qualified professional) — and what
-**"done"** looks like.
+**Where we are:** v1 is feature-complete and in **pilot preparation**. As of
+2026-06-30 we are **freezing v1 features** — the only work that lands on v1 now
+is the remaining pilot gates and bug-fixes. New capability (wearables activation,
+pain mapping) is **v2.0**.
 
----
-
-## Standing rules
-
-- **Migrations go to staging first.** Run a new migration in the **staging**
-  Supabase project, test it on the staging Preview URL, _then_ run it in
-  production and upload to `main`. This is the whole reason staging exists.
-- **Production deploys only on green CI.** Pushing to `main` no longer
-  auto-builds production; the GitHub Action deploys after CI passes
-  (deploy-on-green). Risky work goes to the `staging` branch (Preview) first.
-- **One source of truth.** `HANDOVER.md` for history/architecture; this file for
-  what's next; `OPS.md` for run-time operations.
+Ownership tags: **you** (dashboard / clinical / decision) · **dev** (incoming
+developer) · **external** (qualified professional — DPO, native-Danish clinician).
 
 ---
 
-## Done this session (2026-06-16)
+## Standing rules (unchanged)
 
-- ✅ **Deploy-on-green** — Vercel production auto-build suppressed via the Ignored
-  Build Step (`if production then skip`); production ships through the GitHub
-  Action only after CI is green. _(Final confirmation: the deploy-after-CI test
-  run, + the three GitHub secrets if not yet added.)_ **Follow-up fix
-  (2026-06-16):** the post-deploy **E2E** trigger was keyed off Vercel's
-  "successful Production deploy" event, which deploy-on-green stops emitting (the
-  Ignored Build Step cancels Vercel's own prod build) — so the E2E job started
-  skipping. `e2e.yml` now triggers off the **Deploy** workflow succeeding
-  (`workflow_run`) instead; schedule + manual runs were never affected.
-- ✅ **Staging environment** — separate staging Supabase project (schema loaded
-  from the 5 ordered SQL blocks) + Vercel Preview env vars pointed at it +
-  a `staging` branch. Confirmed isolated from production.
-- ✅ **ESLint** — flat config (ESLint 9 + typescript-eslint + react-hooks +
-  Next plugin) wired into `verify` and CI; 0 errors baseline.
-- ✅ **React hooks crash risk fixed** — the conditional-hooks bug on the clinician
-  treatment screen refactored away; `rules-of-hooks` now a hard error repo-wide.
-  _(Open: your QA pass on that screen — see P0.)_
-- ✅ **Runtime RLS-denial tests** in CI (cross-patient isolation, clinician-session
-  gating + staleness, anon denial, the 0096 care-team-note boundary, admin-only
-  study tables).
-- ✅ **Care-team-notes decision recorded** — patient-readable is intended (the
-  patient's own care record); product was already consistent, docs corrected.
-- ✅ **Export RPC hotfix — `0111` (2026-06-16).** `export_research_dataset()`
-  read `m.guidance` but 0009 moved that column to the session; the live
-  REDCap sync threw "column m.guidance does not exist". Fixed to `s.guidance`,
-  Method-D verified (reproduced the error, confirmed the fix runs). The SQL
-  RPCs aren't exercised by the JS tests — a CI/Method-D smoke-call of the
-  research export would catch this class; logged as a hardening follow-up.
-- ✅ **Dev scenario launcher retired (2026-06-16)** — `/dev/scenarios` page,
-  `/api/dev/scenario` route, and `lib/dev/scenarios.ts` removed (it signed the
-  user out then failed to sign back in — pure friction, no real use). The
-  `ENABLE_DEV_TOOLS` / `NEXT_PUBLIC_ENABLE_DEV_TOOLS` env vars are now unused and
-  can be deleted from Vercel. The `dev_reseed_all()` SQL function is untouched.
-  Open: the Tier-2 E2E scaffolds referenced this mechanism and need re-grounding
-  (seed via SQL + a reusable visit code) — noted in `e2e/clinician.spec.ts`.
+- **Migrations go to staging first**, tested on the staging Preview URL, then
+  production, then `main`.
+- **Production deploys only on green CI** (deploy-on-green). Risky work to the
+  `staging` branch / Preview first.
+- **Run `supabase/checks/verify_security_invariants.sql` after every migration.**
+  It catches the forgotten-revoke / NULL-propagation class on day one.
+- **One source of truth:** `HANDOVER.md` (history) · this file (next) · `OPS.md`
+  (ops).
 
 ---
 
-## P0 — before any real patient touches the system
+## v1.0 — Pilot release  ·  FEATURE FREEZE
 
-- ⛔ **Regulatory + DPO sign-off** _(external)_. MDR determination + DPO review of
-  the DPIA, privacy notice, sub-processor DPAs (Supabase / Vercel / Google-FCM /
-  Sentry), EU residency, retention, and DSAR. **Done =** documented determination
-  and sign-offs on file. _Qualified advice, not engineering._
-- 🔧 **Tested backup/restore** _(you)_. Confirm Supabase **Pro + automated
-  backups / PITR** are on, then **restore once into a scratch project** per
-  `OPS.md §2`. **Done =** a restore you've actually performed and verified. _This
-  is the highest data-loss risk and the single most important open item._
-- 🔧 **Finish Sentry** _(you)_. Set `NEXT_PUBLIC_SENTRY_DSN` (+ `=production`
-  environment) in Vercel on an EU-region project; confirm with a throwaway error.
-  **Done =** a test error visible in Sentry. _(Code already shipped.)_
-- 🔧 **Native-Danish clinical-string review** _(you / clinical)_. The Danish
-  strings are a first pass flagged for native review. **Done =** a clinician
-  fluent in Danish has read the patient- and clinician-facing clinical strings.
-- 🔧 **QA the refactored treatment screen** _(you)_. Load it for real: record /
-  edit / new-cycle / save / copy-from-previous / rail scroll-highlight / total
-  auto-fill. **Done =** each path exercised once without regression.
+### Shipped (the inventory)
 
----
+**Care-triangle model.** Patient (+caregiver on the patient's device), weekly
+**physiotherapist**, treating **clinic**. The product's centre of gravity is the
+clinic's consolidated **"since last visit" review-and-plan** view. Direction is
+upward (patient/therapist → clinic) plus the clinic's goal discussion with the
+patient; the one sanctioned downward channel is the physician→therapist handoff
+note. No clinic→patient messaging (intentional).
 
-## P1 — hardening, shortly after
+- **Goals** — suggestion → clinician-approval → shared goal; goal **versioning /
+  lineage** (recalibrate at a visit, frozen prior versions, per-goal history,
+  link/merge); **GAS-aware** ratings; optional patient goal video.
+- **Weekly check-ins** — patient-reported outcomes vs goals; self/caregiver
+  label; **offline-resilient outbox** + durable drafts.
+- **Treatment cycles** — cycle start/handling, treatment-session capture, the
+  **face-injection map** (blepharospasm/dystonia, copyright-cleared base, free
+  marks, PNG export), **ITB / baclofen-pump** dose changes. Modality model
+  generalising beyond botulinum toxin.
+- **Therapist signals (complete)** — visit-day auto-register, per-goal
+  "working-on" + "needs adjustment" + note, GAS-aware therapist rating,
+  suggestion-status echo, cycle-agnostic suggestions pre-first-injection.
+- **Physician→therapist handoff note** — inter-professional, patient-readable
+  care record, RLS-separated.
+- **Questionnaire engine + library** — create/assign/due/submit/list/export;
+  study-level + patient-level assignment; research export.
+- **Studies & membership** — admin studies view, study-patient management.
+- **Admin** — accounts, search/filter/pagination, password reset, access
+  visibility, audit logging, research export, consent-deletion queue.
+- **Roles & access** — patient / clinician / admin / physiotherapist; RLS
+  everywhere; **session-gated** clinician access (active session, 1-hour
+  timeout).
+- **Bilingual** en/da (sv/nb first-pass); localized EHR-text export; read-aloud;
+  night mode; text scale.
+- **REDCap research sync** — built + proven end-to-end (gated on DPO before real
+  data).
+- **PWA** — installable; service-worker offline shell + offline page.
+- **Push notifications** — web + native.
+- **Security / ops** — RLS-denial test suite; SECURITY DEFINER audit + hardening
+  (0108/0109/0121–0125); Sentry (EU); Dependabot; CI (type-check / i18n parity /
+  build / E2E / RLS); deploy-on-green + staging; **tested** backup/restore;
+  saved security-invariants check; CI DB-type regeneration.
+- **Wearable ingestion module** — built but **feature-flagged OFF**
+  (`NEXT_PUBLIC_WEARABLES_ENABLED`). This is v2's activation target, not a v1
+  feature.
 
-- **Enforce CSP** _(dev)_. It currently ships **Report-Only** and leans on
-  `unsafe-inline` / `unsafe-eval`. Watch the reports, then flip to enforce, then
-  plan a **nonce-based** policy to drop the unsafe directives. **Done =**
-  enforced CSP with no console breakage on the main flows.
-- **Branch protection + PRs** _(dev)_. A protected `main` requiring the CI check,
-  with review. Deferred because it complicates the zip-upload flow — a
-  developer-era change. **Done =** `main` is protected and changes land via PR.
-- **Expand test depth** _(dev)_. Component tests for the patient flows; finish the
-  **Tier-2 E2E** write-journeys (clinician approves a suggestion; therapist-note
-  round-trip) against **staging** (set `ENABLE_DEV_TOOLS` on Preview + staging
-  creds, convert the `test.fixme` scaffolds, ground selectors with
-  `playwright test --ui`). **Done =** Tier-2 journeys run green against staging.
-- **WCAG 2.2 AA + real-device pass** _(dev / you)_. No phone or screen-reader pass
-  has been done. **Done =** an accessibility audit + a real Android device smoke
-  test, issues triaged.
-- **Type-aware ESLint** _(dev)_. The current lint is non-type-checked (faster).
-  A developer can layer on the typed rule set for deeper correctness. **Done =**
-  typed rules enabled in CI with a clean (or triaged) baseline.
-- **2FA / biometric** _(dev)_. Specced and deferred; TOTP via Supabase MFA is the
-  planned route, biometric via the Capacitor wrapper. **Done =** opt-in 2FA
-  available for clinician accounts.
-- **Dependency currency** _(dev)_. Versions are modern and pinned; Dependabot is
-  the tracking mechanism — keep its grouped weekly PRs flowing through CI, and
-  periodically review the majors (Next, React, Supabase, Sentry). **Done =**
-  updates land on a regular cadence, not in a big-bang.
-- **Distribution model** _(you / dev)_. Decide public Play listing + ASO vs.
-  closed testing; verify Android `targetSdk` against current Play policy.
-  **Done =** a chosen channel and a compliant build target.
+### Remaining gates before real patients (no new features — just these)
 
----
-
-## P2 — product threads (sequence by value; no patient-safety gate)
-
-- **REDCap sync — BUILT + PROVEN end-to-end (2026-06-17).** Both triggers live: an
-  admin "Sync to REDCap now" button (now on the **admin page**) + a weekly cron
-  (`vercel.json`). Full snapshot, chunked, idempotent. Env vars `REDCAP_API_URL`
-  (server-wide `https://redcap.regionh.dk/api/`), `REDCAP_API_TOKEN` (per-project),
-  `CRON_SECRET`. Sync confirmed: 7 pseudonymous records (TC-0001…TC-0007) with
-  enrolment + repeating instruments. **Analysis-readiness dry-run PASSED**
-  (`redcap_dryrun.R`): per-instrument tidy tables, muscles join to cycle (0
-  orphans), coded fields decode (0 undecoded). Must not run against real patient
-  data until DPO/DPIA sign-off. Cutover: **same project → REDCap "Move to
-  production" (delete all data)**; repoint/remove Preview `REDCAP_API_*` first so
-  staging can't write to the live project; finalise the dictionary before the move
-  (production locks it). Open: confirm the weekly cron actually fires.
-
-- **Therapist surface Slice 2+** — cockpit consuming `therapist_note`, per-goal
-  cards, the engagement layer.
-- **Face module production integration** — prototype + schema decisions done;
-  resume the integration into the production app.
-- **Smaller threads** — EHR-text reshape; REDCap dictionary reconciliation;
-  per-goal handoff note; persistent/recurring therapist access (touches the
-  consent model); cross-version goal chart.
+- ⛔ **Regulatory + DPO sign-off** _(external)_ — MDR intended-purpose written
+  down; DPO review of DPIA, privacy notice, sub-processor DPAs (Supabase /
+  Vercel / FCM / Sentry), EU residency, retention, DSAR. Done = determination +
+  sign-offs on file.
+- 🔧 **Apply 0123 → 0124 → 0125** _(you)_ — the security fixes from 2026-06-30
+  (webhook-RPC grants, anon revoke, questionnaire guard hardening) on production
+  **and** staging, then run `verify_security_invariants.sql` → all PASS.
+- 🔧 **Verify the service worker on a preview** _(you)_ — active worker,
+  airplane-mode → offline page, push still works — before it reaches patients.
+- 🔧 **Native-Danish clinical review** _(external)_ — every first-pass Danish
+  string (incl. wearables/offline/login).
+- 🔧 **QA the refactored treatment screen** _(you)_ — record / edit / new-cycle /
+  save / copy-from-previous, once each without regression.
+- 🔧 **REDCap go-live hygiene** _(you)_ — repoint/remove Preview `REDCAP_API_*`
+  so staging can't write to the live study; finalise the dictionary before
+  "Move to production".
 
 ---
 
-## Explicit non-goals (absent on purpose — not gaps)
+## v1.x — hardening (post-pilot, still no new features)
 
-- **No global state library** (Redux/Zustand) — React Query + local state is
-  sufficient for this app's shape.
-- **No offline-first / PWA layer** — the clinical flows assume connectivity.
-- **No product analytics** — a deliberate choice for a patient-facing clinical
-  tool; Sentry covers errors, not behavioural tracking.
-- **iOS build deferred** — the Capacitor wrapper targets Android first; iOS is a
-  later decision, not an omission.
-- **No clinic→patient messaging channel** — intentional; the care-team notes are
-  a care-record surface, not a chat.
+Carried from the old P1 band; sequence after the pilot is live.
 
-## Accessibility (a11y) — current state (2026-06-18)
-`eslint-plugin-jsx-a11y` runs as warnings (0 errors). Snapshot after the safe pass:
+- **CSP** — Report-Only → enforced → nonce-based (drop `unsafe-inline/eval`).
+- **Branch protection + PRs** — once the developer joins (complicates the
+  zip-upload flow today).
+- **Test depth** — component tests for patient flows; Tier-2 E2E write-journeys
+  against staging.
+- **WCAG 2.2 AA + real-device pass** — phone + screen-reader audit.
+- **Type-aware ESLint** — layer the typed rule set into CI.
+- **2FA / biometric** — TOTP via Supabase MFA; biometric via the Capacitor
+  wrapper.
+- **SECURITY DEFINER RPC smoke test in CI** — Method-D/CI call of the research
+  export + key RPCs (the class that caused the `0111` hotfix).
+- **Dependency currency** — keep Dependabot's grouped PRs flowing; review majors
+  periodically.
 
-**Fixed (safe, deterministic):**
-- `html-has-lang` — `app/global-error.tsx` standalone `<html>` now has `lang="en"`.
-- `no-redundant-roles` — dropped `role="region"` on a `<section>` that already
-  has `aria-label` (a named section is already a region landmark).
-- `aria-role` (8) were **false positives** — custom components with a domain
-  `role` prop (`role="clinician"`/`"patient"`), not ARIA. Rule now set
-  `ignoreNonDOM: true` so it only checks real DOM elements.
+---
 
-**Deliberately deferred to the WCAG 2.2 AA + screen-reader pass (NOT hacked silent):**
-- `control-has-associated-label` / `label-has-associated-control` (~118) — form
-  fields whose visible `<label>` isn't programmatically linked to the input. Not
-  centralizable (no shared input component; a helper `<p>` between label and input
-  rules out wrapping the input in the `<label>`). Correct fix is an explicit
-  `htmlFor`/`id` pair per field — a layout-sensitive, per-form refactor that should
-  be verified on a real screen reader.
-- `click-events-have-key-events` / `no-static-element-interactions` /
-  `no-noninteractive-element-interactions` (~27) — almost all are **modal/drawer
-  backdrops** (`<div onClick={onClose}>`). The dialogs already have
-  `role="dialog"` + `aria-modal`. The correct fix is Escape-to-close + focus
-  trap + focus return, NOT making the full-screen backdrop a focusable button
-  (which would *regress* real a11y to satisfy the linter). Belongs in a proper
-  dialog-a11y pass.
-- `media-has-caption` (8) — goal `<video>` elements. Self-recorded clinical
-  movement clips; captions are arguably N/A. Decide during the pass: add a track,
-  or disable the rule per-element with a documented rationale.
+## v2.0 — next major release
 
-**Not lintable at all** (the larger layer): colour contrast, focus order &
-visibility, screen-reader reading flow, live-region announcements for dynamic
-updates (new rating / saved check-in), touch-target size, motion. These need a
-real-device + screen-reader manual pass — they cannot be caught by static lint.
+Two epics. Both are partly scaffolded already; neither ships until its gates
+clear.
 
-- **RLS performance pass — consolidate permissive policies.** The Supabase Performance Advisor flags `multiple_permissive_policies` on most tables (separate admin/clinician/patient policies per action). Consolidating into single OR'd policies per action is a perf optimisation that only matters at scale; it rewrites the security boundary, so do it as a dedicated, fully Method-D-verified pass, not pre-pilot. The `auth_rls_initplan` half of the advisor was already addressed in migration 0113.
+### Epic A — Wearables activation
 
-## Questionnaire engine — remaining slices (foundation 0114 shipped + verified)
-- Slice 2: TS types (lib/database.types.ts regen) + data-access helpers in lib/.
-- Slice 3: dynamic questionnaire renderer (render a definition as a check-in page; ride-along after goals via due_questionnaires_for_checkin).
-- Slice 4: clinician/admin authoring + assignment UI (build definitions, assign to study/patient with schedule).
-- Slice 5: i18n for item prompts/options (en/da) — NOTE validated instruments need the official validated translation, not a first-pass.
-- Slice 6: REDCap export mapping (each questionnaire -> a repeating instrument; raw item values).
-- GATES before enabling any NAMED/validated instrument: licence cleared + validated translation + regulatory sign-off (raw-capture keeps it descriptive).
+The whole stack exists behind the feature flag (observation store, webhook RPCs,
+metric allowlist, connect panel, normalize layer). Activating it is:
 
-## Questionnaire engine — slice 2 DONE: clinician tool panel (library picker + cadence + manage)
-- Remaining: patient-side renderer (due_questionnaires_for_checkin + submit_questionnaire_response on the check-in page); admin authoring + publish UI; database.types regen (drop rpc casts); REDCap export mapping (each questionnaire -> repeating instrument, raw values).
+1. **Choose + onboard an EU aggregator** _(you / external)_ — Terra / Thryve /
+   Vitalera / Rook. For a Danish clinical app, EU data residency favours
+   **Thryve** (Germany-hosted, excludes non-EU sub-processing) or **Vitalera**
+   (EU, FHIR-native, Garmin-clinical track record). Comparison in the
+   2026-06-30 session notes.
+2. **Reconcile `lib/wearables/aggregator.ts`** _(dev)_ — the single seam: connect
+   session, signature scheme, `parseWebhookEvents`, deauthorize, to the chosen
+   vendor's live docs. Nothing downstream changes.
+3. **Compliance gates** _(external)_ — DPIA update, DPA with the aggregator,
+   sub-processor disclosure, transfer basis, DPO sign-off on consent wording.
+4. **Flip on** — run `gen:types`, set `NEXT_PUBLIC_WEARABLES_ENABLED=true`.
+5. **Constraint:** descriptive only — no thresholds/alerts/auto-titration, to
+   stay the safe side of the MDR line. The clinician metric allowlist (built)
+   enforces data-minimisation.
 
-## Questionnaire engine — slice 3 DONE: patient renderer (post-checkin)
-- Remaining: admin authoring + publish UI; database.types regen; REDCap export mapping (each questionnaire -> repeating instrument, raw values).
+Self-testing with your own Garmin is already possible now via the Level-A
+harness (`scripts/wearable-webhook-test.console.js` + `wearable-test-setup.sql`)
+without choosing a vendor.
 
-## Questionnaire engine — slice 4 DONE: admin authoring + publish UI
-- Remaining: database.types regen (drop the rpc/from casts in questionnaires.ts); REDCap export mapping (each questionnaire -> repeating instrument, raw item values).
+### Epic B — Pain mapping / treatments
 
-## Questionnaire engine — slice 5 DONE: language field/filter + REDCap export. Feature complete.
-- Optional follow-ups: database.types regen (drop rpc/from casts); per-questionnaire wide REDCap instruments if a study needs them (current export is generic long-format).
+1. **Pain / body-region mapping** _(you / external + dev)_ — prototype exists
+   (`subcutaneous-tracker-anatomical.html`), **shelved pending commissioned
+   medical illustrations**. Needs: illustration commission → schema for
+   pain/body regions → patient capture + clinician review UX.
+2. **Patient-facing muscle names → function language** _(you + dev)_ — parked;
+   draft ready (`docs/muscle-function-mapping-DRAFT.md`). Body muscles are free
+   text today → needs a structured catalogue. Directly feeds the mapping UX.
+3. **Treatment-modality generalisation** _(you + dev)_ — extend beyond botulinum
+   toxin + ITB toward surgery and other modalities in the cycle/session model.
+
+---
+
+## Backlog / parking lot (deferred, unscheduled)
+
+Product threads with no patient-safety gate; pull into a release when they earn
+priority.
+
+- **Adjustment-request status loop** — give the therapist's "needs adjustment"
+  flag a physician-set status echoed back (needs a status column + RPC +
+  cross-role UI).
+- **Cross-version goal chart** — currently the history modal shows per-version
+  rating chips instead.
+- **Persistent / recurring therapist access** — touches the consent model.
+- **Per-goal handoff note** (vs the current per-cycle) — needs a migration.
+- **EHR-text content reshape** — _your call_ on what the note should contain.
+- **REDCap dictionary reconciliation** — _decision_: extra check-in fields, PII
+  flags, quasi-identifiers — DPO/study-team call before any push is built.
+- **Distribution / iOS** — Play listing vs closed testing; iOS build is a later
+  decision.
+
+---
+
+## Cross-cutting / ongoing
+
+- **Onboard the incoming developer** — the standing rules, the font-stub build,
+  Method-D harness, and `verify_security_invariants.sql` are the things to hand
+  over first.
+- **Native-Danish review** recurs with every i18n addition — Claude's Danish is
+  always first-pass, flagged.
+
+---
+
+## Non-goals (on purpose — not gaps)
+
+- **No clinic→patient messaging channel** — care-team notes are a care-record
+  surface, not a chat.
+- **No separate caregiver accounts** — caregivers use the patient's own device;
+  a per-check-in self/caregiver label records who entered it.
+- **No auto-titration / triage / alerts** — the app informs; the clinician
+  decides. Automating the decision would change the MDR classification.
+- **No product analytics** — deliberate for a patient-facing clinical tool;
+  Sentry covers errors, not behaviour.
+- **No global state library** — React Query + local state suffices.
+
+_(Superseded: the previous "No offline-first / PWA layer" non-goal — a
+deliberately-scoped PWA + check-in outbox shipped in v1. Scope is install +
+graceful-offline + never-lose-a-check-in; **not** a fully offline authed app.)_

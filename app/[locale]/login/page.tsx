@@ -32,6 +32,7 @@ export default function LoginPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('login');
+  const tSupport = useTranslations('support');
   const { user, profile, loading } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -251,6 +252,13 @@ export default function LoginPage() {
             className="text-ink-muted hover:text-ink-soft"
           >
             {t('privacyLink')}
+          </Link>
+          <span className="mx-2 text-ink-muted" aria-hidden>·</span>
+          <Link
+            href={`${prefix}/support`}
+            className="text-ink-muted hover:text-ink-soft"
+          >
+            {tSupport('loginLink')}
           </Link>
         </p>
         <VersionTag className="mt-6 block text-center text-[11px] text-ink-muted" />

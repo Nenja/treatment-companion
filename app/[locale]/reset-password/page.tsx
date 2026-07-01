@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useAuth } from '@/lib/supabase/auth';
+import Link from 'next/link';
 
 /**
  * Set-password screen. Serves two flows:
@@ -29,6 +30,7 @@ export default function ResetPasswordPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('resetPassword');
+  const tSupport = useTranslations('support');
   const prefix = locale === 'en' ? '' : `/${locale}`;
   const { user, profile, loading, refreshProfile } = useAuth();
 
@@ -39,14 +41,9 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  // No session at all (not a recovery session, not logged in) → nothing
-  // to do here. Wait for auth to resolve, then bounce to sign in.
-  useEffect(() => {
-    if (loading) return;
-    if (!user && !done) {
-      router.replace(`${prefix}/login`);
-    }
-  }, [loading, user, done, router, prefix]);
+  // If auth resolves and there's still no session, the recovery link was
+  // invalid or expired (or the page was opened directly). We render an
+  // explanatory state below rather than bouncing silently to login.
 
   // Is this the forced-change flow? (logged in + flag set)
   const forcedChange = !!profile?.mustChangePassword;
@@ -123,15 +120,63 @@ export default function ResetPasswordPage() {
           >
             Continue
           </button>
+        <p className="mt-6 text-center text-[13px]">
+          <Link
+            href={`${prefix}/support`}
+            className="text-ink-muted hover:text-ink-soft"
+          >
+            {tSupport('loginLink')}
+          </Link>
+        </p>
         </main>
       </div>
     );
   }
 
-  // While auth is resolving, render nothing — avoids a flash of the
-  // form before we know whether to bounce to login.
-  if (loading || !user) {
+  // While auth is resolving, render nothing — avoids a flash of content
+  // before we know which state to show.
+  if (loading) {
     return <div className="min-h-dvh bg-cream" />;
+  }
+
+  // Auth resolved but there's no session: the recovery link was invalid or
+  // has expired (or the page was opened directly). Explain it, and offer a
+  // fresh link instead of a dead end.
+  if (!user) {
+    return (
+      <div className="min-h-dvh bg-cream">
+        <main className="mx-auto max-w-[420px] px-5 py-12">
+          <h1 className="font-display text-[28px] leading-tight text-ink">
+            {t('invalidTitle')}
+          </h1>
+          <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
+            {t('invalidBody')}
+          </p>
+          <Link
+            href={`${prefix}/forgot-password`}
+            className="mt-8 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[16px] font-semibold text-on-accent hover:bg-ink-soft"
+          >
+            {t('requestNewLink')}
+          </Link>
+          <p className="mt-4 text-center text-[14px]">
+            <Link
+              href={`${prefix}/login`}
+              className="font-semibold text-sage-deep hover:text-ink"
+            >
+              {t('backToSignIn')}
+            </Link>
+          </p>
+          <p className="mt-6 text-center text-[13px]">
+            <Link
+              href={`${prefix}/support`}
+              className="text-ink-muted hover:text-ink-soft"
+            >
+              {tSupport('loginLink')}
+            </Link>
+          </p>
+        </main>
+      </div>
+    );
   }
 
   return (
@@ -213,6 +258,14 @@ export default function ResetPasswordPage() {
             {submitting ? t('submitting') : t('submit')}
           </button>
         </form>
+        <p className="mt-6 text-center text-[13px]">
+          <Link
+            href={`${prefix}/support`}
+            className="text-ink-muted hover:text-ink-soft"
+          >
+            {tSupport('loginLink')}
+          </Link>
+        </p>
       </main>
     </div>
   );

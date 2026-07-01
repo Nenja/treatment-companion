@@ -851,6 +851,44 @@ The wearable webhook was also hardened: 2 MB body cap → 413, Sentry on
 signature/JSON failures, and a 500-on-unexpected-error so the aggregator's
 (idempotent) retry redelivers rather than dropping a batch.
 
+**Grant-gap fix (0123):** production verification found the two 0120 webhook
+RPCs (`ingest_wearable_observations`, `set_wearable_connection_status`) still
+had the default EXECUTE-to-PUBLIC grant (anon + authenticated could call them);
+0120's service-role-only lockdown hadn't taken. Migration
+`0123_assert_wearable_rpc_service_role_only.sql` re-asserts it forward
+(revoke from public/anon/authenticated, grant to service_role; idempotent,
+harness-verified). Exposure was theoretical (wearables off, no connected rows).
+**Apply 0123 to production AND staging.**
+
+**Anon-grant gap (0124):** the full SECURITY DEFINER sweep
+(`has_function_privilege` over every `prosecdef` fn) found 12 more functions
+still anon-executable — the questionnaire module + `set_wearable_import_metrics`
+— added after the original ~67-fn anon-revoke audit. Migration
+`0124_revoke_anon_on_post_audit_definer_fns.sql` revokes anon and re-asserts
+authenticated+service_role, leaving the 6 RLS predicate helpers
+(`current_*`, `clinician_can_access_patient`) anon-executable as intended.
+Harness-verified. The RLS table sweep was clean (all tables RLS-on).
+**Apply 0124 to production AND staging.**
+
+**Questionnaire guard audit — DONE (0125).** Of the 12 fns 0124 revoked anon on,
+5 also NULL-propagated: `due_questionnaires_for_checkin`,
+`due_questionnaires_for_week`, `list_patient_questionnaire_responses`,
+`export_questionnaire_responses`, `list_library_questionnaires`. Real residual
+threat post-0124: a logged-in clinician/physio without an active session for the
+target patient could read that patient's questionnaire due-lists + responses
+(bypassing session-gated access). `0125_harden_questionnaire_fn_guards.sql`
+recreates the 5 verbatim except the guard (disjuncts coalesced; export uses
+`is distinct from`). Harness-verified (unauthorized denied; authorized clinician
+and own-patient still allowed; all 5 parse). The other 7 fns were checked and are
+safe (coalesced admin gate / `null and false=false` collapse / definite
+clinician_can_access backstop). **Apply 0125 to production AND staging.**
+
+**Saved security check:** `supabase/checks/verify_security_invariants.sql` —
+re-run after every migration. Asserts: all tables RLS-on; only the 6 predicate
+helpers are anon-executable (auto-catches a forgotten anon-revoke on any new
+SECURITY DEFINER fn — the 0120/0124 bug class); webhook RPCs service_role-only;
+import_observations coalesce-hardened.
+
 ### 5.18 PWA service worker — offline shell (`public/sw.js`)
 
 There was already a push-only SW (`public/sw.js`) that registered *only* when a
@@ -877,6 +915,35 @@ caches; the file's header comment carries a copy-paste self-unregistering SW for
 emergencies. **Verify on a Vercel PREVIEW first** (DevTools → Application →
 Service Workers / Lighthouse PWA, then airplane-mode a navigation → offline
 page) before it reaches production patients — it can't be tested locally here.
+
+### 5.19 Help & support — `app/[locale]/support/page.tsx`
+
+The simplest support surface for the pilot (decided 2026-06-30): a **public**
+Help & support page with a `mailto:` to a shared clinic inbox. **No ticketing,
+no stored messages, no migration.**
+
+- **Public route** — added to `PUBLIC_PREFIXES` (`lib/supabase/auth.tsx`) and the
+  `SetupGate` exempt list, so a locked-out / setup-incomplete user can still
+  reach it, and the app stores + privacy notice have a stable support URL.
+- **Inbox** — `NEXT_PUBLIC_SUPPORT_EMAIL` (public env var; set per-deploy to the
+  clinic address). When unset the page degrades to a neutral "your clinic will
+  give you the address" line instead of a broken `mailto`.
+- **Carries two clinical-app necessities:** a prominent **"not for medical
+  emergencies"** notice (call 112), and the **GDPR access/erasure route** pointed
+  at the same inbox.
+- **Reachable from every screen.** Authed: the account menu (`AccountMenu.tsx`),
+  which `AppShell`/`AppHeader`, `WizardLayout`, and the clinician/physio headers
+  all render — so home, goals, check-in wizard, clinician/physio, etc. all carry
+  it. Unauthed: a footer "Help & support" link on **login, signup, forgot-password,
+  and reset-password** (so a locked-out / stuck user always has a path).
+  Decision (2026-06-30): NOT a floating corner bubble — that pattern signals live
+  chat (we chose email-only) and a bottom-right overlay collides with primary
+  actions on this mobile-first clinical app.
+- **i18n:** new `support` namespace, **en + da** only (first-pass Danish, flag for
+  native review) — same scope precedent as `offline`/`wearables`. The route
+  prerenders for sv/nb too; those fall back until sv/nb are activated.
+- Verified tsc 0 / eslint 0 / i18n en-da parity / font-stub build **112** pages;
+  `layout.tsx` untouched (SHA unchanged).
 
 ## 6. Build history (tags, oldest → newest)
 

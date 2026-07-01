@@ -1750,7 +1750,11 @@
     "errMismatch": "The two passwords don’t match.",
     "errSameAsCurrent": "Please choose a password different from your current one.",
     "errWeak": "Please choose a stronger password.",
-    "errGeneric": "Could not update your password. Please try again."
+    "errGeneric": "Could not update your password. Please try again.",
+    "invalidTitle": "This link has expired",
+    "invalidBody": "Password reset links can only be used once, and they expire a short while after they're sent. Request a new one and we'll email you a fresh link.",
+    "requestNewLink": "Request a new link",
+    "backToSignIn": "Back to sign in"
   },
   "visitChanges": {
     "title": "Since last visit",
@@ -2008,8 +2012,6 @@
     "submit": "Submit",
     "continueLabel": "Continue",
     "finish": "Finish",
-    "continueLabel": "Continue",
-    "finish": "Finish",
     "finishLater": "Finish later",
     "leaveBody": "Your check-in is already saved. Leave the remaining questions for now?",
     "leaveConfirm": "Leave",
@@ -2135,5 +2137,28 @@
       "decideTitle": "Your decision",
       "decideBody": "Approve it — setting how it should be rated — or set it aside for now."
     }
+  },
+  "support": {
+    "back": "Back",
+    "title": "Help & support",
+    "intro": "Need a hand with the app? Here's how to reach us, and answers to a few common questions.",
+    "emergencyTitle": "Not for medical emergencies",
+    "emergencyBody": "This app and its support inbox are not monitored around the clock and are not for urgent medical problems. If you have a medical emergency, call 112. For urgent but non-emergency health concerns, contact your clinic directly.",
+    "contactTitle": "Contact the team",
+    "contactBody": "Email us about anything to do with the app — signing in, using a feature, or a problem you've run into. Please don't include sensitive health details in your message.",
+    "emailButton": "Email support",
+    "emailSubject": "Treatment Companion support",
+    "noEmailFallback": "Your clinic will give you the support email address.",
+    "faqTitle": "Common questions",
+    "faqSigninQ": "I can't sign in",
+    "faqSigninBody": "If you've forgotten your password, you can reset it from the sign-in screen.",
+    "faqSigninLink": "Reset your password",
+    "faqDataQ": "Who can see my information?",
+    "faqDataBody": "Your care team. You can read what the app holds about you, and how it's protected, on the privacy page.",
+    "dataTitle": "Your data & privacy",
+    "dataBody": "You own your data. To ask for a copy of your information, or to have it deleted, email the support address above and we'll handle your request. The privacy page explains your rights in full.",
+    "dataPrivacyLink": "Read about your data & privacy",
+    "menuLink": "Help & support",
+    "loginLink": "Help & support"
   }
 }

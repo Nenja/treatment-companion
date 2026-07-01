@@ -36,7 +36,7 @@ export function SetupGate() {
   if (profile.hasSeenIntro) return null; // already completed
   if (profile.role === 'admin') return null; // no setup flow for admins
 
-  const exempt = ['/login', '/signup', '/forgot-password', '/reset-password'];
+  const exempt = ['/login', '/signup', '/forgot-password', '/reset-password', '/support'];
   if (exempt.some((p) => pathname.endsWith(p))) return null;
 
   return (
