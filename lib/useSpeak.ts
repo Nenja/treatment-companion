@@ -44,17 +44,20 @@ function pickVoice(
   lang: string
 ): SpeechSynthesisVoice | undefined {
   if (!voices.length) return undefined;
-  const region = lang.toLowerCase();
+  // Some platforms report voice.lang with an underscore (da_DK) rather than
+  // the BCP-47 hyphen (da-DK); normalise both sides before comparing.
+  const norm = (l: string) => l.toLowerCase().replace('_', '-');
+  const region = norm(lang);
   const base = region.split('-')[0];
 
-  const exact = voices.filter((v) => v.lang.toLowerCase() === region);
+  const exact = voices.filter((v) => norm(v.lang) === region);
   const sameLang = voices.filter(
-    (v) => v.lang.toLowerCase().split('-')[0] === base
+    (v) => norm(v.lang).split('-')[0] === base
   );
   // Norwegian Bokmål voices are sometimes tagged no-NO rather than nb-NO.
   const norwegianAlias =
     base === 'nb'
-      ? voices.filter((v) => v.lang.toLowerCase().startsWith('no'))
+      ? voices.filter((v) => norm(v.lang).startsWith('no'))
       : [];
 
   const pool = exact.length
@@ -75,6 +78,10 @@ function pickVoice(
 export function useSpeak() {
   const locale = useLocale();
   const [supported, setSupported] = useState(false);
+  // Whether the device actually has a voice for the current locale. Starts
+  // false and flips once voices resolve; consumers hide read-aloud when it's
+  // false so it never reads text in the wrong-language (fallback) voice.
+  const [hasVoice, setHasVoice] = useState(false);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
 
   useEffect(() => {
@@ -84,11 +91,12 @@ export function useSpeak() {
     const load = () => {
       const v = synth.getVoices();
       if (v.length) voicesRef.current = v;
+      setHasVoice(!!pickVoice(voicesRef.current, targetLang(locale)));
     };
     load();
     synth.addEventListener('voiceschanged', load);
     return () => synth.removeEventListener('voiceschanged', load);
-  }, []);
+  }, [locale]);
 
   const speak = useCallback(
     (text: string) => {
@@ -123,5 +131,5 @@ export function useSpeak() {
     }
   }, []);
 
-  return { speak, stop, supported };
+  return { speak, stop, supported, hasVoice };
 }

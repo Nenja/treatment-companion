@@ -1313,7 +1313,8 @@
     "sectionSharing": "What you share",
     "sharingIntro": "Control what you share with your care team, and how. You can change these at any time.",
     "sharingSummary": "Consents and data sharing",
-    "edited": "Edited"
+    "edited": "Edited",
+    "discard": "Undo"
   },
   "help": {
     "buttonLabel": "Help",

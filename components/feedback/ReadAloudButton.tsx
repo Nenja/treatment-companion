@@ -9,7 +9,8 @@ import { useSpeak } from '@/lib/useSpeak';
  *
  * Self-gating: it renders nothing unless the signed-in user has turned
  * on the read-aloud preference AND the device supports speech synthesis
- * AND there is text to read. That means callers can drop it in next to
+ * AND the device has a voice for the current language (so it never reads in
+ * the wrong-language fallback voice) AND there is text to read. That means callers can drop it in next to
  * any patient-facing text without their own conditional — it simply
  * disappears for everyone who hasn't opted in.
  */
@@ -21,10 +22,11 @@ export function ReadAloudButton({
   className?: string;
 }) {
   const { profile } = useAuth();
-  const { speak, supported } = useSpeak();
+  const { speak, supported, hasVoice } = useSpeak();
   const tA11y = useTranslations('a11y');
 
-  if (!profile?.readAloud || !supported || !text?.trim()) return null;
+  if (!profile?.readAloud || !supported || !hasVoice || !text?.trim())
+    return null;
 
   return (
     <button

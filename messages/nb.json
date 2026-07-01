@@ -1274,7 +1274,8 @@
     "sectionSharing": "Det du deler",
     "sharingIntro": "Bestem hva du deler med behandlingsteamet ditt, og hvordan. Du kan endre dette når som helst.",
     "sharingSummary": "Samtykker og datadeling",
-    "edited": "Endret"
+    "edited": "Endret",
+    "discard": "Angre"
   },
   "help": {
     "buttonLabel": "Hjelp",

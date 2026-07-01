@@ -209,6 +209,20 @@ export default function ProfilePage() {
     .filter(Boolean)
     .join(' \u00B7 ');
 
+  // Undo: revert every staged field to the last-saved baseline. Nothing is
+  // written; `dirty` then goes false and the save bar hides.
+  const discardChanges = () => {
+    if (!base) return;
+    setName(base.n);
+    setProfession(base.pf);
+    setProfessionOther(base.po);
+    setSex(base.sx);
+    setReminderDay(base.rd);
+    setClinical(base.cc);
+    setEducational(base.ce);
+    setResearchConsent(base.rc);
+  };
+
   // Guard in-app navigation: if there are unsaved changes, queue the nav
   // behind the confirm dialog; otherwise go straight away.
   const attemptLeave = (nav: () => void) => {
@@ -362,21 +376,16 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Appearance — colour palette + night mode. Applies live. */}
-        <div className="mt-10 border-t border-stone/70 pt-7">
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="eyebrow">{t('sectionAccessibility')}</p>
-            <span className="text-[11px] font-medium text-ink-muted">
-              {t('savesAutomatically')}
-            </span>
-          </div>
-          <p className="mt-2 text-[12px] text-ink-muted">
-            {t('appearanceHelper')}
-          </p>
-          <div className="mt-3">
-            <AppearanceSettings />
-          </div>
-        </div>
+        {/* Appearance — colour palette + night mode. Applies live; collapsed
+            by default. Quick text-size + night mode also live in the account
+            menu, so the full palette here is fine to tuck away. */}
+        <CollapsibleSection
+          title={t('sectionAccessibility')}
+          summary={t('appearanceHelper')}
+          hint={t('savesAutomatically')}
+        >
+          <AppearanceSettings />
+        </CollapsibleSection>
 
         {/* Your details — identity, changed rarely. Collapsed by default. */}
         <CollapsibleSection
@@ -579,19 +588,27 @@ export default function ProfilePage() {
           sections (language, appearance, wearable) never trigger it. */}
       {seeded && dirty && (
         <div className="fixed inset-x-0 bottom-0 z-[110] border-t border-stone bg-cream/95 px-5 py-3 shadow-[0_-2px_12px_rgba(31,36,33,0.08)] backdrop-blur">
-          <div className="mx-auto flex max-w-[480px] items-center gap-3">
-            <span className="flex items-center gap-2 text-[13px] font-semibold text-amber-deep">
+          <div className="mx-auto flex max-w-[480px] items-center gap-2.5">
+            <span className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-amber-deep">
               <span
                 className="h-2 w-2 shrink-0 rounded-full bg-amber-deep"
                 aria-hidden
               />
-              {t('unsavedChanges')}
+              <span className="truncate">{t('unsavedChanges')}</span>
             </span>
+            <button
+              type="button"
+              onClick={discardChanges}
+              disabled={saving}
+              className="ml-auto flex h-11 shrink-0 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {t('discard')}
+            </button>
             <button
               type="button"
               onClick={onSave}
               disabled={saving}
-              className="ml-auto flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-6 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-11 shrink-0 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? t('saving') : t('save')}
             </button>
@@ -644,6 +661,7 @@ export default function ProfilePage() {
 function CollapsibleSection({
   title,
   summary,
+  hint,
   edited,
   editedLabel,
   defaultOpen = false,
@@ -651,8 +669,9 @@ function CollapsibleSection({
 }: {
   title: string;
   summary?: string;
+  hint?: string;
   edited?: boolean;
-  editedLabel: string;
+  editedLabel?: string;
   defaultOpen?: boolean;
   children: ReactNode;
 }) {
@@ -673,7 +692,7 @@ function CollapsibleSection({
             </span>
           )}
         </span>
-        {edited && (
+        {edited && editedLabel ? (
           <span className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold text-amber-deep">
             <span
               className="h-1.5 w-1.5 rounded-full bg-amber-deep"
@@ -681,7 +700,11 @@ function CollapsibleSection({
             />
             {editedLabel}
           </span>
-        )}
+        ) : hint ? (
+          <span className="shrink-0 text-[11px] font-medium text-ink-muted">
+            {hint}
+          </span>
+        ) : null}
         <svg
           aria-hidden
           width="18"

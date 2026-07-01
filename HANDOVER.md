@@ -1107,6 +1107,57 @@ Verified: tsc 0, eslint 0 errors, 4-locale parity (2024), vitest 41/41, font-stu
 build 112. layout SHA unchanged. Real-device QA still owed: collapse/scroll feel
 and the sticky bar on the smallest screens.
 
+### 5.26 Read-aloud hidden when no matching-language voice (2026-06-30)
+
+Follow-up to the voice-selection fix. Diagnosed the "still English" report as a
+platform limitation, not a bug: Firefox on Windows exposes only OS-installed
+voices, and Windows ships no Danish TTS voice by default, so there was nothing to
+pick and it fell back to English. (Confirmed via an in-browser voice diagnostic.)
+
+Decision: rather than read in a wrong-language fallback voice, **hide read-aloud
+when the device has no voice for the app's language.** `useSpeak` now exposes
+`hasVoice` (recomputed from `pickVoice` on `voiceschanged` and on locale change);
+`ReadAloudButton` gates on it alongside the existing preference / support / text
+checks. So the speaker button simply doesn't appear on a device that can't read
+the current language correctly, and reappears once a matching voice is installed.
+Also normalised underscore lang tags (`da_DK`→`da-DK`) in matching.
+
+Consequence for QA: on a Windows/Firefox machine without a Danish voice, the
+read-aloud buttons are now ABSENT by design (not a regression). Install a Danish
+Windows voice + restart Firefox to see them. iOS ships Danish; most Android has
+or can add it. Verified: tsc 0, eslint 0, vitest 41/41, font-stub build 112.
+layout SHA unchanged.
+
+### 5.27 Profile: undo on the save bar + accessibility collapsed (2026-06-30)
+
+Follow-ups on the profile restructure. All roles share the one `/profile` route
+(linked ungated in the account menu), so these apply to patient, physiotherapist
+and clinician alike.
+
+- **Undo on the save bar.** The sticky bar now carries an "Undo" action beside
+  Save. `discardChanges()` reverts every staged field (name, profession, sex,
+  reminder day, research + video consent) to the last-saved baseline; nothing is
+  written, so `dirty` clears and the bar hides. Direct action, no confirm — it
+  only returns to the saved state. Save reduced to px-5 and the "Unsaved changes"
+  label truncates so the three items fit on narrow phones.
+- **Accessibility (Appearance) collapsed.** The colour-palette / night-mode
+  section is now a collapsed `CollapsibleSection` with a "Saves automatically"
+  hint, matching the other set-once banners. Safe because the account menu
+  already exposes quick text-size + night-mode for every role; only the full
+  palette is tucked away. Language stays visible (switched more often).
+- `CollapsibleSection` generalised: optional `hint` (muted right-side label) and
+  optional `editedLabel`; a section shows the amber "Edited" chip when it holds
+  unsaved staged edits, else the hint.
+- +1 key `profile.discard` (all four locales).
+
+Other-role profile review: the non-patient view is already lean — Language,
+Appearance (collapsed), Your details (collapsed: name/email/password, +profession
+for physiotherapists), Help. No reminders/consents/wearable/sex for them. The
+restructure + undo benefit them automatically; no separate page exists to review.
+
+Verified: tsc 0, eslint 0 errors, i18n parity 2025, vitest 41/41, build 112.
+layout SHA unchanged.
+
 ## 6. Build history (tags, oldest → newest)
 
 `copy-to-other-side` → `trim-header-and-meds` → `meds-to-actionrow` →
