@@ -1,3 +1,11 @@
+=== 2026-06-30 — Always-present "Help" control (help-discoverability-1; no migration) ===
+- Chosen shape (user): icon + "Help" label in the header, on every screen, routed to support.
+- PageHelpButton rewritten: labelled "? Help" pill, pageKey now OPTIONAL, always rendered. AppHeader + WizardLayout render it unconditionally (was gated on helpPageKey) -> present on all authed screens (AppHeader is the single header, used via AppShell + clinician/physio pages; TopBar is retired).
+- Opens ONE unified sheet: always "Contact support" -> /support, plus the page tour and/or help text when available. Replaced HelpDialog + the tour-or-dialog fork. First-visit tour nudge preserved.
+- i18n: +4 help keys (sheetTitle/takeTour/contactHint/contactSupport), en + da (Danish first-pass). Parity 1970.
+- Verified: tsc 0, eslint 0, parity OK, font-stub build 112/112. layout.tsx SHA unchanged (6e231e…).
+- Known minor: profile page uses a bespoke header (not AppHeader) -> no pill there (still has account-menu Help & support). Left as-is.
+
 === 2026-06-30 — reset-password expired-link state (reset-invalid-1; no migration) ===
 - Fixed the long-flagged blank-screen gap: reset-password used to silently router.replace -> /login (with a blank flash) whenever there was no recovery session, so a user with an expired/invalid reset link got no explanation.
 - Now: if auth resolves with no session (!loading && !user), render an explicit "This link has expired" state with a primary "Request a new link" -> /forgot-password, "Back to sign in" -> /login, and the Help & support link. The `loading` state still renders blank briefly to avoid a form flash. Forced-change + normal reset flows unchanged.

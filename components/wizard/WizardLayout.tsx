@@ -73,7 +73,7 @@ export function WizardLayout({
         <div className="mx-auto flex max-w-[480px] items-center justify-between gap-3 px-5 pb-2 pt-3">
           <BrandMark />
           <div className="flex items-center gap-2">
-            {helpPageKey && <PageHelpButton pageKey={helpPageKey} />}
+            <PageHelpButton pageKey={helpPageKey} />
             <AccountMenu />
           </div>
         </div>

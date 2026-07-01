@@ -135,7 +135,7 @@ export function AppHeader({
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {actions}
-          {helpPageKey && <PageHelpButton pageKey={helpPageKey} />}
+          <PageHelpButton pageKey={helpPageKey} />
           {showAccount && <AccountMenu />}
         </div>
       </div>

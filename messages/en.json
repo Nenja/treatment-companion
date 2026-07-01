@@ -1316,7 +1316,11 @@
     "physioProgressBody": "Rate how each goal is progressing and add a short note for the physician to see at the next visit. Your assessment is kept separate from the patient's own weekly ratings, so both points of view stay visible on the graph.",
     "tourNudge": "New here? Take a quick tour of this page.",
     "tourNudgeStart": "Take the tour",
-    "tourNudgeDismiss": "Not now"
+    "tourNudgeDismiss": "Not now",
+    "sheetTitle": "Help",
+    "takeTour": "Take a tour of this page",
+    "contactHint": "Questions, or a problem with the app? Get in touch and we'll help.",
+    "contactSupport": "Contact support"
   },
   "sex": {
     "female": "Female",
