@@ -9,7 +9,7 @@ import { useEditGoal } from '@/lib/supabase/clinicianPatient';
 import type { ClinicianPatientGoal } from '@/lib/supabase/clinicianPatient';
 
 const inputClasses =
-  'mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none';
+  'mt-2 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-3 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none';
 
 /**
  * Recalibrate a goal at a visit. Editing creates a NEW version of the goal

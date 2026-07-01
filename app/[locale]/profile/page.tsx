@@ -306,7 +306,7 @@ export default function ProfilePage() {
   const fieldLabel = 'block text-[13px] font-semibold text-ink-soft';
   const fieldHelper = 'mt-0.5 text-[12px] text-ink-muted';
   const inputClass =
-    'mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] text-ink focus:border-sage focus:outline-none';
+    'mt-1.5 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-3 py-2.5 text-[15px] text-ink focus:border-sage focus:outline-none';
 
   return (
     <div className="min-h-dvh bg-cream">
@@ -527,7 +527,7 @@ export default function ProfilePage() {
                   type="checkbox"
                   checked={researchConsent}
                   onChange={(e) => setResearchConsent(e.target.checked)}
-                  className="mt-1 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
+                  className="mt-1 h-4 w-4 shrink-0 rounded border-ink-muted text-sage-deep focus:ring-sage"
                 />
                 <span>
                   {tRC('label')}

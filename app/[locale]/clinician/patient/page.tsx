@@ -1011,7 +1011,7 @@ export default function ClinicianPatientPage() {
                     rows={3}
                     maxLength={4000}
                     placeholder={t('medCurrentPlaceholder')}
-                    className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+                    className="mt-1 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
                   />
                 </div>
                 <div>
@@ -1028,7 +1028,7 @@ export default function ClinicianPatientPage() {
                     rows={3}
                     maxLength={4000}
                     placeholder={t('medPreviousPlaceholder')}
-                    className="mt-1 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+                    className="mt-1 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
                   />
                 </div>
                 <div className="flex gap-2">

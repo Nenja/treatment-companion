@@ -70,7 +70,7 @@ export function NewCycleDialog({ onClose }: NewCycleDialogProps) {
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] text-ink focus:border-sage focus:outline-none"
+          className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-3 py-2.5 text-[15px] text-ink focus:border-sage focus:outline-none"
         />
 
         <div className="mt-6 flex flex-col gap-2">

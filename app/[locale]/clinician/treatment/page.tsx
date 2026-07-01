@@ -1655,7 +1655,7 @@ function LastTreatmentDialog({
 }
 
 const inputClasses =
-  'mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2.5 text-[15px] text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none';
+  'mt-1.5 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2.5 text-[15px] text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none';
 
 function Field({
   label,

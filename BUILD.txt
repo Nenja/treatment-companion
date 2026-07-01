@@ -1,3 +1,10 @@
+=== 2026-06-30 — Accessibility remediation pass (no migration) ===
+- H1 (WCAG 1.4.11): input/select/textarea borders (57 across 24 files) + checkboxes (7) stone(1.18:1) -> ink-muted (>=4.4:1 all palettes day+night). Inputs now clearly bounded.
+- M1 (WCAG 1.4.3): ink-muted retuned for soft-panel contrast — palettes.ts green-day #5c605c, clay-day #685a52, green-night #a1a7a0, clay-night #a49a91; globals.css @theme #5c605c. High-contrast untouched.
+- M2: WizardLayout step indicator bg-sage -> bg-sage-deep (4.45 -> 7.14:1 default).
+- H2 withdrawn (GAS buttons are full-width rows; h-8 is an inner badge — targets fine). H3 already handled (reset-password has an expired-link screen). Assessment doc corrected.
+- N1 (documented, NOT changed): night-mode primary-button text on-accent/sage-deep 4.12 (green-night)/4.19 (clay-night) — just under AA; needs a night-mode visual-QA tuning pass (sage-deep doubles as text-on-dark).
+- Verified: tsc 0, eslint 0 errors, parity 2025, vitest 41/41, build 112. layout SHA unchanged.
 === 2026-06-30 — Profile: undo on save bar + accessibility collapsed (no migration) ===
 - Save bar: added "Undo" (t('discard')) beside Save. discardChanges() reverts all staged fields to baseline; no write, bar hides. Save px-5, "Unsaved changes" truncates for narrow phones.
 - Appearance/accessibility section now a collapsed CollapsibleSection with "Saves automatically" hint (quick text-size + night mode remain in the account menu for all roles). Language stays visible.

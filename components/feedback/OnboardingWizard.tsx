@@ -531,7 +531,7 @@ function DetailsStep({
   };
 
   const selectClass =
-    'block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[15px] text-ink focus:border-sage focus:outline-none';
+    'block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[15px] text-ink focus:border-sage focus:outline-none';
 
   return (
     <div className="mt-2">

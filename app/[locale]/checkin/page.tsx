@@ -502,7 +502,7 @@ function CheckinPageInner() {
           onChange={(e) => update({ comment: e.target.value })}
           placeholder={t('commentPlaceholder')}
           rows={4}
-          className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-3 text-[16px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
+          className="block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-4 py-3 text-[16px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
           maxLength={500}
         />
         <p className="mt-2 text-[14px] text-ink-muted">

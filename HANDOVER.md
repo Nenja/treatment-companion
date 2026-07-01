@@ -1158,6 +1158,37 @@ restructure + undo benefit them automatically; no separate page exists to review
 Verified: tsc 0, eslint 0 errors, i18n parity 2025, vitest 41/41, build 112.
 layout SHA unchanged.
 
+### 5.28 Accessibility remediation pass (2026-06-30)
+
+Acting on the patient-app accessibility assessment
+(`accessibility-assessment-patient-app-2026-06-30.md`). All changes are token
+*values* or className swaps — no token names or component structure changed.
+
+- **H1 · input/checkbox borders (WCAG 1.4.11).** `stone` borders on `cream` were
+  1.18:1 — inputs barely read as inputs. Swapped inputs, selects, textareas
+  (57 occurrences, 24 files) and checkboxes (7) from `border-stone` to
+  `border-ink-muted`, which is palette-aware and ≥4.4:1 in every scheme (day+night).
+- **M1 · muted text (WCAG 1.4.3).** `ink-muted` sat at/below the 4.5:1 floor on
+  the soft/stone panels (4.0–4.4 across schemes). Retuned in `lib/palettes.ts`:
+  green-day #686d69→#5c605c, clay-day #766860→#685a52, green-night #8f948d→#a1a7a0,
+  clay-night #938880→#a49a91; and the `globals.css` @theme default to #5c605c.
+  Now ≥4.9:1 on soft panels everywhere. High-contrast untouched (already 9–13:1).
+- **M2 · wizard step indicator.** `WizardLayout` used `bg-sage`+`on-accent`
+  (4.45:1); now `bg-sage-deep` (7.14:1 default).
+- **H2 WITHDRAWN, H3 ALREADY DONE.** On reading source: the GAS buttons are
+  full-width rows (`px-4 py-3.5`; the `h-8` is an inner badge) — targets are fine;
+  and reset-password already has an `if (!user)` expired-link screen with a
+  request-new-link CTA. The assessment doc records both corrections. _(Lesson,
+  again: verify against the filesystem, not carried summaries.)_
+- **N1 (new, NOT fixed).** Night-mode primary-button text `on-accent`/`sage-deep`
+  is 4.12 (green-night) / 4.19 (clay-night) — just under AA. Left for a tuning
+  pass that needs a real night-mode screen, since `sage-deep` doubles as
+  text-on-dark. Documented with recommended direction in the assessment.
+
+Verified: tsc 0, eslint 0 errors, i18n parity 2025, vitest 41/41, build 112.
+layout SHA unchanged. Real-device QA owed: confirm the heavier input borders read
+well (not too heavy) across palettes, and re-run contrast on N1 after any change.
+
 ## 6. Build history (tags, oldest → newest)
 
 `copy-to-other-side` → `trim-header-and-meds` → `meds-to-actionrow` →

@@ -94,7 +94,7 @@ export function VideoEnableGuide({
                 onChange={(e) =>
                   onSetConsent(e.target.checked, consentEducational)
                 }
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-ink-muted text-sage-deep focus:ring-sage"
               />
               <span>{tPatient('videoConsentClinical')}</span>
             </label>
@@ -105,7 +105,7 @@ export function VideoEnableGuide({
                 onChange={(e) =>
                   onSetConsent(consentClinical, e.target.checked)
                 }
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-ink-muted text-sage-deep focus:ring-sage"
               />
               <span>{tPatient('videoConsentEducational')}</span>
             </label>

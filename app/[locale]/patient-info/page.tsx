@@ -305,7 +305,7 @@ export default function PatientInfoPage() {
             <select
               value={sex}
               onChange={(e) => setSex(e.target.value as Sex | '')}
-              className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
+              className="block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
             >
               <option value="">{t('selectPlaceholder')}</option>
               {SEX_VALUES.map((v) => (
@@ -319,7 +319,7 @@ export default function PatientInfoPage() {
             <select
               value={etiology}
               onChange={(e) => setEtiology(e.target.value as Etiology | '')}
-              className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
+              className="block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
             >
               <option value="">{t('selectPlaceholder')}</option>
               {ETIOLOGY_VALUES.map((v) => (
@@ -334,7 +334,7 @@ export default function PatientInfoPage() {
               onChange={(e) => setEtiologyDetail(e.target.value)}
               maxLength={500}
               placeholder={t('etiologyDetailPlaceholder')}
-              className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
+              className="mt-2 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
             />
           </Field>
           <Field label={t('affectedSide')}>
@@ -343,7 +343,7 @@ export default function PatientInfoPage() {
               onChange={(e) =>
                 setAffectedSide(e.target.value as AffectedSide | '')
               }
-              className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
+              className="block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
             >
               <option value="">{t('selectPlaceholder')}</option>
               {SIDE_VALUES.map((v) => (
@@ -362,7 +362,7 @@ export default function PatientInfoPage() {
               min={1900}
               max={new Date().getFullYear()}
               placeholder={t('yearPlaceholder')}
-              className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
+              className="block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
             />
           </Field>
           <Field label={t('ambulation')}>
@@ -371,7 +371,7 @@ export default function PatientInfoPage() {
               onChange={(e) =>
                 setAmbulation(e.target.value as AmbulationStatus | '')
               }
-              className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
+              className="block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] text-ink focus:border-sage focus:outline-none"
             >
               <option value="">{t('selectPlaceholder')}</option>
               {AMBULATION_VALUES.map((v) => (
@@ -388,7 +388,7 @@ export default function PatientInfoPage() {
               rows={3}
               maxLength={4000}
               placeholder={t('devicesPlaceholder')}
-              className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+              className="block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
             />
             <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
               {t('devicesHelper')}
@@ -401,7 +401,7 @@ export default function PatientInfoPage() {
               rows={4}
               maxLength={4000}
               placeholder={t('notesPlaceholder')}
-              className="block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
+              className="block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-3 py-2 text-[14px] leading-relaxed text-ink focus:border-sage focus:outline-none"
             />
           </Field>
           <Field label={t('wearableLabel')}>

@@ -76,7 +76,7 @@ export function WearableImportSettings({ patientId }: { patientId: string }) {
                     type="checkbox"
                     checked={selected.has(key)}
                     onChange={() => toggle(c.id, key)}
-                    className="h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
+                    className="h-4 w-4 shrink-0 rounded border-ink-muted text-sage-deep focus:ring-sage"
                   />
                   <span>{t(`metrics.${key}`)}</span>
                 </label>

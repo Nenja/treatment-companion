@@ -73,7 +73,7 @@ export function BirthdatePicker({
   };
 
   const selectClass =
-    'block w-full rounded-[var(--radius-button)] border border-stone bg-cream px-2 py-2 text-[14px] text-ink focus:border-sage focus:outline-none';
+    'block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream px-2 py-2 text-[14px] text-ink focus:border-sage focus:outline-none';
 
   return (
     <div className="grid grid-cols-[minmax(0,0.85fr)_minmax(0,1.7fr)_minmax(0,1.15fr)] gap-2">

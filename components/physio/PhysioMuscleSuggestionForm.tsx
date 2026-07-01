@@ -97,7 +97,7 @@ export function PhysioMuscleSuggestionForm({
             value={muscle}
             onChange={(e) => setMuscle(e.target.value)}
             maxLength={80}
-            className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
+            className="mt-1.5 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-3 py-2.5 text-[15px] text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
             placeholder={t('musclePlaceholder')}
           />
         </div>
@@ -144,7 +144,7 @@ export function PhysioMuscleSuggestionForm({
               id="physio-muscle-goal"
               value={relatedGoalId}
               onChange={(e) => setRelatedGoalId(e.target.value)}
-              className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] text-ink focus:border-sage focus:outline-none"
+              className="mt-2 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-3 py-2.5 text-[15px] text-ink focus:border-sage focus:outline-none"
             >
               <option value="">{t('noSpecificGoal')}</option>
               {goals.map((g) => (
@@ -169,7 +169,7 @@ export function PhysioMuscleSuggestionForm({
             onChange={(e) => setRationale(e.target.value)}
             rows={4}
             maxLength={1000}
-            className="mt-2 block w-full rounded-[var(--radius-button)] border border-stone bg-cream-soft px-3 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
+            className="mt-2 block w-full rounded-[var(--radius-button)] border border-ink-muted bg-cream-soft px-3 py-2.5 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted focus:border-sage focus:outline-none"
             placeholder={t('muscleRationalePlaceholder')}
           />
         </div>
