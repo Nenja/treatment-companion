@@ -1,34 +1,45 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useModalA11y } from '@/lib/useModalA11y';
 import { ModalPortal } from '@/components/feedback/ModalPortal';
 import { GuidedTour } from '@/components/feedback/GuidedTour';
 import { tourFor } from '@/lib/tourSteps';
 
 /**
- * Contextual page help.
+ * Always-present help control.
  *
- * A small "?" button for a page's top panel. If the page has a tour
- * registered in `lib/tourSteps` (by pageKey), tapping "?" launches a
- * guided spotlight walkthrough; otherwise it opens a short text modal
- * scoped to the page (`help.{pageKey}Title` / `…Body`).
+ * Rendered in the header on every authed screen (pageKey optional). It's a
+ * labelled "? Help" button — deliberately not icon-only and not a floating
+ * bubble — so the way to get help sits in the same predictable spot for a
+ * population that includes low-vision and motor-impaired patients.
  *
- * Tour pages also get a one-time, dismissible "take a tour" nudge near
- * the button on first visit. "Seen" is remembered per page in
- * localStorage (a low-stakes, per-device hint — not account state), so
- * it won't nag again after the user starts or dismisses it.
+ * Tapping it opens ONE sheet that unifies the two help needs:
+ *   - "explain this screen" — the page's guided tour (if one is registered
+ *     in lib/tourSteps) or its short help text (help.{pageKey}Title/Body);
+ *   - "reach a human" — a Contact support action that always appears and
+ *     routes to /support (email inbox + emergency notice + GDPR route).
+ *
+ * Tour pages also get a one-time, dismissible first-visit nudge. "Seen" is
+ * per-page in localStorage (a low-stakes per-device hint, not account state).
  */
-export function PageHelpButton({ pageKey }: { pageKey: string }) {
+export function PageHelpButton({ pageKey }: { pageKey?: string }) {
   const t = useTranslations('help');
   const tTour = useTranslations('tour');
-  const [open, setOpen] = useState(false);
+  const locale = useLocale();
+  const supportHref = locale === 'en' ? '/support' : `/${locale}/support`;
+
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
   const [showNudge, setShowNudge] = useState(false);
 
-  const registered = tourFor(pageKey);
+  const registered = pageKey ? tourFor(pageKey) : [];
   const hasTour = registered.length > 0;
-  const seenKey = `tc.tourNudge.${pageKey}`;
+  // Mirror the prior invariant: a provided non-tour pageKey has help text.
+  const hasText = !!pageKey && !hasTour;
+  const seenKey = pageKey ? `tc.tourNudge.${pageKey}` : '';
 
   const tourSteps = hasTour
     ? registered.map((s) => ({
@@ -39,6 +50,7 @@ export function PageHelpButton({ pageKey }: { pageKey: string }) {
     : [];
 
   const markSeen = () => {
+    if (!seenKey) return;
     try {
       window.localStorage.setItem(seenKey, '1');
     } catch {
@@ -46,8 +58,7 @@ export function PageHelpButton({ pageKey }: { pageKey: string }) {
     }
   };
 
-  // First-visit nudge: only for tour pages, only if not seen, and after a
-  // short beat so it feels gentle rather than popping in on load.
+  // First-visit nudge: only for tour pages, only if not seen, after a beat.
   useEffect(() => {
     if (!hasTour) return;
     let seen = false;
@@ -61,10 +72,16 @@ export function PageHelpButton({ pageKey }: { pageKey: string }) {
     return () => window.clearTimeout(id);
   }, [hasTour, seenKey]);
 
-  const launchTour = () => {
+  const openSheet = () => {
+    if (hasTour) markSeen();
+    setShowNudge(false);
+    setSheetOpen(true);
+  };
+  const startTour = () => {
     markSeen();
     setShowNudge(false);
-    setOpen(true);
+    setSheetOpen(false);
+    setTourOpen(true);
   };
   const dismissNudge = () => {
     markSeen();
@@ -75,13 +92,8 @@ export function PageHelpButton({ pageKey }: { pageKey: string }) {
     <span className="relative inline-flex">
       <button
         type="button"
-        onClick={() => {
-          if (hasTour) markSeen();
-          setShowNudge(false);
-          setOpen(true);
-        }}
-        aria-label={t('buttonLabel')}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-stone bg-cream text-ink-soft hover:bg-stone-soft hover:text-ink"
+        onClick={openSheet}
+        className="flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-stone bg-cream pl-2.5 pr-3.5 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft hover:text-ink"
       >
         <svg
           width="18"
@@ -98,6 +110,7 @@ export function PageHelpButton({ pageKey }: { pageKey: string }) {
           <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" />
           <line x1="12" y1="17" x2="12" y2="17" />
         </svg>
+        {t('buttonLabel')}
       </button>
 
       {showNudge && (
@@ -117,7 +130,7 @@ export function PageHelpButton({ pageKey }: { pageKey: string }) {
             </button>
             <button
               type="button"
-              onClick={launchTour}
+              onClick={startTour}
               className="rounded-[var(--radius-button)] bg-sage-deep px-3 py-1.5 text-[12px] font-semibold text-on-accent hover:bg-ink-soft"
             >
               {t('tourNudgeStart')}
@@ -126,32 +139,50 @@ export function PageHelpButton({ pageKey }: { pageKey: string }) {
         </div>
       )}
 
-      {open && hasTour && (
-        <GuidedTour steps={tourSteps} onClose={() => setOpen(false)} />
-      )}
-
-      {open && !hasTour && (
-        <HelpDialog
-          title={t(`${pageKey}Title`)}
-          body={t(`${pageKey}Body`)}
+      {sheetOpen && (
+        <HelpSheet
+          title={t('sheetTitle')}
+          heading={hasText ? t(`${pageKey}Title`) : null}
+          body={hasText ? t(`${pageKey}Body`) : null}
+          tourLabel={hasTour ? t('takeTour') : null}
+          onStartTour={hasTour ? startTour : undefined}
+          contactHint={t('contactHint')}
+          contactLabel={t('contactSupport')}
+          supportHref={supportHref}
           closeLabel={t('close')}
           dialogLabel={t('dialogLabel')}
-          onClose={() => setOpen(false)}
+          onClose={() => setSheetOpen(false)}
         />
+      )}
+
+      {tourOpen && hasTour && (
+        <GuidedTour steps={tourSteps} onClose={() => setTourOpen(false)} />
       )}
     </span>
   );
 }
 
-function HelpDialog({
+function HelpSheet({
   title,
+  heading,
   body,
+  tourLabel,
+  onStartTour,
+  contactHint,
+  contactLabel,
+  supportHref,
   closeLabel,
   dialogLabel,
   onClose
 }: {
   title: string;
-  body: string;
+  heading: string | null;
+  body: string | null;
+  tourLabel: string | null;
+  onStartTour?: () => void;
+  contactHint: string;
+  contactLabel: string;
+  supportHref: string;
   closeLabel: string;
   dialogLabel: string;
   onClose: () => void;
@@ -170,13 +201,43 @@ function HelpDialog({
           <h2 className="font-display text-[20px] leading-tight text-ink">
             {title}
           </h2>
-          <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
-            {body}
-          </p>
+
+          {heading && (
+            <div className="mt-4">
+              <h3 className="text-[15px] font-semibold text-ink">{heading}</h3>
+              <p className="mt-1.5 text-[15px] leading-relaxed text-ink-soft">
+                {body}
+              </p>
+            </div>
+          )}
+
+          {onStartTour && tourLabel && (
+            <button
+              type="button"
+              onClick={onStartTour}
+              className="mt-4 flex w-full items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 py-2.5 text-[15px] font-semibold text-ink hover:bg-stone-soft"
+            >
+              {tourLabel}
+            </button>
+          )}
+
+          <div className="mt-5 border-t border-stone/60 pt-4">
+            <p className="text-[14px] leading-relaxed text-ink-soft">
+              {contactHint}
+            </p>
+            <Link
+              href={supportHref}
+              onClick={onClose}
+              className="mt-3 flex h-11 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-4 text-[15px] font-semibold text-on-accent hover:bg-ink-soft"
+            >
+              {contactLabel}
+            </Link>
+          </div>
+
           <button
             type="button"
             onClick={onClose}
-            className="mt-6 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft"
+            className="mt-3 w-full rounded-[var(--radius-button)] px-4 py-2 text-[14px] font-semibold text-ink-muted hover:text-ink"
           >
             {closeLabel}
           </button>

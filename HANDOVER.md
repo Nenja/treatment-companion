@@ -945,6 +945,30 @@ no stored messages, no migration.**
 - Verified tsc 0 / eslint 0 / i18n en-da parity / font-stub build **112** pages;
   `layout.tsx` untouched (SHA unchanged).
 
+### 5.20 Always-present "Help" control (discoverability)
+
+Decision (2026-06-30): help was reachable but not *obvious* — the contextual
+"?" appeared on only ~7 of 14 shell screens (appear/disappear), was icon-only,
+and didn't connect to support; the support path was a level deep in the account
+menu. Replaced with one predictable control.
+
+- `PageHelpButton` (`components/feedback/PageHelpButton.tsx`) rewritten: a
+  **labelled "? Help" pill** (not icon-only, not a floating bubble), and
+  **`pageKey` is now optional**. It renders on **every authed screen** —
+  `AppHeader` (used via `AppShell` and by clinician/physio pages) and
+  `WizardLayout` now render it unconditionally (was gated on `helpPageKey`).
+- Tapping it opens **one unified sheet** that always offers **"Contact support"**
+  (→ `/support`) plus, when the page has them, its guided **tour** and/or short
+  **help text** (`help.{pageKey}Title/Body`). Replaces the old tour-or-dialog
+  fork and the separate `HelpDialog`.
+- First-visit tour nudge preserved (tour pages only). Account-menu "Help &
+  support" kept as a secondary path.
+- i18n: +4 `help` keys (`sheetTitle`, `takeTour`, `contactHint`,
+  `contactSupport`), en + da (Danish first-pass). Parity 1970.
+- Verified tsc 0 / eslint 0 / parity / font-stub build 112. `layout.tsx` SHA
+  unchanged. Note: the `profile` page uses a bespoke header (not `AppHeader`),
+  so it shows the account menu's help item but not the pill — minor, reachable.
+
 ## 6. Build history (tags, oldest → newest)
 
 `copy-to-other-side` → `trim-header-and-meds` → `meds-to-actionrow` →

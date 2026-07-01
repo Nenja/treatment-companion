@@ -1320,7 +1320,11 @@
     "physioProgressBody": "Vurdér, hvordan hvert mål skrider frem, og tilføj en kort note, som lægen kan se ved næste besøg. Din vurdering holdes adskilt fra patientens egne ugentlige vurderinger, så begge synsvinkler forbliver synlige på grafen.",
     "tourNudge": "Ny her? Tag en hurtig rundvisning af siden.",
     "tourNudgeStart": "Tag rundvisningen",
-    "tourNudgeDismiss": "Ikke nu"
+    "tourNudgeDismiss": "Ikke nu",
+    "sheetTitle": "Hjælp",
+    "takeTour": "Tag en rundvisning på siden",
+    "contactHint": "Spørgsmål eller et problem med appen? Skriv til os, så hjælper vi.",
+    "contactSupport": "Kontakt support"
   },
   "sex": {
     "female": "Kvinde",
