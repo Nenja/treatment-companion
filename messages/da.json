@@ -1754,7 +1754,11 @@
     "errMismatch": "De to adgangskoder er ikke ens.",
     "errSameAsCurrent": "Vælg venligst en adgangskode, der er forskellig fra din nuværende.",
     "errWeak": "Vælg venligst en stærkere adgangskode.",
-    "errGeneric": "Din adgangskode kunne ikke opdateres. Prøv venligst igen."
+    "errGeneric": "Din adgangskode kunne ikke opdateres. Prøv venligst igen.",
+    "invalidTitle": "Linket er udløbet",
+    "invalidBody": "Links til nulstilling af adgangskode kan kun bruges én gang, og de udløber kort efter, at de er sendt. Bed om et nyt, så sender vi dig et friskt link på e-mail.",
+    "requestNewLink": "Bed om et nyt link",
+    "backToSignIn": "Tilbage til login"
   },
   "visitChanges": {
     "title": "Siden sidste besøg",
@@ -2012,8 +2016,6 @@
     "submit": "Send",
     "continueLabel": "Fortsæt",
     "finish": "Afslut",
-    "continueLabel": "Fortsæt",
-    "finish": "Afslut",
     "finishLater": "Afslut senere",
     "leaveBody": "Din status er allerede gemt. Vil du forlade de resterende spørgsmål for nu?",
     "leaveConfirm": "Forlad",
@@ -2139,5 +2141,28 @@
       "decideTitle": "Din beslutning",
       "decideBody": "Godkend det — og fastsæt, hvordan det skal vurderes — eller læg det til side for nu."
     }
+  },
+  "support": {
+    "back": "Tilbage",
+    "title": "Hjælp og support",
+    "intro": "Brug for hjælp med appen? Her kan du se, hvordan du kontakter os, og finde svar på et par almindelige spørgsmål.",
+    "emergencyTitle": "Ikke til akutte medicinske tilfælde",
+    "emergencyBody": "Denne app og dens supportpostkasse overvåges ikke døgnet rundt og er ikke til akutte medicinske problemer. Ring 112 ved en medicinsk nødsituation. Ved akutte, men ikke livstruende, helbredsproblemer skal du kontakte din klinik direkte.",
+    "contactTitle": "Kontakt teamet",
+    "contactBody": "Skriv til os om alt, der har med appen at gøre — at logge ind, bruge en funktion eller et problem, du er stødt på. Undlad venligst at skrive følsomme helbredsoplysninger i din besked.",
+    "emailButton": "Skriv til support",
+    "emailSubject": "Treatment Companion support",
+    "noEmailFallback": "Din klinik giver dig e-mailadressen til support.",
+    "faqTitle": "Almindelige spørgsmål",
+    "faqSigninQ": "Jeg kan ikke logge ind",
+    "faqSigninBody": "Hvis du har glemt din adgangskode, kan du nulstille den fra login-skærmen.",
+    "faqSigninLink": "Nulstil din adgangskode",
+    "faqDataQ": "Hvem kan se mine oplysninger?",
+    "faqDataBody": "Dit behandlingsteam. Du kan se, hvad appen indeholder om dig, og hvordan det beskyttes, på privatlivssiden.",
+    "dataTitle": "Dine data og privatliv",
+    "dataBody": "Du ejer dine data. For at bede om en kopi af dine oplysninger eller få dem slettet kan du skrive til supportadressen ovenfor, så behandler vi din anmodning. Privatlivssiden forklarer dine rettigheder i detaljer.",
+    "dataPrivacyLink": "Læs om dine data og privatliv",
+    "menuLink": "Hjælp og support",
+    "loginLink": "Hjælp og support"
   }
 }

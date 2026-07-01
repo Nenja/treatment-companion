@@ -26,6 +26,7 @@ export function AccountMenu() {
   const tA11y = useTranslations('a11y');
   const tProfile = useTranslations('profile');
   const tMenu = useTranslations('accountMenu');
+  const tSupport = useTranslations('support');
 
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -235,6 +236,17 @@ export function AccountMenu() {
               {tMenu('adminLink')}
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() =>
+              navHard(locale === 'en' ? '/support' : `/${locale}/support`)
+            }
+            role="menuitem"
+            className="block w-full border-b border-stone/50 px-4 py-3 text-left text-[14px] font-medium text-ink-soft hover:bg-stone-soft"
+          >
+            {tSupport('menuLink')}
+          </button>
 
           <button
             type="button"

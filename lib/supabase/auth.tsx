@@ -98,7 +98,8 @@ const PUBLIC_PREFIXES = [
   '/signup',
   '/forgot-password',
   '/reset-password',
-  '/privacy'
+  '/privacy',
+  '/support'
 ];
 
 // Strip a leading non-default locale segment ('/da', '/sv', '/nb') so route

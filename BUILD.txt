@@ -1,3 +1,42 @@
+=== 2026-06-30 — reset-password expired-link state (reset-invalid-1; no migration) ===
+- Fixed the long-flagged blank-screen gap: reset-password used to silently router.replace -> /login (with a blank flash) whenever there was no recovery session, so a user with an expired/invalid reset link got no explanation.
+- Now: if auth resolves with no session (!loading && !user), render an explicit "This link has expired" state with a primary "Request a new link" -> /forgot-password, "Back to sign in" -> /login, and the Help & support link. The `loading` state still renders blank briefly to avoid a form flash. Forced-change + normal reset flows unchanged.
+- Removed the redirect useEffect (and the now-unused useEffect import).
+- i18n: +4 resetPassword keys (invalidTitle/invalidBody/requestNewLink/backToSignIn), en + da (Danish first-pass). Parity 1966 keys.
+- Verified: tsc 0, eslint 0 (pre-existing password-toggle a11y warnings only), parity OK, font-stub build 112/112. layout.tsx SHA unchanged (6e231e…).
+
+=== 2026-06-30 — Support reachable everywhere (support-reach-1; no migration) ===
+- Decision: support is reached via the header/account menu + public-page footer links, NOT a floating corner bubble (chat-signal mismatch with email-only support; overlay collides with primary actions on mobile-first clinical UI).
+- Authed coverage confirmed already present: AccountMenu (now with "Help & support") is rendered by AppShell/AppHeader, WizardLayout, and clinician/physio headers -> every primary authed screen.
+- Closed the unauthenticated gap: added a footer "Help & support" link to signup, forgot-password, and reset-password (login already had it). reset-password also gained `import Link`.
+- All use the existing `support.loginLink` string (no new i18n keys; parity unchanged at 1962).
+- Verified: tsc 0, eslint 0 (pre-existing a11y warnings only), i18n parity OK, font-stub build compiled successfully (page count unchanged at 112 — links only, no new routes). layout.tsx SHA unchanged (6e231e…).
+- Note (flagged, not fixed): reset-password renders a blank screen when there's no valid recovery session (loading || !user) — a stuck user with an expired link sees nothing + no support link in that state. Separate UX fix (show an "invalid/expired link" message + support link), out of scope here.
+
+=== 2026-06-30 — Help & support screen (support-screen-1; no migration) ===
+- New PUBLIC route app/[locale]/support/page.tsx: Help & support. mailto: to a shared clinic inbox via NEXT_PUBLIC_SUPPORT_EMAIL (degrades gracefully if unset). NO ticketing/storage/migration.
+- Includes a prominent "not for medical emergencies" notice (call 112) + the GDPR access/erasure route (same inbox) + 2-item FAQ (can't sign in -> /forgot-password; who sees my data -> /privacy).
+- Wiring: /support added to PUBLIC_PREFIXES (lib/supabase/auth.tsx) + SetupGate exempt list; "Help & support" link on login (beside privacy) + menu item in AccountMenu.
+- i18n: new `support` namespace, en + da (Danish first-pass, flag for native review); parity OK (1962 keys). sv/nb fall back (en+da-only precedent, matches offline/wearables).
+- ACTION (you): set NEXT_PUBLIC_SUPPORT_EMAIL in Vercel (prod + staging) to the clinic inbox once decided.
+- Verified: tsc 0, eslint 0 (3 pre-existing warnings), i18n en/da parity, font-stub build 112/112 pages (was 108; +4 /support locale routes). layout.tsx SHA unchanged (6e231e…).
+
+=== 2026-06-30 — v1 feature-freeze + roadmap rewrite (docs/ROADMAP.md) ===
+- Decision recorded: v1 is FEATURE-FROZEN as of 2026-06-30; only pilot gates + bugfixes land on v1. New capability = v2.0.
+- Rewrote docs/ROADMAP.md around v1.0 (pilot, freeze) / v1.x (post-pilot hardening) / v2.0 (Epic A wearables activation, Epic B pain mapping/treatments) / backlog / non-goals. Old roadmap backed up to docs/ROADMAP.prev-2026-06-16.md.
+- Inventory grounded in HANDOVER §5 + this session. Corrected stale non-goal: PWA/offline is now SHIPPED (deliberately scoped), no longer a non-goal.
+- v1 gates: regulatory/DPO + MDR intended-purpose; apply 0123/0124/0125 + verify; SW preview verify; native-Danish review; treatment-screen QA; REDCap go-live hygiene.
+- v2 Epic A: choose EU aggregator (Thryve/Vitalera favoured on EU residency) -> reconcile aggregator.ts -> DPIA/DPA/sub-processor/transfer-basis/DPO -> flip NEXT_PUBLIC_WEARABLES_ENABLED; descriptive-only (MDR line). v2 Epic B: pain/body-region mapping (illustration commission + schema + UX), muscle-function language catalogue, modality generalisation.
+- Docs only; no code/migration/i18n change.
+
+=== 2026-06-30 — Level-A wearable self-test harness (own Garmin data, no aggregator) ===
+- Goal: let Nikolaj test the wearable ingest pipeline with his OWN Garmin readings without choosing/onboarding an aggregator. Tests ~90% of the built code (webhook route, HMAC verify, parseWebhookEvents, normalize, ingest_wearable_observations, dedup, allowlist filter, patient resolution, last_sync). The only untested part is aggregator.ts's real REST/OAuth (the stub seam — needs a chosen vendor).
+- scripts/wearable-webhook-test.console.js: browser DevTools console snippet (no local tooling — Nikolaj is on Windows w/o local Node). Builds a {type:'data',user_id,data:[{metric,value,unit,start,end?,id,device}]} payload from edited CONFIG.samples (his real Garmin values), HMAC-SHA256(secret, body) via crypto.subtle -> hex, POSTs to /api/wearables/webhook on the PREVIEW origin with header x-wearables-signature. Signature contract verified to match server verifyWebhookSignature (createHmac sha256 hex). metric must be in IMPORTABLE_METRIC_KEYS and in the connection allowlist.
+- scripts/wearable-test-setup.sql: (1) find own patient id; (2) upsert a CONNECTED wearable_connection (aggregator='garmin-test', provider='garmin' -> source forced to 'garmin', metrics allowlist); (3) optional direct ingest_wearable_observations call in SQL editor (runs as superuser, bypasses the service-role grant) for a DB-only test; (4) verify observation rows + last_sync_at; (5) cleanup deletes. Re-run = 0 new rows (dedup) idempotency check.
+- PREREQS (preview env): WEARABLES_API_BASE_URL + WEARABLES_API_KEY + WEARABLES_WEBHOOK_SECRET (isAggregatorConfigured needs all three; only WEBHOOK_SECRET is used by the webhook path) + WEARABLES_AGGREGATOR matching the connection row. Test on PREVIEW not production; own test patient; test data only.
+- DATA-STATE: Level A is own code + own numbers on a preview, no third party -> ordinary dev test, no compliance gate. Level B (real aggregator) needs aggregator chosen + aggregator.ts reconciled; real-patient data via aggregator still gated on DPIA/DPA/DPO.
+- No app code / migration / i18n change (scaffolding only).
+
 === 2026-06-30 — 0125: coalesce-harden NULL-propagation in 5 questionnaire definer fns + saved verification query ===
 - GUARD AUDIT (read the live bodies): of the 12 fns 0124 revoked anon on, 5 also had NULL-propagating auth guards (same class as 0069/0121/0122). Helper semantics determined it: current_user_is_admin() (coalesce->false) + clinician_can_access_patient() (exists->bool) are NEVER null/safe; current_patient_id(), current_app_role(), current_role_is_care_professional() CAN be null.
 - VULNERABLE (fixed in 0125): due_questionnaires_for_checkin, due_questionnaires_for_week, list_patient_questionnaire_responses (guard led with `x = current_patient_id()` -> null for any non-patient; `null or false = null` -> `if not null` doesn't raise -> BYPASS), export_questionnaire_responses (`current_app_role() <> 'clinician'` -> null when role null), list_library_questionnaires (`care_prof() or admin()` -> null when role null). Real residual threat after 0124: a logged-in clinician/physio WITHOUT an active session for the target patient (current_patient_id()=null, clinician_can_access=false) could read that patient's questionnaire due-lists + RESPONSES — bypassing the session-gated access model. export/library bypassable only by a null-role authed user (no profile row).

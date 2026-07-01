@@ -19,6 +19,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 export default function ForgotPasswordPage() {
   const locale = useLocale();
   const t = useTranslations('forgotPassword');
+  const tSupport = useTranslations('support');
   const prefix = locale === 'en' ? '' : `/${locale}`;
 
   const [email, setEmail] = useState('');
@@ -135,6 +136,15 @@ export default function ForgotPasswordPage() {
             className="font-semibold text-sage-deep hover:text-ink"
           >
             Back to sign in
+          </Link>
+        </p>
+
+        <p className="mt-4 text-center text-[13px]">
+          <Link
+            href={`${prefix}/support`}
+            className="text-ink-muted hover:text-ink-soft"
+          >
+            {tSupport('loginLink')}
           </Link>
         </p>
       </main>

@@ -916,6 +916,35 @@ emergencies. **Verify on a Vercel PREVIEW first** (DevTools → Application →
 Service Workers / Lighthouse PWA, then airplane-mode a navigation → offline
 page) before it reaches production patients — it can't be tested locally here.
 
+### 5.19 Help & support — `app/[locale]/support/page.tsx`
+
+The simplest support surface for the pilot (decided 2026-06-30): a **public**
+Help & support page with a `mailto:` to a shared clinic inbox. **No ticketing,
+no stored messages, no migration.**
+
+- **Public route** — added to `PUBLIC_PREFIXES` (`lib/supabase/auth.tsx`) and the
+  `SetupGate` exempt list, so a locked-out / setup-incomplete user can still
+  reach it, and the app stores + privacy notice have a stable support URL.
+- **Inbox** — `NEXT_PUBLIC_SUPPORT_EMAIL` (public env var; set per-deploy to the
+  clinic address). When unset the page degrades to a neutral "your clinic will
+  give you the address" line instead of a broken `mailto`.
+- **Carries two clinical-app necessities:** a prominent **"not for medical
+  emergencies"** notice (call 112), and the **GDPR access/erasure route** pointed
+  at the same inbox.
+- **Reachable from every screen.** Authed: the account menu (`AccountMenu.tsx`),
+  which `AppShell`/`AppHeader`, `WizardLayout`, and the clinician/physio headers
+  all render — so home, goals, check-in wizard, clinician/physio, etc. all carry
+  it. Unauthed: a footer "Help & support" link on **login, signup, forgot-password,
+  and reset-password** (so a locked-out / stuck user always has a path).
+  Decision (2026-06-30): NOT a floating corner bubble — that pattern signals live
+  chat (we chose email-only) and a bottom-right overlay collides with primary
+  actions on this mobile-first clinical app.
+- **i18n:** new `support` namespace, **en + da** only (first-pass Danish, flag for
+  native review) — same scope precedent as `offline`/`wearables`. The route
+  prerenders for sv/nb too; those fall back until sv/nb are activated.
+- Verified tsc 0 / eslint 0 / i18n en-da parity / font-stub build **112** pages;
+  `layout.tsx` untouched (SHA unchanged).
+
 ## 6. Build history (tags, oldest → newest)
 
 `copy-to-other-side` → `trim-header-and-meds` → `meds-to-actionrow` →
