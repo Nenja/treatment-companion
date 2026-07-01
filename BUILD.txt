@@ -1,3 +1,17 @@
+=== 2026-06-30 — Clinician goals per-goal collapse (no migration) ===
+- GoalProgressView: added optional collapsible + defaultOpen props. When collapsible, header (goal title + weeks-reported) stays visible; a chevron toggles the chart body (per-instance useState). Other 4 call sites omit the prop (modal/tour/physio unchanged).
+- clinician/patient/page.tsx: GoalProgressView called with `collapsible defaultOpen={bontGoals.length <= 2}` -> charts expanded at <=2 active goals, default-collapsed at >2, each independently toggleable. Header per goal remains (matches patient goals page intent).
+- +2 a11y keys collapseChart/expandChart (4 locales).
+- Per-goal action row (edit/retire/video) remains visible under a collapsed chart (can fold into collapse if desired).
+- Verified: tsc 0, eslint 0 errors, parity 2027, vitest 41/41, build 112. layout SHA unchanged.
+- Button audit (navigation locale-safety): no raw un-prefixed router.push/href; no no-op/TODO/href="#"/console-only handlers across 360 buttons / 374 onClick. AccountMenu window.location.assign(path) receives locale-aware paths (OK).
+=== 2026-06-30 — Accessibility contrast pass across all palettes (no migration) ===
+- Input borders (WCAG 1.4.11): added --color-field-border token (@theme + all 6 palette day/night) + unlayered rule on input/select/textarea.border-stone:not(:focus). Was stone ~1.2:1 (invisible); now >=3:1 every scheme (green.d 3.6 / .n 3.9, clay.d 3.5 / .n 4.0, hc.d 7.0 / .n 6.1). Decorative stone hairlines untouched; focus tint + 3px ring preserved.
+- Night-mode primary-button text: on-accent/sage-deep was <4.5 in night (green 4.1, clay 4.2). Fixed green.night on-accent -> #ffffff (4.72); clay.night sage-deep -> #bd6e50 (4.93). All 6 schemes pass 4.5:1.
+- ink-muted default already #5c605c (5.7:1) — no change.
+- Corrected (no change): GAS badge is decorative inside a full-width tap row; reset-password already has an expired-link screen; only remaining bg-sage is a decorative progress bar. High-contrast palette passed all checks unchanged.
+- Assessment doc + resolution log: accessibility-assessment-patient-app-2026-06-30.md.
+- Verified: tsc 0, eslint 0 errors, parity 2025, vitest 41/41, build 112, contrast matrix all-pass. layout SHA unchanged.
 === 2026-06-30 — Accessibility remediation pass (no migration) ===
 - H1 (WCAG 1.4.11): input/select/textarea borders (57 across 24 files) + checkboxes (7) stone(1.18:1) -> ink-muted (>=4.4:1 all palettes day+night). Inputs now clearly bounded.
 - M1 (WCAG 1.4.3): ink-muted retuned for soft-panel contrast — palettes.ts green-day #5c605c, clay-day #685a52, green-night #a1a7a0, clay-night #a49a91; globals.css @theme #5c605c. High-contrast untouched.

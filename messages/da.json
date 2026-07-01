@@ -1756,7 +1756,9 @@
     "chartColRating": "Vurdering",
     "chartNoData": "Ingen vurderinger registreret endnu.",
     "back": "Tilbage",
-    "language": "Sprog"
+    "language": "Sprog",
+    "collapseChart": "Skjul graf for: {goal}",
+    "expandChart": "Vis graf for: {goal}"
   },
   "accountMenu": {
     "adminLink": "Administration",

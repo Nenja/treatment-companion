@@ -1189,6 +1189,60 @@ Verified: tsc 0, eslint 0 errors, i18n parity 2025, vitest 41/41, build 112.
 layout SHA unchanged. Real-device QA owed: confirm the heavier input borders read
 well (not too heavy) across palettes, and re-run contrast on N1 after any change.
 
+### 5.28 Accessibility pass — contrast fixes across all palettes (2026-06-30)
+
+Acted on the patient-app accessibility assessment
+(`accessibility-assessment-patient-app-2026-06-30.md`).
+
+- **Input borders (WCAG 1.4.11).** Form fields used a `stone` border at ~1.2:1 on
+  the pale backgrounds — effectively invisible. Added a dedicated
+  `--color-field-border` token to `@theme` and to all six palette day/night sets,
+  plus an unlayered rule applying it to `input/select/textarea.border-stone`
+  (excluding `:focus`). Now ≥3:1 in every scheme; decorative hairlines unchanged.
+- **Night-mode primary-button text.** A full six-scheme contrast matrix found
+  `on-accent` on the accent below 4.5:1 in night mode (green 4.1, clay 4.2).
+  Fixed: green.night on-accent → #ffffff (4.72); clay.night sage-deep → #bd6e50
+  (4.93). All schemes now pass 4.5:1.
+
+Three assessment items turned out to be non-issues on inspection and were NOT
+changed (findings corrected): the GAS "small button" is a decorative badge inside
+a full-width tap row; reset-password already renders a proper expired-link screen;
+the only remaining plain `bg-sage` is a decorative progress bar. The high-contrast
+palette passed everything unchanged.
+
+Baseline confirmed already-present (correcting stale notes): skip-link to
+`#main-content`, per-locale `<html lang>`, 3px `:focus-visible` ring, reduced-motion
+handling, `zoom`-based text scaling.
+
+Still open (device/AT pass, not code): screen-reader run, keyboard order, fixed bar
+under 2× zoom, plain-language reading-level review.
+
+Verified: tsc 0, eslint 0 errors, i18n parity 2025, vitest 41/41, build 112,
+6-scheme contrast matrix all-pass. layout SHA unchanged. No migration.
+
+### 5.29 Clinician goals: per-goal collapse, default-collapsed above two (2026-06-30)
+
+Per Nikolaj: on the clinician patient view, the active-goals graph should not
+collapse as one block — each goal keeps its own header (like the patient goals
+page), with the chart collapsing per goal.
+
+`GoalProgressView` gained optional `collapsible` + `defaultOpen` props. When
+`collapsible`, the goal-title header and weeks-reported line stay visible and a
+chevron toggles the chart body; `defaultOpen` seeds the initial state (per-instance
+useState, so each goal remembers its own toggle for the session). The four other
+call sites (GoalGraphModal, OnboardingWizard ×2, PhysioProgressForm) omit the prop
+and are unchanged — the modal always renders fully open.
+
+The clinician list passes `collapsible defaultOpen={bontGoals.length <= 2}`, so with
+one or two active goals the charts show expanded; with three or more they default
+collapsed to a scannable header list, each independently expandable. +2 a11y keys
+(`collapseChart`/`expandChart`, 4 locales). Note: the per-goal action row
+(edit/retire/video) stays visible under a collapsed chart — offered to fold it into
+the collapse too if wanted.
+
+Verified: tsc 0, eslint 0 errors, i18n parity 2027, vitest 41/41, build 112.
+layout SHA unchanged. No migration.
+
 ## 6. Build history (tags, oldest → newest)
 
 `copy-to-other-side` → `trim-header-and-meds` → `meds-to-actionrow` →

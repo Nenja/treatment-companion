@@ -23,6 +23,10 @@
   --color-amber-deep: #705619;
   --color-stone: #e5dfd3;
   --color-stone-soft: #efeae0;
+  /* Input/select/textarea border. A separate token so form fields
+     read as fields at >=3:1 (WCAG 1.4.11) without darkening the
+     decorative stone hairlines. Overridden per scheme in palettes.ts. */
+  --color-field-border: #8a7e64;
   /* Text colour that sits on the sage-deep / amber-deep accent fills
      (buttons). A separate token because cream-soft — used for raised
      surfaces — must go dark in dark schemes, but button text must stay
@@ -153,6 +157,17 @@
 
 /* Design direction (orthogonal to palette). Editorial (near-square) is the
    default, set on :root above. 'current' restores the original rounded look. */
+/* Form-control borders need >=3:1 to be perceivable (WCAG 1.4.11). The
+   stone hairline used elsewhere is too faint on the pale backgrounds, so
+   inputs get a dedicated per-scheme field-border. Unlayered so it wins
+   over the Tailwind border-stone utility; :focus is excluded so the focus
+   border tint still shows (the 3px focus ring is unaffected either way). */
+input.border-stone:not(:focus),
+select.border-stone:not(:focus),
+textarea.border-stone:not(:focus) {
+  border-color: var(--color-field-border);
+}
+
 [data-design='current'] {
   --radius-card: 1.25rem;
   --radius-button: 0.875rem;

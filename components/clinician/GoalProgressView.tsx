@@ -75,6 +75,11 @@ interface GoalProgressViewProps {
   /** Hide the goal-title line (e.g. when the surrounding row already
    * labels the goal). weeksReported and the chart still render. */
   hideTitle?: boolean;
+  /** When true, the chart body collapses behind the header — the goal title
+   *  and weeks-reported line stay visible and a chevron toggles the chart.
+   *  `defaultOpen` sets the initial state. Other call sites omit both. */
+  collapsible?: boolean;
+  defaultOpen?: boolean;
 }
 
 /**
@@ -114,11 +119,15 @@ export function GoalProgressView({
   doseMarkers = [],
   headerBadge,
   bare = false,
-  hideTitle = false
+  hideTitle = false,
+  collapsible = false,
+  defaultOpen = true
 }: GoalProgressViewProps) {
   const t = useTranslations('treatment');
   const tA11y = useTranslations('a11y');
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+  const [open, setOpen] = useState(defaultOpen);
+  const showBody = !collapsible || open;
   // Unique id so multiple charts on one page don't share a <linearGradient>.
   const gradId = `nrs-good-${useId().replace(/:/g, '')}`;
 
@@ -312,7 +321,7 @@ export function GoalProgressView({
           </p>
           {headerBadge ? <div className="mt-1.5">{headerBadge}</div> : null}
         </div>
-        {(onExportChart || onExpand) && (
+        {(onExportChart || onExpand || collapsible) && (
           <div className="flex shrink-0 items-center gap-1">
             {onExportChart && (
               <button
@@ -367,10 +376,40 @@ export function GoalProgressView({
                 </svg>
               </button>
             )}
+            {collapsible && (
+              <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                aria-expanded={open}
+                aria-label={
+                  open
+                    ? tA11y('collapseChart', { goal: goalText })
+                    : tA11y('expandChart', { goal: goalText })
+                }
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                  className={`transition-transform ${open ? 'rotate-180' : ''}`}
+                >
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+            )}
           </div>
         )}
       </div>
 
+      {showBody && (
+        <>
       <svg
         viewBox={`0 0 ${width} ${height}`}
         className="mt-3 block w-full"
@@ -926,6 +965,8 @@ export function GoalProgressView({
           </p>
         )}
       </div>
+        </>
+      )}
     </article>
   );
 }

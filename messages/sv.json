@@ -1713,7 +1713,9 @@
     "chartColRating": "Bedömning",
     "chartNoData": "Inga bedömningar rapporterade än.",
     "back": "Tillbaka",
-    "language": "Språk"
+    "language": "Språk",
+    "collapseChart": "Dölj diagram för: {goal}",
+    "expandChart": "Visa diagram för: {goal}"
   },
   "accountMenu": {
     "adminLink": "Administration",

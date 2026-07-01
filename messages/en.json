@@ -1752,7 +1752,9 @@
     "chartColRating": "Rating",
     "chartNoData": "No ratings reported yet.",
     "back": "Back",
-    "language": "Language"
+    "language": "Language",
+    "collapseChart": "Hide chart for: {goal}",
+    "expandChart": "Show chart for: {goal}"
   },
   "accountMenu": {
     "adminLink": "Admin",

@@ -1548,6 +1548,8 @@ export default function ClinicianPatientPage() {
                 <li key={g.id} className="max-w-[520px]">
                   <GoalProgressView
                     goalText={g.patientFacingText}
+                    collapsible
+                    defaultOpen={bontGoals.length <= 2}
                     kind={g.kind}
                     currentWeek={weekNumber}
                     ratings={ratingsByGoal.get(g.id) ?? []}
