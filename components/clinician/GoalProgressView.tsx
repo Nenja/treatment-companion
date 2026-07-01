@@ -310,18 +310,57 @@ export function GoalProgressView({
       }
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          {!hideTitle && (
-            <p className="font-display text-[16px] leading-snug text-ink">
-              {goalText}
+        {collapsible ? (
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            className="flex min-w-0 flex-1 items-start gap-2 text-left"
+          >
+            <span className="min-w-0 flex-1">
+              {!hideTitle && (
+                <span className="block font-display text-[16px] leading-snug text-ink">
+                  {goalText}
+                </span>
+              )}
+              <span className="mt-0.5 block text-[14px] text-ink-muted">
+                {t('weeksReported', { reported: reportedCount, total: currentWeek })}
+              </span>
+              {headerBadge ? (
+                <span className="mt-1.5 block">{headerBadge}</span>
+              ) : null}
+            </span>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+              className={`mt-0.5 shrink-0 text-ink-muted transition-transform ${
+                open ? 'rotate-180' : ''
+              }`}
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+        ) : (
+          <div className="min-w-0">
+            {!hideTitle && (
+              <p className="font-display text-[16px] leading-snug text-ink">
+                {goalText}
+              </p>
+            )}
+            <p className="mt-0.5 text-[14px] text-ink-muted">
+              {t('weeksReported', { reported: reportedCount, total: currentWeek })}
             </p>
-          )}
-          <p className="mt-0.5 text-[14px] text-ink-muted">
-            {t('weeksReported', { reported: reportedCount, total: currentWeek })}
-          </p>
-          {headerBadge ? <div className="mt-1.5">{headerBadge}</div> : null}
-        </div>
-        {(onExportChart || onExpand || collapsible) && (
+            {headerBadge ? <div className="mt-1.5">{headerBadge}</div> : null}
+          </div>
+        )}
+        {(onExportChart || onExpand) && (
           <div className="flex shrink-0 items-center gap-1">
             {onExportChart && (
               <button
@@ -373,34 +412,6 @@ export function GoalProgressView({
                   <path d="M9 21H3v-6" />
                   <path d="M21 3l-7 7" />
                   <path d="M3 21l7-7" />
-                </svg>
-              </button>
-            )}
-            {collapsible && (
-              <button
-                type="button"
-                onClick={() => setOpen((o) => !o)}
-                aria-expanded={open}
-                aria-label={
-                  open
-                    ? tA11y('collapseChart', { goal: goalText })
-                    : tA11y('expandChart', { goal: goalText })
-                }
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-stone-soft hover:text-ink"
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                  className={`transition-transform ${open ? 'rotate-180' : ''}`}
-                >
-                  <path d="M6 9l6 6 6-6" />
                 </svg>
               </button>
             )}

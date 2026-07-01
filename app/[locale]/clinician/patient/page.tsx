@@ -634,23 +634,6 @@ export default function ClinicianPatientPage() {
       return day === 0 ? 7 : day;
     })
   );
-  // What functions they're working on: a goal is "working on" if the most
-  // recent assessment that mentions it has the flag set (assessments are
-  // ascending, so the last match wins).
-  // A goal counts as one the therapist is working on if they have rated it
-  // in any assessment — rating it is the report that they engaged with it
-  // (there is no separate "working on" flag any more).
-  const workingOnGoalIds = new Set<string>();
-  for (const g of activeGoals) {
-    const rated = physioAssessments.some((a) =>
-      a.ratings.some(
-        (x) =>
-          x.approvedGoalId === g.id &&
-          (x.nrsValue != null || x.gasValue != null)
-      )
-    );
-    if (rated) workingOnGoalIds.add(g.id);
-  }
   // Feasibility help: adjustment requests, newest first.
   const adjustmentRequests = physioAssessments
     .flatMap((a) =>
@@ -1584,15 +1567,9 @@ export default function ClinicianPatientPage() {
                     }
                     onExpand={() => setEnlargedGoalId(g.id)}
                   />
-                  {/* Footer row: therapist tag (left) + actions (right),
-                      aligned on one baseline. Retire keeps history; the
+                  {/* Footer row: goal actions. Retire keeps history; the
                       goal leaves the patient's future check-ins. */}
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    {workingOnGoalIds.has(g.id) && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-sage-soft px-2.5 py-1 text-[12px] font-semibold text-sage-deep">
-                        {t('physioWorkingOnTag')}
-                      </span>
-                    )}
                     <div className="ml-auto flex flex-wrap justify-end gap-2">
                     <button
                       type="button"
