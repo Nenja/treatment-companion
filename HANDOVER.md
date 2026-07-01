@@ -1023,6 +1023,90 @@ flagged for native Swedish/Norwegian clinical review** (same status as da).
   one-line option if you want CI to keep them from drifting again — deferred as a
   policy call, since they're first-pass and a native reviewer may re-word.
 
+### 5.23 Test fix + verification-gap note (2026-06-30)
+
+Adding `useTranslations` to `GoalRatingPicker` in the localization sweep broke
+its unit test (`tests/GoalRatingPicker.test.tsx`), which renders the component
+bare — it even stubs `ReadAloudButton` specifically to avoid next-intl. CI
+vitest caught it (6 failures: missing `NextIntlClientProvider` context).
+
+Fix: a `renderWithIntl` helper wraps renders in `NextIntlClientProvider`
+(`locale="en"`, real `messages/en.json`) via RTL's `{ wrapper }` option so
+`rerender` inherits it; the "Worst/Best/tap a number" assertions now check
+shipped copy. vitest 41/41, tsc 0, eslint 0.
+
+**Durable lesson:** the font-stub verify (tsc + eslint + parity + build) does
+**not** run vitest, so a component that gains a hook can pass local verify yet
+fail CI. Run `npx vitest run` whenever a component's internals change (a newly
+added hook, context dependency, or provider requirement).
+
+### 5.24 Read-aloud voice selection + profile save-clarity (2026-06-30)
+
+**Read-aloud (`lib/useSpeak.ts`).** It set `utter.lang = 'da-DK'` but never
+assigned `utter.voice`, so most browsers read Danish text with the default
+(English) voice. Now actively selects an installed voice matching the locale:
+exact region (da-DK) → same base language any region (da-*, plus no-* as an
+alias for nb) → prefers an on-device ("local") voice; falls back to the browser
+default only when nothing matches. Handles async voice loading (`getVoices()` is
+often empty until `voiceschanged` — warmed into a ref and re-read at speak time).
+Locale→lang map covers da/sv/nb(no)/en. API unchanged (`{ speak, stop,
+supported }`), so the four `ReadAloudButton` callers are untouched. Caveat: if a
+device has no Danish voice installed, it still falls back to default — can't
+install voices from the web.
+
+**Profile save-clarity (`app/[locale]/profile/page.tsx`).** The page mixed two
+save models that looked identical: most fields are STAGED (persist only via the
+bottom "Save changes" button) while Language, Appearance, and the wearable
+connect persist THEMSELVES immediately — with no signal which was which, and the
+Save button buried below the self-saving sections. Changes:
+- Replaced the static bottom Save button with a **sticky bottom bar that appears
+  only when `dirty`** — its presence is the "you have unsaved changes" signal
+  (amber dot + label + Save). Always reachable regardless of scroll; `main` gets
+  `pb-28` when dirty so nothing hides behind it. z-110 (below the leave-guard
+  dialog's z-120).
+- Added a **"Saves automatically"** label to the Language and Appearance section
+  headers to separate the live sections from the staged ones.
+- +2 profile keys (`unsavedChanges`, `savesAutomatically`) in all four locales
+  (en/da proper; sv/nb first-pass). Existing unsaved-changes leave guard
+  (in-app + beforeunload) unchanged.
+
+Verified: tsc 0, eslint 0 errors, 4-locale parity (2018 keys), vitest 41/41,
+font-stub build 112. layout SHA unchanged. Not verifiable here (flagged for a
+real-device glance): actual Danish voice availability/pronunciation on a target
+phone, and the sticky bar's feel on the smallest screens.
+
+### 5.25 Patient profile restructure + goals-button graphic (2026-06-30)
+
+**Goals button (`app/[locale]/page.tsx`).** The "Your goals" home entry was text
++ chevron only (the visit-code row below it had an icon). Added a leading
+target/bullseye graphic in a sage-soft tile so the row reads as picture + label;
+layout is `items-center gap-4`, text block `flex-1`, chevron unchanged.
+Decorative (aria-hidden); label untouched.
+
+**Profile restructure (`app/[locale]/profile/page.tsx`).** Addressed the "a lot
+all over the place / unclear what's saved" critique. LAYOUT ONLY — no consent
+wording or save behaviour changed. New order puts routine, visible settings
+first (Reminders [patient], Language, Appearance — the last two keep the "Saves
+automatically" tag), then the set-once material collapsed by default:
+- New local `CollapsibleSection` (chevron toggle, `aria-expanded`, optional
+  collapsed summary, and an **"Edited" chip** shown when that section holds
+  unsaved staged changes — so a collapsed section still signals it needs saving).
+- **"Your details"** (collapsed) — name, email, password, profession[therapist],
+  sex[patient]; summary shows name · email.
+- **"What you share"** (collapsed, patient only) — consolidates the three
+  sharing controls under one heading + intro: research consent, video consent,
+  and the wearable panel (which self-renders nothing when the flag is off). The
+  three were previously scattered as separate full-width sections.
+- Per-section dirty flags (`detailsDirty`/`shareDirty`) parsed from the existing
+  baseline snapshot; sticky save bar + leave guard unchanged.
+- +6 profile keys (`sectionReminders`, `sectionDetails`, `sectionSharing`,
+  `sharingIntro`, `sharingSummary`, `edited`) in all four locales. Old
+  `sectionAccount`/`sectionAbout` keys now unused (left in place).
+
+Verified: tsc 0, eslint 0 errors, 4-locale parity (2024), vitest 41/41, font-stub
+build 112. layout SHA unchanged. Real-device QA still owed: collapse/scroll feel
+and the sticky bar on the smallest screens.
+
 ## 6. Build history (tags, oldest → newest)
 
 `copy-to-other-side` → `trim-header-and-meds` → `meds-to-actionrow` →

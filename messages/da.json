@@ -1309,7 +1309,15 @@
     "sectionLanguage": "Sprog",
     "sectionAccessibility": "Tilgængelighed",
     "sectionHelp": "Hjælp",
-    "tutorialReplayHelper": "Gennemgå appens vigtigste skærme igen."
+    "tutorialReplayHelper": "Gennemgå appens vigtigste skærme igen.",
+    "unsavedChanges": "Ugemte ændringer",
+    "savesAutomatically": "Gemmes automatisk",
+    "sectionReminders": "Påmindelser",
+    "sectionDetails": "Dine oplysninger",
+    "sectionSharing": "Det du deler",
+    "sharingIntro": "Bestem, hvad du deler med dit behandlingsteam, og hvordan. Du kan ændre det når som helst.",
+    "sharingSummary": "Samtykker og datadeling",
+    "edited": "Ændret"
   },
   "help": {
     "buttonLabel": "Hjælp",

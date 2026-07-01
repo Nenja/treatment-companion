@@ -1266,7 +1266,15 @@
     "sectionLanguage": "Språk",
     "sectionAccessibility": "Tillgänglighet",
     "sectionHelp": "Hjälp",
-    "tutorialReplayHelper": "Gå igenom appens huvudskärmar igen."
+    "tutorialReplayHelper": "Gå igenom appens huvudskärmar igen.",
+    "unsavedChanges": "Osparade ändringar",
+    "savesAutomatically": "Sparas automatiskt",
+    "sectionReminders": "Påminnelser",
+    "sectionDetails": "Dina uppgifter",
+    "sectionSharing": "Det du delar",
+    "sharingIntro": "Bestäm vad du delar med ditt vårdteam, och hur. Du kan ändra detta när som helst.",
+    "sharingSummary": "Samtycken och datadelning",
+    "edited": "Ändrad"
   },
   "help": {
     "buttonLabel": "Hjälp",

@@ -1,3 +1,24 @@
+=== 2026-06-30 — Patient profile restructure + goals-button graphic (no migration) ===
+- Goals button (patient home): added a target/bullseye graphic in a sage tile to the "Your goals" entry (was text + chevron only). Decorative; label unchanged.
+- Profile page restructure (LAYOUT ONLY — no consent wording/behaviour change): routine-first order (Reminders, Language, Appearance with "Saves automatically"), then set-once material collapsed by default via a new local CollapsibleSection (chevron, aria-expanded, collapsed summary, "Edited" chip when the section holds unsaved staged edits). "Your details" (name/email/password/profession/sex) and "What you share" (research + video consent + wearable panel, consolidated under one heading + intro) are collapsed. Per-section dirty parsed from baseline snapshot; sticky bar + leave guard unchanged.
+- i18n: +6 profile keys (sectionReminders, sectionDetails, sectionSharing, sharingIntro, sharingSummary, edited) in all four locales. sectionAccount/sectionAbout now unused (kept).
+- Verified: tsc 0, eslint 0 errors, 4-locale parity 2024, vitest 41/41, font-stub build 112. layout SHA unchanged.
+=== 2026-06-30 — Goals button graphic on patient home (no migration) ===
+- app/[locale]/page.tsx: the "Your goals" entry was text + chevron only, while the visit-code row below it had an icon. Added a leading target/bullseye graphic in a sage-soft tile (h-12 w-12) so the row reads as picture + label. Layout switched to items-center gap-4 with the text block flex-1; chevron stays right. Decorative (aria-hidden); label unchanged. No new icon existed to reuse.
+- Verified: tsc 0, eslint 0, font-stub build 112. layout SHA unchanged.
+=== 2026-06-30 — Read-aloud voice selection + profile save-clarity (no migration) ===
+- useSpeak.ts: was setting utter.lang only -> browsers read Danish with the default (English) voice. Now picks an installed voice matching the locale (exact region -> same base language -> local-service preferred), handles async getVoices()/voiceschanged, maps da/sv/nb(no)/en. Falls back to default only if no matching voice installed. API unchanged; 4 ReadAloudButton callers untouched.
+- profile/page.tsx: two save models looked identical (staged fields need the bottom Save button; Language/Appearance/wearable self-persist). Replaced the buried static Save button with a STICKY bottom bar shown only when dirty (amber dot + "Unsaved changes" + Save) -> its presence is the unsaved signal; main gets pb-28 when dirty; z-110 (under leave-dialog z-120). Added "Saves automatically" labels to Language + Appearance headers.
+- i18n: +2 profile keys (unsavedChanges, savesAutomatically) in all four locales (sv/nb first-pass).
+- Verified: tsc 0, eslint 0 errors, 4-locale parity 2018, vitest 41/41, font-stub build 112. layout SHA unchanged.
+- Cannot verify here (real-device QA): Danish voice availability/pronunciation on target phones; sticky-bar feel on smallest screens.
+
+=== 2026-06-30 — Fix: GoalRatingPicker unit test broke after i18n sweep (no migration) ===
+- CI vitest failed: adding useTranslations('patient.checkin') to GoalRatingPicker (Best/Worst + tapNumberHint) made the component require NextIntlClientProvider, but tests/GoalRatingPicker.test.tsx rendered it bare (it even stubs ReadAloudButton to avoid next-intl) -> 6 failures "context from NextIntlClientProvider was not found".
+- Fix: wrap test renders via a renderWithIntl helper using RTL's { wrapper } (so rerender inherits it), with locale="en" + real messages/en.json — keeps the 0/10 "Worst"/"Best" and "tap a number" assertions tied to shipped copy rather than a mock. Updated the stale "no providers to set up" comment.
+- Result: vitest 41/41 pass, tsc 0, eslint 0.
+- WORKFLOW GAP (noted): the standard font-stub verify (tsc+eslint+parity+build) does NOT run vitest, so component-hook regressions slip through; run `npx vitest run` whenever a component's internals change (e.g. a newly added hook).
+
 === 2026-06-30 — Swedish + Norwegian to full parity (no migration) ===
 - sv/nb were 85.8% (286 keys behind en: this session's support page, Help control, and i18n sweep had only landed in en+da, since only en↔da is parity-gated).
 - Filled all 286 keys in BOTH sv and nb as Claude first-pass, flagged for native Swedish/Norwegian clinical review. Anchored to existing sv/nb vocabulary for consistency.

@@ -268,9 +268,31 @@ export default function PatientHomePage() {
           router.push(locale === 'en' ? '/goals' : `/${locale}/goals`)
         }
         data-tour="goals"
-        className="mt-8 flex w-full items-center justify-between gap-3 rounded-[var(--radius-card)] border border-sage/50 px-5 py-4 text-left hover:bg-sage-soft/30"
+        className="mt-8 flex w-full items-center gap-4 rounded-[var(--radius-card)] border border-sage/50 px-5 py-4 text-left hover:bg-sage-soft/30"
       >
-        <span className="min-w-0">
+        {/* Goal graphic — a target/bullseye, the clearest at-a-glance cue for
+            "goals". Set in a sage tile so the row reads as a picture + label,
+            not a wall of text. Decorative; the label carries the meaning. */}
+        <span
+          aria-hidden
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-button)] bg-sage-soft text-sage-deep"
+        >
+          <svg
+            width="26"
+            height="26"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <circle cx="12" cy="12" r="5" />
+            <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+          </svg>
+        </span>
+        <span className="min-w-0 flex-1">
           <span className="block font-display text-[20px] leading-tight text-ink">
             {t('yourGoals')}
           </span>

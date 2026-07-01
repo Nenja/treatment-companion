@@ -1305,7 +1305,15 @@
     "sectionLanguage": "Language",
     "sectionAccessibility": "Accessibility",
     "sectionHelp": "Help",
-    "tutorialReplayHelper": "Walk through the app’s main screens again."
+    "tutorialReplayHelper": "Walk through the app’s main screens again.",
+    "unsavedChanges": "Unsaved changes",
+    "savesAutomatically": "Saves automatically",
+    "sectionReminders": "Reminders",
+    "sectionDetails": "Your details",
+    "sectionSharing": "What you share",
+    "sharingIntro": "Control what you share with your care team, and how. You can change these at any time.",
+    "sharingSummary": "Consents and data sharing",
+    "edited": "Edited"
   },
   "help": {
     "buttonLabel": "Help",

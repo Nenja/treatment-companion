@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/supabase/auth';
@@ -179,6 +179,36 @@ export default function ProfilePage() {
   const saving =
     updateProfile.isPending || setOwnSex.isPending || setOwnConsent.isPending;
 
+  // Per-section unsaved-change flags, so a collapsed section can flag that
+  // it holds edits (an "Edited" chip) without the user opening it.
+  const base =
+    seeded && baseline
+      ? (JSON.parse(baseline) as {
+          n: string;
+          pf: ProfessionCode;
+          po: string;
+          sx: Sex | null;
+          rd: number | null;
+          cc: boolean;
+          ce: boolean;
+          rc: boolean;
+        })
+      : null;
+  const detailsDirty =
+    !!base &&
+    (name.trim() !== base.n ||
+      sex !== base.sx ||
+      (isTherapist &&
+        (profession !== base.pf || professionOther.trim() !== base.po)));
+  const shareDirty =
+    !!base &&
+    (researchConsent !== base.rc ||
+      clinical !== base.cc ||
+      educational !== base.ce);
+  const detailsSummary = [name.trim(), user.email ?? '']
+    .filter(Boolean)
+    .join(' \u00B7 ');
+
   // Guard in-app navigation: if there are unsaved changes, queue the nav
   // behind the confirm dialog; otherwise go straight away.
   const attemptLeave = (nav: () => void) => {
@@ -278,227 +308,255 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[480px] px-5 py-8">
+      <main className={`mx-auto max-w-[480px] px-5 py-8 ${dirty ? 'pb-28' : ''}`}>
         <h1 className="font-display text-[26px] leading-tight text-ink">
           {t('title')}
         </h1>
 
-        {/* Account */}
-        <p className="eyebrow mt-7">{t('sectionAccount')}</p>
-
-        {/* Name */}
-        <div className="mt-4">
-          <label htmlFor="profile-name" className={fieldLabel}>
-            {t('nameLabel')}
-          </label>
-          <input
-            id="profile-name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={80}
-            className={inputClass}
-          />
-          <p className={fieldHelper}>{t('nameHelper')}</p>
-          {!nameValid && name.length > 0 && (
-            <p className="mt-1 text-[13px] text-amber-deep">
-              {t('nameRequired')}
-            </p>
-          )}
-        </div>
-
-        {/* Email — read-only, plain text. */}
-        <div className="mt-5">
-          <p className={fieldLabel}>{t('emailLabel')}</p>
-          <p className="mt-1 text-[15px] text-ink">{user.email ?? '\u2014'}</p>
-          <p className={fieldHelper}>{t('emailHelper')}</p>
-        </div>
-
-        {/* Password — links to the existing reset flow. */}
-        <div className="mt-5">
-          <p className={fieldLabel}>{t('passwordLabel')}</p>
-          <button
-            type="button"
-            onClick={() =>
-              attemptLeave(() =>
-                router.push(
-                  prefix ? `${prefix}/reset-password` : '/reset-password'
-                )
-              )
-            }
-            className="mt-1.5 flex h-10 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
-          >
-            {t('passwordChange')}
-          </button>
-        </div>
-
-        {/* Profession — therapist accounts only. */}
-        {isTherapist && (
-          <div className="mt-6">
-            <label htmlFor="profile-profession" className={fieldLabel}>
-              {t('professionLabel')}
-            </label>
-            <select
-              id="profile-profession"
-              value={profession}
-              onChange={(e) => setProfession(e.target.value as ProfessionCode)}
-              className={`${inputClass} font-semibold`}
-            >
-              {professionOptions(locale === 'da' ? 'da' : 'en').map((opt) => (
-                <option key={opt.code} value={opt.code}>
-                  {opt.label}
+        {/* Reminders — patient only. Staged (saved by the bar below). */}
+        {isPatient && (
+          <div className="mt-7">
+            <p className="eyebrow">{t('sectionReminders')}</p>
+            <div className="mt-4">
+              <label htmlFor="profile-reminder-day" className={fieldLabel}>
+                {t('reminderDayLabel')}
+              </label>
+              <select
+                id="profile-reminder-day"
+                value={reminderDay ?? ''}
+                onChange={(e) =>
+                  setReminderDay(
+                    e.target.value === '' ? null : Number(e.target.value)
+                  )
+                }
+                className={inputClass}
+              >
+                <option value="" disabled>
+                  {t('reminderDayUnset')}
                 </option>
-              ))}
-            </select>
-            <p className={fieldHelper}>{t('professionHelper')}</p>
-            {profession === 'other' && (
-              <>
-                <input
-                  type="text"
-                  value={professionOther}
-                  onChange={(e) => setProfessionOther(e.target.value)}
-                  placeholder={t('professionOtherPlaceholder')}
-                  maxLength={60}
-                  className={inputClass}
-                />
-                {!professionOtherValid && (
-                  <p className="mt-1 text-[13px] text-amber-deep">
-                    {t('professionOtherRequired')}
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-        )}
-
-        {/* About you — patient accounts only (sex + reminder day). */}
-        {isPatient && (
-          <div className="mt-9 border-t border-stone/70 pt-7">
-            <p className="eyebrow">{t('sectionAbout')}</p>
-          </div>
-        )}
-
-        {/* Sex — patient accounts only. */}
-        {isPatient && (
-          <div className="mt-5">
-            <label htmlFor="profile-sex" className={fieldLabel}>
-              {t('sexLabel')}
-            </label>
-            <select
-              id="profile-sex"
-              value={sex ?? ''}
-              disabled={ownSex.isLoading}
-              onChange={(e) => setSex((e.target.value || null) as Sex | null)}
-              className={inputClass}
-            >
-              <option value="">{t('sexUnset')}</option>
-              {SEX_OPTS.map((v) => (
-                <option key={v} value={v}>
-                  {tSex(v)}
-                </option>
-              ))}
-            </select>
-            <p className={fieldHelper}>{t('sexHelper')}</p>
-          </div>
-        )}
-
-        {/* Reminder day — patient accounts only. */}
-        {isPatient && (
-          <div className="mt-6">
-            <label htmlFor="profile-reminder-day" className={fieldLabel}>
-              {t('reminderDayLabel')}
-            </label>
-            <select
-              id="profile-reminder-day"
-              value={reminderDay ?? ''}
-              onChange={(e) =>
-                setReminderDay(
-                  e.target.value === '' ? null : Number(e.target.value)
-                )
-              }
-              className={inputClass}
-            >
-              <option value="" disabled>
-                {t('reminderDayUnset')}
-              </option>
-              {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-                <option key={d} value={d}>
-                  {tWeekday(`long.${d}`)}
-                </option>
-              ))}
-            </select>
-            <p className={fieldHelper}>{t('reminderDayHelper')}</p>
-          </div>
-        )}
-
-        {/* Video consent — patient accounts only. Staged here; saved by
-            the page's Save button. */}
-        {isPatient && (
-          <div className="mt-10 border-t border-stone/70 pt-7">
-            <h2 className="eyebrow">{tRC('patientHeading')}</h2>
-            <p className="mt-2 text-[12px] text-ink-muted">
-              {tRC('patientHelper')}
-            </p>
-            <label className="mt-3 flex items-start gap-2.5 text-[14px] text-ink">
-              <input
-                type="checkbox"
-                checked={researchConsent}
-                onChange={(e) => setResearchConsent(e.target.checked)}
-                className="mt-1 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
-              />
-              <span>
-                {tRC('label')}
-                <span className="mt-0.5 block text-[13px] text-ink-muted">
-                  {tRC('desc')}
-                </span>
-              </span>
-            </label>
-            <p className="mt-4 text-[12px] leading-relaxed text-ink-muted">
-              {tRC('withdrawNote')}
-            </p>
-          </div>
-        )}
-
-        {isPatient && <WearableConnectPanel />}
-
-        {isPatient && (
-          <div className="mt-10 border-t border-stone/70 pt-7">
-            <VideoConsentSettings
-              clinical={clinical}
-              educational={educational}
-              onChange={(next) => {
-                setClinical(next.clinical);
-                setEducational(next.educational);
-              }}
-            />
+                {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+                  <option key={d} value={d}>
+                    {tWeekday(`long.${d}`)}
+                  </option>
+                ))}
+              </select>
+              <p className={fieldHelper}>{t('reminderDayHelper')}</p>
+            </div>
           </div>
         )}
 
         {/* Language — applies live and persists itself; not under Save. */}
-        <div className="mt-10 border-t border-stone/70 pt-7">
-          <p className="eyebrow">{t('sectionLanguage')}</p>
+        <div
+          className={
+            isPatient ? 'mt-10 border-t border-stone/70 pt-7' : 'mt-7'
+          }
+        >
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="eyebrow">{t('sectionLanguage')}</p>
+            <span className="text-[11px] font-medium text-ink-muted">
+              {t('savesAutomatically')}
+            </span>
+          </div>
           <div className="mt-3">
             <LanguageSelect variant="cards" onChoose={chooseLanguage} />
           </div>
         </div>
 
-        {/* Appearance — colour palette + night mode. Applies live and
-            persists itself; not under Save. */}
+        {/* Appearance — colour palette + night mode. Applies live. */}
         <div className="mt-10 border-t border-stone/70 pt-7">
-          <p className="eyebrow">{t('sectionAccessibility')}</p>
-          <p className="mt-2 text-[12px] text-ink-muted">{t('appearanceHelper')}</p>
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="eyebrow">{t('sectionAccessibility')}</p>
+            <span className="text-[11px] font-medium text-ink-muted">
+              {t('savesAutomatically')}
+            </span>
+          </div>
+          <p className="mt-2 text-[12px] text-ink-muted">
+            {t('appearanceHelper')}
+          </p>
           <div className="mt-3">
             <AppearanceSettings />
           </div>
         </div>
 
-        {/* Help — replay the onboarding walkthrough. Routed through
-            attemptLeave so unsaved edits are confirmed first; sets a
-            transient replay flag and hard-navigates to this role's home,
-            where the wizard mounts (has_seen_intro is left untouched). */}
+        {/* Your details — identity, changed rarely. Collapsed by default. */}
+        <CollapsibleSection
+          title={t('sectionDetails')}
+          summary={detailsSummary}
+          edited={detailsDirty}
+          editedLabel={t('edited')}
+        >
+          <div>
+            <label htmlFor="profile-name" className={fieldLabel}>
+              {t('nameLabel')}
+            </label>
+            <input
+              id="profile-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={80}
+              className={inputClass}
+            />
+            <p className={fieldHelper}>{t('nameHelper')}</p>
+            {!nameValid && name.length > 0 && (
+              <p className="mt-1 text-[13px] text-amber-deep">
+                {t('nameRequired')}
+              </p>
+            )}
+          </div>
+
+          <div className="mt-5">
+            <p className={fieldLabel}>{t('emailLabel')}</p>
+            <p className="mt-1 text-[15px] text-ink">{user.email ?? '—'}</p>
+            <p className={fieldHelper}>{t('emailHelper')}</p>
+          </div>
+
+          <div className="mt-5">
+            <p className={fieldLabel}>{t('passwordLabel')}</p>
+            <button
+              type="button"
+              onClick={() =>
+                attemptLeave(() =>
+                  router.push(
+                    prefix ? `${prefix}/reset-password` : '/reset-password'
+                  )
+                )
+              }
+              className="mt-1.5 flex h-10 items-center justify-center rounded-[var(--radius-button)] border border-stone bg-cream-soft px-4 text-[14px] font-semibold text-ink-soft hover:bg-stone-soft"
+            >
+              {t('passwordChange')}
+            </button>
+          </div>
+
+          {isTherapist && (
+            <div className="mt-6">
+              <label htmlFor="profile-profession" className={fieldLabel}>
+                {t('professionLabel')}
+              </label>
+              <select
+                id="profile-profession"
+                value={profession}
+                onChange={(e) =>
+                  setProfession(e.target.value as ProfessionCode)
+                }
+                className={`${inputClass} font-semibold`}
+              >
+                {professionOptions(locale === 'da' ? 'da' : 'en').map((opt) => (
+                  <option key={opt.code} value={opt.code}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <p className={fieldHelper}>{t('professionHelper')}</p>
+              {profession === 'other' && (
+                <>
+                  <input
+                    type="text"
+                    value={professionOther}
+                    onChange={(e) => setProfessionOther(e.target.value)}
+                    placeholder={t('professionOtherPlaceholder')}
+                    maxLength={60}
+                    className={inputClass}
+                  />
+                  {!professionOtherValid && (
+                    <p className="mt-1 text-[13px] text-amber-deep">
+                      {t('professionOtherRequired')}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {isPatient && (
+            <div className="mt-6">
+              <label htmlFor="profile-sex" className={fieldLabel}>
+                {t('sexLabel')}
+              </label>
+              <select
+                id="profile-sex"
+                value={sex ?? ''}
+                disabled={ownSex.isLoading}
+                onChange={(e) =>
+                  setSex((e.target.value || null) as Sex | null)
+                }
+                className={inputClass}
+              >
+                <option value="">{t('sexUnset')}</option>
+                {SEX_OPTS.map((v) => (
+                  <option key={v} value={v}>
+                    {tSex(v)}
+                  </option>
+                ))}
+              </select>
+              <p className={fieldHelper}>{t('sexHelper')}</p>
+            </div>
+          )}
+        </CollapsibleSection>
+
+        {/* What you share — the three sharing controls consolidated under
+            one heading. Patient only. Research + video are staged (saved by
+            the bar); the wearable connects on its own. Wording unchanged. */}
+        {isPatient && (
+          <CollapsibleSection
+            title={t('sectionSharing')}
+            summary={t('sharingSummary')}
+            edited={shareDirty}
+            editedLabel={t('edited')}
+          >
+            <p className="text-[13px] leading-relaxed text-ink-muted">
+              {t('sharingIntro')}
+            </p>
+
+            <div className="mt-5">
+              <h2 className="eyebrow">{tRC('patientHeading')}</h2>
+              <p className="mt-2 text-[12px] text-ink-muted">
+                {tRC('patientHelper')}
+              </p>
+              <label className="mt-3 flex items-start gap-2.5 text-[14px] text-ink">
+                <input
+                  type="checkbox"
+                  checked={researchConsent}
+                  onChange={(e) => setResearchConsent(e.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 rounded border-stone text-sage-deep focus:ring-sage"
+                />
+                <span>
+                  {tRC('label')}
+                  <span className="mt-0.5 block text-[13px] text-ink-muted">
+                    {tRC('desc')}
+                  </span>
+                </span>
+              </label>
+              <p className="mt-4 text-[12px] leading-relaxed text-ink-muted">
+                {tRC('withdrawNote')}
+              </p>
+            </div>
+
+            <div className="mt-6 border-t border-stone/60 pt-6">
+              <VideoConsentSettings
+                clinical={clinical}
+                educational={educational}
+                onChange={(next) => {
+                  setClinical(next.clinical);
+                  setEducational(next.educational);
+                }}
+              />
+            </div>
+
+            {/* Wearable connects on its own and renders nothing when the
+                feature is off, so no forced divider here. */}
+            <div className="mt-6">
+              <WearableConnectPanel />
+            </div>
+          </CollapsibleSection>
+        )}
+
+        {/* Help — replay the onboarding walkthrough. */}
         <div className="mt-10 border-t border-stone/70 pt-7">
           <p className="eyebrow">{t('sectionHelp')}</p>
-          <p className="mt-2 text-[12px] text-ink-muted">{t('tutorialReplayHelper')}</p>
+          <p className="mt-2 text-[12px] text-ink-muted">
+            {t('tutorialReplayHelper')}
+          </p>
           <button
             type="button"
             onClick={() =>
@@ -513,18 +571,33 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        {/* Save — the single write for every form field above. Disabled
-            until something changes. Last on the page. */}
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={!dirty || saving}
-          className="mt-10 flex h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-5 text-[15px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {saving ? t('saving') : t('save')}
-        </button>
-        <VersionTag className="mt-8 block text-center text-[11px] text-ink-muted" />
+        <VersionTag className="mt-10 block text-center text-[11px] text-ink-muted" />
       </main>
+
+      {/* Sticky save bar — appears only when there are unsaved form edits, so
+          its presence IS the "you have changes to save" signal. The self-saving
+          sections (language, appearance, wearable) never trigger it. */}
+      {seeded && dirty && (
+        <div className="fixed inset-x-0 bottom-0 z-[110] border-t border-stone bg-cream/95 px-5 py-3 shadow-[0_-2px_12px_rgba(31,36,33,0.08)] backdrop-blur">
+          <div className="mx-auto flex max-w-[480px] items-center gap-3">
+            <span className="flex items-center gap-2 text-[13px] font-semibold text-amber-deep">
+              <span
+                className="h-2 w-2 shrink-0 rounded-full bg-amber-deep"
+                aria-hidden
+              />
+              {t('unsavedChanges')}
+            </span>
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={saving}
+              className="ml-auto flex h-11 items-center justify-center rounded-[var(--radius-button)] bg-sage-deep px-6 text-[14px] font-semibold text-on-accent hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? t('saving') : t('save')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Unsaved-changes guard for in-app navigation. */}
       {pendingLeave && (
@@ -564,6 +637,69 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function CollapsibleSection({
+  title,
+  summary,
+  edited,
+  editedLabel,
+  defaultOpen = false,
+  children
+}: {
+  title: string;
+  summary?: string;
+  edited?: boolean;
+  editedLabel: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="mt-10 border-t border-stone/70 pt-6">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 text-left"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="eyebrow">{title}</span>
+          {!open && summary && (
+            <span className="mt-1 block truncate text-[13px] text-ink-muted">
+              {summary}
+            </span>
+          )}
+        </span>
+        {edited && (
+          <span className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold text-amber-deep">
+            <span
+              className="h-1.5 w-1.5 rounded-full bg-amber-deep"
+              aria-hidden
+            />
+            {editedLabel}
+          </span>
+        )}
+        <svg
+          aria-hidden
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`shrink-0 text-ink-soft transition-transform ${
+            open ? 'rotate-90' : ''
+          }`}
+        >
+          <path d="M9 6l6 6-6 6" />
+        </svg>
+      </button>
+      {open && <div className="mt-5">{children}</div>}
     </div>
   );
 }
