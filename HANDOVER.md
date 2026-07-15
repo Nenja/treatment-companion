@@ -1278,6 +1278,35 @@ His clinical call.
 Verified: tsc 0, eslint 0 errors, i18n parity 2027, vitest 41/41, build 112.
 layout SHA unchanged. No migration.
 
+### 5.32 Supabase upgrade: supabase-js 2.46 -> 2.110, @supabase/ssr 0.5 -> 0.12 (2026-06-30)
+
+A Dependabot "minor-and-patch" PR bumped `@supabase/supabase-js` and failed the
+Vercel build on a type error in `admin/update-account`. Investigation: bumping
+supabase-js alone produced ~40 type errors, but almost all were a **version skew**
+— `@supabase/ssr` 0.5.2 bundled an older supabase-js type, so `SupabaseClient`
+generics didn't match and queries collapsed to `never`. Bumping **both in
+lockstep** (supabase-js 2.110.5, ssr 0.12.3 — which peers on ^2.110) cleared the
+entire cascade, leaving only two real fixes:
+- `admin/update-account/route.ts` and `lib/supabase/profile.ts`: the dynamic
+  `patch` objects were `Record<string, unknown>`; newer postgrest-js types
+  `.update()` with `RejectExcessProperties`, which rejects an index signature.
+  Retyped both as `TablesUpdate<'profile'>` (correct under old and new alike).
+
+Pinned exact (2.110.5 / 0.12.3) to match repo convention. The temporary Dependabot
+ignore added during triage was reverted — Supabase is current again and CI guards
+future grouped bumps.
+
+**Bonus:** this satisfies the auth-spec prerequisite (passkeys need supabase-js
+>= 2.105) — auth "phase 1" (the client upgrade) is effectively done; on 2.110.5 now.
+
+**QA still owed (runtime, can't verify from build):** the ssr 0.5 -> 0.12 jump
+changes session/cookie internals. Types compile and build is green, but smoke-test
+real auth on a preview deploy — sign-in, SSR session hydration, cookie refresh,
+sign-out — before treating this as done.
+
+Verified: tsc 0, eslint 0 errors, i18n parity 2027, vitest 41/41, build 112.
+layout SHA unchanged. No migration (DB).
+
 ## 6. Build history (tags, oldest → newest)
 
 `copy-to-other-side` → `trim-header-and-meds` → `meds-to-actionrow` →

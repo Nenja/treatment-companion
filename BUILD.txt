@@ -1,3 +1,10 @@
+=== 2026-06-30 — Supabase upgrade supabase-js 2.46->2.110 + ssr 0.5->0.12 (no DB migration) ===
+- Root cause of the failing Dependabot build: version skew (ssr bundled old supabase-js -> SupabaseClient generic mismatch -> queries typed as never, ~40 errors). Fixed by bumping BOTH in lockstep (supabase-js 2.110.5, ssr 0.12.3).
+- Two real code fixes: admin/update-account/route.ts + lib/supabase/profile.ts patch objects retyped Record<string,unknown> -> TablesUpdate<'profile'> (new postgrest-js RejectExcessProperties rejects index signatures).
+- Exact pins to match convention. Dependabot triage-ignore reverted (Supabase current; CI guards future bumps).
+- Satisfies passkey prerequisite (supabase-js >= 2.105) — auth phase-1 client upgrade effectively done.
+- QA owed (runtime): ssr 0.5->0.12 changes session/cookie internals; smoke-test sign-in / SSR session / cookie refresh / sign-out on a preview deploy.
+- Verified: tsc 0, eslint 0 errors, parity 2027, vitest 41/41, build 112. layout SHA unchanged.
 === 2026-06-30 — Remove front-page emergency disclaimer from patient home (no migration) ===
 - Removed SafetyNotice ("Ikke til akut hjælp"/"Not for urgent care") from patient home app/[locale]/page.tsx (error/empty/main states) + its import. Redundant with the fuller support-page emergency notice (support.emergencyTitle/emergencyBody, "Ring 112").
 - safety.* i18n keys + SafetyNotice component left unused (reinstatable). checkin.commentSafetyNote unaffected.

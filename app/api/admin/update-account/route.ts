@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseServiceClient } from '@/lib/supabase/serviceClient';
+import type { TablesUpdate } from '@/lib/database.types';
 
 /**
  * Admin endpoint: edit an existing account's display name and (for
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const patch: Record<string, unknown> = { display_name: displayName };
+  const patch: TablesUpdate<'profile'> = { display_name: displayName };
 
   if (target.role === 'physiotherapist') {
     // Profession is editable for therapist accounts.

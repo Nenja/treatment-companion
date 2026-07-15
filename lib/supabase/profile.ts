@@ -2,6 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from './browser';
+import type { TablesUpdate } from '@/lib/database.types';
 import { useAuth } from './auth';
 
 /**
@@ -39,7 +40,7 @@ export function useUpdateOwnProfile() {
       const { data: userResp } = await supabase.auth.getUser();
       if (!userResp.user) throw new Error('Not signed in');
 
-      const patch: Record<string, unknown> = {};
+      const patch: TablesUpdate<'profile'> = {};
       if (input.displayName !== undefined) {
         patch.display_name = input.displayName;
       }
